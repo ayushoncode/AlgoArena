@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base resets ─────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    @apply bg-arena-bg text-arena-text antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply min-h-screen font-sans;
+    background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.12), transparent);
+  }
+
+  a { @apply text-arena-accent hover:text-arena-accent2 transition-colors; }
+}
+
+/* ─── Utility components ──────────────────────────── */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl
+           bg-arena-accent hover:bg-arena-accent2 text-white font-semibold
+           transition-all duration-200 shadow-lg shadow-indigo-500/20
+           active:scale-95 disabled:opacity-40 disabled:pointer-events-none;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl
+           border border-arena-border hover:border-arena-accent/50 text-arena-text
+           font-semibold transition-all duration-200 active:scale-95;
+  }
+
+  .card {
+    @apply bg-arena-card border border-arena-border rounded-2xl p-6
+           shadow-xl shadow-black/30;
+  }
+
+  .input-field {
+    @apply w-full bg-arena-surface border border-arena-border rounded-xl px-4 py-2.5
+           text-arena-text placeholder:text-arena-muted
+           focus:outline-none focus:border-arena-accent/60 focus:ring-2 focus:ring-arena-accent/20
+           transition-all duration-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  /* glow ring on focus-visible for accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-arena-accent/50 ring-offset-2 ring-offset-arena-bg;
+  }
+}
+
+/* ─── Scrollbar ───────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; }
+::-webkit-scrollbar-track  { @apply bg-arena-bg; }
+::-webkit-scrollbar-thumb  { @apply bg-arena-border rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-arena-accent/50; }
