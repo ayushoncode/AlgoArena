@@ -25,12 +25,18 @@ const { registerMatch }       = require('./socket/match')
 
 // ── App + HTTP server ─────────────────────────────────────────────────────────
 const app    = express()
+// In dev, allow any localhost Vite port (5173, 5174, 5175…) so port conflicts never block you
+const devOrigins = ['http://localhost:5173','http://localhost:5174','http://localhost:5175']
+const allowedOrigin = process.env.NODE_ENV === 'production'
+  ? process.env.CLIENT_URL
+  : (origin, cb) => cb(null, devOrigins.includes(origin) || !origin)
+
 const server = http.createServer(app)
 
 // ── Socket.io ─────────────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin:  process.env.CLIENT_URL || 'http://localhost:5173',
+    origin:  allowedOrigin,
     methods: ['GET', 'POST'],
   },
   transports: ['websocket', 'polling'],
@@ -38,7 +44,7 @@ const io = new Server(server, {
 
 // ── Express middleware ────────────────────────────────────────────────────────
 app.use(cors({
-  origin:      process.env.CLIENT_URL || 'http://localhost:5173',
+  origin:      allowedOrigin,
   credentials: true,
 }))
 app.use(express.json({ limit: '50kb' }))  // prevent enormous request bodies
