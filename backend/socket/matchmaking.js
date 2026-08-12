@@ -29,6 +29,8 @@
 'use strict'
 
 const { randomBytes } = require('crypto')
+const db              = require('../db')
+const { trackRoom }   = require('./match')
 
 // ── In-memory queue ────────────────────────────────────────────
 // Map<topicKey, WaitingEntry[]>
@@ -132,6 +134,29 @@ function registerMatchmaking(io) {
         }
 
         io.to(roomId).emit('match_found', matchPayload)
+
+        // Persist match to DB and link to room state
+        ;(async () => {
+          try {
+            const { rows: problems } = await db.query(
+              `SELECT id FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY RANDOM() LIMIT 1`,
+              [topic, difficulty]
+            )
+            const problemId = problems[0]?.id ?? null
+            const { rows } = await db.query(
+              `INSERT INTO matches (player_one_id, player_two_id, problem_id, topic, difficulty, status)
+               VALUES ($1, $2, $3, $4, $5, 'active') RETURNING id`,
+              [newEntry.userId, opponent.userId, problemId, topic, difficulty]
+            )
+            const dbMatchId = rows[0]?.id ?? null
+            if (dbMatchId) {
+              trackRoom(roomId, dbMatchId)
+              console.log(`[DB] match row created  id=${dbMatchId}  room=${roomId}`)
+            }
+          } catch (err) {
+            console.error('[DB] createMatchRow failed:', err.message)
+          }
+        })()
 
         console.log(`[Queue] MATCH  ${username} (${rating}) vs ${opponent.username} (${opponent.rating})  room=${roomId}  topic=${topicKey}`)
       } else {
