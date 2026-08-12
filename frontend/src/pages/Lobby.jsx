@@ -145,17 +145,32 @@ export default function Lobby() {
   const elo     = user?.elo_rating ?? 1200
   const diffObj = DIFFS.find(d => d.id === diff)
   const ch      = todayChallenge()
-  const { connected } = useSocket()
+  const { connected, emit, on, off } = useSocket()
+
+  // Listen for match_found — navigate to match room
+  useEffect(() => {
+    function onMatchFound({ roomId, topic: t, difficulty: d, players }) {
+      console.log('[Lobby] match_found →', roomId)
+      navigate(`/match/${roomId}`, { state: { topic: t, difficulty: d, players } })
+    }
+    on('match_found', onMatchFound)
+    return () => off('match_found', onMatchFound)
+  }, [on, off, navigate])
 
   function startQueue() {
     if (!topic) return
-    console.log('[Lobby] join_queue', { topic, difficulty: diff, rating: elo })
+    emit('join_queue', { topic, difficulty: diff })
     setQueuing(true)
+  }
+
+  function cancelQueue() {
+    emit('leave_queue')
+    setQueuing(false)
   }
 
   return (
     <>
-      {queuing && <SearchingOverlay topic={topic} difficulty={diff} rating={elo} onCancel={()=>setQueuing(false)}/>}
+      {queuing && <SearchingOverlay topic={topic} difficulty={diff} rating={elo} onCancel={cancelQueue}/>}
 
       <div className="min-h-[calc(100vh-3.5rem)]">
 

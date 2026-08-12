@@ -20,7 +20,7 @@ const authRoutes    = require('./routes/auth')
 const userRoutes    = require('./routes/users')
 const problemRoutes = require('./routes/problems')
 const matchRoutes   = require('./routes/matches')
-const { registerMatchmaking } = require('./socket/matchmaking')
+const { registerMatchmaking, queueStats } = require('./socket/matchmaking')
 const { registerMatch }       = require('./socket/match')
 const socketAuth              = require('./middleware/socketAuth')
 
@@ -78,6 +78,11 @@ app.get('/health', (_req, res) => {
     environment: process.env.NODE_ENV,
   })
 })
+
+// ── Queue stats (dev only) ───────────────────────────────────────────────────
+if (process.env.NODE_ENV === 'development') {
+  app.get('/queue-stats', (_req, res) => res.json(queueStats()))
+}
 
 // ── 404 catch-all ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {
