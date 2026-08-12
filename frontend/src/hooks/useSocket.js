@@ -1,46 +1,70 @@
-import { useEffect, useRef } from 'react'
-import { io } from 'socket.io-client'
-
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
-
 /**
- * useSocket — creates and manages a Socket.io connection.
- * Stub: event wiring (join_queue, match_found, etc.) added in Day 9.
+ * hooks/useSocket.js
  *
- * @param {boolean} enabled - set to false to skip connecting (e.g. unauthenticated)
- * @returns {{ socket: Socket | null }}
+ * Connects the singleton socket when the user is authenticated,
+ * disconnects when they log out, and exposes:
+ *
+ *   const { connected, emit, on, off } = useSocket()
+ *
+ * Usage example (Day 11 — Lobby matchmaking):
+ *   const { emit } = useSocket()
+ *   emit('join_queue', { topic, difficulty, rating })
+ *
+ * Usage example (Day 22 — match events):
+ *   const { on, off } = useSocket()
+ *   useEffect(() => {
+ *     on('match_found', handler)
+ *     return () => off('match_found', handler)
+ *   }, [])
  */
-export function useSocket(enabled = true) {
-  const socketRef = useRef(null)
+
+import { useEffect, useState, useCallback } from 'react'
+import socket from '../utils/socket'
+import { useAuth } from './useAuth'
+
+export function useSocket() {
+  const { isAuthenticated } = useAuth()
+  const [connected, setConnected] = useState(socket.connected)
 
   useEffect(() => {
-    if (!enabled) return
+    // Connect when authenticated, disconnect when not
+    if (isAuthenticated && !socket.connected) {
+      socket.connect()
+    } else if (!isAuthenticated && socket.connected) {
+      socket.disconnect()
+    }
 
-    const socket = io(SOCKET_URL, {
-      autoConnect: true,
-      transports: ['websocket'],
-      // auth token will be added in Day 9 once backend auth middleware is in place
-    })
+    // Track connection state for consumers
+    function onConnect()    { setConnected(true)  }
+    function onDisconnect() { setConnected(false) }
 
-    socket.on('connect', () => {
-      console.log('[Socket] connected:', socket.id)
-    })
-
-    socket.on('disconnect', (reason) => {
-      console.log('[Socket] disconnected:', reason)
-    })
-
-    socket.on('connect_error', (err) => {
-      console.warn('[Socket] connection error:', err.message)
-    })
-
-    socketRef.current = socket
+    socket.on('connect',    onConnect)
+    socket.on('disconnect', onDisconnect)
 
     return () => {
-      socket.disconnect()
-      socketRef.current = null
+      socket.off('connect',    onConnect)
+      socket.off('disconnect', onDisconnect)
     }
-  }, [enabled])
+  }, [isAuthenticated])
 
-  return { socket: socketRef.current }
+  /** emit(event, data) — fire-and-forget */
+  const emit = useCallback((event, data) => {
+    if (!socket.connected) {
+      console.warn(`[Socket] tried to emit "${event}" but socket is not connected`)
+      return
+    }
+    socket.emit(event, data)
+  }, [])
+
+  /** on(event, handler) — register a listener */
+  const on = useCallback((event, handler) => {
+    socket.on(event, handler)
+  }, [])
+
+  /** off(event, handler) — remove a listener */
+  const off = useCallback((event, handler) => {
+    socket.off(event, handler)
+  }, [])
+
+  return { connected, emit, on, off, socket }
 }

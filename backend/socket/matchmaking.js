@@ -13,15 +13,18 @@
  */
 function registerMatchmaking(io) {
   io.on('connection', (socket) => {
+    // ── Day 8: confirm handshake ────────────────────────
+    console.log(`[Socket] new connection  id=${socket.id}  transport=${socket.conn.transport.name}`)
+
     // join_queue — emitted by Lobby.jsx when user clicks "Find Match"
-    socket.on('join_queue', ({ topic, rating }) => {
-      console.log(`[Matchmaking] join_queue — socket=${socket.id} topic=${topic} rating=${rating}`)
-      // Day 13: push into in-memory queue and attempt to match
+    socket.on('join_queue', ({ topic, difficulty, rating }) => {
+      console.log(`[Matchmaking] join_queue — id=${socket.id} topic=${topic} diff=${difficulty} rating=${rating}`)
+      // Day 11: push into in-memory queue and attempt to match
     })
 
     socket.on('disconnect', (reason) => {
-      console.log(`[Socket] disconnected — socket=${socket.id} reason=${reason}`)
-      // Day 13: remove from queue if still waiting
+      console.log(`[Socket] disconnected   id=${socket.id}  reason=${reason}`)
+      // Day 11: remove from queue if still waiting
     })
   })
 }
