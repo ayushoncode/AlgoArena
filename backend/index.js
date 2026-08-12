@@ -22,6 +22,7 @@ const problemRoutes = require('./routes/problems')
 const matchRoutes   = require('./routes/matches')
 const { registerMatchmaking } = require('./socket/matchmaking')
 const { registerMatch }       = require('./socket/match')
+const socketAuth              = require('./middleware/socketAuth')
 
 // ── App + HTTP server ─────────────────────────────────────────────────────────
 const app    = express()
@@ -41,6 +42,10 @@ const io = new Server(server, {
   },
   transports: ['websocket', 'polling'],
 })
+
+// ── Socket auth middleware (Day 9) ────────────────────────────────────────────
+// Runs before any 'connection' event — rejects unauthenticated sockets
+io.use(socketAuth)
 
 // ── Express middleware ────────────────────────────────────────────────────────
 app.use(cors({

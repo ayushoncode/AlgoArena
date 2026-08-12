@@ -13,8 +13,8 @@
  */
 function registerMatchmaking(io) {
   io.on('connection', (socket) => {
-    // ── Day 8: confirm handshake ────────────────────────
-    console.log(`[Socket] new connection  id=${socket.id}  transport=${socket.conn.transport.name}`)
+    // ── Day 9: confirm authenticated handshake ──────────
+    console.log(`[Socket] authed connection  user=${socket.user.username}  id=${socket.id}  transport=${socket.conn.transport.name}`)
 
     // join_queue — emitted by Lobby.jsx when user clicks "Find Match"
     socket.on('join_queue', ({ topic, difficulty, rating }) => {
