@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import Editor from '@monaco-editor/react'
 import { useAuth } from '../hooks/useAuth'
 import { useSocket } from '../hooks/useSocket'
+import api from '../utils/api'
 
 /* ════════════════════════════════════════════════
    MATCH TIMER
@@ -141,6 +142,132 @@ function PlayerHeader({ player, isMe, verdict }) {
         {isMe && <span className="font-mono text-[9px] px-1.5 py-0.5" style={{ background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.2)', borderRadius: 2 }}>you</span>}
       </div>
       <VerdictBadge verdict={verdict} />
+    </div>
+  )
+}
+
+/* ════════════════════════════════════════════════
+   PROBLEM PANEL
+════════════════════════════════════════════════ */
+function ProblemPanel({ topic, difficulty }) {
+  const [problem, setProblem]   = useState(null)
+  const [loading, setLoading]   = useState(true)
+  const [collapsed, setCollapsed] = useState(false)
+
+  useEffect(() => {
+    if (!topic) return
+    api.get(`/problems?topic=${topic}&difficulty=${difficulty}`)
+      .then(({ data }) => {
+        if (data?.length) setProblem(data[0])
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [topic, difficulty])
+
+  const diffCols = { easy:'#10b981', medium:'#f59e0b', hard:'#f43f5e' }
+
+  return (
+    <div
+      className="flex flex-col shrink-0 transition-all duration-200"
+      style={{
+        width: collapsed ? 36 : 300,
+        borderRight: '1px solid #1e2130',
+        background: '#07080c',
+        overflow: 'hidden',
+        position: 'relative',
+      }}
+    >
+      {/* Collapse toggle */}
+      <button
+        onClick={() => setCollapsed(c => !c)}
+        className="absolute top-2 right-2 z-10 font-mono text-[10px] px-1.5 py-0.5 transition-colors"
+        style={{ color:'#374151', background:'#0d0f17', border:'1px solid #1e2130', borderRadius:3 }}
+        title={collapsed ? 'expand problem' : 'collapse'}
+      >
+        {collapsed ? '›' : '‹'}
+      </button>
+
+      {!collapsed && (
+        <div className="flex flex-col h-full overflow-y-auto" style={{ scrollbarWidth:'thin' }}>
+          {/* Header */}
+          <div className="px-4 py-2.5 shrink-0" style={{ borderBottom:'1px solid #1e2130' }}>
+            <p className="font-mono text-[9px] uppercase tracking-widest mb-1"
+               style={{ color:'#374151', letterSpacing:'0.12em' }}>// problem</p>
+            {loading ? (
+              <div style={{ width:120, height:12, background:'#1e2130', borderRadius:3 }}/>
+            ) : problem ? (
+              <>
+                <p className="font-display font-bold text-[13px] leading-tight" style={{ color:'#dde1ea' }}>
+                  {problem.title}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="font-mono text-[9px] px-1.5 py-0.5"
+                        style={{ background:`${diffCols[difficulty]}15`, color: diffCols[difficulty],
+                                 border:`1px solid ${diffCols[difficulty]}40`, borderRadius:2 }}>
+                    {difficulty}
+                  </span>
+                  <span className="font-mono text-[9px]" style={{ color:'#374151' }}>{topic}</span>
+                </div>
+              </>
+            ) : (
+              <p className="font-mono text-[11px]" style={{ color:'#4b5563' }}>no problem found</p>
+            )}
+          </div>
+
+          {/* Description */}
+          {problem && (
+            <div className="px-4 py-3 space-y-4 flex-1">
+              {/* Main description — split on code blocks */}
+              <div className="font-mono text-[11px] leading-relaxed" style={{ color:'#9ca3af' }}>
+                {problem.description.split('```').map((part, i) =>
+                  i % 2 === 0 ? (
+                    <p key={i} style={{ whiteSpace:'pre-wrap', marginBottom: 8 }}>{part.trim()}</p>
+                  ) : (
+                    <pre key={i} className="px-3 py-2 my-2"
+                         style={{ background:'#0d0f17', border:'1px solid #1e2130', borderRadius:3,
+                                  fontSize:10, color:'#dde1ea', overflowX:'auto', whiteSpace:'pre' }}>
+                      {part.trim()}
+                    </pre>
+                  )
+                )}
+              </div>
+
+              {/* Sample I/O */}
+              {problem.sample_input && (
+                <div>
+                  <p className="font-mono text-[9px] uppercase tracking-widest mb-1.5"
+                     style={{ color:'#374151', letterSpacing:'0.12em' }}>// sample input</p>
+                  <pre className="px-3 py-2"
+                       style={{ background:'#0d0f17', border:'1px solid #1e2130', borderRadius:3,
+                                fontSize:10, color:'#22d3ee', whiteSpace:'pre-wrap' }}>
+                    {problem.sample_input}
+                  </pre>
+                </div>
+              )}
+              {problem.sample_output && (
+                <div>
+                  <p className="font-mono text-[9px] uppercase tracking-widest mb-1.5"
+                     style={{ color:'#374151', letterSpacing:'0.12em' }}>// expected output</p>
+                  <pre className="px-3 py-2"
+                       style={{ background:'#0d0f17', border:'1px solid #1e2130', borderRadius:3,
+                                fontSize:10, color:'#10b981', whiteSpace:'pre-wrap' }}>
+                    {problem.sample_output}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Collapsed label */}
+      {collapsed && (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="font-mono text-[9px]" style={{ color:'#374151', writingMode:'vertical-rl', transform:'rotate(180deg)' }}>
+            problem
+          </p>
+        </div>
+      )}
     </div>
   )
 }
@@ -287,12 +414,16 @@ export default function Match() {
         </div>
       </div>
 
-      {/* ── SPLIT EDITOR ──────────────────────────────────── */}
+      {/* ── 3-COLUMN SPLIT: problem | editor | opponent ───── */}
       <div className="flex flex-1 min-h-0">
+
+        {/* PROBLEM PANEL */}
+        <ProblemPanel topic={matchState?.topic} difficulty={matchState?.difficulty} />
 
         {/* MY SIDE */}
         <div className="flex flex-col flex-1 min-w-0" style={{ borderRight: '1px solid #1e2130' }}>
           <PlayerHeader player={me ?? { username: user?.username, rating: user?.elo_rating }} isMe={true} verdict={myVerdict} />
+
 
           {/* Lang selector + submit */}
           <div className="flex items-center justify-between px-3 py-1.5 shrink-0"
