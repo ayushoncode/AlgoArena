@@ -40,7 +40,11 @@ const io = new Server(server, {
     origin:  allowedOrigin,
     methods: ['GET', 'POST'],
   },
-  transports: ['websocket', 'polling'],
+  transports:        ['websocket', 'polling'],
+  pingTimeout:       60_000,   // 60s before declaring dead (default 20s — too short on slow wifi)
+  pingInterval:      25_000,   // send ping every 25s
+  upgradeTimeout:    10_000,   // 10s to upgrade from polling → websocket
+  maxHttpBufferSize: 1e6,      // 1MB max message
 })
 
 // ── Socket auth middleware (Day 9) ────────────────────────────────────────────
