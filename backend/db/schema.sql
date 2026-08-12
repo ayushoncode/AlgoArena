@@ -56,9 +56,10 @@ CREATE TABLE IF NOT EXISTS matches (
   id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   player_one_id  UUID        NOT NULL REFERENCES users (id),
   player_two_id  UUID        NOT NULL REFERENCES users (id),
-  problem_id     UUID        NOT NULL REFERENCES problems (id),
+  problem_id     UUID                 REFERENCES problems (id),
   winner_id      UUID                 REFERENCES users (id),    -- NULL while active
   topic          VARCHAR(50),
+  difficulty     VARCHAR(10),
   status         VARCHAR(20) NOT NULL DEFAULT 'active'          -- active | finished | cancelled
                  CHECK (status IN ('active', 'finished', 'cancelled')),
   started_at     TIMESTAMP   NOT NULL DEFAULT NOW(),
