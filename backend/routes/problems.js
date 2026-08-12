@@ -8,14 +8,34 @@ const authMiddleware = require('../middleware/auth')
 const db             = require('../db')
 const router         = express.Router()
 
-// GET /api/problems — list problems (filter by topic/difficulty)
+// GET /api/problems — list problems (filter by topic/difficulty, with fallback)
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const { topic, difficulty } = req.query
-    let text   = `SELECT id, title, topic, difficulty, min_rating, max_rating FROM problems`
+
+    // Try exact match first
+    if (topic && difficulty) {
+      const { rows } = await db.query(
+        `SELECT id, title, topic, difficulty, description, sample_input, sample_output
+         FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY RANDOM() LIMIT 5`,
+        [topic, difficulty]
+      )
+      // If exact match found, return it
+      if (rows.length) return res.json(rows)
+
+      // Fallback: same topic, any difficulty
+      const { rows: fallback } = await db.query(
+        `SELECT id, title, topic, difficulty, description, sample_input, sample_output
+         FROM problems WHERE topic = $1 ORDER BY RANDOM() LIMIT 5`,
+        [topic]
+      )
+      return res.json(fallback)
+    }
+
+    // Generic list with optional filters
+    let text    = `SELECT id, title, topic, difficulty FROM problems`
     const params = []
     const where  = []
-
     if (topic)      { params.push(topic);      where.push(`topic = $${params.length}`) }
     if (difficulty) { params.push(difficulty); where.push(`difficulty = $${params.length}`) }
     if (where.length) text += ' WHERE ' + where.join(' AND ')
