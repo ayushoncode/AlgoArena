@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import api from '../utils/api'
 
 /* ════════════════════════════════════════════════
    TYPEWRITER HOOK
@@ -323,6 +324,7 @@ function Spinner() {
 
 function LoginForm({ onSwitch }) {
   const { login } = useAuth()
+  const navigate  = useNavigate()
   const [form, setForm] = useState({ email:'', password:'' })
   const [err,  setErr]  = useState('')
   const [busy, setBusy] = useState(false)
@@ -332,9 +334,18 @@ function LoginForm({ onSwitch }) {
     e.preventDefault()
     if (!form.email||!form.password) { setErr('all fields required'); return }
     setBusy(true)
-    await new Promise(r=>setTimeout(r,700))
-    setErr('backend offline — wired in day 6')
-    setBusy(false)
+    try {
+      const { data } = await api.post('/api/auth/login', {
+        email:    form.email.trim().toLowerCase(),
+        password: form.password,
+      })
+      login(data)           // stores token + user in context + localStorage
+      navigate('/lobby')    // redirect to lobby after login
+    } catch (err) {
+      setErr(err.message || 'login failed')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -374,6 +385,8 @@ function LoginForm({ onSwitch }) {
 }
 
 function RegisterForm({ onSwitch }) {
+  const { login } = useAuth()
+  const navigate  = useNavigate()
   const [form, setForm] = useState({ username:'', email:'', password:'', confirm:'' })
   const [err,  setErr]  = useState('')
   const [busy, setBusy] = useState(false)
@@ -390,11 +403,21 @@ function RegisterForm({ onSwitch }) {
 
   async function go(e) {
     e.preventDefault()
-    const err = validate(); if(err){ setErr(err); return }
+    const validErr = validate(); if(validErr){ setErr(validErr); return }
     setBusy(true)
-    await new Promise(r=>setTimeout(r,700))
-    setErr('backend offline — wired in day 6')
-    setBusy(false)
+    try {
+      const { data } = await api.post('/api/auth/register', {
+        username: form.username.trim(),
+        email:    form.email.trim().toLowerCase(),
+        password: form.password,
+      })
+      login(data)           // auto-login after registration
+      navigate('/lobby')
+    } catch (err) {
+      setErr(err.message || 'registration failed')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (

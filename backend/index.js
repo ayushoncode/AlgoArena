@@ -20,25 +20,40 @@ const authRoutes    = require('./routes/auth')
 const userRoutes    = require('./routes/users')
 const problemRoutes = require('./routes/problems')
 const matchRoutes   = require('./routes/matches')
-const { registerMatchmaking } = require('./socket/matchmaking')
+const { registerMatchmaking, queueStats } = require('./socket/matchmaking')
 const { registerMatch }       = require('./socket/match')
+const socketAuth              = require('./middleware/socketAuth')
 
 // ── App + HTTP server ─────────────────────────────────────────────────────────
 const app    = express()
+// In dev, allow any localhost Vite port (5173, 5174, 5175…) so port conflicts never block you
+const devOrigins = ['http://localhost:5173','http://localhost:5174','http://localhost:5175']
+const allowedOrigin = process.env.NODE_ENV === 'production'
+  ? process.env.CLIENT_URL
+  : (origin, cb) => cb(null, devOrigins.includes(origin) || !origin)
+
 const server = http.createServer(app)
 
 // ── Socket.io ─────────────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin:  process.env.CLIENT_URL || 'http://localhost:5173',
+    origin:  allowedOrigin,
     methods: ['GET', 'POST'],
   },
-  transports: ['websocket', 'polling'],
+  transports:        ['websocket', 'polling'],
+  pingTimeout:       60_000,   // 60s before declaring dead (default 20s — too short on slow wifi)
+  pingInterval:      25_000,   // send ping every 25s
+  upgradeTimeout:    10_000,   // 10s to upgrade from polling → websocket
+  maxHttpBufferSize: 1e6,      // 1MB max message
 })
+
+// ── Socket auth middleware (Day 9) ────────────────────────────────────────────
+// Runs before any 'connection' event — rejects unauthenticated sockets
+io.use(socketAuth)
 
 // ── Express middleware ────────────────────────────────────────────────────────
 app.use(cors({
-  origin:      process.env.CLIENT_URL || 'http://localhost:5173',
+  origin:      allowedOrigin,
   credentials: true,
 }))
 app.use(express.json({ limit: '50kb' }))  // prevent enormous request bodies
@@ -67,6 +82,11 @@ app.get('/health', (_req, res) => {
     environment: process.env.NODE_ENV,
   })
 })
+
+// ── Queue stats (dev only) ───────────────────────────────────────────────────
+if (process.env.NODE_ENV === 'development') {
+  app.get('/queue-stats', (_req, res) => res.json(queueStats()))
+}
 
 // ── 404 catch-all ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {

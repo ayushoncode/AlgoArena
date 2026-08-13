@@ -18,9 +18,12 @@ let pool = null
 if (DATABASE_URL && !DATABASE_URL.includes('<password>')) {
   pool = new Pool({
     connectionString: DATABASE_URL,
+    // Force IPv4 — Supabase direct connection resolves to IPv6 on some networks
+    // which causes ETIMEDOUT. This pins DNS resolution to IPv4.
     ssl: process.env.NODE_ENV === 'production'
       ? { rejectUnauthorized: false }
       : false,
+    connectionTimeoutMillis: 10_000,
   })
 
   // Verify connectivity on startup
