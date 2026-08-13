@@ -156,7 +156,7 @@ function ProblemPanel({ topic, difficulty }) {
 
   useEffect(() => {
     if (!topic) return
-    api.get(`/problems?topic=${topic}&difficulty=${difficulty}`)
+    api.get(`/api/problems?topic=${topic}&difficulty=${difficulty}`)
       .then(({ data }) => {
         if (data?.length) setProblem(data[0])
       })
@@ -273,6 +273,66 @@ function ProblemPanel({ topic, difficulty }) {
 }
 
 /* ════════════════════════════════════════════════
+   DRAG-TO-RESIZE HOOK
+════════════════════════════════════════════════ */
+function useDragResize(initial, min, max) {
+  const [width, setWidth] = useState(initial)
+  const dragging = useRef(false)
+  const startX   = useRef(0)
+  const startW   = useRef(0)
+
+  const onMouseDown = (e) => {
+    dragging.current = true
+    startX.current   = e.clientX
+    startW.current   = width
+    document.body.style.cursor    = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const onMove = (ev) => {
+      if (!dragging.current) return
+      const delta = ev.clientX - startX.current
+      setWidth(Math.min(max, Math.max(min, startW.current + delta)))
+    }
+    const onUp = () => {
+      dragging.current = false
+      document.body.style.cursor    = ''
+      document.body.style.userSelect = ''
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup',   onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup',   onUp)
+  }
+
+  return { width, setWidth, onMouseDown }
+}
+
+/* ════════════════════════════════════════════════
+   DIVIDER HANDLE
+════════════════════════════════════════════════ */
+function DragHandle({ onMouseDown, onDoubleClick }) {
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      onDoubleClick={onDoubleClick}
+      className="shrink-0 flex items-center justify-center group"
+      style={{
+        width: 5,
+        background: '#0d0f17',
+        borderLeft:  '1px solid #1e2130',
+        borderRight: '1px solid #1e2130',
+        cursor: 'col-resize',
+        zIndex: 10,
+      }}
+      title="drag to resize · double-click to reset"
+    >
+      <div className="w-px h-8 opacity-0 group-hover:opacity-100 transition-opacity"
+           style={{ background:'#f97316' }}/>
+    </div>
+  )
+}
+
+/* ════════════════════════════════════════════════
    MATCH PAGE
 ════════════════════════════════════════════════ */
 export default function Match() {
@@ -281,6 +341,10 @@ export default function Match() {
   const { user }    = useAuth()
   const { emit, on, off } = useSocket()
   const navigate    = useNavigate()
+
+  // Panel widths — draggable
+  const probPanel = useDragResize(240, 36, 480)
+  const oppPanel  = useDragResize(180, 120, 360)
 
   // Match state from navigation or socket
   const [matchState, setMatchState] = useState(state ?? null)
@@ -296,7 +360,6 @@ export default function Match() {
   const [myVerdict,  setMyVerdict]  = useState(null)
   const [oppVerdict, setOppVerdict] = useState(null)
 
-  // Opponent's code cursor position (future live-coding feature)
   const editorRef = useRef(null)
 
   // Determine which player is me and who's the opponent
@@ -414,16 +477,27 @@ export default function Match() {
         </div>
       </div>
 
-      {/* ── 3-COLUMN SPLIT: problem | editor | opponent ───── */}
-      <div className="flex flex-1 min-h-0">
+      {/* ── RESIZABLE 3-PANEL: problem | editor | opponent ── */}
+      <div className="flex flex-1 min-h-0" style={{ overflow:'hidden' }}>
 
-        {/* PROBLEM PANEL */}
-        <ProblemPanel topic={matchState?.topic} difficulty={matchState?.difficulty} />
+        {/* PROBLEM PANEL — resizable */}
+        <div style={{ width: probPanel.width, minWidth: probPanel.width, flexShrink: 0, overflow:'hidden' }}>
+          <ProblemPanel
+            topic={matchState?.topic}
+            difficulty={matchState?.difficulty}
+            forcedWidth={probPanel.width}
+          />
+        </div>
 
-        {/* MY SIDE */}
-        <div className="flex flex-col flex-1 min-w-0" style={{ borderRight: '1px solid #1e2130' }}>
+        {/* DRAG HANDLE — problem | editor */}
+        <DragHandle
+          onMouseDown={probPanel.onMouseDown}
+          onDoubleClick={() => probPanel.setWidth(240)}
+        />
+
+        {/* EDITOR PANEL — fills remaining space */}
+        <div className="flex flex-col flex-1 min-w-0">
           <PlayerHeader player={me ?? { username: user?.username, rating: user?.elo_rating }} isMe={true} verdict={myVerdict} />
-
 
           {/* Lang selector + submit */}
           <div className="flex items-center justify-between px-3 py-1.5 shrink-0"
@@ -440,7 +514,6 @@ export default function Match() {
                 </button>
               ))}
             </div>
-
             <button
               id="submit-btn"
               onClick={handleSubmit}
@@ -467,61 +540,82 @@ export default function Match() {
               beforeMount={defineTheme}
               onMount={e => { editorRef.current = e }}
               options={{
-                fontSize:          13,
-                fontFamily:        "'JetBrains Mono', monospace",
-                fontLigatures:     true,
-                lineNumbers:       'on',
-                minimap:           { enabled: false },
+                fontSize:             13,
+                fontFamily:           "'JetBrains Mono', monospace",
+                fontLigatures:        true,
+                lineNumbers:          'on',
+                minimap:              { enabled: false },
                 scrollBeyondLastLine: false,
-                renderLineHighlight: 'line',
-                padding:           { top: 16 },
-                tabSize:           2,
-                wordWrap:          'on',
-                smoothScrolling:   true,
-                cursorBlinking:    'phase',
-                renderWhitespace:  'none',
+                renderLineHighlight:  'line',
+                padding:              { top: 16 },
+                tabSize:              2,
+                wordWrap:             'on',
+                smoothScrolling:      true,
+                cursorBlinking:       'phase',
+                renderWhitespace:     'none',
               }}
             />
           </div>
         </div>
 
-        {/* OPPONENT SIDE */}
-        <div className="flex flex-col flex-1 min-w-0">
+        {/* DRAG HANDLE — editor | opponent */}
+        <DragHandle
+          onMouseDown={(e) => {
+            // Dragging opponent panel from the LEFT: delta is inverted
+            const dragging = { active: true, startX: e.clientX, startW: oppPanel.width }
+            document.body.style.cursor     = 'col-resize'
+            document.body.style.userSelect = 'none'
+            const onMove = (ev) => {
+              if (!dragging.active) return
+              const delta = dragging.startX - ev.clientX   // inverted: drag left = wider
+              oppPanel.setWidth(Math.min(360, Math.max(120, dragging.startW + delta)))
+            }
+            const onUp = () => {
+              dragging.active = false
+              document.body.style.cursor     = ''
+              document.body.style.userSelect = ''
+              window.removeEventListener('mousemove', onMove)
+              window.removeEventListener('mouseup',   onUp)
+            }
+            window.addEventListener('mousemove', onMove)
+            window.addEventListener('mouseup',   onUp)
+          }}
+          onDoubleClick={() => oppPanel.setWidth(180)}
+        />
+
+        {/* OPPONENT PANEL — small by default, resizable */}
+        <div className="flex flex-col shrink-0"
+             style={{ width: oppPanel.width, minWidth: oppPanel.width, background:'#090b13', overflow:'hidden' }}>
           <PlayerHeader player={opp} isMe={false} verdict={oppVerdict} />
 
-          {/* Opponent status area */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-4"
-               style={{ background: '#090b13' }}>
-
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 px-3">
             {oppVerdict === 'ACCEPTED' ? (
-              <div className="text-center space-y-3">
-                <div className="text-4xl">⚡</div>
-                <p className="font-display font-bold text-lg" style={{ color: '#22d3ee' }}>
+              <div className="text-center space-y-2">
+                <div className="text-2xl">⚡</div>
+                <p className="font-mono font-bold text-[11px]" style={{ color:'#22d3ee' }}>
                   {opp?.username} solved it!
                 </p>
-                <p className="font-mono text-[11px]" style={{ color: '#4b5563' }}>redirecting to results…</p>
+                <p className="font-mono text-[9px]" style={{ color:'#4b5563' }}>redirecting…</p>
               </div>
             ) : oppVerdict === 'PENDING' ? (
-              <div className="text-center space-y-3">
-                <div className="flex gap-2 justify-center">
-                  {[0,1,2].map(i=><div key={i} className="dot-pulse" style={{ animationDelay:`${i*0.2}s`, background:'#22d3ee' }}/>)}
+              <div className="text-center space-y-2">
+                <div className="flex gap-1.5 justify-center">
+                  {[0,1,2].map(i => <div key={i} className="dot-pulse" style={{ animationDelay:`${i*0.2}s`, background:'#22d3ee', width:5, height:5 }}/>)}
                 </div>
-                <p className="font-mono text-[11px]" style={{ color: '#4b5563' }}>{opp?.username} submitted — judging…</p>
+                <p className="font-mono text-[10px]" style={{ color:'#4b5563' }}>judging…</p>
               </div>
             ) : (
-              <div className="text-center space-y-3 px-8">
-                <div className="font-mono text-[10px] uppercase tracking-widest mb-4"
-                     style={{ color: '#374151', letterSpacing: '0.13em' }}>
-                  // opponent's workspace
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ background: '#22d3ee', boxShadow: '0 0 6px #22d3ee' }}/>
-                  <span className="font-mono text-[11px]" style={{ color: '#4b5563' }}>
-                    {opp?.username ?? 'waiting for opponent…'} is coding
+              <div className="text-center space-y-2">
+                <div className="font-mono text-[9px] uppercase tracking-widest"
+                     style={{ color:'#1e2130', letterSpacing:'0.12em' }}>// opp</div>
+                <div className="flex items-center gap-1.5 justify-center">
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background:'#22d3ee', boxShadow:'0 0 4px #22d3ee' }}/>
+                  <span className="font-mono text-[10px]" style={{ color:'#4b5563' }}>
+                    {opp?.username ?? '…'}
                   </span>
                 </div>
-                <p className="font-mono text-[10px]" style={{ color: '#374151', maxWidth: 220 }}>
-                  opponent's code hidden until match ends or they submit
+                <p className="font-mono text-[9px] text-center" style={{ color:'#1e2130' }}>
+                  coding
                 </p>
               </div>
             )}
