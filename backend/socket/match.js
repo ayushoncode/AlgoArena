@@ -41,40 +41,42 @@ async function createMatchRow({ playerOneId, playerTwoId, topic, difficulty }) {
 }
 
 /* ── Resolve match: update Elo, write history, finish match row ─ */
-async function resolveMatch({ dbMatchId, winner, loser, winnerDelta, loserDelta }) {
+async function resolveMatch({ dbMatchId, winner, loser, winnerDelta, loserDelta, isCustom = false }) {
   if (!dbMatchId) return
 
   const client = await db.pool.connect()
   try {
     await client.query('BEGIN')
 
-    // Update winner
-    await client.query(
-      `UPDATE users
-       SET elo_rating = elo_rating + $1, wins = wins + 1
-       WHERE id = $2`,
-      [winnerDelta, winner.userId]
-    )
-    // Update loser
-    await client.query(
-      `UPDATE users
-       SET elo_rating = GREATEST(100, elo_rating + $1), losses = losses + 1
-       WHERE id = $2`,
-      [loserDelta, loser.userId]
-    )
+    if (!isCustom) {
+      // Update winner
+      await client.query(
+        `UPDATE users
+         SET elo_rating = elo_rating + $1, wins = wins + 1
+         WHERE id = $2`,
+        [winnerDelta, winner.userId]
+      )
+      // Update loser
+      await client.query(
+        `UPDATE users
+         SET elo_rating = GREATEST(100, elo_rating + $1), losses = losses + 1
+         WHERE id = $2`,
+        [loserDelta, loser.userId]
+      )
 
-    // Elo history rows
-    await client.query(
-      `INSERT INTO elo_history (user_id, match_id, old_rating, new_rating, delta)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [winner.userId, dbMatchId, winner.rating, winner.rating + winnerDelta, winnerDelta]
-    )
-    if (loser.userId) {
+      // Elo history rows
       await client.query(
         `INSERT INTO elo_history (user_id, match_id, old_rating, new_rating, delta)
          VALUES ($1, $2, $3, $4, $5)`,
-        [loser.userId, dbMatchId, loser.rating, loser.rating + loserDelta, loserDelta]
+        [winner.userId, dbMatchId, winner.rating, winner.rating + winnerDelta, winnerDelta]
       )
+      if (loser.userId) {
+        await client.query(
+          `INSERT INTO elo_history (user_id, match_id, old_rating, new_rating, delta)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [loser.userId, dbMatchId, loser.rating, loser.rating + loserDelta, loserDelta]
+        )
+      }
     }
 
     // Close match row
@@ -86,7 +88,7 @@ async function resolveMatch({ dbMatchId, winner, loser, winnerDelta, loserDelta 
     )
 
     await client.query('COMMIT')
-    console.log(`[DB] match resolved  id=${dbMatchId}  winner=${winner.username}  Δ${winnerDelta}`)
+    console.log(`[DB] match resolved  id=${dbMatchId}  winner=${winner.username}  custom=${isCustom}`)
   } catch (err) {
     await client.query('ROLLBACK')
     console.error('[DB] resolveMatch transaction failed:', err.message)
@@ -173,14 +175,20 @@ function registerMatch(io) {
           if (s && s.user.id !== userId) { opponent = s.user; break }
         }
 
+        const isCustom = match.isCustom || roomId.includes('custom')
         const winnerRating = elo_rating    ?? 1200
         const loserRating  = opponent?.elo_rating ?? 1200
-        const { winnerDelta, loserDelta } = calculateElo({ winnerRating, loserRating })
+        const { winnerDelta: rawWinDelta, loserDelta: rawLossDelta } = calculateElo({ winnerRating, loserRating })
+
+        // Casual custom rooms do not alter Elo ratings (0 delta)
+        const winnerDelta = isCustom ? 0 : rawWinDelta
+        const loserDelta  = isCustom ? 0 : rawLossDelta
 
         const payload = {
           roomId,
           topic,
           difficulty,
+          isCustom,
           winner: { userId, username,            rating: winnerRating, delta: winnerDelta },
           loser:  opponent
             ? { userId: opponent.id, username: opponent.username, rating: loserRating, delta: loserDelta }
@@ -188,14 +196,16 @@ function registerMatch(io) {
         }
 
         io.to(roomId).emit('match_end', payload)
-        console.log(`[Match] ENDED winner=${username}(+${winnerDelta}) loser=${opponent?.username ?? '?'}(${loserDelta}) room=${roomId}`)
+        console.log(`[Match] ENDED winner=${username}(+${winnerDelta}) loser=${opponent?.username ?? '?'}(${loserDelta}) room=${roomId} custom=${isCustom}`)
 
+        // Persist to DB (if custom match, resolveMatch closes match row without altering elo_rating)
         await resolveMatch({
           dbMatchId:   match.dbMatchId,
           winner:      payload.winner,
           loser:       payload.loser ?? { userId: null, rating: loserRating },
           winnerDelta,
           loserDelta,
+          isCustom,
         })
 
         activeMatches.delete(roomId)
@@ -205,13 +215,14 @@ function registerMatch(io) {
 }
 
 /* ── Called by matchmaking when a room is created ────────────── */
-function trackRoom(roomId, dbMatchId, problemId) {
+function trackRoom(roomId, dbMatchId, problemId, isCustom = false) {
   if (activeMatches.has(roomId)) {
     const entry = activeMatches.get(roomId)
     entry.dbMatchId = dbMatchId
     if (problemId) entry.problemId = problemId
+    entry.isCustom = isCustom
   } else {
-    activeMatches.set(roomId, { dbMatchId, problemId, submissions: new Map(), startedAt: Date.now() })
+    activeMatches.set(roomId, { dbMatchId, problemId, isCustom, submissions: new Map(), startedAt: Date.now() })
   }
 }
 

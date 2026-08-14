@@ -75,7 +75,8 @@ export default function Result() {
   const myData  = isWin ? winner : loser
   const oppData = isWin ? loser  : winner
 
-  const myDelta  = myData?.delta  ?? (isWin ? 18 : isDraw ? 0 : -18)
+  const isCustomMatch = state?.isCustom || state?.roomId?.includes('custom')
+  const myDelta  = isCustomMatch ? 0 : (myData?.delta ?? (isWin ? 18 : isDraw ? 0 : -18))
   const myRating = user?.elo_rating ?? 1200
 
   const topic      = state?.topic      ?? state?.matchState?.topic      ?? '—'
@@ -108,8 +109,8 @@ export default function Result() {
             <div className="px-8 py-8 text-center"
                  style={{ borderBottom: '1px solid #1e2130' }}>
               <p className="font-mono text-[11px] uppercase tracking-widest mb-3"
-                 style={{ color: '#4b5563', letterSpacing: '0.14em' }}>
-                // match complete
+                 style={{ color: isCustomMatch ? '#22d3ee' : '#4b5563', letterSpacing: '0.14em' }}>
+                {isCustomMatch ? '// casual friend match (unranked)' : '// ranked match complete'}
               </p>
 
               {/* Result label */}
@@ -144,15 +145,24 @@ export default function Result() {
                  style={{ color: '#4b5563', letterSpacing: '0.13em' }}>
                 // rating change
               </p>
-              <div className="flex items-baseline justify-center gap-3">
-                <span className="font-mono text-lg" style={{ color: '#374151' }}>{myRating}</span>
-                <span className="font-mono text-2xl" style={{ color: '#374151' }}>→</span>
-                <EloCounter delta={myDelta} from={myRating} />
-                <span className="font-mono text-xl font-bold"
-                      style={{ color: myDelta >= 0 ? '#10b981' : '#f43f5e' }}>
-                  ({myDelta > 0 ? `+${myDelta}` : myDelta})
-                </span>
-              </div>
+              {isCustomMatch ? (
+                <div className="flex items-center justify-center gap-2">
+                  <span className="font-mono text-sm px-3 py-1 font-bold"
+                        style={{ background: 'rgba(34,211,238,0.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.25)', borderRadius: 3 }}>
+                    Unranked Casual Match · Rating Unchanged ({myRating})
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-baseline justify-center gap-3">
+                  <span className="font-mono text-lg" style={{ color: '#374151' }}>{myRating}</span>
+                  <span className="font-mono text-2xl" style={{ color: '#374151' }}>→</span>
+                  <EloCounter delta={myDelta} from={myRating} />
+                  <span className="font-mono text-xl font-bold"
+                        style={{ color: myDelta >= 0 ? '#10b981' : '#f43f5e' }}>
+                    ({myDelta > 0 ? `+${myDelta}` : myDelta})
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Match summary */}

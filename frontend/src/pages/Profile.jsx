@@ -206,12 +206,13 @@ function StatCard({ label, value, sub, color = '#dde1ea' }) {
    PROFILE PAGE
 ════════════════════════════════════════════════ */
 export default function Profile() {
-  const { user, isAuthenticated, loading: authLoading } = useAuth()
+  const { user, isAuthenticated, loading: authLoading, refreshUser } = useAuth()
   const { streak, history } = useStreak()
   const navigate = useNavigate()
 
-  const [matches, setMatches]       = useState([])
-  const [eloHistory, setEloHistory] = useState([])
+  const [profileUser, setProfileUser] = useState(user)
+  const [matches, setMatches]         = useState([])
+  const [eloHistory, setEloHistory]   = useState([])
   const [dataLoading, setDataLoading] = useState(true)
 
   useEffect(() => {
@@ -220,10 +221,12 @@ export default function Profile() {
     async function fetchUserData() {
       try {
         setDataLoading(true)
-        const [histRes, eloRes] = await Promise.all([
+        const [meRes, histRes, eloRes] = await Promise.all([
+          api.get('/api/users/me').catch(() => ({ data: null })),
           api.get('/api/users/me/history').catch(() => ({ data: [] })),
           api.get('/api/users/me/elo-history').catch(() => ({ data: [] })),
         ])
+        if (meRes.data) setProfileUser(meRes.data)
         setMatches(histRes.data || [])
         setEloHistory(eloRes.data || [])
       } catch (err) {
@@ -247,9 +250,10 @@ export default function Profile() {
     return null
   }
 
-  const elo    = user?.elo_rating ?? 1200
-  const wins   = user?.wins   ?? 0
-  const losses = user?.losses ?? 0
+  const activeUser = profileUser || user
+  const elo    = activeUser?.elo_rating ?? 1200
+  const wins   = activeUser?.wins   ?? 0
+  const losses = activeUser?.losses ?? 0
   const total  = wins + losses
   const wr     = total > 0 ? Math.round((wins / total) * 100) : 0
 
@@ -264,7 +268,7 @@ export default function Profile() {
   const chartData = eloHistory.length > 0
     ? eloHistory.map(e => ({ date: e.date, rating: e.rating }))
     : [
-        { date: user?.created_at ? new Date(user.created_at).toISOString().slice(0,10) : 'Start', rating: 1200 },
+        { date: activeUser?.created_at ? new Date(activeUser.created_at).toISOString().slice(0,10) : 'Start', rating: 1200 },
         { date: new Date().toISOString().slice(0,10), rating: elo }
       ]
 
@@ -283,14 +287,14 @@ export default function Profile() {
             {/* Avatar */}
             <div className="flex items-center justify-center font-display font-black text-4xl shrink-0"
                  style={{ width: 88, height: 88, background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: 6, color: '#f97316' }}>
-              {(user?.username?.[0] ?? 'A').toUpperCase()}
+              {(activeUser?.username?.[0] ?? 'A').toUpperCase()}
             </div>
 
             {/* Info */}
             <div className="flex-1">
               <div className="flex items-center gap-3 flex-wrap mb-1">
                 <h1 className="font-display font-black text-2xl" style={{ color: '#dde1ea' }}>
-                  {user?.username}
+                  {activeUser?.username}
                 </h1>
                 {/* Rank badge */}
                 {elo >= 1800
@@ -300,7 +304,7 @@ export default function Profile() {
                   : <span className="font-mono text-[11px] px-2 py-0.5 font-bold" style={{ background: 'rgba(34,211,238,0.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.25)', borderRadius: 3 }}>CODER</span>
                 }
                 <span className="font-mono text-[11px]" style={{ color: '#374151' }}>
-                  joined {new Date(user?.created_at ?? Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                  joined {new Date(activeUser?.created_at ?? Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                 </span>
               </div>
               <div className="flex items-baseline gap-2">
