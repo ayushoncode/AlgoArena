@@ -119,7 +119,51 @@ function VerdictBadge({ verdict }) {
     </span>
   )
 }
+/* ════════════════════════════════════════════════
+   TEST CASE RESULTS DRAWER
+════════════════════════════════════════════════ */
+function TestCaseDrawer({ testDetails, onClose }) {
+  if (!testDetails) return null
+  const { verdict, passedTests, totalTests, runtimeMs, testResults } = testDetails
+  const isAccepted = verdict === 'ACCEPTED'
 
+  return (
+    <div className="shrink-0 border-t animate-fade-in" style={{ background: '#0a0c14', borderColor: '#1e2130', maxHeight: 200, overflowY: 'auto' }}>
+      <div className="flex items-center justify-between px-3 py-1.5" style={{ background: '#07080c', borderBottom: '1px solid #1e2130' }}>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] uppercase font-bold" style={{ color: isAccepted ? '#10b981' : '#f43f5e' }}>
+            {verdict}
+          </span>
+          <span className="font-mono text-[10px]" style={{ color: '#9ca3af' }}>
+            ({passedTests ?? 0}/{totalTests ?? 0} test cases passed · {runtimeMs || 0}ms)
+          </span>
+        </div>
+        <button onClick={onClose} className="font-mono text-[10px] hover:text-white transition-colors" style={{ color: '#4b5563' }}>✕</button>
+      </div>
+
+      <div className="p-3 space-y-2 font-mono text-[10px]">
+        {testResults?.map((tc, idx) => (
+          <div key={idx} className="p-2 rounded" style={{ background: '#0d0f17', border: `1px solid ${tc.passed ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)'}` }}>
+            <div className="flex items-center justify-between mb-1">
+              <span style={{ color: tc.passed ? '#10b981' : '#f43f5e', fontWeight: 'bold' }}>
+                Test Case {tc.testIndex} {tc.passed ? '✓ Passed' : '✗ Failed'}
+              </span>
+              {tc.isHidden && <span className="text-[9px]" style={{ color: '#6b7280' }}>[Hidden]</span>}
+            </div>
+            {!tc.isHidden && (
+              <div className="grid grid-cols-3 gap-2" style={{ color: '#dde1ea' }}>
+                <div className="truncate"><span style={{ color: '#4b5563' }}>Input:</span> {tc.input}</div>
+                <div className="truncate"><span style={{ color: '#4b5563' }}>Expected:</span> {tc.expected}</div>
+                <div className="truncate"><span style={{ color: '#4b5563' }}>Actual:</span> <span style={{ color: tc.passed ? '#10b981' : '#f43f5e' }}>{tc.actual}</span></div>
+              </div>
+            )}
+            {tc.error && <div className="mt-1" style={{ color: '#f43f5e' }}>Error: {tc.error}</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 /* ════════════════════════════════════════════════
    PLAYER PANEL HEADER
 ════════════════════════════════════════════════ */
@@ -356,9 +400,10 @@ export default function Match() {
   const [code,    setCode]    = useState(TEMPLATES.javascript)
   const [submitting, setSubmitting] = useState(false)
 
-  // Verdicts
-  const [myVerdict,  setMyVerdict]  = useState(null)
-  const [oppVerdict, setOppVerdict] = useState(null)
+  // Verdicts & Test details
+  const [myVerdict,      setMyVerdict]      = useState(null)
+  const [oppVerdict,     setOppVerdict]     = useState(null)
+  const [myTestDetails,  setMyTestDetails]  = useState(null)
 
   const editorRef = useRef(null)
 
@@ -371,18 +416,19 @@ export default function Match() {
     function onMatchFound(payload) {
       setMatchState(payload)
     }
-    function onSubmissionResult({ userId, verdict }) {
+    function onSubmissionResult({ userId, verdict, totalTests, passedTests, testResults, runtimeMs }) {
       if (userId === user?.id) {
         setMyVerdict(verdict)
         setSubmitting(false)
+        setMyTestDetails({ verdict, totalTests, passedTests, testResults, runtimeMs })
         if (verdict === 'ACCEPTED') {
           // Winner — navigate to result after brief delay
-          setTimeout(() => navigate('/result', { state: { result: 'WIN', roomId, verdict, matchState } }), 1500)
+          setTimeout(() => navigate('/result', { state: { result: 'WIN', roomId, verdict, matchState } }), 1800)
         }
       } else {
         setOppVerdict(verdict)
         if (verdict === 'ACCEPTED') {
-          setTimeout(() => navigate('/result', { state: { result: 'LOSS', roomId, verdict: 'ACCEPTED', matchState } }), 1500)
+          setTimeout(() => navigate('/result', { state: { result: 'LOSS', roomId, verdict: 'ACCEPTED', matchState } }), 1800)
         }
       }
     }
@@ -556,6 +602,12 @@ export default function Match() {
               }}
             />
           </div>
+
+          {/* Test Case Results Drawer */}
+          <TestCaseDrawer
+            testDetails={myTestDetails}
+            onClose={() => setMyTestDetails(null)}
+          />
         </div>
 
         {/* DRAG HANDLE — editor | opponent */}

@@ -1,40 +1,18 @@
 /**
- * socket/match.js — in-match socket events + DB persistence
- *
- * Flow:
- *  1. match_found (from matchmaking) → create match row in DB
- *  2. submit_code → stub judge → emit submission_result
- *  3. ACCEPTED → resolveMatch() → update users Elo, insert elo_history, finish match row
- *
- * Day 43: replace stubJudge with real BullMQ + Docker sandbox.
+ * socket/match.js — in-match socket events + DB persistence & real code evaluation
  */
 
 'use strict'
 
-const db             = require('../db')
-const { calculateElo } = require('../utils/elo')
+const db                   = require('../db')
+const { calculateElo }      = require('../utils/elo')
+const { evaluateSubmission } = require('../services/judge')
 
 // ── In-memory active matches ───────────────────────────────────
-// Map<roomId, { dbMatchId, topic, difficulty, submissions, startedAt }>
+// Map<roomId, { dbMatchId, problemId, topic, difficulty, submissions, startedAt }>
 const activeMatches = new Map()
 
-/* ── Stub judge ────────────────────────────────────────────────
- * Real implementation: BullMQ → Docker sandbox → stdout compare
- */
-function stubJudge(code) {
-  const untouched = ['write your solution here', '# write your solution here']
-  if (untouched.some(s => code.includes(s))) return 'WRONG_ANSWER'
-  const r = Math.random()
-  if (r < 0.65) return 'ACCEPTED'
-  if (r < 0.80) return 'WRONG_ANSWER'
-  if (r < 0.90) return 'TIME_LIMIT_EXCEEDED'
-  return 'RUNTIME_ERROR'
-}
-
-/* ── Create match row in DB ────────────────────────────────────
- * Called when match_found fires (both sockets join the room).
- * Returns the new match UUID.
- */
+/* ── Create match row in DB ──────────────────────────────────── */
 async function createMatchRow({ playerOneId, playerTwoId, topic, difficulty }) {
   try {
     // Pick a random problem for the topic + difficulty
@@ -45,7 +23,7 @@ async function createMatchRow({ playerOneId, playerTwoId, topic, difficulty }) {
        LIMIT 1`,
       [topic, difficulty]
     )
-    const problemId = problems[0]?.id ?? null  // null if no seed yet
+    const problemId = problems[0]?.id ?? null
 
     const { rows } = await db.query(
       `INSERT INTO matches (player_one_id, player_two_id, problem_id, topic, difficulty, status)
@@ -54,17 +32,17 @@ async function createMatchRow({ playerOneId, playerTwoId, topic, difficulty }) {
       [playerOneId, playerTwoId, problemId, topic, difficulty]
     )
     const matchId = rows[0].id
-    console.log(`[DB] match created  id=${matchId}  topic=${topic}:${difficulty}`)
-    return matchId
+    console.log(`[DB] match created  id=${matchId}  topic=${topic}:${difficulty}  problemId=${problemId}`)
+    return { matchId, problemId }
   } catch (err) {
     console.error('[DB] createMatchRow failed:', err.message)
-    return null
+    return { matchId: null, problemId: null }
   }
 }
 
 /* ── Resolve match: update Elo, write history, finish match row ─ */
 async function resolveMatch({ dbMatchId, winner, loser, winnerDelta, loserDelta }) {
-  if (!dbMatchId) return   // no DB row, skip gracefully
+  if (!dbMatchId) return
 
   const client = await db.pool.connect()
   try {
@@ -118,11 +96,9 @@ async function resolveMatch({ dbMatchId, winner, loser, winnerDelta, loserDelta 
 }
 
 /* ════════════════════════════════════════════════
-   REGISTER
+   REGISTER SOCKET HANDLERS
 ════════════════════════════════════════════════ */
 function registerMatch(io) {
-  // Hook into matchmaking: when a room is created, persist to DB
-  // We expose createMatchRow so matchmaking.js can call it
   io._createMatchRow = createMatchRow
 
   io.on('connection', (socket) => {
@@ -134,7 +110,8 @@ function registerMatch(io) {
 
       if (!activeMatches.has(roomId)) {
         activeMatches.set(roomId, {
-          dbMatchId:   null,   // set by matchmaking when room was created
+          dbMatchId:   null,
+          problemId:   null,
           topic,
           difficulty,
           submissions: new Map(),
@@ -144,15 +121,51 @@ function registerMatch(io) {
       const match = activeMatches.get(roomId)
       if (match.submissions.get(userId) === 'ACCEPTED') return
 
-      const verdict = stubJudge(code)
+      // Look up problem ID if not cached
+      let targetProblemId = match.problemId
+      if (!targetProblemId) {
+        const { rows } = await db.query(
+          `SELECT id FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY created_at DESC LIMIT 1`,
+          [topic, difficulty]
+        )
+        targetProblemId = rows[0]?.id ?? null
+        match.problemId = targetProblemId
+      }
+
+      // ── Real Code Judge Evaluation ───────────────────────
+      const judgeResult = await evaluateSubmission(targetProblemId, code, language)
+      const verdict = judgeResult.verdict
+
       match.submissions.set(userId, verdict)
 
-      console.log(`[Match] verdict  user=${username}  verdict=${verdict}  room=${roomId}`)
+      console.log(`[Match] verdict user=${username} verdict=${verdict} (${judgeResult.passedTests}/${judgeResult.totalTests} tests) room=${roomId}`)
 
-      io.to(roomId).emit('submission_result', { userId, username, verdict })
+      // ── Save submission to DB ─────────────────────────────
+      if (match.dbMatchId && targetProblemId) {
+        try {
+          await db.query(
+            `INSERT INTO submissions (match_id, user_id, problem_id, code, language, status, verdict, runtime_ms)
+             VALUES ($1, $2, $3, $4, $5, 'done', $6, $7)`,
+            [match.dbMatchId, userId, targetProblemId, code, language, verdict, judgeResult.runtimeMs]
+          )
+        } catch (dbErr) {
+          console.error('[DB] Failed to insert submission:', dbErr.message)
+        }
+      }
 
+      // Broadcast verdict & test case details to room
+      io.to(roomId).emit('submission_result', {
+        userId,
+        username,
+        verdict,
+        totalTests: judgeResult.totalTests,
+        passedTests: judgeResult.passedTests,
+        testResults: judgeResult.testResults,
+        runtimeMs: judgeResult.runtimeMs,
+      })
+
+      // ── If ACCEPTED → End Match ───────────────────────────
       if (verdict === 'ACCEPTED') {
-        // Find opponent socket
         const sockets = io.sockets.adapter.rooms.get(roomId)
         let opponent  = null
         for (const sid of (sockets ?? [])) {
@@ -175,9 +188,8 @@ function registerMatch(io) {
         }
 
         io.to(roomId).emit('match_end', payload)
-        console.log(`[Match] ENDED  winner=${username}(+${winnerDelta})  loser=${opponent?.username ?? '?'}(${loserDelta})  room=${roomId}`)
+        console.log(`[Match] ENDED winner=${username}(+${winnerDelta}) loser=${opponent?.username ?? '?'}(${loserDelta}) room=${roomId}`)
 
-        // Persist to DB
         await resolveMatch({
           dbMatchId:   match.dbMatchId,
           winner:      payload.winner,
@@ -193,11 +205,13 @@ function registerMatch(io) {
 }
 
 /* ── Called by matchmaking when a room is created ────────────── */
-function trackRoom(roomId, dbMatchId) {
+function trackRoom(roomId, dbMatchId, problemId) {
   if (activeMatches.has(roomId)) {
-    activeMatches.get(roomId).dbMatchId = dbMatchId
+    const entry = activeMatches.get(roomId)
+    entry.dbMatchId = dbMatchId
+    if (problemId) entry.problemId = problemId
   } else {
-    activeMatches.set(roomId, { dbMatchId, submissions: new Map(), startedAt: Date.now() })
+    activeMatches.set(roomId, { dbMatchId, problemId, submissions: new Map(), startedAt: Date.now() })
   }
 }
 

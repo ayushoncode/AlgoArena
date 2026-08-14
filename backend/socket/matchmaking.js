@@ -150,8 +150,8 @@ function registerMatchmaking(io) {
             )
             const dbMatchId = rows[0]?.id ?? null
             if (dbMatchId) {
-              trackRoom(roomId, dbMatchId)
-              console.log(`[DB] match row created  id=${dbMatchId}  room=${roomId}`)
+              trackRoom(roomId, dbMatchId, problemId)
+              console.log(`[DB] match row created  id=${dbMatchId}  room=${roomId}  prob=${problemId}`)
             }
           } catch (err) {
             console.error('[DB] createMatchRow failed:', err.message)
