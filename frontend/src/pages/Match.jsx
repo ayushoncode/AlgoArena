@@ -400,12 +400,15 @@ export default function Match() {
   const [code,    setCode]    = useState(TEMPLATES.javascript)
   const [submitting, setSubmitting] = useState(false)
 
-  // Verdicts & Test details
-  const [myVerdict,      setMyVerdict]      = useState(null)
-  const [oppVerdict,     setOppVerdict]     = useState(null)
-  const [myTestDetails,  setMyTestDetails]  = useState(null)
+  // Verdicts & Test details & Disconnect & Opponent Progress state
+  const [myVerdict,          setMyVerdict]          = useState(null)
+  const [oppVerdict,         setOppVerdict]         = useState(null)
+  const [myTestDetails,      setMyTestDetails]      = useState(null)
+  const [oppDisconnectState, setOppDisconnectState] = useState(null)
+  const [oppProgress,        setOppProgress]        = useState(null)
 
-  const editorRef = useRef(null)
+  const editorRef        = useRef(null)
+  const typingTimeoutRef = useRef(null)
 
   // Determine which player is me and who's the opponent
   const me  = matchState?.players?.find(p => p.username === user?.username)
@@ -435,17 +438,50 @@ export default function Match() {
     function onMatchEnd(payload) {
       navigate('/result', { state: { ...payload, roomId } })
     }
+    function onPlayerDisconnected({ userId, username, gracePeriodSec }) {
+      if (userId !== user?.id) {
+        setOppDisconnectState({ username, countdown: gracePeriodSec || 30 })
+      }
+    }
+    function onPlayerReconnected({ userId }) {
+      if (userId !== user?.id) {
+        setOppDisconnectState(null)
+      }
+    }
+    function onOpponentCodeChange(data) {
+      if (data.userId !== user?.id) {
+        setOppProgress(data)
+      }
+    }
 
-    on('match_found',        onMatchFound)
-    on('submission_result',  onSubmissionResult)
-    on('match_end',          onMatchEnd)
+    // Rejoin match on page mount to clear server disconnect timers
+    emit('rejoin_match', { roomId })
+
+    on('match_found',          onMatchFound)
+    on('submission_result',    onSubmissionResult)
+    on('match_end',            onMatchEnd)
+    on('player_disconnected',  onPlayerDisconnected)
+    on('player_reconnected',   onPlayerReconnected)
+    on('opponent_code_change', onOpponentCodeChange)
 
     return () => {
-      off('match_found',       onMatchFound)
-      off('submission_result', onSubmissionResult)
-      off('match_end',         onMatchEnd)
+      off('match_found',          onMatchFound)
+      off('submission_result',    onSubmissionResult)
+      off('match_end',            onMatchEnd)
+      off('player_disconnected',  onPlayerDisconnected)
+      off('player_reconnected',   onPlayerReconnected)
+      off('opponent_code_change', onOpponentCodeChange)
     }
-  }, [on, off, navigate, user, roomId, matchState])
+  }, [on, off, emit, navigate, user, roomId, matchState])
+
+  // Disconnect countdown interval
+  useEffect(() => {
+    if (!oppDisconnectState || oppDisconnectState.countdown <= 0) return
+    const t = setInterval(() => {
+      setOppDisconnectState(prev => prev ? { ...prev, countdown: Math.max(0, prev.countdown - 1) } : null)
+    }, 1000)
+    return () => clearInterval(t)
+  }, [oppDisconnectState])
 
   // Time's up
   useEffect(() => {
@@ -581,7 +617,17 @@ export default function Match() {
               height="100%"
               language={lang}
               value={code}
-              onChange={v => setCode(v ?? '')}
+              onChange={v => {
+                const val = v ?? ''
+                setCode(val)
+                const lineCount = val.split('\n').length
+                const charCount = val.length
+                emit('code_change', { roomId, lineCount, charCount, isTyping: true })
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+                typingTimeoutRef.current = setTimeout(() => {
+                  emit('code_change', { roomId, lineCount, charCount, isTyping: false })
+                }, 1200)
+              }}
               theme="algoarena"
               beforeMount={defineTheme}
               onMount={e => { editorRef.current = e }}
@@ -641,7 +687,15 @@ export default function Match() {
           <PlayerHeader player={opp} isMe={false} verdict={oppVerdict} />
 
           <div className="flex-1 flex flex-col items-center justify-center gap-3 px-3">
-            {oppVerdict === 'ACCEPTED' ? (
+            {oppDisconnectState ? (
+              <div className="p-3 text-center space-y-2 rounded w-full" style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)' }}>
+                <div className="text-2xl animate-bounce">⚠️</div>
+                <p className="font-mono text-xs font-bold" style={{ color: '#f43f5e' }}>{oppDisconnectState.username} Disconnected</p>
+                <p className="font-mono text-[9px]" style={{ color: '#9ca3af' }}>Reconnection grace period:</p>
+                <p className="font-mono text-2xl font-black tabular-nums" style={{ color: '#f43f5e' }}>{oppDisconnectState.countdown}s</p>
+                <p className="font-mono text-[9px]" style={{ color: '#4b5563' }}>Forfeit victory awarded if timer reaches 0s</p>
+              </div>
+            ) : oppVerdict === 'ACCEPTED' ? (
               <div className="text-center space-y-2">
                 <div className="text-2xl">⚡</div>
                 <p className="font-mono font-bold text-[11px]" style={{ color:'#22d3ee' }}>
@@ -657,18 +711,39 @@ export default function Match() {
                 <p className="font-mono text-[10px]" style={{ color:'#4b5563' }}>judging…</p>
               </div>
             ) : (
-              <div className="text-center space-y-2">
+              <div className="text-center space-y-3 w-full">
                 <div className="font-mono text-[9px] uppercase tracking-widest"
-                     style={{ color:'#1e2130', letterSpacing:'0.12em' }}>// opp</div>
+                     style={{ color:'#1e2130', letterSpacing:'0.12em' }}>// opponent workspace</div>
+
                 <div className="flex items-center gap-1.5 justify-center">
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background:'#22d3ee', boxShadow:'0 0 4px #22d3ee' }}/>
-                  <span className="font-mono text-[10px]" style={{ color:'#4b5563' }}>
-                    {opp?.username ?? '…'}
+                  <span className={`w-2 h-2 rounded-full ${oppProgress?.isTyping ? 'animate-ping' : ''}`}
+                        style={{ background: oppProgress?.isTyping ? '#22d3ee' : '#374151', boxShadow: oppProgress?.isTyping ? '0 0 6px #22d3ee' : 'none' }}/>
+                  <span className="font-mono text-[11px] font-bold" style={{ color: oppProgress?.isTyping ? '#22d3ee' : '#4b5563' }}>
+                    {oppProgress?.isTyping ? `${opp?.username ?? 'opponent'} is typing…` : `${opp?.username ?? 'opponent'} is coding`}
                   </span>
                 </div>
-                <p className="font-mono text-[9px] text-center" style={{ color:'#1e2130' }}>
-                  coding
-                </p>
+
+                {oppProgress && (
+                  <div className="p-3 rounded space-y-2 font-mono text-[10px]" style={{ background: '#0d0f17', border: '1px solid #1e2130' }}>
+                    <div className="flex justify-between" style={{ color: '#9ca3af' }}>
+                      <span>Lines written:</span>
+                      <span className="font-bold" style={{ color: '#22d3ee' }}>{oppProgress.lineCount || 1} lines</span>
+                    </div>
+                    <div className="flex justify-between" style={{ color: '#9ca3af' }}>
+                      <span>Character count:</span>
+                      <span className="font-bold" style={{ color: '#22d3ee' }}>{oppProgress.charCount || 0} chars</span>
+                    </div>
+                    <div className="w-full h-1 mt-1 rounded overflow-hidden" style={{ background: '#1e2130' }}>
+                      <div style={{ height: '100%', width: `${Math.min(100, (oppProgress.lineCount || 1) * 3)}%`, background: '#22d3ee', transition: 'width 0.3s ease' }}/>
+                    </div>
+                  </div>
+                )}
+
+                {!oppProgress && (
+                  <p className="font-mono text-[9px] text-center" style={{ color:'#374151' }}>
+                    opponent's code hidden until submit
+                  </p>
+                )}
               </div>
             )}
           </div>

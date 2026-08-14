@@ -90,29 +90,34 @@ function registerCustomRoom(io) {
         ],
       }
 
-      // 1. Emit match_found to both players in custom room
+      // 1. Track room state immediately in memory
+      trackRoom(roomId, null, null, true, matchPayload.players)
+
+      // 2. Emit match_found to both players in custom room
       io.to(roomId).emit('match_found', matchPayload)
 
-      // 2. Persist match in DB
-      try {
-        const { rows: problems } = await db.query(
-          `SELECT id FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY RANDOM() LIMIT 1`,
-          [topic, difficulty]
-        )
-        const problemId = problems[0]?.id ?? null
-        const { rows } = await db.query(
-          `INSERT INTO matches (player_one_id, player_two_id, problem_id, topic, difficulty, status)
-           VALUES ($1, $2, $3, $4, $5, 'active') RETURNING id`,
-          [hostUserId, userId, problemId, topic, difficulty]
-        )
-        const dbMatchId = rows[0]?.id ?? null
-        if (dbMatchId) {
-          trackRoom(roomId, dbMatchId, problemId)
-          console.log(`[DB] custom match row created  id=${dbMatchId}  room=${roomId}`)
+      // 3. Persist match in DB asynchronously
+      ;(async () => {
+        try {
+          const { rows: problems } = await db.query(
+            `SELECT id FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY RANDOM() LIMIT 1`,
+            [topic, difficulty]
+          )
+          const problemId = problems[0]?.id ?? null
+          const { rows } = await db.query(
+            `INSERT INTO matches (player_one_id, player_two_id, problem_id, topic, difficulty, status)
+             VALUES ($1, $2, $3, $4, $5, 'active') RETURNING id`,
+            [hostUserId, userId, problemId, topic, difficulty]
+          )
+          const dbMatchId = rows[0]?.id ?? null
+          if (dbMatchId) {
+            trackRoom(roomId, dbMatchId, problemId, true, matchPayload.players)
+            console.log(`[DB] custom match row created  id=${dbMatchId}  room=${roomId}`)
+          }
+        } catch (err) {
+          console.error('[DB] custom createMatchRow failed:', err.message)
         }
-      } catch (err) {
-        console.error('[DB] custom createMatchRow failed:', err.message)
-      }
+      })()
 
       // Cleanup room code from memory
       customRooms.delete(formattedCode)

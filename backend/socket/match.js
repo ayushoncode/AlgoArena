@@ -1,5 +1,5 @@
 /**
- * socket/match.js — in-match socket events + DB persistence & real code evaluation
+ * socket/match.js — in-match socket events, DB persistence, real code evaluation, & forfeit recovery
  */
 
 'use strict'
@@ -9,13 +9,12 @@ const { calculateElo }      = require('../utils/elo')
 const { evaluateSubmission } = require('../services/judge')
 
 // ── In-memory active matches ───────────────────────────────────
-// Map<roomId, { dbMatchId, problemId, topic, difficulty, submissions, startedAt }>
+// Map<roomId, { dbMatchId, problemId, topic, difficulty, players, isCustom, submissions, startedAt, disconnectTimers }>
 const activeMatches = new Map()
 
 /* ── Create match row in DB ──────────────────────────────────── */
 async function createMatchRow({ playerOneId, playerTwoId, topic, difficulty }) {
   try {
-    // Pick a random problem for the topic + difficulty
     const { rows: problems } = await db.query(
       `SELECT id FROM problems
        WHERE topic = $1 AND difficulty = $2
@@ -106,6 +105,32 @@ function registerMatch(io) {
   io.on('connection', (socket) => {
     const { id: userId, username, elo_rating } = socket.user
 
+    /* ── rejoin_match (clear disconnect timer if reconnected) ────── */
+    socket.on('rejoin_match', ({ roomId }) => {
+      const match = activeMatches.get(roomId)
+      if (!match) return
+
+      socket.join(roomId)
+
+      if (match.disconnectTimers && match.disconnectTimers.has(userId)) {
+        clearTimeout(match.disconnectTimers.get(userId))
+        match.disconnectTimers.delete(userId)
+        console.log(`[Match] player reconnected user=${username} room=${roomId}`)
+        io.to(roomId).emit('player_reconnected', { userId, username })
+      }
+    })
+
+    /* ── code_change (typing & line count indicators) ────────── */
+    socket.on('code_change', ({ roomId, lineCount, charCount, isTyping }) => {
+      socket.to(roomId).emit('opponent_code_change', {
+        userId,
+        username,
+        lineCount,
+        charCount,
+        isTyping,
+      })
+    })
+
     /* ── submit_code ──────────────────────────────────────── */
     socket.on('submit_code', async ({ roomId, code, language, topic, difficulty }) => {
       console.log(`[Match] submit_code  user=${username}  room=${roomId}  lang=${language}`)
@@ -175,12 +200,16 @@ function registerMatch(io) {
           if (s && s.user.id !== userId) { opponent = s.user; break }
         }
 
+        // Clear any disconnect timers
+        if (match.disconnectTimers) {
+          for (const timer of match.disconnectTimers.values()) clearTimeout(timer)
+        }
+
         const isCustom = match.isCustom || roomId.includes('custom')
         const winnerRating = elo_rating    ?? 1200
         const loserRating  = opponent?.elo_rating ?? 1200
         const { winnerDelta: rawWinDelta, loserDelta: rawLossDelta } = calculateElo({ winnerRating, loserRating })
 
-        // Casual custom rooms do not alter Elo ratings (0 delta)
         const winnerDelta = isCustom ? 0 : rawWinDelta
         const loserDelta  = isCustom ? 0 : rawLossDelta
 
@@ -198,7 +227,6 @@ function registerMatch(io) {
         io.to(roomId).emit('match_end', payload)
         console.log(`[Match] ENDED winner=${username}(+${winnerDelta}) loser=${opponent?.username ?? '?'}(${loserDelta}) room=${roomId} custom=${isCustom}`)
 
-        // Persist to DB (if custom match, resolveMatch closes match row without altering elo_rating)
         await resolveMatch({
           dbMatchId:   match.dbMatchId,
           winner:      payload.winner,
@@ -211,18 +239,85 @@ function registerMatch(io) {
         activeMatches.delete(roomId)
       }
     })
+
+    /* ── Disconnect & Forfeit Recovery ───────────────────── */
+    socket.on('disconnect', (reason) => {
+      for (const [roomId, match] of activeMatches.entries()) {
+        const isParticipant = match.players?.some(p => p.userId === userId)
+        if (!isParticipant) continue
+
+        // Ignore if user already solved it
+        if (match.submissions.get(userId) === 'ACCEPTED') continue
+
+        console.log(`[Match] player disconnected user=${username} room=${roomId} reason=${reason}`)
+
+        if (!match.disconnectTimers) match.disconnectTimers = new Map()
+
+        // Broadcast disconnect alert to room
+        io.to(roomId).emit('player_disconnected', {
+          userId,
+          username,
+          gracePeriodSec: 30,
+        })
+
+        // 30-Second Forfeit Countdown Timer
+        const timer = setTimeout(async () => {
+          if (!activeMatches.has(roomId)) return
+
+          console.log(`[Match] FORFEIT EXPIRED user=${username} room=${roomId}`)
+          const opponent = match.players?.find(p => p.userId !== userId)
+          if (!opponent) return
+
+          const isCustom = match.isCustom || roomId.includes('custom')
+          const winnerRating = opponent.rating ?? 1200
+          const loserRating  = elo_rating ?? 1200
+          const { winnerDelta: rawWinDelta, loserDelta: rawLossDelta } = calculateElo({ winnerRating, loserRating })
+
+          const winnerDelta = isCustom ? 0 : rawWinDelta
+          const loserDelta  = isCustom ? 0 : rawLossDelta
+
+          const payload = {
+            roomId,
+            topic: match.topic,
+            difficulty: match.difficulty,
+            isCustom,
+            isForfeit: true,
+            forfeitUser: username,
+            winner: { userId: opponent.userId, username: opponent.username, rating: winnerRating, delta: winnerDelta },
+            loser:  { userId, username, rating: loserRating, delta: loserDelta },
+          }
+
+          io.to(roomId).emit('match_end', payload)
+          console.log(`[Match] FORFEIT ENDED winner=${opponent.username}(+${winnerDelta}) loser=${username}(${loserDelta}) room=${roomId}`)
+
+          await resolveMatch({
+            dbMatchId: match.dbMatchId,
+            winner: payload.winner,
+            loser: payload.loser,
+            winnerDelta,
+            loserDelta,
+            isCustom,
+          })
+
+          activeMatches.delete(roomId)
+        }, 30_000)
+
+        match.disconnectTimers.set(userId, timer)
+      }
+    })
   })
 }
 
-/* ── Called by matchmaking when a room is created ────────────── */
-function trackRoom(roomId, dbMatchId, problemId, isCustom = false) {
+/* ── Called by matchmaking or customRoom when a room is created ─ */
+function trackRoom(roomId, dbMatchId, problemId, isCustom = false, players = []) {
   if (activeMatches.has(roomId)) {
     const entry = activeMatches.get(roomId)
     entry.dbMatchId = dbMatchId
     if (problemId) entry.problemId = problemId
     entry.isCustom = isCustom
+    if (players.length) entry.players = players
   } else {
-    activeMatches.set(roomId, { dbMatchId, problemId, isCustom, submissions: new Map(), startedAt: Date.now() })
+    activeMatches.set(roomId, { dbMatchId, problemId, isCustom, players, submissions: new Map(), startedAt: Date.now() })
   }
 }
 

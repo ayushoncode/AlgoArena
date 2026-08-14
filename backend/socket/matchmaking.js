@@ -150,7 +150,7 @@ function registerMatchmaking(io) {
             )
             const dbMatchId = rows[0]?.id ?? null
             if (dbMatchId) {
-              trackRoom(roomId, dbMatchId, problemId)
+              trackRoom(roomId, dbMatchId, problemId, false, matchPayload.players)
               console.log(`[DB] match row created  id=${dbMatchId}  room=${roomId}  prob=${problemId}`)
             }
           } catch (err) {

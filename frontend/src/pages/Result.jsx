@@ -109,8 +109,12 @@ export default function Result() {
             <div className="px-8 py-8 text-center"
                  style={{ borderBottom: '1px solid #1e2130' }}>
               <p className="font-mono text-[11px] uppercase tracking-widest mb-3"
-                 style={{ color: isCustomMatch ? '#22d3ee' : '#4b5563', letterSpacing: '0.14em' }}>
-                {isCustomMatch ? '// casual friend match (unranked)' : '// ranked match complete'}
+                 style={{ color: state?.isForfeit ? '#f97316' : isCustomMatch ? '#22d3ee' : '#4b5563', letterSpacing: '0.14em' }}>
+                {state?.isForfeit
+                  ? `// ${state.forfeitUser === user?.username ? 'match forfeited (disconnected)' : 'forfeit victory (opponent disconnected)'}`
+                  : isCustomMatch
+                  ? '// casual friend match (unranked)'
+                  : '// ranked match complete'}
               </p>
 
               {/* Result label */}
