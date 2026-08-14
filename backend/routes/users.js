@@ -69,6 +69,23 @@ router.get('/me/history', authMiddleware, async (req, res) => {
   }
 })
 
+// GET /api/users/me/elo-history — rating history points for chart
+router.get('/me/elo-history', authMiddleware, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT created_at AS date, new_rating AS rating, delta
+       FROM elo_history
+       WHERE user_id = $1
+       ORDER BY created_at ASC`,
+      [req.user.id]
+    )
+    return res.json(rows)
+  } catch (err) {
+    console.error('[GET /users/me/elo-history]', err)
+    return res.status(500).json({ message: 'internal server error' })
+  }
+})
+
 // GET /api/users/:id — public profile
 router.get('/:id', async (req, res) => {
   try {
