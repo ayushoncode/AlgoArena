@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useSocket } from '../hooks/useSocket'
 
@@ -70,7 +70,7 @@ function useQueueTimer(running) {
    SEARCHING OVERLAY
 ════════════════════════════════════════════════ */
 function SearchingOverlay({ topic, difficulty, rating, onCancel }) {
-  const { sec, band } = useQueueTimer(true)
+  const { sec } = useQueueTimer(true)
   const mm   = String(Math.floor(sec/60)).padStart(2,'0')
   const ss   = String(sec%60).padStart(2,'0')
   const diff = DIFFS.find(d => d.id === difficulty)
@@ -79,8 +79,6 @@ function SearchingOverlay({ topic, difficulty, rating, onCancel }) {
     <div className="fixed inset-0 z-40 flex items-center justify-center"
          style={{ background:'rgba(5,6,10,0.96)', backdropFilter:'blur(8px)' }}>
       <div className="flex flex-col items-center gap-8">
-
-        {/* Pulse rings + timer */}
         <div className="relative">
           <div className="searching-ring-1"/>
           <div className="searching-ring-2"/>
@@ -92,28 +90,210 @@ function SearchingOverlay({ topic, difficulty, rating, onCancel }) {
           </div>
         </div>
 
-        {/* Info */}
         <div className="text-center space-y-3">
           <p className="font-display font-bold text-xl" style={{ color:'#dde1ea' }}>Finding your opponent…</p>
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <span className="font-mono text-[11px] px-2 py-1" style={{ background:'rgba(249,115,22,0.1)',color:'#f97316',border:'1px solid rgba(249,115,22,0.25)',borderRadius:3 }}>{topic}</span>
             <span className="font-mono text-[11px] px-2 py-1" style={{ background:diff.bg,color:diff.col,border:`1px solid ${diff.col}40`,borderRadius:3 }}>{difficulty}</span>
-            <span className="font-mono text-[11px] px-2 py-1" style={{ background:'rgba(34,211,238,0.08)',color:'#22d3ee',border:'1px solid rgba(34,211,238,0.2)',borderRadius:3 }}>±{band} of {rating}</span>
           </div>
-          <p className="font-mono text-[11px]" style={{ color:'#374151' }}>band widens every 10 seconds</p>
         </div>
 
-        <div className="flex gap-2">
-          {[0,1,2,3,4].map(i=><div key={i} className="dot-pulse" style={{ animationDelay:`${i*0.15}s` }}/>)}
-        </div>
-
-        <button id="cancel-queue" onClick={onCancel}
-                className="font-mono text-[11px] px-6 py-2 transition-colors"
-                style={{ color:'#4b5563',border:'1px solid #1e2130',borderRadius:4 }}
-                onMouseOver={e=>e.currentTarget.style.color='#f43f5e'}
-                onMouseOut={e=>e.currentTarget.style.color='#4b5563'}>
-          cancel_search()
+        <button onClick={onCancel} className="font-mono text-xs px-6 py-2.5 transition-colors" style={{ color:'#6b7280', border:'1px solid #1e2130', borderRadius:4 }}>
+          cancel search ✕
         </button>
+      </div>
+    </div>
+  )
+}
+
+/* ════════════════════════════════════════════════
+   PRIVATE CUSTOM MATCH MODAL
+════════════════════════════════════════════════ */
+function PrivateMatchModal({ isOpen, onClose, topic, diff, emit, on, off, initialRoomCode }) {
+  const [tab, setTab]             = useState(initialRoomCode ? 'join' : 'create')
+  const [roomCode, setRoomCode]   = useState(initialRoomCode || '')
+  const [createdRoom, setCreatedRoom] = useState(null)
+  const [errorMsg, setErrorMsg]   = useState(null)
+  const [copied, setCopied]       = useState(false)
+
+  useEffect(() => {
+    if (initialRoomCode) {
+      setTab('join')
+      setRoomCode(initialRoomCode)
+    }
+  }, [initialRoomCode])
+
+  useEffect(() => {
+    function onCreated(data) {
+      setCreatedRoom(data)
+      setErrorMsg(null)
+    }
+    function onError(err) {
+      setErrorMsg(err.message)
+    }
+    function onCancelled() {
+      setCreatedRoom(null)
+      setErrorMsg(null)
+    }
+
+    on('custom_room_created',   onCreated)
+    on('custom_room_error',     onError)
+    on('custom_room_cancelled', onCancelled)
+
+    return () => {
+      off('custom_room_created',   onCreated)
+      off('custom_room_error',     onError)
+      off('custom_room_cancelled', onCancelled)
+    }
+  }, [on, off])
+
+  if (!isOpen) return null
+
+  function handleCreateRoom() {
+    if (!topic) {
+      setErrorMsg('Please select a topic first')
+      return
+    }
+    emit('create_custom_room', { topic, difficulty: diff })
+  }
+
+  function handleCancelCreated() {
+    if (createdRoom) {
+      emit('cancel_custom_room', { code: createdRoom.code })
+      setCreatedRoom(null)
+    }
+  }
+
+  function handleJoinRoom() {
+    if (!roomCode.trim()) {
+      setErrorMsg('Enter a room code')
+      return
+    }
+    setErrorMsg(null)
+    emit('join_custom_room', { code: roomCode.trim() })
+  }
+
+  function handleCopyLink() {
+    if (!createdRoom) return
+    const url = `${window.location.origin}/lobby?room=${createdRoom.code}`
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+         style={{ background: 'rgba(5,6,10,0.85)', backdropFilter: 'blur(6px)' }}>
+      <div className="w-full max-w-md p-6 space-y-6"
+           style={{ background: '#090b13', border: '1px solid #1e2130', borderRadius: 6 }}>
+
+        {/* Modal Header */}
+        <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: '#1e2130' }}>
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: '#4b5563' }}>// private match</p>
+            <h3 className="font-display font-bold text-lg" style={{ color: '#dde1ea' }}>Battle Your Friend ⚔️</h3>
+          </div>
+          <button onClick={() => { handleCancelCreated(); onClose() }} className="font-mono text-sm hover:text-white" style={{ color: '#4b5563' }}>✕</button>
+        </div>
+
+        {/* Tab Switcher */}
+        <div className="flex p-1 rounded" style={{ background: '#07080c', border: '1px solid #1e2130' }}>
+          <button
+            onClick={() => { setTab('create'); setErrorMsg(null) }}
+            className="flex-1 py-1.5 font-mono text-xs font-bold rounded transition-colors"
+            style={{ background: tab === 'create' ? 'rgba(249,115,22,0.12)' : 'transparent', color: tab === 'create' ? '#f97316' : '#4b5563' }}
+          >
+            Create Room
+          </button>
+          <button
+            onClick={() => { setTab('join'); setErrorMsg(null) }}
+            className="flex-1 py-1.5 font-mono text-xs font-bold rounded transition-colors"
+            style={{ background: tab === 'join' ? 'rgba(249,115,22,0.12)' : 'transparent', color: tab === 'join' ? '#f97316' : '#4b5563' }}
+          >
+            Join Code
+          </button>
+        </div>
+
+        {/* Error Alert */}
+        {errorMsg && (
+          <div className="p-3 rounded font-mono text-xs" style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', color: '#f43f5e' }}>
+            {errorMsg}
+          </div>
+        )}
+
+        {/* TAB 1: CREATE ROOM */}
+        {tab === 'create' && (
+          <div className="space-y-4">
+            {!createdRoom ? (
+              <>
+                <div className="p-3 rounded space-y-1 font-mono text-xs" style={{ background: '#0d0f17', border: '1px solid #1e2130' }}>
+                  <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Topic:</span> <span style={{ color: '#f97316' }}>{topic || 'Select a topic in lobby'}</span></div>
+                  <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Difficulty:</span> <span style={{ color: '#22d3ee' }}>{diff}</span></div>
+                  <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Ranked:</span> <span style={{ color: '#10b981' }}>Unranked (Casual)</span></div>
+                </div>
+
+                <button
+                  onClick={handleCreateRoom}
+                  disabled={!topic}
+                  className="w-full py-3 font-mono font-bold text-xs transition-all active:scale-[0.98]"
+                  style={{ background: topic ? '#f97316' : '#1e2130', color: topic ? '#07080c' : '#4b5563', borderRadius: 4, cursor: topic ? 'pointer' : 'not-allowed' }}
+                >
+                  {topic ? 'generate_invite_code() →' : 'Select a topic first'}
+                </button>
+              </>
+            ) : (
+              <div className="text-center space-y-4 py-2">
+                <p className="font-mono text-xs" style={{ color: '#9ca3af' }}>Share this code or link with your friend:</p>
+
+                <div className="p-4 rounded flex items-center justify-between" style={{ background: '#0d0f17', border: '1px stroke #f97316' }}>
+                  <span className="font-mono text-2xl font-black tracking-wider" style={{ color: '#f97316' }}>{createdRoom.code}</span>
+                  <button
+                    onClick={handleCopyLink}
+                    className="font-mono text-xs px-3 py-1.5 transition-all"
+                    style={{ background: copied ? 'rgba(16,185,129,0.2)' : 'rgba(249,115,22,0.15)', color: copied ? '#10b981' : '#f97316', border: '1px solid rgba(249,115,22,0.3)', borderRadius: 4 }}
+                  >
+                    {copied ? '✓ Copied Link' : 'Copy Invite Link'}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  <div className="w-2 h-2 rounded-full animate-ping" style={{ background: '#f97316' }}/>
+                  <span className="font-mono text-xs" style={{ color: '#4b5563' }}>Waiting for friend to join room...</span>
+                </div>
+
+                <button onClick={handleCancelCreated} className="font-mono text-xs text-rose-500 underline pt-2">
+                  Cancel Room
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 2: JOIN ROOM */}
+        {tab === 'join' && (
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <label className="font-mono text-xs" style={{ color: '#4b5563' }}>Enter 6-character Invite Code:</label>
+              <input
+                type="text"
+                placeholder="e.g. ARENA-8K2Y"
+                value={roomCode}
+                onChange={e => setRoomCode(e.target.value.toUpperCase())}
+                className="w-full p-3 font-mono text-sm uppercase font-bold tracking-wider rounded"
+                style={{ background: '#0d0f17', border: '1px solid #1e2130', color: '#f97316', outline: 'none' }}
+              />
+            </div>
+
+            <button
+              onClick={handleJoinRoom}
+              className="w-full py-3 font-mono font-bold text-xs transition-all active:scale-[0.98]"
+              style={{ background: '#f97316', color: '#07080c', borderRadius: 4 }}
+            >
+              join_battle() →
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
   )
@@ -125,15 +305,27 @@ function SearchingOverlay({ topic, difficulty, rating, onCancel }) {
 export default function Lobby() {
   const { user, isAuthenticated, loading } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const live     = useLiveCounter()
 
   const [topic,   setTopic]   = useState(null)
   const [diff,    setDiff]    = useState('medium')
   const [queuing, setQueuing] = useState(false)
 
+  // Private custom match modal state
+  const [customModalOpen, setCustomModalOpen] = useState(false)
+  const initialRoomCode = searchParams.get('room')
+
   useEffect(() => {
     if (!loading && !isAuthenticated) navigate('/?auth=login')
   }, [loading, isAuthenticated, navigate])
+
+  // Open custom modal automatically if URL has ?room=CODE
+  useEffect(() => {
+    if (initialRoomCode) {
+      setCustomModalOpen(true)
+    }
+  }, [initialRoomCode])
 
   if (loading) return (
     <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
@@ -172,6 +364,18 @@ export default function Lobby() {
     <>
       {queuing && <SearchingOverlay topic={topic} difficulty={diff} rating={elo} onCancel={cancelQueue}/>}
 
+      {/* Private Custom Friend Match Modal */}
+      <PrivateMatchModal
+        isOpen={customModalOpen}
+        onClose={() => setCustomModalOpen(false)}
+        topic={topic}
+        diff={diff}
+        emit={emit}
+        on={on}
+        off={off}
+        initialRoomCode={initialRoomCode}
+      />
+
       <div className="min-h-[calc(100vh-3.5rem)]">
 
         {/* ── TOP BAR ───────────────────────────────────── */}
@@ -187,19 +391,16 @@ export default function Lobby() {
             </div>
 
             <div className="hidden sm:flex items-center gap-5">
-              {/* Socket status */}
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: connected ? '#10b981' : '#f59e0b', boxShadow: connected ? '0 0 5px #10b981' : 'none', flexShrink:0 }}/>
                 <span className="font-mono text-[10px]" style={{ color:'#374151' }}>
                   {connected ? 'ws connected' : 'connecting…'}
                 </span>
               </div>
-              {/* Rating */}
               <div className="text-right hidden sm:block">
                 <p className="font-mono text-[10px]" style={{ color:'#4b5563' }}>your rating</p>
                 <p className="font-display font-black text-xl" style={{ color:'#f97316' }}>{elo}</p>
               </div>
-              {/* Live */}
               <div className="text-right hidden sm:block">
                 <div className="flex items-center gap-1.5 justify-end">
                   <span className="dot-live"/>
@@ -329,28 +530,25 @@ export default function Lobby() {
               </div>
             </div>
 
-            {/* Elo band */}
-            <div style={{ background:'#090b13', border:'1px solid #1e2130', borderRadius:4 }}>
-              {[
-                { lbl:'initial band', val:'±100 elo' },
-                { lbl:'widens every', val:'10 seconds' },
-                { lbl:'target range', val:`${elo-100} – ${elo+100}`, hi:true },
-              ].map((r,i) => (
-                <div key={r.lbl} className="flex justify-between px-4 py-2.5"
-                     style={{ borderBottom: i<2 ? '1px solid #0d0f17' : 'none' }}>
-                  <span className="font-mono text-[10px]" style={{ color:'#4b5563' }}>{r.lbl}</span>
-                  <span className="font-mono text-[10px] font-bold" style={{ color:r.hi?'#f97316':'#dde1ea' }}>{r.val}</span>
-                </div>
-              ))}
-            </div>
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              {/* Ranked Match CTA */}
+              <button id="find-match-btn" onClick={startQueue} disabled={!topic}
+                      className="w-full py-4 font-mono font-bold text-sm transition-all duration-150 active:scale-[0.98]"
+                      style={{ background:topic?'#f97316':'#0d0f17', color:topic?'#07080c':'#374151',
+                               border:`1px solid ${topic?'#f97316':'#1e2130'}`, borderRadius:4, cursor:topic?'pointer':'not-allowed' }}>
+                {topic ? `find_ranked_match() →` : 'select a topic first'}
+              </button>
 
-            {/* Find Match CTA */}
-            <button id="find-match-btn" onClick={startQueue} disabled={!topic}
-                    className="w-full py-4 font-mono font-bold text-sm transition-all duration-150 active:scale-[0.98]"
-                    style={{ background:topic?'#f97316':'#0d0f17', color:topic?'#07080c':'#374151',
-                             border:`1px solid ${topic?'#f97316':'#1e2130'}`, borderRadius:4, cursor:topic?'pointer':'not-allowed' }}>
-              {topic ? `find_match() →` : 'select a topic first'}
-            </button>
+              {/* Private Friend Duel CTA */}
+              <button
+                onClick={() => setCustomModalOpen(true)}
+                className="w-full py-3 font-mono font-bold text-xs transition-all active:scale-[0.98]"
+                style={{ background: '#0d0f17', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.3)', borderRadius: 4 }}
+              >
+                battle_friend() ⚔️ (private room)
+              </button>
+            </div>
 
             {/* Elo estimate */}
             <div style={{ borderTop:'1px solid #1e2130', paddingTop:'1rem' }}>

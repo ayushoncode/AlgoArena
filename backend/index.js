@@ -22,6 +22,7 @@ const problemRoutes = require('./routes/problems')
 const matchRoutes   = require('./routes/matches')
 const { registerMatchmaking, queueStats } = require('./socket/matchmaking')
 const { registerMatch }       = require('./socket/match')
+const { registerCustomRoom }  = require('./socket/customRoom')
 const socketAuth              = require('./middleware/socketAuth')
 
 // ── App + HTTP server ─────────────────────────────────────────────────────────
@@ -103,6 +104,7 @@ app.use((err, _req, res, _next) => {
 // ── Socket.io event handlers ──────────────────────────────────────────────────
 registerMatchmaking(io)
 registerMatch(io)
+registerCustomRoom(io)
 
 // Log every new socket connection
 io.on('connection', (socket) => {
