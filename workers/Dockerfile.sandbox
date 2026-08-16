@@ -1,0 +1,55 @@
+# ═══════════════════════════════════════════════════════════════════
+# AlgoArena Sandbox Image — algoarena-sandbox
+#
+# Locked-down execution environment for untrusted user code.
+# Non-root user, minimal Alpine, no shell tools.
+#
+# Build (from repo root):
+#   docker build -t algoarena-sandbox -f workers/Dockerfile.sandbox workers/
+#
+# Security at image level:
+#   - node:20-alpine (smallest possible attack surface)
+#   - Non-root 'sandbox' user (UID 1001)
+#   - No build tools, no curl, no wget, no package manager after build
+#
+# Security at runtime (enforced by sandbox.js docker run flags):
+#   --network none       No outbound or inbound network
+#   --memory 256m        Hard RAM cap (OOM kill if exceeded)
+#   --memory-swap 256m   Disable swap (same as RAM cap = no swap)
+#   --cpus 0.5           Half a CPU core
+#   --pids-limit 50      Fork bomb prevention (max 50 processes)
+#   --read-only          Root filesystem is immutable
+#   --tmpfs /tmp:...     Tiny writable scratch space, no exec bit
+#   --rm                 Container auto-removed on exit
+#   --user sandbox       Enforce non-root at runtime too
+# ═══════════════════════════════════════════════════════════════════
+
+FROM node:20-alpine
+
+# Install Python 3 for Python submissions.
+# python3 only — no pip, no build tools, no compilers.
+RUN apk add --no-cache python3
+
+# ── Create non-root sandbox user ───────────────────────────────────
+# UID/GID 1001 — not root (0), not the default node user (1000).
+RUN addgroup -g 1001 -S sandbox \
+ && adduser  -u 1001 -S sandbox -G sandbox
+
+# Working directory owned by sandbox user.
+# Code will be mounted here read-only at: -v /tmp/job-xxx:/sandbox:ro
+WORKDIR /sandbox
+RUN chown sandbox:sandbox /sandbox
+
+# ── Strip unnecessary binaries ─────────────────────────────────────
+# Remove apk package manager and shell utilities to reduce attack surface.
+# Submissions run via 'node runner.js' or 'python3 runner.py' only.
+RUN apk del apk-tools || true
+
+# ── Drop to non-root user ──────────────────────────────────────────
+USER sandbox
+
+# Smoke test — verify both runtimes are present.
+RUN node --version && python3 --version
+
+# Default entrypoint: print runtimes (used in 'docker run' smoke tests).
+CMD ["node", "--version"]

@@ -1,0 +1,28 @@
+{
+  "name": "algoarena-workers",
+  "version": "1.0.0",
+  "description": "AlgoArena BullMQ submission worker — runs user code in Docker sandbox",
+  "main": "judge.js",
+  "scripts": {
+    "start": "node judge.js",
+    "dev":   "nodemon judge.js",
+    "test":  "node sandbox.js --test",
+    "test:network": "node sandbox.js --test --test-network"
+  },
+  "keywords": [],
+  "author": "ayush",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bullmq":  "^5.56.0",
+    "dotenv":  "^17.4.2",
+    "ioredis": "^5.6.1",
+    "pg":      "^8.23.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

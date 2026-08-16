@@ -21,9 +21,10 @@ const userRoutes    = require('./routes/users')
 const problemRoutes = require('./routes/problems')
 const matchRoutes   = require('./routes/matches')
 const { registerMatchmaking, queueStats } = require('./socket/matchmaking')
-const { registerMatch }       = require('./socket/match')
+const { registerMatch, handleVerdict }  = require('./socket/match')
 const { registerCustomRoom }  = require('./socket/customRoom')
 const socketAuth              = require('./middleware/socketAuth')
+const { startVerdictSubscriber } = require('./queues/verdictSubscriber')
 
 // ── App + HTTP server ─────────────────────────────────────────────────────────
 const app    = express()
@@ -110,6 +111,13 @@ registerCustomRoom(io)
 io.on('connection', (socket) => {
   console.log(`[Socket] connected — id=${socket.id}`)
 })
+
+// ── Verdict subscriber (BullMQ → Socket.io bridge) ─────────────────────────
+// Listens on Redis pub/sub channel "aa:verdicts".
+// The worker publishes here after each Docker sandbox run.
+// We route the result to the correct Socket.io room via handleVerdict().
+// No-op if REDIS_URL is not set (inline judge fallback is active instead).
+startVerdictSubscriber((payload) => handleVerdict(payload, io))
 
 // ── Start server ──────────────────────────────────────────────────────────────
 const PORT = parseInt(process.env.PORT, 10) || 4000
