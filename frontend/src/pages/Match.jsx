@@ -392,7 +392,18 @@ export default function Match() {
 
   // Match state from navigation or socket
   const [matchState, setMatchState] = useState(state ?? null)
-  const [startedAt]  = useState(Date.now())
+
+  // Persistent match start timestamp across browser refreshes
+  const [startedAt, setStartedAt] = useState(() => {
+    if (!roomId) return Date.now()
+    const key = `aa_start_${roomId}`
+    const stored = localStorage.getItem(key)
+    if (stored) return Number(stored)
+    const now = state?.startedAt ?? Date.now()
+    localStorage.setItem(key, String(now))
+    return now
+  })
+
   const { display: timerDisplay, urgent, remaining } = useMatchTimer(startedAt)
 
   // Editor state
@@ -406,6 +417,7 @@ export default function Match() {
   const [myTestDetails,      setMyTestDetails]      = useState(null)
   const [oppDisconnectState, setOppDisconnectState] = useState(null)
   const [oppProgress,        setOppProgress]        = useState(null)
+  const [showResignModal,    setShowResignModal]    = useState(false)
 
   const editorRef        = useRef(null)
   const typingTimeoutRef = useRef(null)
@@ -436,6 +448,7 @@ export default function Match() {
       }
     }
     function onMatchEnd(payload) {
+      if (roomId) localStorage.removeItem(`aa_start_${roomId}`)
       navigate('/result', { state: { ...payload, roomId } })
     }
     function onPlayerDisconnected({ userId, username, gracePeriodSec }) {
@@ -473,6 +486,20 @@ export default function Match() {
       off('opponent_code_change', onOpponentCodeChange)
     }
   }, [on, off, emit, navigate, user, roomId, matchState])
+
+  // Re-initialize matchState if page was refreshed directly at /match/:roomId
+  useEffect(() => {
+    if (!matchState && roomId) {
+      const isCustom = roomId.includes('custom')
+      setMatchState({
+        roomId,
+        topic: 'arrays',
+        difficulty: 'medium',
+        isCustom,
+        players: [{ username: user?.username, rating: user?.elo_rating }]
+      })
+    }
+  }, [matchState, roomId, user])
 
   // Disconnect countdown interval
   useEffect(() => {
@@ -551,13 +578,72 @@ export default function Match() {
           )}
         </div>
 
-        {/* Players summary */}
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-[11px]" style={{ color: '#f97316' }}>{me?.username ?? user?.username}</span>
-          <span className="font-mono text-[10px] font-bold" style={{ color: '#4b5563' }}>vs</span>
-          <span className="font-mono text-[11px]" style={{ color: '#22d3ee' }}>{opp?.username ?? '…'}</span>
+        {/* Players summary & Exit button */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[11px]" style={{ color: '#f97316' }}>{me?.username ?? user?.username}</span>
+            <span className="font-mono text-[10px] font-bold" style={{ color: '#4b5563' }}>vs</span>
+            <span className="font-mono text-[11px]" style={{ color: '#22d3ee' }}>{opp?.username ?? '…'}</span>
+          </div>
+
+          <button
+            onClick={() => setShowResignModal(true)}
+            className="font-mono text-[10px] font-bold px-2.5 py-1 transition-all active:scale-[0.97] flex items-center gap-1"
+            style={{ background: 'rgba(244,63,94,0.1)', color: '#f43f5e', border: '1px solid rgba(244,63,94,0.3)', borderRadius: 3 }}
+            title="Resign & Exit Match"
+          >
+            <span>🚩</span> exit_match()
+          </button>
         </div>
       </div>
+
+      {/* Resign Confirmation Modal */}
+      {showResignModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(5,6,10,0.85)', backdropFilter: 'blur(6px)' }}>
+          <div className="w-full max-w-sm p-6 space-y-4 rounded" style={{ background: '#090b13', border: '1px solid #1e2130' }}>
+            <div className="flex items-center gap-2 font-display font-bold text-sm" style={{ color: '#f43f5e' }}>
+              <span className="text-xl">⚠️</span> Confirm Resignation
+            </div>
+            <p className="font-mono text-xs leading-relaxed" style={{ color: '#9ca3af' }}>
+              Are you sure you want to exit? Your opponent will win the match and your Elo rating will be affected.
+            </p>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setShowResignModal(false)}
+                className="flex-1 py-2 font-mono text-xs rounded border transition-colors"
+                style={{ background: '#0d0f17', borderColor: '#1e2130', color: '#9ca3af' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowResignModal(false)
+                  if (roomId) localStorage.removeItem(`aa_start_${roomId}`)
+                  emit('resign_match', { roomId })
+                  setTimeout(() => {
+                    navigate('/result', {
+                      state: {
+                        roomId,
+                        isForfeit: true,
+                        forfeitUser: user?.username,
+                        isCustom: roomId?.includes('custom'),
+                        topic: matchState?.topic || 'arrays',
+                        difficulty: matchState?.difficulty || 'medium',
+                        winner: { username: opp?.username || 'Opponent', delta: roomId?.includes('custom') ? 0 : 18 },
+                        loser: { username: user?.username, delta: roomId?.includes('custom') ? 0 : -18 },
+                      }
+                    })
+                  }, 200)
+                }}
+                className="flex-1 py-2 font-mono text-xs font-bold rounded transition-all active:scale-[0.98]"
+                style={{ background: '#f43f5e', color: '#ffffff' }}
+              >
+                Resign & Exit 🚩
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── RESIZABLE 3-PANEL: problem | editor | opponent ── */}
       <div className="flex flex-1 min-h-0" style={{ overflow:'hidden' }}>

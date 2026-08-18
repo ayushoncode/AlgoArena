@@ -63,17 +63,21 @@ export default function Result() {
   const navigate   = useNavigate()
   const { user }   = useAuth()
 
-  // Derive result from navigation state
-  const isWin  = state?.result === 'WIN'
-  const isDraw = state?.result === 'DRAW'
-  const isLoss = state?.result === 'LOSS'
-
   const winner = state?.winner
   const loser  = state?.loser
 
+  // Determine if current user is the winner
+  const isIWinner = winner
+    ? (winner.userId ? winner.userId === user?.id : (winner.username && user?.username && winner.username.toLowerCase() === user.username.toLowerCase()))
+    : false
+
+  const isWin  = state?.result === 'WIN' || isIWinner
+  const isDraw = state?.result === 'DRAW' || (!state?.result && !winner && !loser)
+  const isLoss = !isWin && !isDraw
+
   // Who am I?
-  const myData  = isWin ? winner : loser
-  const oppData = isWin ? loser  : winner
+  const myData  = isWin ? winner : (loser ?? { username: user?.username, rating: user?.elo_rating, delta: -18 })
+  const oppData = isWin ? (loser ?? { username: 'Opponent', rating: 1200 }) : (winner ?? { username: 'Opponent', rating: 1200 })
 
   const isCustomMatch = state?.isCustom || state?.roomId?.includes('custom')
   const myDelta  = isCustomMatch ? 0 : (myData?.delta ?? (isWin ? 18 : isDraw ? 0 : -18))
