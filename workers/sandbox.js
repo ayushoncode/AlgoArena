@@ -129,7 +129,6 @@ except Exception as e:
 # ── Run each test case ──────────────────────────────────────────────
 test_cases = json.loads(r'${escapedTestCases}')
 results    = []
-
 for i, tc in enumerate(test_cases):
     start = time.time()
     try:
@@ -157,10 +156,325 @@ print(json.dumps({"results": results}))
 `
 }
 
+/**
+ * Build a C++ runner script.
+ * Includes user solution and uses nlohmann/json for reflection-like argument unpacking.
+ */
+function buildCppRunner(testCases) {
+  const escapedTestCases = JSON.stringify(testCases).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  return `#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <chrono>
+#include <sstream>
+#include <tuple>
+#include <type_traits>
+#include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
+#include <queue>
+#include <stack>
+#include <cmath>
+#include <nlohmann/json.hpp>
+
+// Include user's solution
+#include "/sandbox/solution.cpp"
+
+using json = nlohmann::json;
+using namespace std;
+
+template<typename Ret, typename Class, typename... Args>
+json invokeMember(Ret (Class::*method)(Args...), Class& obj, const json& args) {
+    size_t idx = 0;
+    auto tupleArgs = make_tuple(args.at(idx++).get<decay_t<Args>>()...);
+    if constexpr (is_void_v<Ret>) {
+        apply([&](auto&&... unpacked) { (obj.*method)(unpacked...); }, tupleArgs);
+        return nullptr;
+    } else {
+        auto res = apply([&](auto&&... unpacked) { return (obj.*method)(unpacked...); }, tupleArgs);
+        return json(res);
+    }
+}
+
+int main() {
+    try {
+        json testCases = json::parse("${escapedTestCases}");
+        json results = json::array();
+
+        Solution solInstance;
+
+        for (size_t i = 0; i < testCases.size(); i++) {
+            auto& tc = testCases[i];
+            auto start = chrono::high_resolution_clock::now();
+            try {
+                string rawInput = "[" + tc["input"].get<string>() + "]";
+                json args = json::parse(rawInput);
+                json actual = invokeMember(&Solution::solution, solInstance, args);
+                auto end = chrono::high_resolution_clock::now();
+                int runtimeMs = (int)chrono::duration_cast<chrono::milliseconds>(end - start).count();
+
+                results.push_back({
+                    {"index", i + 1},
+                    {"actual", actual.dump()},
+                    {"expected", tc["output"]},
+                    {"runtimeMs", runtimeMs},
+                    {"isHidden", tc["is_hidden"]},
+                    {"error", nullptr}
+                });
+            } catch (const exception& e) {
+                auto end = chrono::high_resolution_clock::now();
+                int runtimeMs = (int)chrono::duration_cast<chrono::milliseconds>(end - start).count();
+                results.push_back({
+                    {"index", i + 1},
+                    {"actual", nullptr},
+                    {"expected", tc["output"]},
+                    {"runtimeMs", runtimeMs},
+                    {"isHidden", tc["is_hidden"]},
+                    {"error", e.what()}
+                });
+            }
+        }
+
+        cout << json({{"results", results}}).dump() << endl;
+    } catch (const exception& e) {
+        cout << json({{"fatal", e.what()}, {"results", json::array()}}).dump() << endl;
+    }
+    return 0;
+}
+`
+}
+
+/**
+ * Build a Java runner script.
+ * Uses reflection to find and invoke Solution.solution(...) and format output.
+ */
+function buildJavaRunner(testCases) {
+  const escapedTestCases = JSON.stringify(testCases).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  return `import java.lang.reflect.*;
+import java.util.*;
+
+public class Runner {
+    public static void main(String[] args) {
+        try {
+            Class<?> clazz = Class.forName("Solution");
+            Object instance = clazz.getDeclaredConstructor().newInstance();
+            Method targetMethod = null;
+            for (Method m : clazz.getDeclaredMethods()) {
+                if (m.getName().equals("solution")) {
+                    targetMethod = m;
+                    break;
+                }
+            }
+
+            if (targetMethod == null) {
+                System.out.println("{\\"fatal\\":\\"No method named 'solution' found in class Solution\\",\\"results\\":[]}");
+                return;
+            }
+
+            targetMethod.setAccessible(true);
+            Class<?>[] paramTypes = targetMethod.getParameterTypes();
+
+            String rawTestCases = "${escapedTestCases}";
+            List<Map<String, Object>> tcs = parseJsonArrayOfObjects(rawTestCases);
+            StringBuilder out = new StringBuilder();
+            out.append("{\\"results\\":[");
+
+            for (int i = 0; i < tcs.size(); i++) {
+                if (i > 0) out.append(",");
+                Map<String, Object> tc = tcs.get(i);
+                String inputStr = (String) tc.get("input");
+                String expected = (String) tc.get("output");
+                boolean isHidden = Boolean.TRUE.equals(tc.get("is_hidden"));
+
+                long start = System.currentTimeMillis();
+                try {
+                    Object[] parsedArgs = parseArgs("[" + inputStr + "]", paramTypes);
+                    Object ret = targetMethod.invoke(instance, parsedArgs);
+                    long runtime = System.currentTimeMillis() - start;
+                    String actualStr = serializeJson(ret);
+
+                    out.append(String.format("{\\"index\\":%d,\\"actual\\":%s,\\"expected\\":%s,\\"runtimeMs\\":%d,\\"isHidden\\":%b,\\"error\\":null}",
+                        i + 1, escapeJsonString(actualStr), escapeJsonString(expected), runtime, isHidden));
+                } catch (Exception e) {
+                    long runtime = System.currentTimeMillis() - start;
+                    Throwable cause = e.getCause() != null ? e.getCause() : e;
+                    out.append(String.format("{\\"index\\":%d,\\"actual\\":null,\\"expected\\":%s,\\"runtimeMs\\":%d,\\"isHidden\\":%b,\\"error\\":%s}",
+                        i + 1, escapeJsonString(expected), runtime, isHidden, escapeJsonString(cause.getMessage() != null ? cause.getMessage() : cause.toString())));
+                }
+            }
+
+            out.append("]}");
+            System.out.println(out.toString());
+        } catch (Exception e) {
+            String msg = e.getMessage() != null ? e.getMessage() : e.toString();
+            System.out.println("{\\"fatal\\":" + escapeJsonString(msg) + ",\\"results\\":[]}");
+        }
+    }
+
+    private static String escapeJsonString(String s) {
+        if (s == null) return "null";
+        return "\\"" + s.replace("\\\\", "\\\\\\\\").replace("\\"", "\\\\\\"").replace("\\n", "\\\\n").replace("\\r", "") + "\\"";
+    }
+
+    private static String serializeJson(Object obj) {
+        if (obj == null) return "null";
+        if (obj instanceof int[]) {
+            int[] arr = (int[]) obj;
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < arr.length; i++) { if (i > 0) sb.append(","); sb.append(arr[i]); }
+            sb.append("]");
+            return sb.toString();
+        }
+        if (obj instanceof long[]) {
+            long[] arr = (long[]) obj;
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < arr.length; i++) { if (i > 0) sb.append(","); sb.append(arr[i]); }
+            sb.append("]");
+            return sb.toString();
+        }
+        if (obj instanceof double[]) {
+            double[] arr = (double[]) obj;
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < arr.length; i++) { if (i > 0) sb.append(","); sb.append(arr[i]); }
+            sb.append("]");
+            return sb.toString();
+        }
+        if (obj instanceof boolean[]) {
+            boolean[] arr = (boolean[]) obj;
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < arr.length; i++) { if (i > 0) sb.append(","); sb.append(arr[i]); }
+            sb.append("]");
+            return sb.toString();
+        }
+        if (obj instanceof String[]) {
+            String[] arr = (String[]) obj;
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < arr.length; i++) { if (i > 0) sb.append(","); sb.append("\\"").append(arr[i]).append("\\""); }
+            sb.append("]");
+            return sb.toString();
+        }
+        if (obj instanceof Object[]) {
+            Object[] arr = (Object[]) obj;
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < arr.length; i++) { if (i > 0) sb.append(","); sb.append(serializeJson(arr[i])); }
+            sb.append("]");
+            return sb.toString();
+        }
+        if (obj instanceof List) {
+            List<?> l = (List<?>) obj;
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < l.size(); i++) { if (i > 0) sb.append(","); sb.append(serializeJson(l.get(i))); }
+            sb.append("]");
+            return sb.toString();
+        }
+        if (obj instanceof String) return "\\"" + obj + "\\"";
+        return obj.toString();
+    }
+
+    private static Object[] parseArgs(String rawArray, Class<?>[] types) {
+        List<String> rawTokens = splitJsonElements(rawArray.trim());
+        Object[] args = new Object[types.length];
+        for (int i = 0; i < types.length; i++) {
+            String tok = i < rawTokens.size() ? rawTokens.get(i) : "";
+            args[i] = convertToken(tok, types[i]);
+        }
+        return args;
+    }
+
+    private static List<String> splitJsonElements(String arr) {
+        List<String> list = new ArrayList<>();
+        if (arr.startsWith("[") && arr.endsWith("]")) {
+            arr = arr.substring(1, arr.length() - 1).trim();
+        }
+        if (arr.isEmpty()) return list;
+        int depth = 0;
+        boolean inQuote = false;
+        StringBuilder cur = new StringBuilder();
+        for (int i = 0; i < arr.length(); i++) {
+            char c = arr.charAt(i);
+            if (c == '"' && (i == 0 || arr.charAt(i - 1) != '\\\\')) inQuote = !inQuote;
+            if (!inQuote) {
+                if (c == '[' || c == '{') depth++;
+                else if (c == ']' || c == '}') depth--;
+                else if (c == ',' && depth == 0) {
+                    list.add(cur.toString().trim());
+                    cur.setLength(0);
+                    continue;
+                }
+            }
+            cur.append(c);
+        }
+        if (cur.length() > 0) list.add(cur.toString().trim());
+        return list;
+    }
+
+    private static Object convertToken(String tok, Class<?> t) {
+        tok = tok.trim();
+        if (t == int.class || t == Integer.class) return Integer.parseInt(tok);
+        if (t == long.class || t == Long.class) return Long.parseLong(tok);
+        if (t == double.class || t == Double.class) return Double.parseDouble(tok);
+        if (t == boolean.class || t == Boolean.class) return Boolean.parseBoolean(tok);
+        if (t == String.class) {
+            if (tok.startsWith("\\"") && tok.endsWith("\\"") && tok.length() >= 2) return tok.substring(1, tok.length() - 1);
+            return tok;
+        }
+        if (t == int[].class) {
+            List<String> items = splitJsonElements(tok);
+            int[] res = new int[items.size()];
+            for (int i = 0; i < items.size(); i++) res[i] = Integer.parseInt(items.get(i).trim());
+            return res;
+        }
+        if (t == String[].class) {
+            List<String> items = splitJsonElements(tok);
+            String[] res = new String[items.size()];
+            for (int i = 0; i < items.size(); i++) {
+                String s = items.get(i).trim();
+                res[i] = (s.startsWith("\\"") && s.endsWith("\\"")) ? s.substring(1, s.length() - 1) : s;
+            }
+            return res;
+        }
+        if (t == List.class) {
+            List<String> items = splitJsonElements(tok);
+            List<Object> res = new ArrayList<>();
+            for (String item : items) {
+                try { res.add(Integer.parseInt(item.trim())); }
+                catch (Exception e) { res.add(item.trim()); }
+            }
+            return res;
+        }
+        return tok;
+    }
+
+    private static List<Map<String, Object>> parseJsonArrayOfObjects(String jsonStr) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        List<String> objs = splitJsonElements(jsonStr);
+        for (String objStr : objs) {
+            Map<String, Object> map = new HashMap<>();
+            if (objStr.startsWith("{") && objStr.endsWith("}")) objStr = objStr.substring(1, objStr.length() - 1);
+            List<String> pairs = splitJsonElements(objStr);
+            for (String pair : pairs) {
+                int col = pair.indexOf(':');
+                if (col > 0) {
+                    String key = pair.substring(0, col).trim().replace("\\"", "");
+                    String val = pair.substring(col + 1).trim();
+                    if (val.startsWith("\\"") && val.endsWith("\\"")) val = val.substring(1, val.length() - 1);
+                    if (key.equals("is_hidden")) map.put(key, Boolean.parseBoolean(val));
+                    else map.put(key, val);
+                }
+            }
+            list.add(map);
+        }
+        return list;
+    }
+}
+`
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    OUTPUT COMPARISON
    Flexible but deterministic: handles JSON arrays, numbers, booleans.
-═══════════════════════════════════════════════════════════════════ */
+ ═══════════════════════════════════════════════════════════════════ */
 function normalizeOutput(val) {
   if (val === undefined || val === null) return 'null'
   const s = String(val).trim()
@@ -192,7 +506,7 @@ function compareOutputs(actual, expected) {
 
 /* ═══════════════════════════════════════════════════════════════════
    CORE: spawn docker with timeout
-═══════════════════════════════════════════════════════════════════ */
+ ═══════════════════════════════════════════════════════════════════ */
 function spawnWithTimeout(cmd, args, timeoutMs) {
   return new Promise((resolve, reject) => {
     const proc       = spawn(cmd, args)
@@ -237,7 +551,7 @@ function spawnWithTimeout(cmd, args, timeoutMs) {
 
 /* ═══════════════════════════════════════════════════════════════════
    HELPERS
-═══════════════════════════════════════════════════════════════════ */
+ ═══════════════════════════════════════════════════════════════════ */
 function makeErrorResult(verdict, testCases, errorMsg, runtimeMs) {
   return {
     verdict,
@@ -259,12 +573,12 @@ function makeErrorResult(verdict, testCases, errorMsg, runtimeMs) {
 
 /* ═══════════════════════════════════════════════════════════════════
    PUBLIC API
-═══════════════════════════════════════════════════════════════════ */
+ ═══════════════════════════════════════════════════════════════════ */
 /**
  * runSandbox({ code, language, testCases })
  *
  * @param   {string}  code       Raw user source code
- * @param   {string}  language   'javascript' | 'python'
+ * @param   {string}  language   'javascript' | 'python' | 'cpp' | 'java'
  * @param   {Array}   testCases  [{ input, output, is_hidden }, ...]
  * @returns {Promise<{verdict, totalTests, passedTests, runtimeMs, testResults}>}
  */
@@ -274,34 +588,51 @@ async function runSandbox({ code, language, testCases }) {
 
   fs.mkdirSync(tmpDir, { recursive: true })
 
-  const isPython   = (language === 'python' || language === 'py')
-  const codeFile   = isPython ? 'solution.py'  : 'solution.js'
-  const runnerFile = isPython ? 'runner.py'    : 'runner.js'
-  const cmd        = isPython ? 'python3'      : 'node'
+  const lang = (language || 'javascript').toLowerCase()
+  let codeFile, runnerFile, runnerContent, dockerExecCmd
+
+  if (lang === 'python' || lang === 'py') {
+    codeFile      = 'solution.py'
+    runnerFile    = 'runner.py'
+    runnerContent = buildPyRunner(testCases)
+    dockerExecCmd = ['python3', '/sandbox/runner.py']
+  } else if (lang === 'cpp' || lang === 'c++') {
+    codeFile      = 'solution.cpp'
+    runnerFile    = 'runner.cpp'
+    runnerContent = buildCppRunner(testCases)
+    dockerExecCmd = ['sh', '-c', 'g++ -O0 -std=c++17 /sandbox/runner.cpp -o /tmp/runner && /tmp/runner']
+  } else if (lang === 'java') {
+    codeFile      = 'Solution.java'
+    runnerFile    = 'Runner.java'
+    runnerContent = buildJavaRunner(testCases)
+    dockerExecCmd = ['sh', '-c', 'javac -d /tmp /sandbox/Solution.java /sandbox/Runner.java && java -cp /tmp Runner']
+  } else {
+    codeFile      = 'solution.js'
+    runnerFile    = 'runner.js'
+    runnerContent = buildJsRunner(testCases)
+    dockerExecCmd = ['node', '/sandbox/runner.js']
+  }
 
   try {
     // ── Write user code and runner to temp dir ─────────────────
-    fs.writeFileSync(path.join(tmpDir, codeFile),   code,                                  'utf8')
-    fs.writeFileSync(path.join(tmpDir, runnerFile), isPython
-      ? buildPyRunner(testCases)
-      : buildJsRunner(testCases),                                                           'utf8')
+    fs.writeFileSync(path.join(tmpDir, codeFile),   code,          'utf8')
+    fs.writeFileSync(path.join(tmpDir, runnerFile), runnerContent, 'utf8')
 
     // ── docker run with all security flags ─────────────────────
     const dockerArgs = [
       'run',
       '--network',     'none',            // no internet
-      '--memory',      '256m',            // 256 MB RAM hard cap
-      '--memory-swap', '256m',            // no swap
+      '--memory',      '512m',            // 512 MB RAM cap (needed for C++ / Java compilation)
+      '--memory-swap', '512m',            // no swap
       '--cpus',        '0.5',             // half a CPU core
       '--pids-limit',  '50',              // fork bomb prevention
       '--read-only',                      // immutable root filesystem
-      '--tmpfs',       '/tmp:noexec,nosuid,nodev,size=32m', // scratch only, no exec
+      '--tmpfs',       '/tmp:exec,nosuid,nodev,size=64m', // scratch & binary execution permitted in tmpfs
       '--rm',                             // auto-remove after exit
       '--user',        'sandbox',         // run as non-root
       '-v',            `${tmpDir}:/sandbox:ro`, // user code — read only
       DOCKER_IMAGE,
-      cmd,
-      `/sandbox/${runnerFile}`,
+      ...dockerExecCmd,
     ]
 
     const startTime = Date.now()

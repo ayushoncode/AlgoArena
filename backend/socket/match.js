@@ -156,7 +156,11 @@ function registerMatch(io) {
       const isCustom = match.isCustom || String(roomId).includes('custom')
       const winnerRating = opponent?.rating ?? 1200
       const loserRating  = elo_rating ?? 1200
-      const { winnerDelta: rawWinDelta, loserDelta: rawLossDelta } = calculateElo({ winnerRating, loserRating })
+      const { winnerDelta: rawWinDelta, loserDelta: rawLossDelta } = calculateElo({
+        winnerRating,
+        loserRating,
+        difficulty: match.difficulty || 'medium',
+      })
 
       const winnerDelta = isCustom ? 0 : rawWinDelta
       const loserDelta  = isCustom ? 0 : rawLossDelta
@@ -271,7 +275,13 @@ function registerMatch(io) {
         const isCustom = match.isCustom || roomId.includes('custom')
         const winnerRating = elo_rating    ?? 1200
         const loserRating  = opponent?.elo_rating ?? 1200
-        const { winnerDelta: rawWinDelta, loserDelta: rawLossDelta } = calculateElo({ winnerRating, loserRating })
+        const solveTimeSec = Math.round((Date.now() - (match.startedAt || Date.now())) / 1000)
+        const { winnerDelta: rawWinDelta, loserDelta: rawLossDelta } = calculateElo({
+          winnerRating,
+          loserRating,
+          difficulty,
+          solveTimeSec,
+        })
 
         const winnerDelta = isCustom ? 0 : rawWinDelta
         const loserDelta  = isCustom ? 0 : rawLossDelta
@@ -371,6 +381,67 @@ function registerMatch(io) {
   })
 }
 
+/* ── Called by verdictSubscriber for Docker sandbox verdicts ─── */
+function handleVerdict(payload, io) {
+  const { roomId, userId, username, verdict, totalTests, passedTests, testResults, runtimeMs } = payload
+
+  // Broadcast to the match room
+  io.to(roomId).emit('submission_result', {
+    userId,
+    username,
+    verdict,
+    totalTests,
+    passedTests,
+    testResults,
+    runtimeMs,
+  })
+
+  if (verdict === 'ACCEPTED') {
+    const match = activeMatches.get(roomId)
+    const opponent = match?.players?.find(p => p.userId !== userId)
+
+    if (match?.disconnectTimers) {
+      for (const timer of match.disconnectTimers.values()) clearTimeout(timer)
+    }
+
+    const isCustom = match?.isCustom || String(roomId).includes('custom')
+    const winnerRating = match?.players?.find(p => p.userId === userId)?.rating ?? 1200
+    const loserRating  = opponent?.rating ?? 1200
+    const solveTimeSec = Math.round((Date.now() - (match?.startedAt || Date.now())) / 1000)
+    const { winnerDelta: rawWinDelta, loserDelta: rawLossDelta } = calculateElo({
+      winnerRating,
+      loserRating,
+      difficulty: match?.difficulty,
+      solveTimeSec,
+    })
+
+    const winnerDelta = isCustom ? 0 : rawWinDelta
+    const loserDelta  = isCustom ? 0 : rawLossDelta
+
+    const endPayload = {
+      roomId,
+      topic: match?.topic,
+      difficulty: match?.difficulty,
+      isCustom,
+      winner: { userId, username, rating: winnerRating, delta: winnerDelta },
+      loser: opponent ? { userId: opponent.userId, username: opponent.username, rating: loserRating, delta: loserDelta } : null,
+    }
+
+    io.to(roomId).emit('match_end', endPayload)
+
+    resolveMatch({
+      dbMatchId: match?.dbMatchId,
+      winner: endPayload.winner,
+      loser: endPayload.loser ?? { userId: null, rating: loserRating },
+      winnerDelta,
+      loserDelta,
+      isCustom,
+    })
+
+    activeMatches.delete(roomId)
+  }
+}
+
 /* ── Called by matchmaking or customRoom when a room is created ─ */
 function trackRoom(roomId, dbMatchId, problemId, isCustom = false, players = []) {
   if (activeMatches.has(roomId)) {
@@ -384,4 +455,4 @@ function trackRoom(roomId, dbMatchId, problemId, isCustom = false, players = [])
   }
 }
 
-module.exports = { registerMatch, trackRoom }
+module.exports = { registerMatch, trackRoom, handleVerdict }

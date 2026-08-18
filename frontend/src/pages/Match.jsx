@@ -58,17 +58,212 @@ function defineTheme(monaco) {
 }
 
 /* ════════════════════════════════════════════════
-   STARTER TEMPLATES
+   STARTER TEMPLATES & DYNAMIC GENERATOR
 ════════════════════════════════════════════════ */
-const TEMPLATES = {
-  javascript: `/**
- * @param {number[]} nums
- * @param {number} target
- * @return {number[]}
+function splitArgs(inputStr) {
+  if (!inputStr) return []
+  const str = inputStr.replace(/\\n/g, ', ').trim()
+  const list = []
+  let depth = 0
+  let inQuote = false
+  let cur = ''
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i]
+    if (c === '"' && (i === 0 || str[i-1] !== '\\')) inQuote = !inQuote
+    if (!inQuote) {
+      if (c === '[' || c === '{') depth++
+      else if (c === ']' || c === '}') depth--
+      else if (c === ',' && depth === 0) {
+        if (cur.trim()) list.push(cur.trim())
+        cur = ''
+        continue
+      }
+    }
+    cur += c
+  }
+  if (cur.trim()) list.push(cur.trim())
+  return list
+}
+
+function getParamInfo(token, index, total, title = '', topic = '') {
+  const t = token.trim()
+  const lowerTitle = title.toLowerCase()
+  const lowerTopic = topic.toLowerCase()
+
+  if (t.startsWith('[') && t.endsWith(']')) {
+    let name = 'nums'
+    if (lowerTopic.includes('linked') || lowerTitle.includes('linked') || lowerTitle.includes('list')) name = 'head'
+    else if (lowerTopic.includes('tree') || lowerTitle.includes('tree') || lowerTitle.includes('bst')) name = 'root'
+    else if (lowerTitle.includes('stock') || lowerTitle.includes('price')) name = 'prices'
+    else if (lowerTitle.includes('water') || lowerTitle.includes('height')) name = 'height'
+    else if (lowerTitle.includes('interval')) name = 'intervals'
+    else if (lowerTitle.includes('matrix') || lowerTitle.includes('island')) name = 'grid'
+    else if (total > 1 && index === 0) name = 'nums'
+    else if (total > 1 && index === 1) name = 'nums2'
+
+    const isMatrix = t.startsWith('[[')
+    return {
+      name,
+      jsType: isMatrix ? 'number[][]' : 'number[]',
+      pyType: isMatrix ? 'list[list[int]]' : 'list[int]',
+      javaType: isMatrix ? 'int[][]' : 'int[]',
+      cppType: isMatrix ? 'vector<vector<int>>&' : 'vector<int>&',
+      defaultVal: isMatrix ? 'new int[][]{}' : 'new int[]{}',
+      cppDefault: '{}',
+    }
+  }
+
+  if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
+    let name = 's'
+    if (total > 1 && index === 1) name = 't'
+    if (lowerTitle.includes('word')) name = index === 0 ? 'word1' : 'word2'
+    return {
+      name,
+      jsType: 'string',
+      pyType: 'str',
+      javaType: 'String',
+      cppType: 'string',
+      defaultVal: '""',
+      cppDefault: '""',
+    }
+  }
+
+  if (t === 'true' || t === 'false') {
+    return {
+      name: 'flag',
+      jsType: 'boolean',
+      pyType: 'bool',
+      javaType: 'boolean',
+      cppType: 'bool',
+      defaultVal: 'false',
+      cppDefault: 'false',
+    }
+  }
+
+  // Number
+  let name = 'target'
+  if (lowerTitle.includes('stair') || lowerTitle.includes('fib') || total === 1) name = 'n'
+  else if (lowerTitle.includes('kth') || lowerTitle.includes('rotate') || index === 1) name = 'k'
+  else if (total === 3 && index === 1) name = 'p'
+  else if (total === 3 && index === 2) name = 'q'
+  else if (total === 2 && index === 0) name = 'n'
+  else if (total === 2 && index === 1) name = 'target'
+
+  return {
+    name,
+    jsType: 'number',
+    pyType: 'int',
+    javaType: 'int',
+    cppType: 'int',
+    defaultVal: '0',
+    cppDefault: '0',
+  }
+}
+
+function getReturnTypeInfo(outputStr) {
+  if (!outputStr) return { jsType: 'any', pyType: 'any', javaType: 'int', cppType: 'int', retValJava: '0', retValCpp: '0' }
+  const out = outputStr.trim()
+  if (out.startsWith('[') && out.endsWith(']')) {
+    const isMatrix = out.startsWith('[[')
+    return {
+      jsType: isMatrix ? 'number[][]' : 'number[]',
+      pyType: isMatrix ? 'list[list[int]]' : 'list[int]',
+      javaType: isMatrix ? 'int[][]' : 'int[]',
+      cppType: isMatrix ? 'vector<vector<int>>' : 'vector<int>',
+      retValJava: isMatrix ? 'new int[][]{}' : 'new int[]{}',
+      retValCpp: '{}',
+    }
+  }
+  if (out === 'true' || out === 'false') {
+    return {
+      jsType: 'boolean',
+      pyType: 'bool',
+      javaType: 'boolean',
+      cppType: 'bool',
+      retValJava: 'false',
+      retValCpp: 'false',
+    }
+  }
+  if (out.startsWith('"') && out.endsWith('"')) {
+    return {
+      jsType: 'string',
+      pyType: 'str',
+      javaType: 'String',
+      cppType: 'string',
+      retValJava: '""',
+      retValCpp: '""',
+    }
+  }
+  return {
+    jsType: 'number',
+    pyType: 'int',
+    javaType: 'int',
+    cppType: 'int',
+    retValJava: '0',
+    retValCpp: '0',
+  }
+}
+
+function buildStarterTemplate(problem, lang) {
+  if (!problem || !problem.sample_input) {
+    return TEMPLATES[lang] || TEMPLATES.javascript
+  }
+
+  const rawTokens = splitArgs(problem.sample_input)
+  const params = rawTokens.map((tok, i) => getParamInfo(tok, i, rawTokens.length, problem.title, problem.topic))
+  const ret = getReturnTypeInfo(problem.sample_output)
+
+  const jsParamNames = params.map(p => p.name).join(', ')
+  const jsDocParams = params.map(p => ` * @param {${p.jsType}} ${p.name}`).join('\n')
+
+  const pyParams = params.map(p => `${p.name}: ${p.pyType}`).join(', ')
+  const javaParams = params.map(p => `${p.javaType} ${p.name}`).join(', ')
+  const cppParams = params.map(p => `${p.cppType} ${p.name}`).join(', ')
+
+  if (lang === 'python') {
+    return `class Solution:
+    def solution(self${pyParams ? ', ' + pyParams : ''}) -> ${ret.pyType}:
+        # write your solution here
+        pass`
+  }
+
+  if (lang === 'java') {
+    return `class Solution {
+    public ${ret.javaType} solution(${javaParams}) {
+        // write your solution here
+        return ${ret.retValJava};
+    }
+}`
+  }
+
+  if (lang === 'cpp') {
+    return `#include <vector>
+#include <string>
+using namespace std;
+
+class Solution {
+public:
+    ${ret.cppType} solution(${cppParams}) {
+        // write your solution here
+        return ${ret.retValCpp};
+    }
+};`
+  }
+
+  // Default javascript
+  return `/**
+${jsDocParams}
+ * @return {${ret.jsType}}
  */
-function solution(nums, target) {
+function solution(${jsParamNames}) {
   // write your solution here
   
+}`
+}
+
+const TEMPLATES = {
+  javascript: `function solution(nums, target) {
+  // write your solution here
 }`,
   python: `class Solution:
     def solution(self, nums: list[int], target: int) -> list[int]:
@@ -193,7 +388,7 @@ function PlayerHeader({ player, isMe, verdict }) {
 /* ════════════════════════════════════════════════
    PROBLEM PANEL
 ════════════════════════════════════════════════ */
-function ProblemPanel({ topic, difficulty }) {
+function ProblemPanel({ topic, difficulty, onProblemLoaded }) {
   const [problem, setProblem]   = useState(null)
   const [loading, setLoading]   = useState(true)
   const [collapsed, setCollapsed] = useState(false)
@@ -202,7 +397,10 @@ function ProblemPanel({ topic, difficulty }) {
     if (!topic) return
     api.get(`/api/problems?topic=${topic}&difficulty=${difficulty}`)
       .then(({ data }) => {
-        if (data?.length) setProblem(data[0])
+        if (data?.length) {
+          setProblem(data[0])
+          if (onProblemLoaded) onProblemLoaded(data[0])
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -407,9 +605,11 @@ export default function Match() {
   const { display: timerDisplay, urgent, remaining } = useMatchTimer(startedAt)
 
   // Editor state
-  const [lang,    setLang]    = useState('javascript')
-  const [code,    setCode]    = useState(TEMPLATES.javascript)
-  const [submitting, setSubmitting] = useState(false)
+  const [activeProblem, setActiveProblem] = useState(null)
+  const [userHasTyped,  setUserHasTyped]  = useState(false)
+  const [lang,          setLang]          = useState('javascript')
+  const [code,          setCode]          = useState(TEMPLATES.javascript)
+  const [submitting,    setSubmitting]    = useState(false)
 
   // Verdicts & Test details & Disconnect & Opponent Progress state
   const [myVerdict,          setMyVerdict]          = useState(null)
@@ -517,9 +717,16 @@ export default function Match() {
     }
   }, [remaining, navigate, roomId, matchState])
 
+  function handleProblemLoaded(p) {
+    setActiveProblem(p)
+    if (!userHasTyped) {
+      setCode(buildStarterTemplate(p, lang))
+    }
+  }
+
   function handleLangChange(newLang) {
     setLang(newLang)
-    setCode(TEMPLATES[newLang])
+    setCode(buildStarterTemplate(activeProblem, newLang))
   }
 
   function handleSubmit() {
@@ -654,6 +861,7 @@ export default function Match() {
             topic={matchState?.topic}
             difficulty={matchState?.difficulty}
             forcedWidth={probPanel.width}
+            onProblemLoaded={handleProblemLoaded}
           />
         </div>
 
@@ -705,6 +913,7 @@ export default function Match() {
               value={code}
               onChange={v => {
                 const val = v ?? ''
+                setUserHasTyped(true)
                 setCode(val)
                 const lineCount = val.split('\n').length
                 const charCount = val.length

@@ -44,16 +44,20 @@ const CONCURRENCY      = parseInt(process.env.WORKER_CONCURRENCY, 10) || 3
 
 // ── Redis connections ──────────────────────────────────────────────
 // BullMQ requires a dedicated non-subscriber connection.
+const redisTLS = REDIS_URL.startsWith('rediss://') ? { tls: { rejectUnauthorized: false } } : {}
+
 const workerConnection = new Redis(REDIS_URL, {
   maxRetriesPerRequest: null,  // required by BullMQ
   enableReadyCheck:     false,
   lazyConnect:          false,
+  ...redisTLS,
 })
 
 // Separate publisher connection for verdict pub/sub.
 const publishConnection = new Redis(REDIS_URL, {
   maxRetriesPerRequest: 3,
   enableReadyCheck:     false,
+  ...redisTLS,
 })
 
 // ── PostgreSQL ─────────────────────────────────────────────────────
