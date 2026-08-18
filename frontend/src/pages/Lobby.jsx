@@ -337,7 +337,7 @@ export default function Lobby() {
   const elo     = user?.elo_rating ?? 1200
   const diffObj = DIFFS.find(d => d.id === diff)
   const ch      = todayChallenge()
-  const { connected, emit, on, off } = useSocket()
+  const { connected, emit, on, off, socket } = useSocket()
 
   // Listen for match_found — navigate to match room
   useEffect(() => {
@@ -351,8 +351,13 @@ export default function Lobby() {
 
   function startQueue() {
     if (!topic) return
-    emit('join_queue', { topic, difficulty: diff })
     setQueuing(true)
+    if (connected) {
+      emit('join_queue', { topic, difficulty: diff })
+    } else {
+      // Socket still connecting — emit once it's ready
+      socket.once('connect', () => emit('join_queue', { topic, difficulty: diff }))
+    }
   }
 
   function cancelQueue() {

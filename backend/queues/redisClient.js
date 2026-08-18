@@ -23,11 +23,13 @@ function makeRedisConnection(overrideOptions = {}) {
     return null
   }
 
+  const isTLS = url.startsWith('rediss://')
+
   return new Redis(url, {
     maxRetriesPerRequest: null,   // BullMQ requirement
     enableReadyCheck:     false,
     lazyConnect:          false,
-    // Upstash uses rediss:// (TLS) — ioredis auto-detects from the URL scheme
+    ...(isTLS ? { tls: { rejectUnauthorized: false } } : {}),
     ...overrideOptions,
   })
 }
