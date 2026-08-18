@@ -6,6 +6,92 @@ AlgoArena is a real-time 1v1 platform where developers battle head-to-head on Da
 
 ---
 
+## 🚀 Run Locally
+
+### Prerequisites
+
+- Node.js 18 or newer
+- A PostgreSQL database
+- A Redis instance for matchmaking and submission queues
+- Docker, if you want to run the sandboxed judge worker
+
+### 1. Install dependencies
+
+Run these commands from the repository root:
+
+```powershell
+cd backend
+npm install
+
+cd ../frontend
+npm install
+
+cd ../workers
+npm install
+```
+
+### 2. Configure environment variables
+
+Create `backend/.env`:
+
+```env
+PORT=4000
+NODE_ENV=development
+DATABASE_URL=your_postgresql_connection_string
+JWT_SECRET=your_long_random_jwt_secret
+JWT_EXPIRES_IN=7d
+CLIENT_URL=http://localhost:5173
+REDIS_URL=your_redis_connection_string
+```
+
+Create `workers/.env`:
+
+```env
+REDIS_URL=your_redis_connection_string
+DATABASE_URL=your_postgresql_connection_string
+NODE_ENV=development
+SANDBOX_IMAGE=algoarena-sandbox
+SANDBOX_TIMEOUT_MS=5000
+WORKER_CONCURRENCY=3
+```
+
+Do not commit either `.env` file. They are ignored by Git.
+
+### 3. Set up the database
+
+Run [`backend/db/schema.sql`](backend/db/schema.sql) in your PostgreSQL or Supabase SQL editor. Seed data can be loaded with the SQL files in `backend/db/`.
+
+Verify the connection and required tables:
+
+```powershell
+cd backend
+npm run db:verify
+```
+
+### 4. Start the services
+
+Open three terminals from the repository root:
+
+```powershell
+# Terminal 1: API and Socket.io server
+cd backend
+npm start
+```
+
+```powershell
+# Terminal 2: Frontend
+cd frontend
+npm run dev -- --host localhost
+```
+
+```powershell
+# Terminal 3: Submission worker
+cd workers
+npm start
+```
+
+Open the app at [http://localhost:5173](http://localhost:5173). The API health check is available at [http://localhost:4000/health](http://localhost:4000/health).
+
 ## 🎮 What You Can Do
 
 ### ⚡ Real-Time 1v1 Battles
