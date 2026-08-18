@@ -1,4 +1,4 @@
-# ⚔️ AlgoArena
+# ⚔️ AlgoArena 
 
 **Chess.com for competitive coding.**
 
