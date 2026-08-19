@@ -1,12 +1,24 @@
 /**
- * backend/services/judge.js — Safe in-memory JavaScript/Python code execution engine.
- * Evaluates code against PostgreSQL test cases with strict timeouts and error handling.
+ * backend/services/judge.js — Multi-language code execution engine.
+ *
+ * JavaScript  → fast in-process Node.js vm (no Docker overhead)
+ * Python      → Docker sandbox via workers/sandbox.js
+ * C++ / Java  → Docker sandbox via workers/sandbox.js
  */
 
 'use strict'
 
-const vm = require('vm')
-const db = require('../db')
+const vm   = require('vm')
+const path = require('path')
+const db   = require('../db')
+
+// Load sandbox from workers folder (sibling of backend)
+let sandboxRunner = null
+try {
+  sandboxRunner = require(path.join(__dirname, '../../workers/sandbox'))
+} catch {
+  console.warn('[Judge] workers/sandbox.js not found — C++/Python/Java will return RUNTIME_ERROR')
+}
 
 /**
  * Deep equality check for test outputs (handles arrays, objects, primitives, booleans).
@@ -27,7 +39,7 @@ function compareOutputs(actual, expectedStr) {
 
   if (normActual === normExpected) return true
 
-  // Try parsing JSON for structural comparison (e.g. [0,1] vs [0, 1] or [[1,6],[8,10]] vs [[1,6], [8,10]])
+  // Try parsing JSON for structural comparison (e.g. [0,1] vs [0, 1])
   try {
     const jsonActual = JSON.parse(normActual)
     const jsonExpected = JSON.parse(normExpected)
@@ -44,7 +56,7 @@ function compareOutputs(actual, expectedStr) {
 }
 
 /**
- * Evaluate JavaScript submission against test cases.
+ * Evaluate JavaScript submission against test cases (fast in-process vm).
  */
 async function evaluateJavaScript(code, testCases) {
   const testResults = []
@@ -128,6 +140,27 @@ async function evaluateJavaScript(code, testCases) {
 }
 
 /**
+ * Evaluate Python / C++ / Java through the Docker sandbox.
+ */
+async function evaluateSandbox(code, language, testCases) {
+  if (!sandboxRunner) {
+    return {
+      verdict: 'RUNTIME_ERROR',
+      totalTests: testCases.length,
+      passedTests: 0,
+      runtimeMs: 0,
+      testResults: testCases.map((_, i) => ({
+        testIndex: i + 1, passed: false,
+        input: '[N/A]', expected: '[N/A]', actual: '[Error]',
+        error: 'Judge sandbox not available on this server',
+        isHidden: false,
+      })),
+    }
+  }
+  return sandboxRunner.runSandbox({ code, language, testCases })
+}
+
+/**
  * Main evaluation entry point.
  */
 async function evaluateSubmission(problemId, code, language = 'javascript') {
@@ -152,13 +185,15 @@ async function evaluateSubmission(problemId, code, language = 'javascript') {
       }
     }
 
-    // 2. Execute evaluation
-    if (language === 'javascript' || language === 'js') {
+    const lang = (language || 'javascript').toLowerCase()
+
+    // 2. Route to correct evaluator by language
+    if (lang === 'javascript' || lang === 'js') {
       return await evaluateJavaScript(code, testCases)
     }
 
-    // Default fallback for Python/other languages for now
-    return await evaluateJavaScript(code, testCases)
+    // Python, C++, Java → Docker sandbox
+    return await evaluateSandbox(code, lang, testCases)
 
   } catch (err) {
     console.error('[Judge Error]', err)

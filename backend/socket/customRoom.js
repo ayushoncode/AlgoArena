@@ -27,16 +27,22 @@ function registerCustomRoom(io) {
     const { id: userId, username, elo_rating } = socket.user
 
     /* ── create_custom_room ───────────────────────────────── */
-    socket.on('create_custom_room', ({ topic, difficulty }) => {
+    socket.on('create_custom_room', async ({ topic, difficulty }) => {
       const code = generateRoomCode()
       const roomId = `room:custom_${code}`
+
+      let hostRating = elo_rating ?? 1200
+      try {
+        const { rows } = await db.query('SELECT elo_rating FROM users WHERE id = $1', [userId])
+        if (rows[0]?.elo_rating) hostRating = Number(rows[0].elo_rating) || 1200
+      } catch (err) {}
 
       const roomEntry = {
         code,
         roomId,
         hostUserId: userId,
         hostUsername: username,
-        hostRating: elo_rating ?? 1200,
+        hostRating,
         hostSocketId: socket.id,
         topic,
         difficulty,
@@ -72,6 +78,12 @@ function registerCustomRoom(io) {
 
       const { roomId, topic, difficulty, hostUserId, hostUsername, hostRating, hostSocketId } = roomEntry
 
+      let guestRating = elo_rating ?? 1200
+      try {
+        const { rows } = await db.query('SELECT elo_rating FROM users WHERE id = $1', [userId])
+        if (rows[0]?.elo_rating) guestRating = Number(rows[0].elo_rating) || 1200
+      } catch (err) {}
+
       // Both sockets join the room
       socket.join(roomId)
       const hostSocket = io.sockets.sockets.get(hostSocketId)
@@ -86,7 +98,7 @@ function registerCustomRoom(io) {
         difficulty,
         players: [
           { userId: hostUserId, username: hostUsername, rating: hostRating },
-          { userId, username, rating: elo_rating ?? 1200 },
+          { userId, username, rating: guestRating },
         ],
       }
 
