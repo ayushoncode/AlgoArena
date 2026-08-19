@@ -31,7 +31,7 @@ function last14Days() {
 export function useStreak() {
   const [streak,  setStreak]  = useState(0)
   const [playedToday, setPlayedToday] = useState(false)
-  const [history, setHistory] = useState([])   // set of active date strings
+  const [history, setHistory] = useState(new Set())   // set of active date strings
 
   useEffect(() => {
     const td     = today()

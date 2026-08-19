@@ -210,13 +210,26 @@ export default function Profile() {
   const { streak, history } = useStreak()
   const navigate = useNavigate()
 
-  const [profileUser, setProfileUser] = useState(user)
+  const [profileUser, setProfileUser] = useState(null)
   const [matches, setMatches]         = useState([])
   const [eloHistory, setEloHistory]   = useState([])
-  const [dataLoading, setDataLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(false)
 
+  // Redirect unauthenticated users — must be in useEffect, not during render
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!authLoading && !isAuthenticated) {
+      navigate('/?auth=login')
+    }
+  }, [authLoading, isAuthenticated, navigate])
+
+  // Sync profileUser from context whenever context user updates
+  useEffect(() => {
+    if (user) setProfileUser(prev => prev ?? user)
+  }, [user])
+
+  // Fetch all profile data once auth is confirmed
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return
 
     async function fetchUserData() {
       try {
@@ -237,7 +250,7 @@ export default function Profile() {
     }
 
     fetchUserData()
-  }, [isAuthenticated])
+  }, [isAuthenticated, authLoading])
 
   if (authLoading) return (
     <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
@@ -245,10 +258,7 @@ export default function Profile() {
     </div>
   )
 
-  if (!authLoading && !isAuthenticated) {
-    navigate('/?auth=login')
-    return null
-  }
+  if (!isAuthenticated) return null
 
   const activeUser = profileUser || user
   const elo    = activeUser?.elo_rating ?? 1200
