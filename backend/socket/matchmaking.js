@@ -87,8 +87,18 @@ function registerMatchmaking(io) {
     console.log(`[Socket] authed  user=${username}  id=${socket.id}  transport=${socket.conn.transport.name}`)
 
     /* ── join_queue ─────────────────────────────────────── */
-    socket.on('join_queue', ({ topic, difficulty }) => {
-      const rating = elo_rating ?? 1200    // use the JWT payload rating
+    socket.on('join_queue', async ({ topic, difficulty }) => {
+      let rating = elo_rating ?? 1200
+      try {
+        const { rows } = await db.query('SELECT elo_rating FROM users WHERE id = $1', [userId])
+        if (rows[0]?.elo_rating) {
+          rating = Number(rows[0].elo_rating) || 1200
+          socket.user.elo_rating = rating
+        }
+      } catch (err) {
+        console.warn('[Queue] Could not fetch fresh rating from DB:', err.message)
+      }
+
       const topicKey = `${topic}:${difficulty}`
 
       // Guard: don't let same user join twice

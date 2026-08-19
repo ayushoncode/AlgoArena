@@ -239,7 +239,10 @@ export default function Profile() {
           api.get('/api/users/me/history').catch(() => ({ data: [] })),
           api.get('/api/users/me/elo-history').catch(() => ({ data: [] })),
         ])
-        if (meRes.data) setProfileUser(meRes.data)
+        if (meRes.data) {
+          setProfileUser(meRes.data)
+          refreshUser(meRes.data)
+        }
         setMatches(histRes.data || [])
         setEloHistory(eloRes.data || [])
       } catch (err) {
@@ -250,7 +253,7 @@ export default function Profile() {
     }
 
     fetchUserData()
-  }, [isAuthenticated, authLoading])
+  }, [isAuthenticated, authLoading, refreshUser])
 
   if (authLoading) return (
     <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">

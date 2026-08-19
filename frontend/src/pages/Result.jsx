@@ -61,7 +61,12 @@ function EloCounter({ delta, from }) {
 export default function Result() {
   const { state }  = useLocation()
   const navigate   = useNavigate()
-  const { user }   = useAuth()
+  const { user, refreshUser }   = useAuth()
+
+  // Refresh user data from server so Navbar and Context have live DB ratings immediately
+  useEffect(() => {
+    refreshUser()
+  }, [refreshUser])
 
   const winner = state?.winner
   const loser  = state?.loser
@@ -81,7 +86,10 @@ export default function Result() {
 
   const isCustomMatch = state?.isCustom || state?.roomId?.includes('custom')
   const myDelta  = isCustomMatch ? 0 : (myData?.delta ?? (isWin ? 18 : isDraw ? 0 : -18))
-  const myRating = user?.elo_rating ?? 1200
+
+  // Exact before and after rating
+  const fromRating = myData?.oldRating ?? myData?.rating ?? user?.elo_rating ?? 1200
+  const toRating   = myData?.newRating ?? (fromRating + myDelta)
 
   const topic      = state?.topic      ?? state?.matchState?.topic      ?? '—'
   const difficulty = state?.difficulty ?? state?.matchState?.difficulty ?? '—'
@@ -157,14 +165,14 @@ export default function Result() {
                 <div className="flex items-center justify-center gap-2">
                   <span className="font-mono text-sm px-3 py-1 font-bold"
                         style={{ background: 'rgba(34,211,238,0.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.25)', borderRadius: 3 }}>
-                    Unranked Casual Match · Rating Unchanged ({myRating})
+                    Unranked Casual Match · Rating Unchanged ({fromRating})
                   </span>
                 </div>
               ) : (
                 <div className="flex items-baseline justify-center gap-3">
-                  <span className="font-mono text-lg" style={{ color: '#374151' }}>{myRating}</span>
+                  <span className="font-mono text-lg" style={{ color: '#374151' }}>{fromRating}</span>
                   <span className="font-mono text-2xl" style={{ color: '#374151' }}>→</span>
-                  <EloCounter delta={myDelta} from={myRating} />
+                  <EloCounter delta={myDelta} from={fromRating} />
                   <span className="font-mono text-xl font-bold"
                         style={{ color: myDelta >= 0 ? '#10b981' : '#f43f5e' }}>
                     ({myDelta > 0 ? `+${myDelta}` : myDelta})
@@ -223,10 +231,10 @@ export default function Result() {
           {/* ── Motivational copy ──────────────────────────── */}
           <p className="font-mono text-[10px] text-center" style={{ color: '#374151' }}>
             {isWin
-              ? `rating ${myRating} → ${myRating + myDelta} · keep the streak going`
+              ? `rating ${fromRating} → ${toRating} · keep the streak going`
               : isDraw
               ? 'no rating change · comeback starts now'
-              : `rating ${myRating} → ${myRating + myDelta} · study the topic and rematch`}
+              : `rating ${fromRating} → ${toRating} · study the topic and rematch`}
           </p>
         </div>
       </div>

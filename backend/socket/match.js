@@ -40,59 +40,118 @@ async function createMatchRow({ playerOneId, playerTwoId, topic, difficulty }) {
 }
 
 /* ── Resolve match: update Elo, write history, finish match row ─ */
-async function resolveMatch({ dbMatchId, winner, loser, winnerDelta, loserDelta, isCustom = false }) {
-  if (!dbMatchId) return
+async function resolveMatch({ dbMatchId, winner, loser, isCustom = false, difficulty = 'medium', solveTimeSec = null }) {
+  let winnerOldRating = winner?.rating ?? 1200
+  let loserOldRating  = loser?.rating ?? 1200
+  let winnerDelta = 0
+  let loserDelta  = 0
+  let winnerNewRating = winnerOldRating
+  let loserNewRating  = loserOldRating
 
   const client = await db.pool.connect()
   try {
     await client.query('BEGIN')
 
-    if (!isCustom) {
+    let winnerMatches = 0
+    let loserMatches  = 0
+
+    if (winner?.userId) {
+      const { rows } = await client.query(
+        `SELECT id, username, elo_rating, wins, losses FROM users WHERE id = $1 FOR UPDATE`,
+        [winner.userId]
+      )
+      if (rows[0]) {
+        winnerOldRating = Number(rows[0].elo_rating) || 1200
+        winnerMatches   = (Number(rows[0].wins) || 0) + (Number(rows[0].losses) || 0)
+      }
+    }
+
+    if (loser?.userId) {
+      const { rows } = await client.query(
+        `SELECT id, username, elo_rating, wins, losses FROM users WHERE id = $1 FOR UPDATE`,
+        [loser.userId]
+      )
+      if (rows[0]) {
+        loserOldRating = Number(rows[0].elo_rating) || 1200
+        loserMatches   = (Number(rows[0].wins) || 0) + (Number(rows[0].losses) || 0)
+      }
+    }
+
+    if (!isCustom && winner?.userId) {
+      const calculated = calculateElo({
+        winnerRating: winnerOldRating,
+        loserRating:  loserOldRating,
+        winnerMatches,
+        loserMatches,
+        difficulty,
+        solveTimeSec,
+      })
+      winnerDelta     = calculated.winnerDelta
+      loserDelta      = calculated.loserDelta
+      winnerNewRating = calculated.newWinnerRating
+      loserNewRating  = calculated.newLoserRating
+
       // Update winner
       await client.query(
         `UPDATE users
-         SET elo_rating = elo_rating + $1, wins = wins + 1
+         SET elo_rating = $1, wins = wins + 1
          WHERE id = $2`,
-        [winnerDelta, winner.userId]
-      )
-      // Update loser
-      await client.query(
-        `UPDATE users
-         SET elo_rating = GREATEST(100, elo_rating + $1), losses = losses + 1
-         WHERE id = $2`,
-        [loserDelta, loser.userId]
+        [winnerNewRating, winner.userId]
       )
 
-      // Elo history rows
-      await client.query(
-        `INSERT INTO elo_history (user_id, match_id, old_rating, new_rating, delta)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [winner.userId, dbMatchId, winner.rating, winner.rating + winnerDelta, winnerDelta]
-      )
-      if (loser.userId) {
+      // Update loser
+      if (loser?.userId) {
+        await client.query(
+          `UPDATE users
+           SET elo_rating = $1, losses = losses + 1
+           WHERE id = $2`,
+          [loserNewRating, loser.userId]
+        )
+      }
+
+      // Record in elo_history
+      if (dbMatchId) {
         await client.query(
           `INSERT INTO elo_history (user_id, match_id, old_rating, new_rating, delta)
            VALUES ($1, $2, $3, $4, $5)`,
-          [loser.userId, dbMatchId, loser.rating, loser.rating + loserDelta, loserDelta]
+          [winner.userId, dbMatchId, winnerOldRating, winnerNewRating, winnerDelta]
         )
+        if (loser?.userId) {
+          await client.query(
+            `INSERT INTO elo_history (user_id, match_id, old_rating, new_rating, delta)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [loser.userId, dbMatchId, loserOldRating, loserNewRating, loserDelta]
+          )
+        }
       }
     }
 
     // Close match row
-    await client.query(
-      `UPDATE matches
-       SET status = 'finished', winner_id = $1, ended_at = NOW()
-       WHERE id = $2`,
-      [winner.userId, dbMatchId]
-    )
+    if (dbMatchId && winner?.userId) {
+      await client.query(
+        `UPDATE matches
+         SET status = 'finished', winner_id = $1, ended_at = NOW()
+         WHERE id = $2`,
+        [winner.userId, dbMatchId]
+      )
+    }
 
     await client.query('COMMIT')
-    console.log(`[DB] match resolved  id=${dbMatchId}  winner=${winner.username}  custom=${isCustom}`)
+    console.log(`[DB] match resolved id=${dbMatchId} winner=${winner?.username}(${winnerOldRating}->${winnerNewRating}, +${winnerDelta}) loser=${loser?.username}(${loserOldRating}->${loserNewRating}, ${loserDelta}) custom=${isCustom}`)
   } catch (err) {
     await client.query('ROLLBACK')
     console.error('[DB] resolveMatch transaction failed:', err.message)
   } finally {
     client.release()
+  }
+
+  return {
+    winnerDelta,
+    loserDelta,
+    winnerOldRating,
+    winnerNewRating,
+    loserOldRating,
+    loserNewRating,
   }
 }
 
@@ -154,28 +213,42 @@ function registerMatch(io) {
       }
 
       const isCustom = match.isCustom || String(roomId).includes('custom')
-      const winnerRating = opponent?.rating ?? 1200
-      const loserRating  = elo_rating ?? 1200
-      const { winnerDelta: rawWinDelta, loserDelta: rawLossDelta } = calculateElo({
-        winnerRating,
-        loserRating,
-        difficulty: match.difficulty || 'medium',
-      })
+      const difficulty = match.difficulty || 'medium'
 
-      const winnerDelta = isCustom ? 0 : rawWinDelta
-      const loserDelta  = isCustom ? 0 : rawLossDelta
+      const winnerInfo = opponent ? { userId: opponent.userId, username: opponent.username } : { userId: null, username: 'Opponent' }
+      const loserInfo  = { userId, username }
+
+      const resolved = await resolveMatch({
+        dbMatchId: match.dbMatchId,
+        winner: winnerInfo,
+        loser: loserInfo,
+        isCustom,
+        difficulty,
+      })
 
       const payload = {
         roomId,
         topic: match.topic || 'arrays',
-        difficulty: match.difficulty || 'medium',
+        difficulty,
         isCustom,
         isForfeit: true,
         forfeitUser: username,
-        winner: opponent
-          ? { userId: opponent.userId, username: opponent.username, rating: winnerRating, delta: winnerDelta }
-          : { userId: null, username: 'Opponent', rating: 1200, delta: 0 },
-        loser: { userId, username, rating: loserRating, delta: loserDelta },
+        winner: {
+          userId: winnerInfo.userId,
+          username: winnerInfo.username,
+          oldRating: resolved.winnerOldRating,
+          rating: resolved.winnerOldRating,
+          newRating: resolved.winnerNewRating,
+          delta: resolved.winnerDelta,
+        },
+        loser: {
+          userId: loserInfo.userId,
+          username: loserInfo.username,
+          oldRating: resolved.loserOldRating,
+          rating: resolved.loserOldRating,
+          newRating: resolved.loserNewRating,
+          delta: resolved.loserDelta,
+        },
       }
 
       // Emit to room and directly to resigning socket
@@ -183,18 +256,6 @@ function registerMatch(io) {
       socket.emit('match_end', payload)
 
       console.log(`[Match] RESIGNED ENDED winner=${payload.winner.username} loser=${username} room=${roomId}`)
-
-      if (match.dbMatchId) {
-        await resolveMatch({
-          dbMatchId: match.dbMatchId,
-          winner: payload.winner,
-          loser: payload.loser,
-          winnerDelta,
-          loserDelta,
-          isCustom,
-        })
-      }
-
       activeMatches.delete(roomId)
     })
 
@@ -273,41 +334,45 @@ function registerMatch(io) {
         }
 
         const isCustom = match.isCustom || roomId.includes('custom')
-        const winnerRating = elo_rating    ?? 1200
-        const loserRating  = opponent?.elo_rating ?? 1200
         const solveTimeSec = Math.round((Date.now() - (match.startedAt || Date.now())) / 1000)
-        const { winnerDelta: rawWinDelta, loserDelta: rawLossDelta } = calculateElo({
-          winnerRating,
-          loserRating,
-          difficulty,
+
+        const winnerInfo = { userId, username }
+        const loserInfo  = opponent ? { userId: opponent.id, username: opponent.username } : null
+
+        const resolved = await resolveMatch({
+          dbMatchId: match.dbMatchId,
+          winner: winnerInfo,
+          loser: loserInfo,
+          isCustom,
+          difficulty: difficulty || match.difficulty || 'medium',
           solveTimeSec,
         })
 
-        const winnerDelta = isCustom ? 0 : rawWinDelta
-        const loserDelta  = isCustom ? 0 : rawLossDelta
-
         const payload = {
           roomId,
-          topic,
-          difficulty,
+          topic: topic || match.topic || 'arrays',
+          difficulty: difficulty || match.difficulty || 'medium',
           isCustom,
-          winner: { userId, username,            rating: winnerRating, delta: winnerDelta },
-          loser:  opponent
-            ? { userId: opponent.id, username: opponent.username, rating: loserRating, delta: loserDelta }
-            : null,
+          winner: {
+            userId: winnerInfo.userId,
+            username: winnerInfo.username,
+            oldRating: resolved.winnerOldRating,
+            rating: resolved.winnerOldRating,
+            newRating: resolved.winnerNewRating,
+            delta: resolved.winnerDelta,
+          },
+          loser: loserInfo ? {
+            userId: loserInfo.userId,
+            username: loserInfo.username,
+            oldRating: resolved.loserOldRating,
+            rating: resolved.loserOldRating,
+            newRating: resolved.loserNewRating,
+            delta: resolved.loserDelta,
+          } : null,
         }
 
         io.to(roomId).emit('match_end', payload)
-        console.log(`[Match] ENDED winner=${username}(+${winnerDelta}) loser=${opponent?.username ?? '?'}(${loserDelta}) room=${roomId} custom=${isCustom}`)
-
-        await resolveMatch({
-          dbMatchId:   match.dbMatchId,
-          winner:      payload.winner,
-          loser:       payload.loser ?? { userId: null, rating: loserRating },
-          winnerDelta,
-          loserDelta,
-          isCustom,
-        })
+        console.log(`[Match] ENDED winner=${username}(+${resolved.winnerDelta}) loser=${loserInfo?.username ?? '?'}(${resolved.loserDelta}) room=${roomId} custom=${isCustom}`)
 
         activeMatches.delete(roomId)
       }
@@ -342,35 +407,46 @@ function registerMatch(io) {
           if (!opponent) return
 
           const isCustom = match.isCustom || roomId.includes('custom')
-          const winnerRating = opponent.rating ?? 1200
-          const loserRating  = elo_rating ?? 1200
-          const { winnerDelta: rawWinDelta, loserDelta: rawLossDelta } = calculateElo({ winnerRating, loserRating })
+          const difficulty = match.difficulty || 'medium'
 
-          const winnerDelta = isCustom ? 0 : rawWinDelta
-          const loserDelta  = isCustom ? 0 : rawLossDelta
+          const winnerInfo = { userId: opponent.userId, username: opponent.username }
+          const loserInfo  = { userId, username }
+
+          const resolved = await resolveMatch({
+            dbMatchId: match.dbMatchId,
+            winner: winnerInfo,
+            loser: loserInfo,
+            isCustom,
+            difficulty,
+          })
 
           const payload = {
             roomId,
             topic: match.topic,
-            difficulty: match.difficulty,
+            difficulty,
             isCustom,
             isForfeit: true,
             forfeitUser: username,
-            winner: { userId: opponent.userId, username: opponent.username, rating: winnerRating, delta: winnerDelta },
-            loser:  { userId, username, rating: loserRating, delta: loserDelta },
+            winner: {
+              userId: winnerInfo.userId,
+              username: winnerInfo.username,
+              oldRating: resolved.winnerOldRating,
+              rating: resolved.winnerOldRating,
+              newRating: resolved.winnerNewRating,
+              delta: resolved.winnerDelta,
+            },
+            loser: {
+              userId: loserInfo.userId,
+              username: loserInfo.username,
+              oldRating: resolved.loserOldRating,
+              rating: resolved.loserOldRating,
+              newRating: resolved.loserNewRating,
+              delta: resolved.loserDelta,
+            },
           }
 
           io.to(roomId).emit('match_end', payload)
-          console.log(`[Match] FORFEIT ENDED winner=${opponent.username}(+${winnerDelta}) loser=${username}(${loserDelta}) room=${roomId}`)
-
-          await resolveMatch({
-            dbMatchId: match.dbMatchId,
-            winner: payload.winner,
-            loser: payload.loser,
-            winnerDelta,
-            loserDelta,
-            isCustom,
-          })
+          console.log(`[Match] FORFEIT ENDED winner=${opponent.username}(+${resolved.winnerDelta}) loser=${username}(${resolved.loserDelta}) room=${roomId}`)
 
           activeMatches.delete(roomId)
         }, 30_000)
@@ -382,7 +458,7 @@ function registerMatch(io) {
 }
 
 /* ── Called by verdictSubscriber for Docker sandbox verdicts ─── */
-function handleVerdict(payload, io) {
+async function handleVerdict(payload, io) {
   const { roomId, userId, username, verdict, totalTests, passedTests, testResults, runtimeMs } = payload
 
   // Broadcast to the match room
@@ -405,39 +481,45 @@ function handleVerdict(payload, io) {
     }
 
     const isCustom = match?.isCustom || String(roomId).includes('custom')
-    const winnerRating = match?.players?.find(p => p.userId === userId)?.rating ?? 1200
-    const loserRating  = opponent?.rating ?? 1200
+    const difficulty = match?.difficulty || 'medium'
     const solveTimeSec = Math.round((Date.now() - (match?.startedAt || Date.now())) / 1000)
-    const { winnerDelta: rawWinDelta, loserDelta: rawLossDelta } = calculateElo({
-      winnerRating,
-      loserRating,
-      difficulty: match?.difficulty,
+
+    const winnerInfo = { userId, username }
+    const loserInfo  = opponent ? { userId: opponent.userId, username: opponent.username } : null
+
+    const resolved = await resolveMatch({
+      dbMatchId: match?.dbMatchId,
+      winner: winnerInfo,
+      loser: loserInfo,
+      isCustom,
+      difficulty,
       solveTimeSec,
     })
-
-    const winnerDelta = isCustom ? 0 : rawWinDelta
-    const loserDelta  = isCustom ? 0 : rawLossDelta
 
     const endPayload = {
       roomId,
       topic: match?.topic,
-      difficulty: match?.difficulty,
+      difficulty,
       isCustom,
-      winner: { userId, username, rating: winnerRating, delta: winnerDelta },
-      loser: opponent ? { userId: opponent.userId, username: opponent.username, rating: loserRating, delta: loserDelta } : null,
+      winner: {
+        userId: winnerInfo.userId,
+        username: winnerInfo.username,
+        oldRating: resolved.winnerOldRating,
+        rating: resolved.winnerOldRating,
+        newRating: resolved.winnerNewRating,
+        delta: resolved.winnerDelta,
+      },
+      loser: loserInfo ? {
+        userId: loserInfo.userId,
+        username: loserInfo.username,
+        oldRating: resolved.loserOldRating,
+        rating: resolved.loserOldRating,
+        newRating: resolved.loserNewRating,
+        delta: resolved.loserDelta,
+      } : null,
     }
 
     io.to(roomId).emit('match_end', endPayload)
-
-    resolveMatch({
-      dbMatchId: match?.dbMatchId,
-      winner: endPayload.winner,
-      loser: endPayload.loser ?? { userId: null, rating: loserRating },
-      winnerDelta,
-      loserDelta,
-      isCustom,
-    })
-
     activeMatches.delete(roomId)
   }
 }

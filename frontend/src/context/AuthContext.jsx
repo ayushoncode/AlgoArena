@@ -7,18 +7,24 @@ export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null)   // { id, username, elo_rating, token }
   const [loading, setLoading] = useState(true)   // true while restoring session
 
-  const refreshUser = useCallback(async () => {
+  const refreshUser = useCallback(async (explicitData) => {
     try {
       const token = localStorage.getItem('aa_token')
-      if (!token) return
-      const { data } = await api.get('/api/users/me')
-      if (data) {
-        setUser(prev => prev ? { ...prev, ...data } : { ...data, token })
-        localStorage.setItem('aa_user', JSON.stringify(data))
+      if (!token) return null
+      let updated = explicitData
+      if (!updated) {
+        const { data } = await api.get('/api/users/me')
+        updated = data
+      }
+      if (updated) {
+        setUser(prev => ({ ...(prev || {}), ...updated, token }))
+        localStorage.setItem('aa_user', JSON.stringify(updated))
+        return updated
       }
     } catch (e) {
       console.error('[refreshUser error]', e)
     }
+    return null
   }, [])
 
   // ── Restore session from localStorage on first mount & fetch fresh user data ──

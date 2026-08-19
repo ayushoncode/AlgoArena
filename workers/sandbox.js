@@ -36,6 +36,7 @@ const fs              = require('fs')
 const path            = require('path')
 const os              = require('os')
 const { randomBytes } = require('crypto')
+const { buildJavaRunner } = require('./javaRunner')
 
 const DOCKER_IMAGE  = process.env.SANDBOX_IMAGE       || 'algoarena-sandbox'
 const TIMEOUT_MS    = parseInt(process.env.SANDBOX_TIMEOUT_MS, 10) || 5000
@@ -176,13 +177,15 @@ function buildCppRunner(testCases) {
 #include <queue>
 #include <stack>
 #include <cmath>
+#include <climits>
+#include <numeric>
 #include <nlohmann/json.hpp>
-
-// Include user's solution
-#include "/sandbox/solution.cpp"
 
 using json = nlohmann::json;
 using namespace std;
+
+// Include user's solution AFTER std headers so vector/string/etc. are visible
+#include "/sandbox/solution.cpp"
 
 template<typename Ret, typename Class, typename... Args>
 json invokeMember(Ret (Class::*method)(Args...), Class& obj, const json& args) {
@@ -245,231 +248,10 @@ int main() {
 `
 }
 
-/**
- * Build a Java runner script.
- * Uses reflection to find and invoke Solution.solution(...) and format output.
- */
-function buildJavaRunner(testCases) {
-  const escapedTestCases = JSON.stringify(testCases).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-  return `import java.lang.reflect.*;
-import java.util.*;
 
-public class Runner {
-    public static void main(String[] args) {
-        try {
-            Class<?> clazz = Class.forName("Solution");
-            Object instance = clazz.getDeclaredConstructor().newInstance();
-            Method targetMethod = null;
-            for (Method m : clazz.getDeclaredMethods()) {
-                if (m.getName().equals("solution")) {
-                    targetMethod = m;
-                    break;
-                }
-            }
+/* buildJavaRunner is imported from ./javaRunner */
 
-            if (targetMethod == null) {
-                System.out.println("{\\"fatal\\":\\"No method named 'solution' found in class Solution\\",\\"results\\":[]}");
-                return;
-            }
 
-            targetMethod.setAccessible(true);
-            Class<?>[] paramTypes = targetMethod.getParameterTypes();
-
-            String rawTestCases = "${escapedTestCases}";
-            List<Map<String, Object>> tcs = parseJsonArrayOfObjects(rawTestCases);
-            StringBuilder out = new StringBuilder();
-            out.append("{\\"results\\":[");
-
-            for (int i = 0; i < tcs.size(); i++) {
-                if (i > 0) out.append(",");
-                Map<String, Object> tc = tcs.get(i);
-                String inputStr = (String) tc.get("input");
-                String expected = (String) tc.get("output");
-                boolean isHidden = Boolean.TRUE.equals(tc.get("is_hidden"));
-
-                long start = System.currentTimeMillis();
-                try {
-                    Object[] parsedArgs = parseArgs("[" + inputStr + "]", paramTypes);
-                    Object ret = targetMethod.invoke(instance, parsedArgs);
-                    long runtime = System.currentTimeMillis() - start;
-                    String actualStr = serializeJson(ret);
-
-                    out.append(String.format("{\\"index\\":%d,\\"actual\\":%s,\\"expected\\":%s,\\"runtimeMs\\":%d,\\"isHidden\\":%b,\\"error\\":null}",
-                        i + 1, escapeJsonString(actualStr), escapeJsonString(expected), runtime, isHidden));
-                } catch (Exception e) {
-                    long runtime = System.currentTimeMillis() - start;
-                    Throwable cause = e.getCause() != null ? e.getCause() : e;
-                    out.append(String.format("{\\"index\\":%d,\\"actual\\":null,\\"expected\\":%s,\\"runtimeMs\\":%d,\\"isHidden\\":%b,\\"error\\":%s}",
-                        i + 1, escapeJsonString(expected), runtime, isHidden, escapeJsonString(cause.getMessage() != null ? cause.getMessage() : cause.toString())));
-                }
-            }
-
-            out.append("]}");
-            System.out.println(out.toString());
-        } catch (Exception e) {
-            String msg = e.getMessage() != null ? e.getMessage() : e.toString();
-            System.out.println("{\\"fatal\\":" + escapeJsonString(msg) + ",\\"results\\":[]}");
-        }
-    }
-
-    private static String escapeJsonString(String s) {
-        if (s == null) return "null";
-        return "\\"" + s.replace("\\\\", "\\\\\\\\").replace("\\"", "\\\\\\"").replace("\\n", "\\\\n").replace("\\r", "") + "\\"";
-    }
-
-    private static String serializeJson(Object obj) {
-        if (obj == null) return "null";
-        if (obj instanceof int[]) {
-            int[] arr = (int[]) obj;
-            StringBuilder sb = new StringBuilder("[");
-            for (int i = 0; i < arr.length; i++) { if (i > 0) sb.append(","); sb.append(arr[i]); }
-            sb.append("]");
-            return sb.toString();
-        }
-        if (obj instanceof long[]) {
-            long[] arr = (long[]) obj;
-            StringBuilder sb = new StringBuilder("[");
-            for (int i = 0; i < arr.length; i++) { if (i > 0) sb.append(","); sb.append(arr[i]); }
-            sb.append("]");
-            return sb.toString();
-        }
-        if (obj instanceof double[]) {
-            double[] arr = (double[]) obj;
-            StringBuilder sb = new StringBuilder("[");
-            for (int i = 0; i < arr.length; i++) { if (i > 0) sb.append(","); sb.append(arr[i]); }
-            sb.append("]");
-            return sb.toString();
-        }
-        if (obj instanceof boolean[]) {
-            boolean[] arr = (boolean[]) obj;
-            StringBuilder sb = new StringBuilder("[");
-            for (int i = 0; i < arr.length; i++) { if (i > 0) sb.append(","); sb.append(arr[i]); }
-            sb.append("]");
-            return sb.toString();
-        }
-        if (obj instanceof String[]) {
-            String[] arr = (String[]) obj;
-            StringBuilder sb = new StringBuilder("[");
-            for (int i = 0; i < arr.length; i++) { if (i > 0) sb.append(","); sb.append("\\"").append(arr[i]).append("\\""); }
-            sb.append("]");
-            return sb.toString();
-        }
-        if (obj instanceof Object[]) {
-            Object[] arr = (Object[]) obj;
-            StringBuilder sb = new StringBuilder("[");
-            for (int i = 0; i < arr.length; i++) { if (i > 0) sb.append(","); sb.append(serializeJson(arr[i])); }
-            sb.append("]");
-            return sb.toString();
-        }
-        if (obj instanceof List) {
-            List<?> l = (List<?>) obj;
-            StringBuilder sb = new StringBuilder("[");
-            for (int i = 0; i < l.size(); i++) { if (i > 0) sb.append(","); sb.append(serializeJson(l.get(i))); }
-            sb.append("]");
-            return sb.toString();
-        }
-        if (obj instanceof String) return "\\"" + obj + "\\"";
-        return obj.toString();
-    }
-
-    private static Object[] parseArgs(String rawArray, Class<?>[] types) {
-        List<String> rawTokens = splitJsonElements(rawArray.trim());
-        Object[] args = new Object[types.length];
-        for (int i = 0; i < types.length; i++) {
-            String tok = i < rawTokens.size() ? rawTokens.get(i) : "";
-            args[i] = convertToken(tok, types[i]);
-        }
-        return args;
-    }
-
-    private static List<String> splitJsonElements(String arr) {
-        List<String> list = new ArrayList<>();
-        if (arr.startsWith("[") && arr.endsWith("]")) {
-            arr = arr.substring(1, arr.length() - 1).trim();
-        }
-        if (arr.isEmpty()) return list;
-        int depth = 0;
-        boolean inQuote = false;
-        StringBuilder cur = new StringBuilder();
-        for (int i = 0; i < arr.length(); i++) {
-            char c = arr.charAt(i);
-            if (c == '"' && (i == 0 || arr.charAt(i - 1) != '\\\\')) inQuote = !inQuote;
-            if (!inQuote) {
-                if (c == '[' || c == '{') depth++;
-                else if (c == ']' || c == '}') depth--;
-                else if (c == ',' && depth == 0) {
-                    list.add(cur.toString().trim());
-                    cur.setLength(0);
-                    continue;
-                }
-            }
-            cur.append(c);
-        }
-        if (cur.length() > 0) list.add(cur.toString().trim());
-        return list;
-    }
-
-    private static Object convertToken(String tok, Class<?> t) {
-        tok = tok.trim();
-        if (t == int.class || t == Integer.class) return Integer.parseInt(tok);
-        if (t == long.class || t == Long.class) return Long.parseLong(tok);
-        if (t == double.class || t == Double.class) return Double.parseDouble(tok);
-        if (t == boolean.class || t == Boolean.class) return Boolean.parseBoolean(tok);
-        if (t == String.class) {
-            if (tok.startsWith("\\"") && tok.endsWith("\\"") && tok.length() >= 2) return tok.substring(1, tok.length() - 1);
-            return tok;
-        }
-        if (t == int[].class) {
-            List<String> items = splitJsonElements(tok);
-            int[] res = new int[items.size()];
-            for (int i = 0; i < items.size(); i++) res[i] = Integer.parseInt(items.get(i).trim());
-            return res;
-        }
-        if (t == String[].class) {
-            List<String> items = splitJsonElements(tok);
-            String[] res = new String[items.size()];
-            for (int i = 0; i < items.size(); i++) {
-                String s = items.get(i).trim();
-                res[i] = (s.startsWith("\\"") && s.endsWith("\\"")) ? s.substring(1, s.length() - 1) : s;
-            }
-            return res;
-        }
-        if (t == List.class) {
-            List<String> items = splitJsonElements(tok);
-            List<Object> res = new ArrayList<>();
-            for (String item : items) {
-                try { res.add(Integer.parseInt(item.trim())); }
-                catch (Exception e) { res.add(item.trim()); }
-            }
-            return res;
-        }
-        return tok;
-    }
-
-    private static List<Map<String, Object>> parseJsonArrayOfObjects(String jsonStr) {
-        List<Map<String, Object>> list = new ArrayList<>();
-        List<String> objs = splitJsonElements(jsonStr);
-        for (String objStr : objs) {
-            Map<String, Object> map = new HashMap<>();
-            if (objStr.startsWith("{") && objStr.endsWith("}")) objStr = objStr.substring(1, objStr.length() - 1);
-            List<String> pairs = splitJsonElements(objStr);
-            for (String pair : pairs) {
-                int col = pair.indexOf(':');
-                if (col > 0) {
-                    String key = pair.substring(0, col).trim().replace("\\"", "");
-                    String val = pair.substring(col + 1).trim();
-                    if (val.startsWith("\\"") && val.endsWith("\\"")) val = val.substring(1, val.length() - 1);
-                    if (key.equals("is_hidden")) map.put(key, Boolean.parseBoolean(val));
-                    else map.put(key, val);
-                }
-            }
-            list.add(map);
-        }
-        return list;
-    }
-}
-`
-}
 
 /* ═══════════════════════════════════════════════════════════════════
    OUTPUT COMPARISON
@@ -507,9 +289,9 @@ function compareOutputs(actual, expected) {
 /* ═══════════════════════════════════════════════════════════════════
    CORE: spawn docker with timeout
  ═══════════════════════════════════════════════════════════════════ */
-function spawnWithTimeout(cmd, args, timeoutMs) {
+function spawnWithTimeout(cmd, args, timeoutMs, opts = {}) {
   return new Promise((resolve, reject) => {
-    const proc       = spawn(cmd, args)
+    const proc       = spawn(cmd, args, opts)
     const stdoutBufs = []
     const stderrBufs = []
 
@@ -638,6 +420,8 @@ async function runSandbox({ code, language, testCases }) {
     const startTime = Date.now()
 
     let stdout
+    let isDockerUnavailable = false
+
     try {
       stdout = await spawnWithTimeout('docker', dockerArgs, TIMEOUT_MS)
     } catch (err) {
@@ -645,8 +429,27 @@ async function runSandbox({ code, language, testCases }) {
         return makeErrorResult('TIME_LIMIT_EXCEEDED', testCases,
           `Time limit exceeded (${TIMEOUT_MS}ms)`, TIMEOUT_MS)
       }
-      // Runtime error before producing output
-      return makeErrorResult('RUNTIME_ERROR', testCases, err.message, Date.now() - startTime)
+      const msg = String(err.message || '')
+      if (msg.includes('Cannot connect to the Docker daemon') || msg.includes('ENOENT') || msg.includes('not found') || msg.includes('docker:')) {
+        isDockerUnavailable = true
+      } else {
+        return makeErrorResult('RUNTIME_ERROR', testCases, err.message, Date.now() - startTime)
+      }
+    }
+
+    if (isDockerUnavailable) {
+      // Fallback: direct runner execution (e.g. inside Railway / cloud container without host Docker socket)
+      const localCmd = dockerExecCmd[0]
+      const localArgs = dockerExecCmd.slice(1).map(arg => arg.replace(/\/sandbox/g, tmpDir))
+      try {
+        stdout = await spawnWithTimeout(localCmd, localArgs, TIMEOUT_MS, { cwd: tmpDir })
+      } catch (err) {
+        if (err.timedOut) {
+          return makeErrorResult('TIME_LIMIT_EXCEEDED', testCases,
+            `Time limit exceeded (${TIMEOUT_MS}ms)`, TIMEOUT_MS)
+        }
+        return makeErrorResult('RUNTIME_ERROR', testCases, err.message, Date.now() - startTime)
+      }
     }
 
     const totalRuntimeMs = Date.now() - startTime

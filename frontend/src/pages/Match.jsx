@@ -315,46 +315,104 @@ function VerdictBadge({ verdict }) {
   )
 }
 /* ════════════════════════════════════════════════
-   TEST CASE RESULTS DRAWER
+   RESULTS DRAWER — LeetCode style (Run + Submit)
 ════════════════════════════════════════════════ */
-function TestCaseDrawer({ testDetails, onClose }) {
-  if (!testDetails) return null
-  const { verdict, passedTests, totalTests, runtimeMs, testResults } = testDetails
-  const isAccepted = verdict === 'ACCEPTED'
+function ResultsDrawer({ runResult, submitResult, onClose }) {
+  const [tab, setTab] = useState('run')
+  const details = tab === 'run' ? runResult : submitResult
+  if (!runResult && !submitResult) return null
+
+  const verdictCfg = {
+    ACCEPTED:            { col: '#10b981', label: 'Accepted ✓' },
+    WRONG_ANSWER:        { col: '#f43f5e', label: 'Wrong Answer ✗' },
+    TIME_LIMIT_EXCEEDED: { col: '#f59e0b', label: 'Time Limit Exceeded' },
+    RUNTIME_ERROR:       { col: '#f43f5e', label: 'Runtime Error' },
+    PENDING:             { col: '#6b7280', label: 'Judging…' },
+  }
+
+  const vc = verdictCfg[details?.verdict] ?? verdictCfg.PENDING
+  const passed = details?.passedTests ?? 0
+  const total  = details?.totalTests ?? 0
 
   return (
-    <div className="shrink-0 border-t animate-fade-in" style={{ background: '#0a0c14', borderColor: '#1e2130', maxHeight: 200, overflowY: 'auto' }}>
-      <div className="flex items-center justify-between px-3 py-1.5" style={{ background: '#07080c', borderBottom: '1px solid #1e2130' }}>
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase font-bold" style={{ color: isAccepted ? '#10b981' : '#f43f5e' }}>
-            {verdict}
-          </span>
-          <span className="font-mono text-[10px]" style={{ color: '#9ca3af' }}>
-            ({passedTests ?? 0}/{totalTests ?? 0} test cases passed · {runtimeMs || 0}ms)
-          </span>
+    <div className="shrink-0 border-t" style={{ background: '#0a0c14', borderColor: '#1e2130', maxHeight: 240, display:'flex', flexDirection:'column' }}>
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-3 py-1.5 shrink-0" style={{ background: '#07080c', borderBottom: '1px solid #1e2130' }}>
+        <div className="flex items-center gap-1">
+          {runResult && (
+            <button onClick={() => setTab('run')}
+              className="font-mono text-[10px] px-2.5 py-1 transition-all"
+              style={{ borderRadius:3, background: tab==='run' ? '#1e2130' : 'transparent',
+                       color: tab==='run' ? '#dde1ea' : '#4b5563', border:`1px solid ${tab==='run'?'#374151':'transparent'}` }}>
+              ▶ Run
+            </button>
+          )}
+          {submitResult && (
+            <button onClick={() => setTab('submit')}
+              className="font-mono text-[10px] px-2.5 py-1 transition-all"
+              style={{ borderRadius:3, background: tab==='submit' ? '#1e2130' : 'transparent',
+                       color: tab==='submit' ? '#dde1ea' : '#4b5563', border:`1px solid ${tab==='submit'?'#374151':'transparent'}` }}>
+              ⬆ Submit
+            </button>
+          )}
         </div>
-        <button onClick={onClose} className="font-mono text-[10px] hover:text-white transition-colors" style={{ color: '#4b5563' }}>✕</button>
+        <div className="flex items-center gap-3">
+          {details && (
+            <span className="font-mono text-[10px] font-bold" style={{ color: vc.col }}>{vc.label}</span>
+          )}
+          {details && total > 0 && (
+            <span className="font-mono text-[9px]" style={{ color: '#9ca3af' }}>
+              {passed}/{total} cases · {details.runtimeMs || 0}ms
+            </span>
+          )}
+          <button onClick={onClose} className="font-mono text-[11px] hover:text-white transition-colors" style={{ color: '#4b5563' }}>✕</button>
+        </div>
       </div>
 
-      <div className="p-3 space-y-2 font-mono text-[10px]">
-        {testResults?.map((tc, idx) => (
-          <div key={idx} className="p-2 rounded" style={{ background: '#0d0f17', border: `1px solid ${tc.passed ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)'}` }}>
-            <div className="flex items-center justify-between mb-1">
-              <span style={{ color: tc.passed ? '#10b981' : '#f43f5e', fontWeight: 'bold' }}>
-                Test Case {tc.testIndex} {tc.passed ? '✓ Passed' : '✗ Failed'}
-              </span>
-              {tc.isHidden && <span className="text-[9px]" style={{ color: '#6b7280' }}>[Hidden]</span>}
-            </div>
-            {!tc.isHidden && (
-              <div className="grid grid-cols-3 gap-2" style={{ color: '#dde1ea' }}>
-                <div className="truncate"><span style={{ color: '#4b5563' }}>Input:</span> {tc.input}</div>
-                <div className="truncate"><span style={{ color: '#4b5563' }}>Expected:</span> {tc.expected}</div>
-                <div className="truncate"><span style={{ color: '#4b5563' }}>Actual:</span> <span style={{ color: tc.passed ? '#10b981' : '#f43f5e' }}>{tc.actual}</span></div>
+      {/* Test case list */}
+      <div className="flex-1 overflow-y-auto p-2.5 space-y-2" style={{ scrollbarWidth:'thin' }}>
+        {details?.testResults?.map((tc, idx) => {
+          const isHiddenFailed = tc.isHidden && !tc.passed
+          const borderCol = tc.passed ? 'rgba(16,185,129,0.25)' : tc.error ? 'rgba(244,63,94,0.35)' : 'rgba(245,158,11,0.3)'
+          return (
+            <div key={idx} className="rounded overflow-hidden" style={{ border:`1px solid ${borderCol}`, background:'#0d0f17' }}>
+              {/* Row header */}
+              <div className="flex items-center justify-between px-3 py-1.5" style={{ background: tc.passed ? 'rgba(16,185,129,0.06)' : 'rgba(244,63,94,0.06)' }}>
+                <span className="font-mono text-[10px] font-bold" style={{ color: tc.passed ? '#10b981' : '#f43f5e' }}>
+                  {tc.passed ? '✓' : '✗'} Test {tc.testIndex}{tc.isHidden ? ' (Hidden)' : ''}
+                </span>
+                {tc.runtimeMs > 0 && <span className="font-mono text-[9px]" style={{ color:'#4b5563' }}>{tc.runtimeMs}ms</span>}
               </div>
-            )}
-            {tc.error && <div className="mt-1" style={{ color: '#f43f5e' }}>Error: {tc.error}</div>}
-          </div>
-        ))}
+
+              {/* Test content */}
+              {!isHiddenFailed && !tc.isHidden && (
+                <div className="px-3 py-2 space-y-1.5">
+                  <div className="font-mono text-[10px]">
+                    <span style={{ color:'#4b5563' }}>Input  </span>
+                    <code style={{ color:'#22d3ee' }}>{tc.input}</code>
+                  </div>
+                  <div className="font-mono text-[10px]">
+                    <span style={{ color:'#4b5563' }}>Expected </span>
+                    <code style={{ color:'#10b981' }}>{tc.expected}</code>
+                  </div>
+                  {!tc.passed && (
+                    <div className="font-mono text-[10px]">
+                      <span style={{ color:'#4b5563' }}>Got  </span>
+                      <code style={{ color: tc.error ? '#f43f5e' : '#f59e0b' }}>
+                        {tc.error ? tc.error.slice(0, 120) : (tc.actual ?? 'null')}
+                      </code>
+                    </div>
+                  )}
+                </div>
+              )}
+              {isHiddenFailed && (
+                <div className="px-3 py-2 font-mono text-[10px]" style={{ color:'#6b7280' }}>
+                  {tc.error ? `Error: ${tc.error.slice(0, 100)}` : 'Output does not match expected'}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -386,12 +444,14 @@ function PlayerHeader({ player, isMe, verdict }) {
 }
 
 /* ════════════════════════════════════════════════
-   PROBLEM PANEL
+   PROBLEM PANEL  — LeetCode-style
+   Width and collapsed state controlled entirely by parent.
+   Parent passes: topic, difficulty, forcedWidth (px), onProblemLoaded, onToggleCollapse
 ════════════════════════════════════════════════ */
-function ProblemPanel({ topic, difficulty, onProblemLoaded }) {
-  const [problem, setProblem]   = useState(null)
-  const [loading, setLoading]   = useState(true)
-  const [collapsed, setCollapsed] = useState(false)
+function ProblemPanel({ topic, difficulty, forcedWidth, collapsed, onToggleCollapse, onProblemLoaded }) {
+  const [problem,   setProblem] = useState(null)
+  const [loading,   setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('description')
 
   useEffect(() => {
     if (!topic) return
@@ -406,108 +466,248 @@ function ProblemPanel({ topic, difficulty, onProblemLoaded }) {
       .finally(() => setLoading(false))
   }, [topic, difficulty])
 
-  const diffCols = { easy:'#10b981', medium:'#f59e0b', hard:'#f43f5e' }
+  const DIFF = {
+    easy:   { col:'#10b981', bg:'rgba(16,185,129,0.1)',  border:'rgba(16,185,129,0.3)',  label:'Easy'   },
+    medium: { col:'#f59e0b', bg:'rgba(245,158,11,0.1)', border:'rgba(245,158,11,0.3)',  label:'Medium' },
+    hard:   { col:'#f43f5e', bg:'rgba(244,63,94,0.1)',  border:'rgba(244,63,94,0.3)',   label:'Hard'   },
+  }
+  const diff = DIFF[difficulty] || DIFF.medium
+
+  /* ---- text parsers ---- */
+  function renderInline(text) {
+    if (!text) return null
+    return text.split(/(`[^`]+`|\*\*[^*]+\*\*|_[^_]+_)/g).map((chunk, i) => {
+      if (chunk.startsWith('`') && chunk.endsWith('`'))
+        return <code key={i} className="font-mono text-[10.5px] px-1 py-px rounded" style={{ background:'#1a2035', color:'#93c5fd', border:'1px solid #1e3050' }}>{chunk.slice(1,-1)}</code>
+      if (chunk.startsWith('**') && chunk.endsWith('**'))
+        return <strong key={i} style={{ color:'#e5e7eb', fontWeight:700 }}>{chunk.slice(2,-2)}</strong>
+      if (chunk.startsWith('_') && chunk.endsWith('_'))
+        return <em key={i} style={{ color:'#d1d5db', fontStyle:'italic' }}>{chunk.slice(1,-1)}</em>
+      return chunk
+    })
+  }
+
+  function parseSections(desc) {
+    if (!desc) return { paragraphs: [], examples: [], constraints: [] }
+    const lines = desc.split('\n')
+    const paragraphs = []
+    const examples   = []
+    const constraints = []
+    let curExample = null
+    let mode = 'para' // 'para' | 'example' | 'constraints'
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      const trimmed = line.trim()
+
+      // Detect example headers
+      if (/^\*\*Example\s*\d+/i.test(trimmed) || /^Example\s*\d+/i.test(trimmed)) {
+        if (curExample) examples.push(curExample)
+        curExample = { input:'', output:'', explanation:'' }
+        mode = 'example'
+        continue
+      }
+      // Detect constraints
+      if (/^\*\*Constraints\*\*|^Constraints:?$/i.test(trimmed)) {
+        if (curExample) { examples.push(curExample); curExample = null }
+        mode = 'constraints'
+        continue
+      }
+
+      if (mode === 'example' && curExample !== null) {
+        if (/^\*\*Input\*\*:?|^Input:?/i.test(trimmed)) {
+          curExample.input = trimmed.replace(/^\*?\*?Input\*?\*?:?\s*/i, '')
+          continue
+        }
+        if (/^\*\*Output\*\*:?|^Output:?/i.test(trimmed)) {
+          curExample.output = trimmed.replace(/^\*?\*?Output\*?\*?:?\s*/i, '')
+          continue
+        }
+        if (/^\*\*Explanation\*\*:?|^Explanation:?/i.test(trimmed)) {
+          curExample.explanation = trimmed.replace(/^\*?\*?Explanation\*?\*?:?\s*/i, '')
+          continue
+        }
+        if (trimmed === '') continue
+        // generic continuation line in example
+        if (!curExample.explanation && !curExample.output) curExample.input += ' ' + trimmed
+        else if (!curExample.explanation) curExample.explanation += ' ' + trimmed
+        continue
+      }
+      if (mode === 'constraints') {
+        if (trimmed.startsWith('-')) constraints.push(trimmed.replace(/^-\s*/, '').replace(/\*\*/g,''))
+        else if (trimmed !== '') mode = 'para'
+        continue
+      }
+      // para mode
+      if (trimmed !== '') paragraphs.push(trimmed)
+    }
+    if (curExample) examples.push(curExample)
+    return { paragraphs, examples, constraints }
+  }
+
+  const parsed = parseSections(problem?.description)
+
+  // Fallback: if no structured examples found, use sample_input/sample_output
+  const sampleExamples = parsed.examples.length > 0
+    ? parsed.examples
+    : (problem?.sample_input ? [{ input: problem.sample_input, output: problem.sample_output || '', explanation: '' }] : [])
 
   return (
     <div
-      className="flex flex-col shrink-0 transition-all duration-200"
+      className="flex flex-col shrink-0 overflow-hidden"
       style={{
-        width: collapsed ? 36 : 300,
-        borderRight: '1px solid #1e2130',
-        background: '#07080c',
-        overflow: 'hidden',
-        position: 'relative',
+        width: collapsed ? 40 : (forcedWidth || 320),
+        minWidth: collapsed ? 40 : 220,
+        borderRight: '1px solid #151929',
+        background: '#0b0d14',
+        transition: 'width 0.2s cubic-bezier(.4,0,.2,1)',
       }}
     >
-      {/* Collapse toggle */}
-      <button
-        onClick={() => setCollapsed(c => !c)}
-        className="absolute top-2 right-2 z-10 font-mono text-[10px] px-1.5 py-0.5 transition-colors"
-        style={{ color:'#374151', background:'#0d0f17', border:'1px solid #1e2130', borderRadius:3 }}
-        title={collapsed ? 'expand problem' : 'collapse'}
+      {/* Collapse / expand toggle strip */}
+      <div
+        onClick={onToggleCollapse}
+        className="flex items-center justify-center shrink-0 cursor-pointer hover:bg-[#111827] transition-colors"
+        style={{ height: 32, borderBottom:'1px solid #151929', gap:6 }}
+        title={collapsed ? 'Expand problem' : 'Collapse'}
       >
-        {collapsed ? '›' : '‹'}
-      </button>
+        {!collapsed && (
+          <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color:'#374151' }}>Problem</span>
+        )}
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+          style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition:'transform 0.2s', color:'#4b5563' }}>
+          <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
 
       {!collapsed && (
-        <div className="flex flex-col h-full overflow-y-auto" style={{ scrollbarWidth:'thin' }}>
-          {/* Header */}
-          <div className="px-4 py-2.5 shrink-0" style={{ borderBottom:'1px solid #1e2130' }}>
-            <p className="font-mono text-[9px] uppercase tracking-widest mb-1"
-               style={{ color:'#374151', letterSpacing:'0.12em' }}>// problem</p>
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Title + metadata */}
+          <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom:'1px solid #151929' }}>
             {loading ? (
-              <div style={{ width:120, height:12, background:'#1e2130', borderRadius:3 }}/>
+              <div className="space-y-2.5">
+                <div style={{ height:16, width:'80%', background:'#151929', borderRadius:4 }}/>
+                <div style={{ height:10, width:'45%', background:'#151929', borderRadius:4 }}/>
+              </div>
             ) : problem ? (
               <>
-                <p className="font-display font-bold text-[13px] leading-tight" style={{ color:'#dde1ea' }}>
+                <h2 className="text-[14px] font-bold leading-snug mb-2"
+                    style={{ color:'#f3f4f6', fontFamily:"'Inter', system-ui, sans-serif", fontWeight:700 }}>
                   {problem.title}
-                </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="font-mono text-[9px] px-1.5 py-0.5"
-                        style={{ background:`${diffCols[difficulty]}15`, color: diffCols[difficulty],
-                                 border:`1px solid ${diffCols[difficulty]}40`, borderRadius:2 }}>
-                    {difficulty}
+                </h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full"
+                        style={{ background:diff.bg, color:diff.col, border:`1px solid ${diff.border}` }}>
+                    {diff.label}
                   </span>
-                  <span className="font-mono text-[9px]" style={{ color:'#374151' }}>{topic}</span>
+                  <span className="font-mono text-[9px] px-2 py-0.5 rounded-full"
+                        style={{ background:'rgba(55,65,81,0.5)', color:'#9ca3af', border:'1px solid #1f2937' }}>
+                    {topic?.replace(':',' · ')}
+                  </span>
                 </div>
               </>
             ) : (
-              <p className="font-mono text-[11px]" style={{ color:'#4b5563' }}>no problem found</p>
+              <p className="font-mono text-[11px]" style={{ color:'#4b5563' }}>No problem found</p>
             )}
           </div>
 
-          {/* Description */}
+          {/* Tab bar — Description / Solutions */}
           {problem && (
-            <div className="px-4 py-3 space-y-4 flex-1">
-              {/* Main description — split on code blocks */}
-              <div className="font-mono text-[11px] leading-relaxed" style={{ color:'#9ca3af' }}>
-                {problem.description.split('```').map((part, i) =>
-                  i % 2 === 0 ? (
-                    <p key={i} style={{ whiteSpace:'pre-wrap', marginBottom: 8 }}>{part.trim()}</p>
-                  ) : (
-                    <pre key={i} className="px-3 py-2 my-2"
-                         style={{ background:'#0d0f17', border:'1px solid #1e2130', borderRadius:3,
-                                  fontSize:10, color:'#dde1ea', overflowX:'auto', whiteSpace:'pre' }}>
-                      {part.trim()}
-                    </pre>
-                  )
-                )}
-              </div>
-
-              {/* Sample I/O */}
-              {problem.sample_input && (
-                <div>
-                  <p className="font-mono text-[9px] uppercase tracking-widest mb-1.5"
-                     style={{ color:'#374151', letterSpacing:'0.12em' }}>// sample input</p>
-                  <pre className="px-3 py-2"
-                       style={{ background:'#0d0f17', border:'1px solid #1e2130', borderRadius:3,
-                                fontSize:10, color:'#22d3ee', whiteSpace:'pre-wrap' }}>
-                    {problem.sample_input}
-                  </pre>
-                </div>
-              )}
-              {problem.sample_output && (
-                <div>
-                  <p className="font-mono text-[9px] uppercase tracking-widest mb-1.5"
-                     style={{ color:'#374151', letterSpacing:'0.12em' }}>// expected output</p>
-                  <pre className="px-3 py-2"
-                       style={{ background:'#0d0f17', border:'1px solid #1e2130', borderRadius:3,
-                                fontSize:10, color:'#10b981', whiteSpace:'pre-wrap' }}>
-                    {problem.sample_output}
-                  </pre>
-                </div>
-              )}
+            <div className="flex shrink-0" style={{ borderBottom:'1px solid #151929' }}>
+              {[['description','Description']].map(([id, label]) => (
+                <button key={id} onClick={() => setActiveTab(id)}
+                  className="px-4 font-sans text-[11px] py-2 transition-colors"
+                  style={{
+                    color: activeTab===id ? '#f97316' : '#4b5563',
+                    borderBottom: activeTab===id ? '2px solid #f97316' : '2px solid transparent',
+                    fontWeight: activeTab===id ? 600 : 400,
+                    background: 'transparent',
+                  }}>
+                  {label}
+                </button>
+              ))}
             </div>
           )}
+
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth:'thin', scrollbarColor:'#1e2130 transparent' }}>
+            {problem && activeTab === 'description' && (
+              <div className="px-4 py-4 space-y-5">
+
+                {/* Problem statement paragraphs */}
+                {parsed.paragraphs.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {parsed.paragraphs.map((p, i) => (
+                      <p key={i} className="text-[12px] leading-relaxed" style={{ color:'#9ca3af' }}>
+                        {renderInline(p)}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  /* fallback: render raw description if parser got nothing */
+                  <div className="space-y-2">
+                    {(problem.description || '').split('\n').filter(l => l.trim() && !l.trim().startsWith('```')).map((line, i) => (
+                      <p key={i} className="text-[12px] leading-relaxed" style={{ color:'#9ca3af' }}>
+                        {renderInline(line.trim())}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {/* Examples */}
+                {sampleExamples.map((ex, idx) => (
+                  <div key={idx}>
+                    <p className="text-[11px] font-semibold mb-2" style={{ color:'#e5e7eb' }}>Example {idx+1}:</p>
+                    <div className="rounded-lg overflow-hidden" style={{ border:'1px solid #1a2035', background:'#0d1120' }}>
+                      <div className="px-3.5 py-3 space-y-2.5">
+                        {ex.input && (
+                          <div>
+                            <span className="font-mono text-[10px] font-bold" style={{ color:'#6b7280' }}>Input: </span>
+                            <code className="font-mono text-[11px]" style={{ color:'#e5e7eb' }}>{ex.input.replace(/\\n/g,'\n')}</code>
+                          </div>
+                        )}
+                        {ex.output && (
+                          <div>
+                            <span className="font-mono text-[10px] font-bold" style={{ color:'#6b7280' }}>Output: </span>
+                            <code className="font-mono text-[11px]" style={{ color:'#e5e7eb' }}>{ex.output}</code>
+                          </div>
+                        )}
+                        {ex.explanation && (
+                          <div>
+                            <span className="font-mono text-[10px] font-bold" style={{ color:'#6b7280' }}>Explanation: </span>
+                            <span className="font-mono text-[10.5px]" style={{ color:'#9ca3af' }}>{ex.explanation}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Constraints */}
+                {parsed.constraints.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-semibold mb-2" style={{ color:'#e5e7eb' }}>Constraints:</p>
+                    <ul className="space-y-1.5">
+                      {parsed.constraints.map((c, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background:'#374151' }}/>
+                          <code className="font-mono text-[10.5px]" style={{ color:'#9ca3af' }}>{renderInline(c)}</code>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Collapsed label */}
+      {/* Collapsed: show vertical label */}
       {collapsed && (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="font-mono text-[9px]" style={{ color:'#374151', writingMode:'vertical-rl', transform:'rotate(180deg)' }}>
-            problem
-          </p>
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 py-4">
+          <span style={{ writingMode:'vertical-rl', transform:'rotate(180deg)', color:'#374151', fontSize:9, fontFamily:'monospace', letterSpacing:'0.1em', textTransform:'uppercase' }}>
+            Problem
+          </span>
         </div>
       )}
     </div>
@@ -585,7 +785,8 @@ export default function Match() {
   const navigate    = useNavigate()
 
   // Panel widths — draggable
-  const probPanel = useDragResize(240, 36, 480)
+  const probPanel = useDragResize(320, 220, 560)
+  const [probCollapsed, setProbCollapsed] = useState(false)
   const oppPanel  = useDragResize(180, 120, 360)
 
   // Match state from navigation or socket
@@ -610,11 +811,13 @@ export default function Match() {
   const [lang,          setLang]          = useState('javascript')
   const [code,          setCode]          = useState(TEMPLATES.javascript)
   const [submitting,    setSubmitting]    = useState(false)
+  const [running,       setRunning]       = useState(false)
 
   // Verdicts & Test details & Disconnect & Opponent Progress state
   const [myVerdict,          setMyVerdict]          = useState(null)
   const [oppVerdict,         setOppVerdict]         = useState(null)
-  const [myTestDetails,      setMyTestDetails]      = useState(null)
+  const [runResult,          setRunResult]          = useState(null)
+  const [submitResult,       setSubmitResult]       = useState(null)
   const [oppDisconnectState, setOppDisconnectState] = useState(null)
   const [oppProgress,        setOppProgress]        = useState(null)
   const [showResignModal,    setShowResignModal]    = useState(false)
@@ -635,21 +838,17 @@ export default function Match() {
       if (userId === user?.id) {
         setMyVerdict(verdict)
         setSubmitting(false)
-        setMyTestDetails({ verdict, totalTests, passedTests, testResults, runtimeMs })
-        if (verdict === 'ACCEPTED') {
-          // Winner — navigate to result after brief delay
-          setTimeout(() => navigate('/result', { state: { result: 'WIN', roomId, verdict, matchState } }), 1800)
-        }
+        setSubmitResult({ verdict, totalTests, passedTests, testResults, runtimeMs })
       } else {
         setOppVerdict(verdict)
-        if (verdict === 'ACCEPTED') {
-          setTimeout(() => navigate('/result', { state: { result: 'LOSS', roomId, verdict: 'ACCEPTED', matchState } }), 1800)
-        }
       }
     }
     function onMatchEnd(payload) {
       if (roomId) localStorage.removeItem(`aa_start_${roomId}`)
-      navigate('/result', { state: { ...payload, roomId } })
+      // Give 1.4s for user to see the green ACCEPTED indicator before going to results
+      setTimeout(() => {
+        navigate('/result', { state: { ...payload, roomId } })
+      }, 1400)
     }
     function onPlayerDisconnected({ userId, username, gracePeriodSec }) {
       if (userId !== user?.id) {
@@ -727,6 +926,30 @@ export default function Match() {
   function handleLangChange(newLang) {
     setLang(newLang)
     setCode(buildStarterTemplate(activeProblem, newLang))
+  }
+
+  async function handleRun() {
+    if (running || !activeProblem?.id) return
+    setRunning(true)
+    setRunResult(null)
+    try {
+      const { data } = await api.post(`/api/problems/${activeProblem.id}/run`, {
+        code,
+        language: lang,
+      })
+      setRunResult(data)
+    } catch (err) {
+      setRunResult({
+        verdict: 'RUNTIME_ERROR',
+        passedTests: 0,
+        totalTests: 0,
+        runtimeMs: 0,
+        testResults: [{ testIndex:1, passed:false, input:'—', expected:'—', actual:null,
+          error: err?.response?.data?.message || err.message, isHidden:false, runtimeMs:0 }],
+      })
+    } finally {
+      setRunning(false)
+    }
   }
 
   function handleSubmit() {
@@ -856,11 +1079,19 @@ export default function Match() {
       <div className="flex flex-1 min-h-0" style={{ overflow:'hidden' }}>
 
         {/* PROBLEM PANEL — resizable */}
-        <div style={{ width: probPanel.width, minWidth: probPanel.width, flexShrink: 0, overflow:'hidden' }}>
+        <div style={{
+          width: probCollapsed ? 40 : probPanel.width,
+          minWidth: probCollapsed ? 40 : 220,
+          flexShrink: 0,
+          overflow: 'hidden',
+          transition: 'width 0.2s cubic-bezier(.4,0,.2,1)',
+        }}>
           <ProblemPanel
             topic={matchState?.topic}
             difficulty={matchState?.difficulty}
             forcedWidth={probPanel.width}
+            collapsed={probCollapsed}
+            onToggleCollapse={() => setProbCollapsed(c => !c)}
             onProblemLoaded={handleProblemLoaded}
           />
         </div>
@@ -890,19 +1121,37 @@ export default function Match() {
                 </button>
               ))}
             </div>
-            <button
-              id="submit-btn"
-              onClick={handleSubmit}
-              disabled={submitting || myVerdict === 'ACCEPTED'}
-              className="font-mono text-[11px] font-bold px-4 py-1.5 transition-all active:scale-[0.97]"
-              style={{
-                background: myVerdict==='ACCEPTED' ? 'rgba(16,185,129,0.15)' : submitting ? '#1e2130' : '#f97316',
-                color:      myVerdict==='ACCEPTED' ? '#10b981'               : submitting ? '#4b5563' : '#07080c',
-                border:     `1px solid ${myVerdict==='ACCEPTED'?'rgba(16,185,129,0.3)':submitting?'#1e2130':'#f97316'}`,
-                borderRadius: 3, cursor: (submitting||myVerdict==='ACCEPTED') ? 'not-allowed' : 'pointer',
-              }}>
-              {myVerdict==='ACCEPTED' ? '✓ accepted' : submitting ? 'judging…' : 'submit →'}
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Run button — sample test cases only */}
+              <button
+                id="run-btn"
+                onClick={handleRun}
+                disabled={running || submitting}
+                className="font-mono text-[11px] px-3.5 py-1.5 transition-all active:scale-[0.97]"
+                style={{
+                  background: running ? '#1e2130' : 'rgba(34,211,238,0.1)',
+                  color:      running ? '#4b5563' : '#22d3ee',
+                  border:     `1px solid ${running ? '#1e2130' : 'rgba(34,211,238,0.3)'}`,
+                  borderRadius: 3, cursor: running ? 'not-allowed' : 'pointer',
+                }}>
+                {running ? 'running…' : '▶ run'}
+              </button>
+
+              {/* Submit button — all test cases */}
+              <button
+                id="submit-btn"
+                onClick={handleSubmit}
+                disabled={submitting || myVerdict === 'ACCEPTED'}
+                className="font-mono text-[11px] font-bold px-4 py-1.5 transition-all active:scale-[0.97]"
+                style={{
+                  background: myVerdict==='ACCEPTED' ? 'rgba(16,185,129,0.15)' : submitting ? '#1e2130' : '#f97316',
+                  color:      myVerdict==='ACCEPTED' ? '#10b981'               : submitting ? '#4b5563' : '#07080c',
+                  border:     `1px solid ${myVerdict==='ACCEPTED'?'rgba(16,185,129,0.3)':submitting?'#1e2130':'#f97316'}`,
+                  borderRadius: 3, cursor: (submitting||myVerdict==='ACCEPTED') ? 'not-allowed' : 'pointer',
+                }}>
+                {myVerdict==='ACCEPTED' ? '✓ accepted' : submitting ? 'judging…' : 'submit →'}
+              </button>
+            </div>
           </div>
 
           {/* Monaco */}
@@ -944,10 +1193,11 @@ export default function Match() {
             />
           </div>
 
-          {/* Test Case Results Drawer */}
-          <TestCaseDrawer
-            testDetails={myTestDetails}
-            onClose={() => setMyTestDetails(null)}
+          {/* Results Drawer — Run + Submit tabs */}
+          <ResultsDrawer
+            runResult={runResult}
+            submitResult={submitResult}
+            onClose={() => { setRunResult(null); setSubmitResult(null) }}
           />
         </div>
 
