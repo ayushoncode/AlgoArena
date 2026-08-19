@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useState, useRef, useEffect } from 'react'
 
@@ -42,29 +42,29 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-5 sm:px-8 h-full flex items-center justify-between">
 
         {/* Wordmark */}
-        <a
-          href="/"
+        <Link
+          to="/"
           className="font-mono font-bold text-base tracking-tight transition-colors"
-          style={{ color:'#dde1ea', letterSpacing:'-0.02em' }}
+          style={{ color:'#dde1ea', letterSpacing:'-0.02em', textDecoration:'none' }}
           onMouseOver={e => e.currentTarget.style.color = '#f97316'}
           onMouseOut={e  => e.currentTarget.style.color = '#dde1ea'}
         >
           algo<span style={{ color:'#f97316' }}>_</span>arena
-        </a>
+        </Link>
 
         {/* Center nav */}
         <div className="hidden sm:flex items-center gap-7">
           {NAV_LINKS.map(([label, href]) => (
-            <a
+            <Link
               key={label}
-              href={href}
+              to={href}
               className="font-mono text-[11px] uppercase tracking-widest transition-colors"
-              style={{ color: pathname === href ? '#f97316' : '#4b5563', letterSpacing:'0.13em' }}
+              style={{ color: pathname === href ? '#f97316' : '#4b5563', letterSpacing:'0.13em', textDecoration:'none' }}
               onMouseOver={e => e.target.style.color = '#dde1ea'}
               onMouseOut={e  => e.target.style.color = pathname === href ? '#f97316' : '#4b5563'}
             >
               {label}
-            </a>
+            </Link>
           ))}
         </div>
 
