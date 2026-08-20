@@ -6,10 +6,15 @@ const express  = require('express')
 const bcrypt   = require('bcryptjs')
 const jwt      = require('jsonwebtoken')
 const db       = require('../db')
+const mailer   = require('../utils/mailer')
 const router   = express.Router()
 
 // In-memory OTP storage: Map<emailOrPhone, { code: string, expiresAt: number, attempts: number }>
 const otpStore = new Map()
+
+// Pending registrations awaiting email verification
+// Map<email, { username, passwordHash, otp, expiresAt, attempts }>
+const pendingRegistrations = new Map()
 
 // Optional Firebase Admin SDK initialization
 let firebaseAdmin = null
@@ -58,17 +63,72 @@ router.post('/send-otp', async (req, res) => {
 
     otpStore.set(cleanEmail, { code: otp, expiresAt, attempts: 0 })
 
-    console.log(`\n🔑 [OTP] Generated for ${cleanEmail} -> ${otp} (Valid for 5m)\n`)
+    // Send real email — falls back to console if SMTP not configured
+    const mailResult = await mailer.sendLoginOtp(cleanEmail, otp)
+    console.log(`🔑 [OTP] ${cleanEmail} -> ${otp} (Valid 5m) | email sent: ${mailResult.sent}`)
 
     return res.status(200).json({
-      message: 'OTP sent successfully to your email',
+      message: 'OTP sent to your email',
       email: cleanEmail,
-      // Provide devOtp when not in strict production mode for instant dev testing
-      devOtp: process.env.NODE_ENV !== 'production' ? otp : undefined,
+      // Only expose devOtp in the API response when SMTP is not configured (dev/local)
+      devOtp: mailResult.devOnly ? otp : undefined,
     })
   } catch (err) {
     console.error('[POST /auth/send-otp]', err)
     return res.status(500).json({ message: 'Failed to send OTP' })
+  }
+})
+
+// ── POST /api/auth/send-registration-otp ─────────────────────
+// Validate fields and send a verification OTP before creating the account
+router.post('/send-registration-otp', async (req, res) => {
+  try {
+    const { username, email, password } = req.body
+
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'Username, email and password are required' })
+    }
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
+      return res.status(400).json({ message: 'Username must be 3–30 chars (letters, numbers, underscore)' })
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      return res.status(400).json({ message: 'Please enter a valid email address' })
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' })
+    }
+
+    const cleanEmail = email.trim().toLowerCase()
+    const cleanUsername = username.trim().toLowerCase()
+
+    // Check for conflicts before sending the OTP
+    const { rows: conflict } = await db.query(
+      `SELECT username, email FROM users WHERE username = $1 OR email = $2`,
+      [cleanUsername, cleanEmail]
+    )
+    if (conflict.length > 0) {
+      const field = conflict[0].email === cleanEmail ? 'email' : 'username'
+      return res.status(409).json({ message: `That ${field} is already taken` })
+    }
+
+    // Hash password now so it's ready when they verify
+    const passwordHash = await bcrypt.hash(password, 12)
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    const expiresAt = Date.now() + 10 * 60 * 1000 // 10 minutes
+
+    pendingRegistrations.set(cleanEmail, { username: cleanUsername, passwordHash, otp, expiresAt, attempts: 0 })
+
+    const mailResult = await mailer.sendEmailVerificationOtp(cleanEmail, otp)
+    console.log(`📧 [REG OTP] ${cleanEmail} -> ${otp} | email sent: ${mailResult.sent}`)
+
+    return res.status(200).json({
+      message: 'Verification code sent to your email',
+      email: cleanEmail,
+      devOtp: mailResult.devOnly ? otp : undefined,
+    })
+  } catch (err) {
+    console.error('[POST /auth/send-registration-otp]', err)
+    return res.status(500).json({ message: 'Failed to send verification code' })
   }
 })
 
@@ -219,30 +279,42 @@ router.post('/firebase', async (req, res) => {
 })
 
 // ── POST /api/auth/register ──────────────────────────────────
+// Now verifies the OTP sent by /send-registration-otp before creating the account
 router.post('/register', async (req, res) => {
   try {
-    const { username, email, password } = req.body
+    const { email, otp } = req.body
 
-    if (!username || !email || !password) {
-      return res.status(400).json({ message: 'username, email and password are required' })
-    }
-    if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
-      return res.status(400).json({ message: 'username must be 3–30 chars, letters/numbers/underscore' })
-    }
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      return res.status(400).json({ message: 'invalid email address' })
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'password must be at least 6 characters' })
+    if (!email || !otp) {
+      return res.status(400).json({ message: 'Email and verification code are required' })
     }
 
-    const hash = await bcrypt.hash(password, 12)
+    const cleanEmail = email.trim().toLowerCase()
+    const pending = pendingRegistrations.get(cleanEmail)
+
+    if (!pending) {
+      return res.status(400).json({ message: 'Verification code expired. Please go back and try again.' })
+    }
+    if (Date.now() > pending.expiresAt) {
+      pendingRegistrations.delete(cleanEmail)
+      return res.status(400).json({ message: 'Verification code has expired. Please go back and try again.' })
+    }
+    if (pending.attempts >= 5) {
+      pendingRegistrations.delete(cleanEmail)
+      return res.status(429).json({ message: 'Too many wrong attempts. Please restart registration.' })
+    }
+    if (pending.otp !== String(otp).trim()) {
+      pending.attempts++
+      return res.status(400).json({ message: 'Invalid verification code. Please check and try again.' })
+    }
+
+    // Valid — consume the pending registration and create the account
+    pendingRegistrations.delete(cleanEmail)
 
     const { rows } = await db.query(
       `INSERT INTO users (username, email, password, is_username_set)
        VALUES ($1, $2, $3, TRUE)
        RETURNING id, username, email, elo_rating, wins, losses, is_username_set, created_at`,
-      [username.toLowerCase(), email.toLowerCase(), hash]
+      [pending.username, cleanEmail, pending.passwordHash]
     )
     const user = rows[0]
     const token = signToken(user)
@@ -254,7 +326,7 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ message: `${field} already taken` })
     }
     console.error('[POST /auth/register]', err)
-    return res.status(500).json({ message: 'internal server error' })
+    return res.status(500).json({ message: 'Registration failed. Please try again.' })
   }
 })
 
@@ -313,12 +385,14 @@ router.post('/forgot-password', async (req, res) => {
 
     otpStore.set(`reset_${cleanEmail}`, { code: otp, expiresAt, attempts: 0 })
 
-    console.log(`\n🔑 [RESET PASSWORD OTP] Generated for ${cleanEmail} -> ${otp} (Valid for 10m)\n`)
+    // Send real email
+    const mailResult = await mailer.sendPasswordResetOtp(cleanEmail, otp)
+    console.log(`🔑 [RESET OTP] ${cleanEmail} -> ${otp} | email sent: ${mailResult.sent}`)
 
     return res.status(200).json({
       message: 'Password reset code sent to your email',
       email: cleanEmail,
-      devOtp: process.env.NODE_ENV !== 'production' ? otp : undefined,
+      devOtp: mailResult.devOnly ? otp : undefined,
     })
   } catch (err) {
     console.error('[POST /auth/forgot-password]', err)

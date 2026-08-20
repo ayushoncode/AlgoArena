@@ -791,58 +791,135 @@ function ForgotPasswordForm({ onBackToLogin }) {
   )
 }
 
-/** Standard Registration Form */
+/** Standard Registration Form — 2-step with email verification */
 function RegisterForm({ onSwitchLogin }) {
   const { login } = useAuth()
   const navigate  = useNavigate()
-  const [form, setForm] = useState({ username:'', email:'', password:'', confirm:'' })
-  const [err,  setErr]  = useState('')
-  const [busy, setBusy] = useState(false)
+  const [step, setStep]     = useState(1) // 1: fill form, 2: enter OTP
+  const [form, setForm]     = useState({ username:'', email:'', password:'', confirm:'' })
+  const [otp, setOtp]       = useState('')
+  const [err, setErr]       = useState('')
+  const [success, setSuccess] = useState('')
+  const [busy, setBusy]     = useState(false)
+  const [devOtp, setDevOtp] = useState(null)
+  const [cooldown, setCooldown] = useState(0)
   const set = f => e => { setForm(p=>({...p,[f]:e.target.value})); setErr('') }
 
-  async function go(e) {
-    e.preventDefault()
-    if (Object.values(form).some(v=>!v)) { setErr('All fields required'); return }
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const t = setInterval(() => setCooldown(c => Math.max(0, c - 1)), 1000)
+    return () => clearInterval(t)
+  }, [cooldown])
+
+  async function handleSendOtp(e) {
+    if (e) e.preventDefault()
+    if (Object.values(form).some(v => !v)) { setErr('All fields required'); return }
     if (!/^[a-zA-Z0-9_]{3,30}$/.test(form.username)) { setErr('Username: 3–30 chars (letters/numbers/_)'); return }
     if (form.password.length < 6) { setErr('Password: min 6 chars'); return }
     if (form.password !== form.confirm) { setErr("Passwords don't match"); return }
 
     setBusy(true)
+    setErr('')
     try {
-      const { data } = await api.post('/api/auth/register', {
+      const { data } = await api.post('/api/auth/send-registration-otp', {
         username: form.username.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,
       })
+      if (data.devOtp) setDevOtp(data.devOtp)
+      setSuccess('Verification code sent! Check your inbox.')
+      setStep(2)
+      setCooldown(30)
+    } catch (err) {
+      setErr(err.response?.data?.message || err.message || 'Failed to send verification code')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleVerify(e) {
+    e.preventDefault()
+    if (otp.length < 6) { setErr('Please enter the 6-digit code'); return }
+    setBusy(true)
+    setErr('')
+    try {
+      const { data } = await api.post('/api/auth/register', {
+        email: form.email.trim().toLowerCase(),
+        otp: otp.trim(),
+      })
       login(data)
       navigate('/lobby')
     } catch (err) {
-      setErr(err.response?.data?.message || err.message || 'Registration failed')
+      setErr(err.response?.data?.message || err.message || 'Verification failed')
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <form onSubmit={go} className="space-y-3.5 fade-in" noValidate>
+    <div className="space-y-4 fade-in">
       <Err msg={err}/>
-      <Field id="r-user" label="Username" placeholder="ninja_coder" autoComplete="username" value={form.username} onChange={set('username')}/>
-      <Field id="r-email" label="Email" type="email" placeholder="you@domain.com" autoComplete="email" value={form.email} onChange={set('email')}/>
-      <PasswordField id="r-pw" label="Password" placeholder="min. 6 characters" autoComplete="new-password" value={form.password} onChange={set('password')}/>
-      <PasswordStrength password={form.password} />
-      <PasswordField id="r-conf" label="Confirm Password" placeholder="repeat password" autoComplete="new-password" value={form.confirm} onChange={set('confirm')}/>
+      <SuccessAlert msg={success}/>
 
-      <button id="register-submit" type="submit" disabled={busy} className="btn-primary w-full py-3 mt-2">
-        {busy ? <><Spinner/> Creating Account...</> : <>create_account() →</>}
-      </button>
+      {step === 1 && (
+        <form onSubmit={handleSendOtp} className="space-y-3.5" noValidate>
+          <Field id="r-user" label="Username" placeholder="ninja_coder" autoComplete="username" value={form.username} onChange={set('username')}/>
+          <Field id="r-email" label="Email" type="email" placeholder="you@domain.com" autoComplete="email" value={form.email} onChange={set('email')}/>
+          <PasswordField id="r-pw" label="Password" placeholder="min. 6 characters" autoComplete="new-password" value={form.password} onChange={set('password')}/>
+          <PasswordStrength password={form.password} />
+          <PasswordField id="r-conf" label="Confirm Password" placeholder="repeat password" autoComplete="new-password" value={form.confirm} onChange={set('confirm')}/>
 
-      <p className="font-mono text-[11px] text-center text-[#6b7280] pt-1">
-        Already have an account?{' '}
-        <button type="button" onClick={onSwitchLogin} className="text-[#f97316] hover:underline">
-          Sign in →
-        </button>
-      </p>
-    </form>
+          <button id="register-submit" type="submit" disabled={busy} className="btn-primary w-full py-3 mt-2">
+            {busy ? <><Spinner/> Sending Verification Code...</> : <>Verify Email & Create Account →</>}
+          </button>
+
+          <p className="font-mono text-[11px] text-center text-[#6b7280] pt-1">
+            Already have an account?{' '}
+            <button type="button" onClick={onSwitchLogin} className="text-[#f97316] hover:underline">
+              Sign in →
+            </button>
+          </p>
+        </form>
+      )}
+
+      {step === 2 && (
+        <form onSubmit={handleVerify} className="space-y-4">
+          <div className="text-center space-y-1">
+            <p className="font-mono text-xs text-[#9ca3af]">Enter the 6-digit code sent to</p>
+            <p className="font-mono text-xs font-bold text-[#10b981]">{form.email}</p>
+          </div>
+
+          {devOtp && (
+            <div className="p-2 bg-[#111422] border border-[#10b981]/30 rounded text-center">
+              <span className="font-mono text-[10px] text-[#10b981]">Dev Code: </span>
+              <span className="font-mono text-xs font-bold text-white tracking-widest">{devOtp}</span>
+            </div>
+          )}
+
+          <div className="py-1">
+            <OtpDigitsInput length={6} value={otp} onChange={setOtp} />
+          </div>
+
+          <button id="register-verify-submit" type="submit" disabled={busy || otp.length < 6} className="btn-primary w-full py-3">
+            {busy ? <><Spinner/> Creating Account...</> : <>Confirm & Enter Arena →</>}
+          </button>
+
+          <div className="flex items-center justify-between font-mono text-[11px] text-[#6b7280]">
+            <button type="button" onClick={() => { setStep(1); setSuccess(''); setOtp(''); setDevOtp(null) }} className="hover:text-white transition-colors">
+              ← Back
+            </button>
+            <button
+              type="button"
+              disabled={cooldown > 0 || busy}
+              onClick={handleSendOtp}
+              className="hover:text-[#f97316] transition-colors disabled:opacity-50"
+            >
+              {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
   )
 }
 
