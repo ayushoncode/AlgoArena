@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
+import { UserAvatar } from '../utils/avatar'
 
 /* ════════════════════════════════════════════════
    RANK BADGE
@@ -70,13 +71,8 @@ function LeaderRow({ player, isMe, prevElo }) {
         <RankBadge rank={Number(player.rank)} />
       </div>
 
-      {/* Avatar */}
-      <div className="flex items-center justify-center font-mono font-bold text-[11px] shrink-0"
-           style={{ width:30, height:30, background: isMe ? 'rgba(249,115,22,0.15)' : '#0d0f17',
-                    border:`1px solid ${isMe ? 'rgba(249,115,22,0.35)' : '#1e2130'}`, borderRadius:3,
-                    color: isMe ? '#f97316' : '#4b5563' }}>
-        {(player.username?.[0] ?? '?').toUpperCase()}
-      </div>
+      {/* Emoji Avatar */}
+      <UserAvatar username={player.username} size={30} isMe={isMe} />
 
       {/* Name + tier */}
       <div className="flex-1 min-w-0">
@@ -121,7 +117,7 @@ export default function Leaderboard() {
   async function fetchLeaderboard() {
     try {
       setLoading(true)
-      const { data } = await api.get('/users/leaderboard')
+      const { data } = await api.get('/api/users/leaderboard')
       setPlayers(data)
       setLastUpdated(new Date())
       setError(null)

@@ -1,6 +1,7 @@
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useState, useRef, useEffect } from 'react'
+import { UserAvatar } from '../utils/avatar'
 
 export default function Navbar() {
   const navigate     = useNavigate()
@@ -87,13 +88,8 @@ export default function Navbar() {
               onMouseOver={e => { if (!open) e.currentTarget.style.borderColor = 'rgba(249,115,22,0.25)' }}
               onMouseOut={e  => { if (!open) e.currentTarget.style.borderColor = '#1e2130' }}
             >
-              {/* Avatar initial */}
-              <span
-                className="font-mono font-bold text-[11px] flex items-center justify-center shrink-0"
-                style={{ width:22, height:22, background:'rgba(249,115,22,0.15)', border:'1px solid rgba(249,115,22,0.35)', borderRadius:3, color:'#f97316' }}
-              >
-                {(user.username?.[0] ?? 'A').toUpperCase()}
-              </span>
+              {/* Emoji Avatar */}
+              <UserAvatar username={user.username} size={22} isMe={true} />
 
               <span className="font-mono text-[11px]" style={{ color:'#dde1ea' }}>
                 {user.username}

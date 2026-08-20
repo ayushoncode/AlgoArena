@@ -8,6 +8,23 @@ const authMiddleware = require('../middleware/auth')
 const db             = require('../db')
 const router         = express.Router()
 
+// GET /api/users/stats — live platform statistics
+router.get('/stats', async (_req, res) => {
+  try {
+    const { rows: userCount } = await db.query(`SELECT COUNT(*)::int as total FROM users`)
+    const { rows: matchCount } = await db.query(`SELECT COUNT(*)::int as total FROM matches WHERE status = 'finished'`)
+    const { rows: subCount } = await db.query(`SELECT COUNT(*)::int as total FROM submissions`)
+    return res.json({
+      totalUsers: userCount[0]?.total || 0,
+      totalMatches: matchCount[0]?.total || 0,
+      totalSubmissions: subCount[0]?.total || 0,
+    })
+  } catch (err) {
+    console.error('[GET /users/stats]', err)
+    return res.status(500).json({ message: 'internal server error' })
+  }
+})
+
 // GET /api/users/leaderboard — top 20 by Elo (public)
 router.get('/leaderboard', async (_req, res) => {
   try {
@@ -29,7 +46,7 @@ router.get('/leaderboard', async (_req, res) => {
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const { rows } = await db.query(
-      `SELECT id, username, email, elo_rating, wins, losses, created_at
+      `SELECT id, username, email, elo_rating, wins, losses, is_username_set, created_at
        FROM users WHERE id = $1`,
       [req.user.id]
     )

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useSocket } from '../hooks/useSocket'
+import api from '../utils/api'
 
 /* ════════════════════════════════════════════════
    DATA
@@ -23,34 +24,34 @@ const DIFFS = [
   { id:'hard',   label:'Hard',   col:'#f43f5e', bg:'rgba(244,63,94,0.1)'   },
 ]
 
-const DAILY_CHALLENGES = [
-  { topic:'arrays',        problem:'Two Sum',                difficulty:'easy',   desc:'Find indices of two numbers that add to target. HashMap solution.' },
-  { topic:'binary-search', problem:'Search Rotated Array',  difficulty:'medium', desc:'Binary search in an array that has been rotated at some pivot.' },
-  { topic:'dp',            problem:'Coin Change',            difficulty:'medium', desc:'Find the minimum number of coins to make up a given amount.' },
-  { topic:'graphs',        problem:'Number of Islands',      difficulty:'medium', desc:'Count connected components using BFS or DFS flood fill.' },
-  { topic:'trees',         problem:'Max Depth of Tree',      difficulty:'easy',   desc:'Find maximum depth using recursion or iterative BFS.' },
-  { topic:'strings',       problem:'Longest Palindrome',     difficulty:'medium', desc:'Expand around center technique for O(n²) solution.' },
-  { topic:'linked-lists',  problem:'Detect Cycle',           difficulty:'easy',   desc:"Floyd's tortoise and hare — O(1) space cycle detection." },
-]
-
-function todayChallenge() {
-  const doy = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
-  return DAILY_CHALLENGES[doy % DAILY_CHALLENGES.length]
-}
-
 /* ════════════════════════════════════════════════
-   LIVE COUNTER
+   LIVE ARENA STATS HOOK
 ════════════════════════════════════════════════ */
 function useLiveCounter() {
-  const [c, setC] = useState({ players:247, matches:12 })
+  const [stats, setStats] = useState({ players: 1, matches: 0, totalProblems: 175 })
+
   useEffect(() => {
-    const t = setInterval(() => setC(prev => ({
-      players: Math.max(150, prev.players + Math.floor(Math.random()*5-2)),
-      matches: Math.max(1,   prev.matches + (Math.random()>0.5?1:-1)),
-    })), 4000)
+    async function loadStats() {
+      try {
+        const [uRes, pRes] = await Promise.all([
+          api.get('/api/users/stats').catch(() => ({ data: {} })),
+          api.get('/api/problems/stats').catch(() => ({ data: {} })),
+        ])
+        setStats({
+          players: Math.max(1, uRes.data?.totalUsers || 1),
+          matches: uRes.data?.totalMatches || 0,
+          totalProblems: pRes.data?.totalProblems || 175,
+        })
+      } catch (err) {
+        console.error('[Lobby stats]', err)
+      }
+    }
+    loadStats()
+    const t = setInterval(loadStats, 15_000)
     return () => clearInterval(t)
   }, [])
-  return c
+
+  return stats
 }
 
 /* ════════════════════════════════════════════════
@@ -348,7 +349,17 @@ export default function Lobby() {
 
   const elo     = user?.elo_rating ?? 1200
   const diffObj = DIFFS.find(d => d.id === diff)
-  const ch      = todayChallenge()
+  const [dailyProblem, setDailyProblem] = useState(null)
+
+  useEffect(() => {
+    api.get('/api/problems/daily')
+      .then(({ data }) => setDailyProblem(data))
+      .catch(() => {})
+  }, [])
+
+  const ch = dailyProblem
+    ? { topic: dailyProblem.topic, problem: dailyProblem.title, difficulty: dailyProblem.difficulty, desc: (dailyProblem.description || '').slice(0, 90) + '...' }
+    : { topic: 'arrays', problem: 'Two Sum', difficulty: 'easy', desc: 'Find indices of two numbers that add to target.' }
 
   function startQueue() {
     if (!topic) return
@@ -411,9 +422,9 @@ export default function Lobby() {
                 <div className="flex items-center gap-1.5 justify-end">
                   <span className="dot-live"/>
                   <span className="font-mono text-[11px] font-bold tabular-nums" style={{ color:'#dde1ea' }}>{live.players}</span>
-                  <span className="font-mono text-[10px]" style={{ color:'#4b5563' }}>online</span>
+                  <span className="font-mono text-[10px]" style={{ color:'#4b5563' }}>registered</span>
                 </div>
-                <p className="font-mono text-[10px]" style={{ color:'#374151' }}>{live.matches} active</p>
+                <p className="font-mono text-[10px]" style={{ color:'#374151' }}>{live.totalProblems} problems</p>
               </div>
             </div>
           </div>

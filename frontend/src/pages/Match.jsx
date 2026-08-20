@@ -4,6 +4,7 @@ import Editor from '@monaco-editor/react'
 import { useAuth } from '../hooks/useAuth'
 import { useSocket } from '../hooks/useSocket'
 import api from '../utils/api'
+import { UserAvatar, getUserEmoji } from '../utils/avatar'
 
 /* ════════════════════════════════════════════════
    MATCH TIMER
@@ -87,28 +88,67 @@ function splitArgs(inputStr) {
 
 function getParamInfo(token, index, total, title = '', topic = '') {
   const t = token.trim()
-  const lowerTitle = title.toLowerCase()
-  const lowerTopic = topic.toLowerCase()
+  const lowerTitle = (title || '').toLowerCase()
+  const lowerTopic = (topic || '').toLowerCase()
 
   if (t.startsWith('[') && t.endsWith(']')) {
     let name = 'nums'
-    if (lowerTopic.includes('linked') || lowerTitle.includes('linked') || lowerTitle.includes('list')) name = 'head'
-    else if (lowerTopic.includes('tree') || lowerTitle.includes('tree') || lowerTitle.includes('bst')) name = 'root'
+    const isTree = lowerTopic.includes('tree') || lowerTitle.includes('tree') || lowerTitle.includes('bst')
+    const isList = lowerTopic.includes('linked') || lowerTitle.includes('linked') || (lowerTitle.includes('list') && !lowerTitle.includes('list of'))
+
+    if (isList) name = 'head'
+    else if (isTree) name = 'root'
     else if (lowerTitle.includes('stock') || lowerTitle.includes('price')) name = 'prices'
     else if (lowerTitle.includes('water') || lowerTitle.includes('height')) name = 'height'
     else if (lowerTitle.includes('interval')) name = 'intervals'
-    else if (lowerTitle.includes('matrix') || lowerTitle.includes('island')) name = 'grid'
-    else if (total > 1 && index === 0) name = 'nums'
+    else if (lowerTitle.includes('matrix') || lowerTitle.includes('island') || lowerTitle.includes('board') || lowerTitle.includes('sudoku')) name = 'board'
+    else if (total > 1 && index === 0) name = 'nums1'
     else if (total > 1 && index === 1) name = 'nums2'
 
     const isMatrix = t.startsWith('[[')
+    if (isMatrix) {
+      return {
+        name,
+        jsType: 'number[][]',
+        pyType: 'List[List[int]]',
+        javaType: 'int[][]',
+        cppType: 'vector<vector<int>>&',
+        defaultVal: 'new int[][]{}',
+        cppDefault: '{}',
+      }
+    }
+
+    if (isTree) {
+      return {
+        name,
+        jsType: 'TreeNode',
+        pyType: 'Optional[TreeNode]',
+        javaType: 'TreeNode',
+        cppType: 'TreeNode*',
+        defaultVal: 'null',
+        cppDefault: 'nullptr',
+      }
+    }
+
+    if (isList) {
+      return {
+        name,
+        jsType: 'ListNode',
+        pyType: 'Optional[ListNode]',
+        javaType: 'ListNode',
+        cppType: 'ListNode*',
+        defaultVal: 'null',
+        cppDefault: 'nullptr',
+      }
+    }
+
     return {
       name,
-      jsType: isMatrix ? 'number[][]' : 'number[]',
-      pyType: isMatrix ? 'list[list[int]]' : 'list[int]',
-      javaType: isMatrix ? 'int[][]' : 'int[]',
-      cppType: isMatrix ? 'vector<vector<int>>&' : 'vector<int>&',
-      defaultVal: isMatrix ? 'new int[][]{}' : 'new int[]{}',
+      jsType: 'number[]',
+      pyType: 'List[int]',
+      javaType: 'int[]',
+      cppType: 'vector<int>&',
+      defaultVal: 'new int[]{}',
       cppDefault: '{}',
     }
   }
@@ -160,20 +200,66 @@ function getParamInfo(token, index, total, title = '', topic = '') {
   }
 }
 
-function getReturnTypeInfo(outputStr) {
+function getReturnTypeInfo(outputStr, title = '', topic = '') {
   if (!outputStr) return { jsType: 'any', pyType: 'any', javaType: 'int', cppType: 'int', retValJava: '0', retValCpp: '0' }
   const out = outputStr.trim()
-  if (out.startsWith('[') && out.endsWith(']')) {
-    const isMatrix = out.startsWith('[[')
+  const lowerTitle = (title || '').toLowerCase()
+  const lowerTopic = (topic || '').toLowerCase()
+  const isTree = lowerTopic.includes('tree') || lowerTitle.includes('tree') || lowerTitle.includes('bst')
+  const isList = lowerTopic.includes('linked') || lowerTitle.includes('linked')
+
+  if (out.startsWith('[[')) {
     return {
-      jsType: isMatrix ? 'number[][]' : 'number[]',
-      pyType: isMatrix ? 'list[list[int]]' : 'list[int]',
-      javaType: isMatrix ? 'int[][]' : 'int[]',
-      cppType: isMatrix ? 'vector<vector<int>>' : 'vector<int>',
-      retValJava: isMatrix ? 'new int[][]{}' : 'new int[]{}',
+      jsType: 'number[][]',
+      pyType: 'List[List[int]]',
+      javaType: 'List<List<Integer>>',
+      cppType: 'vector<vector<int>>',
+      retValJava: 'new ArrayList<>()',
       retValCpp: '{}',
     }
   }
+
+  if (out.startsWith('[')) {
+    if (isTree && (lowerTitle.includes('traversal') || lowerTitle.includes('inorder') || lowerTitle.includes('preorder') || lowerTitle.includes('postorder'))) {
+      return {
+        jsType: 'number[]',
+        pyType: 'List[int]',
+        javaType: 'List<Integer>',
+        cppType: 'vector<int>',
+        retValJava: 'new ArrayList<>()',
+        retValCpp: '{}',
+      }
+    }
+    if (isTree && (lowerTitle.includes('invert') || lowerTitle.includes('flatten') || lowerTitle.includes('construct') || lowerTitle.includes('convert'))) {
+      return {
+        jsType: 'TreeNode',
+        pyType: 'Optional[TreeNode]',
+        javaType: 'TreeNode',
+        cppType: 'TreeNode*',
+        retValJava: 'null',
+        retValCpp: 'nullptr',
+      }
+    }
+    if (isList && (lowerTitle.includes('reverse') || lowerTitle.includes('merge') || lowerTitle.includes('sort') || lowerTitle.includes('remove') || lowerTitle.includes('rotate'))) {
+      return {
+        jsType: 'ListNode',
+        pyType: 'Optional[ListNode]',
+        javaType: 'ListNode',
+        cppType: 'ListNode*',
+        retValJava: 'null',
+        retValCpp: 'nullptr',
+      }
+    }
+    return {
+      jsType: 'number[]',
+      pyType: 'List[int]',
+      javaType: 'int[]',
+      cppType: 'vector<int>',
+      retValJava: 'new int[]{}',
+      retValCpp: '{}',
+    }
+  }
+
   if (out === 'true' || out === 'false') {
     return {
       jsType: 'boolean',
@@ -211,7 +297,10 @@ function buildStarterTemplate(problem, lang) {
 
   const rawTokens = splitArgs(problem.sample_input)
   const params = rawTokens.map((tok, i) => getParamInfo(tok, i, rawTokens.length, problem.title, problem.topic))
-  const ret = getReturnTypeInfo(problem.sample_output)
+  const ret = getReturnTypeInfo(problem.sample_output, problem.title, problem.topic)
+
+  const isTree = params.some(p => p.jsType === 'TreeNode') || ret.jsType === 'TreeNode'
+  const isList = params.some(p => p.jsType === 'ListNode') || ret.jsType === 'ListNode'
 
   const jsParamNames = params.map(p => p.name).join(', ')
   const jsDocParams = params.map(p => ` * @param {${p.jsType}} ${p.name}`).join('\n')
@@ -221,14 +310,26 @@ function buildStarterTemplate(problem, lang) {
   const cppParams = params.map(p => `${p.cppType} ${p.name}`).join(', ')
 
   if (lang === 'python') {
-    return `class Solution:
+    let prefix = ''
+    if (isTree) {
+      prefix += `# Definition for a binary tree node.\n# class TreeNode:\n#     def __init__(self, val=0, left=None, right=None):\n#         self.val = val\n#         self.left = left\n#         self.right = right\n\n`
+    } else if (isList) {
+      prefix += `# Definition for singly-linked list.\n# class ListNode:\n#     def __init__(self, val=0, next=None):\n#         self.val = val\n#         self.next = next\n\n`
+    }
+    return `${prefix}class Solution:
     def solution(self${pyParams ? ', ' + pyParams : ''}) -> ${ret.pyType}:
         # write your solution here
         pass`
   }
 
   if (lang === 'java') {
-    return `class Solution {
+    let prefix = 'import java.util.*;\n\n'
+    if (isTree) {
+      prefix += `/**\n * Definition for a binary tree node.\n * public class TreeNode {\n *     int val;\n *     TreeNode left;\n *     TreeNode right;\n *     TreeNode() {}\n *     TreeNode(int val) { this.val = val; }\n *     TreeNode(int val, TreeNode left, TreeNode right) {\n *         this.val = val;\n *         this.left = left;\n *         this.right = right;\n *     }\n * }\n */\n`
+    } else if (isList) {
+      prefix += `/**\n * Definition for singly-linked list.\n * public class ListNode {\n *     int val;\n *     ListNode next;\n *     ListNode() {}\n *     ListNode(int val) { this.val = val; }\n *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }\n * }\n */\n`
+    }
+    return `${prefix}class Solution {
     public ${ret.javaType} solution(${javaParams}) {
         // write your solution here
         return ${ret.retValJava};
@@ -237,11 +338,13 @@ function buildStarterTemplate(problem, lang) {
   }
 
   if (lang === 'cpp') {
-    return `#include <vector>
-#include <string>
-using namespace std;
-
-class Solution {
+    let prefix = `#include <vector>\n#include <string>\n#include <queue>\n#include <algorithm>\nusing namespace std;\n\n`
+    if (isTree) {
+      prefix += `/**\n * Definition for a binary tree node.\n * struct TreeNode {\n *     int val;\n *     TreeNode *left;\n *     TreeNode *right;\n *     TreeNode() : val(0), left(nullptr), right(nullptr) {}\n *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}\n *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}\n * };\n */\n`
+    } else if (isList) {
+      prefix += `/**\n * Definition for singly-linked list.\n * struct ListNode {\n *     int val;\n *     ListNode *next;\n *     ListNode() : val(0), next(nullptr) {}\n *     ListNode(int x) : val(x), next(nullptr) {}\n *     ListNode(int x, ListNode *next) : val(x), next(next) {}\n * };\n */\n`
+    }
+    return `${prefix}class Solution {
 public:
     ${ret.cppType} solution(${cppParams}) {
         // write your solution here
@@ -251,7 +354,13 @@ public:
   }
 
   // Default javascript
-  return `/**
+  let prefix = ''
+  if (isTree) {
+    prefix = `/**\n * Definition for a binary tree node.\n * function TreeNode(val, left, right) {\n *     this.val = (val===undefined ? 0 : val)\n *     this.left = (left===undefined ? null : left)\n *     this.right = (right===undefined ? null : right)\n * }\n */\n`
+  } else if (isList) {
+    prefix = `/**\n * Definition for singly-linked list.\n * function ListNode(val, next) {\n *     this.val = (val===undefined ? 0 : val)\n *     this.next = (next===undefined ? null : next)\n * }\n */\n`
+  }
+  return `${prefix}/**
 ${jsDocParams}
  * @return {${ret.jsType}}
  */
@@ -425,13 +534,8 @@ function PlayerHeader({ player, isMe, verdict }) {
     <div className="flex items-center justify-between px-4 py-2.5"
          style={{ background: '#07080c', borderBottom: '1px solid #1e2130' }}>
       <div className="flex items-center gap-2.5">
-        {/* Avatar */}
-        <span className="flex items-center justify-center font-mono font-bold text-[11px] shrink-0"
-              style={{ width: 24, height: 24, background: isMe ? 'rgba(249,115,22,0.15)' : 'rgba(34,211,238,0.12)',
-                       border: `1px solid ${isMe ? 'rgba(249,115,22,0.35)' : 'rgba(34,211,238,0.25)'}`,
-                       borderRadius: 3, color: isMe ? '#f97316' : '#22d3ee' }}>
-          {(player?.username?.[0] ?? '?').toUpperCase()}
-        </span>
+        {/* Emoji Avatar */}
+        <UserAvatar username={player?.username} size={24} isMe={isMe} />
         <span className="font-mono text-[12px] font-bold" style={{ color: isMe ? '#f97316' : '#22d3ee' }}>
           {player?.username ?? '—'}
         </span>
@@ -499,9 +603,11 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
 
   function parseSections(desc) {
     if (!desc) return { paragraphs: [], examples: [], constraints: [] }
-    const lines = desc.split('\n')
+    // Clean up redundant standalone 'Example 1:\nExample 2:' header blocks that LeetCode scraper dumps
+    const cleanedDesc = desc.replace(/(?:^|\n)(?:Example\s*\d+:?\s*\n)+(?:Constraints:?\s*\n)?/gi, '\n')
+    const lines = cleanedDesc.split('\n')
     const paragraphs = []
-    const examples   = []
+    const rawExamples = []
     const constraints = []
     let curExample = null
     let mode = 'para' // 'para' | 'example' | 'constraints'
@@ -509,49 +615,75 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       const trimmed = line.trim()
+      if (!trimmed) continue
 
-      // Detect example headers
-      if (/^\*\*Example\s*\d+/i.test(trimmed) || /^Example\s*\d+/i.test(trimmed)) {
-        if (curExample) examples.push(curExample)
+      // Detect example headers (e.g. **Example 1:** or Example 1:)
+      if (/^(\*\*Example\s*\d+\*?:?|Example\s*\d+:?)/i.test(trimmed)) {
+        if (curExample && (curExample.input || curExample.output)) {
+          rawExamples.push(curExample)
+        }
         curExample = { input:'', output:'', explanation:'' }
         mode = 'example'
         continue
       }
-      // Detect constraints
-      if (/^\*\*Constraints\*\*|^Constraints:?$/i.test(trimmed)) {
-        if (curExample) { examples.push(curExample); curExample = null }
+
+      // Detect constraints headers
+      if (/^(\*\*Constraints\*?:?|Constraints:?)/i.test(trimmed)) {
+        if (curExample && (curExample.input || curExample.output)) {
+          rawExamples.push(curExample)
+        }
+        curExample = null
         mode = 'constraints'
         continue
       }
 
       if (mode === 'example' && curExample !== null) {
-        if (/^\*\*Input\*\*:?|^Input:?/i.test(trimmed)) {
-          curExample.input = trimmed.replace(/^\*?\*?Input\*?\*?:?\s*/i, '')
+        if (trimmed.startsWith('```')) continue // skip code block fences
+
+        if (/^\*?\*?Input\*?\*?:?/i.test(trimmed)) {
+          curExample.input = trimmed.replace(/^\*?\*?Input\*?\*?:?\s*/i, '').trim()
           continue
         }
-        if (/^\*\*Output\*\*:?|^Output:?/i.test(trimmed)) {
-          curExample.output = trimmed.replace(/^\*?\*?Output\*?\*?:?\s*/i, '')
+        if (/^\*?\*?Output\*?\*?:?/i.test(trimmed)) {
+          curExample.output = trimmed.replace(/^\*?\*?Output\*?\*?:?\s*/i, '').trim()
           continue
         }
-        if (/^\*\*Explanation\*\*:?|^Explanation:?/i.test(trimmed)) {
-          curExample.explanation = trimmed.replace(/^\*?\*?Explanation\*?\*?:?\s*/i, '')
+        if (/^\*?\*?Explanation\*?\*?:?/i.test(trimmed)) {
+          curExample.explanation = trimmed.replace(/^\*?\*?Explanation\*?\*?:?\s*/i, '').trim()
           continue
         }
-        if (trimmed === '') continue
-        // generic continuation line in example
-        if (!curExample.explanation && !curExample.output) curExample.input += ' ' + trimmed
-        else if (!curExample.explanation) curExample.explanation += ' ' + trimmed
+
+        // Continuation lines
+        if (curExample.explanation) {
+          curExample.explanation += ' ' + trimmed
+        } else if (curExample.output) {
+          curExample.output += ' ' + trimmed
+        } else if (curExample.input) {
+          curExample.input += ' ' + trimmed
+        }
         continue
       }
+
       if (mode === 'constraints') {
-        if (trimmed.startsWith('-')) constraints.push(trimmed.replace(/^-\s*/, '').replace(/\*\*/g,''))
-        else if (trimmed !== '') mode = 'para'
+        if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+          constraints.push(trimmed.replace(/^[-*]\s*/, '').replace(/\*\*/g,''))
+        } else {
+          constraints.push(trimmed.replace(/\*\*/g,''))
+        }
         continue
       }
-      // para mode
-      if (trimmed !== '') paragraphs.push(trimmed)
+
+      // Paragraph mode
+      if (!/^Example\s*\d+:?$/i.test(trimmed) && !/^Constraints:?$/i.test(trimmed)) {
+        paragraphs.push(trimmed)
+      }
     }
-    if (curExample) examples.push(curExample)
+
+    if (curExample && (curExample.input || curExample.output)) {
+      rawExamples.push(curExample)
+    }
+
+    const examples = rawExamples.filter(ex => ex.input.trim() || ex.output.trim())
     return { paragraphs, examples, constraints }
   }
 
@@ -564,10 +696,11 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
 
   return (
     <div
-      className="flex flex-col shrink-0 overflow-hidden"
+      className="flex flex-col shrink-0 overflow-hidden h-full"
       style={{
         width: collapsed ? 40 : (forcedWidth || 320),
         minWidth: collapsed ? 40 : 220,
+        height: '100%',
         borderRight: '1px solid #151929',
         background: '#0b0d14',
         transition: 'width 0.2s cubic-bezier(.4,0,.2,1)',
@@ -590,7 +723,7 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
       </div>
 
       {!collapsed && (
-        <div className="flex flex-col flex-1 min-h-0">
+        <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
           {/* Title + metadata */}
           <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom:'1px solid #151929' }}>
             {loading ? (
@@ -1051,9 +1184,15 @@ export default function Match() {
         {/* Players summary & Exit button */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px]" style={{ color: '#f97316' }}>{me?.username ?? user?.username}</span>
+            <span className="font-mono text-[11px] flex items-center gap-1" style={{ color: '#f97316' }}>
+              <span>{getUserEmoji(me?.username ?? user?.username)}</span>
+              {me?.username ?? user?.username}
+            </span>
             <span className="font-mono text-[10px] font-bold" style={{ color: '#4b5563' }}>vs</span>
-            <span className="font-mono text-[11px]" style={{ color: '#22d3ee' }}>{opp?.username ?? '…'}</span>
+            <span className="font-mono text-[11px] flex items-center gap-1" style={{ color: '#22d3ee' }}>
+              <span>{getUserEmoji(opp?.username)}</span>
+              {opp?.username ?? '…'}
+            </span>
           </div>
 
           <button
@@ -1122,6 +1261,9 @@ export default function Match() {
         <div style={{
           width: probCollapsed ? 40 : probPanel.width,
           minWidth: probCollapsed ? 40 : 220,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
           flexShrink: 0,
           overflow: 'hidden',
           transition: 'width 0.2s cubic-bezier(.4,0,.2,1)',

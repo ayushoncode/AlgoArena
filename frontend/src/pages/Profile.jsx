@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useStreak } from '../hooks/useStreak'
 import api from '../utils/api'
+import { UserAvatar } from '../utils/avatar'
 
 /* ════════════════════════════════════════════════
    SVG ELO CHART
@@ -327,10 +328,7 @@ export default function Profile() {
           <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6">
 
             {/* Avatar */}
-            <div className="flex items-center justify-center font-display font-black text-4xl shrink-0"
-                 style={{ width: 88, height: 88, background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: 6, color: '#f97316' }}>
-              {(activeUser?.username?.[0] ?? 'A').toUpperCase()}
-            </div>
+            <UserAvatar username={activeUser?.username} size={88} isMe={true} />
 
             {/* Info */}
             <div className="flex-1">

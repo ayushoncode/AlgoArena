@@ -7,6 +7,44 @@ const authMiddleware = require('../middleware/auth')
 const db             = require('../db')
 const router         = express.Router()
 
+// GET /api/problems/stats — real-time problem count & topic breakdown
+router.get('/stats', async (_req, res) => {
+  try {
+    const { rows: countRows } = await db.query(`SELECT COUNT(*)::int as total FROM problems`)
+    const { rows: testRows } = await db.query(`SELECT COUNT(*)::int as total FROM test_cases`)
+    const { rows: topicRows } = await db.query(`SELECT topic, COUNT(*)::int as count FROM problems GROUP BY topic`)
+    const { rows: diffRows } = await db.query(`SELECT difficulty, COUNT(*)::int as count FROM problems GROUP BY difficulty`)
+    return res.json({
+      totalProblems: countRows[0]?.total || 0,
+      totalTestCases: testRows[0]?.total || 0,
+      byTopic: Object.fromEntries(topicRows.map(r => [r.topic, r.count])),
+      byDifficulty: Object.fromEntries(diffRows.map(r => [r.difficulty, r.count])),
+    })
+  } catch (err) {
+    console.error('[GET /problems/stats]', err)
+    return res.status(500).json({ message: 'internal server error' })
+  }
+})
+
+// GET /api/problems/daily — today's deterministic daily challenge from DB
+router.get('/daily', async (_req, res) => {
+  try {
+    const doy = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
+    const { rows: problems } = await db.query(
+      `SELECT id, title, topic, difficulty, description, sample_input, sample_output
+       FROM problems ORDER BY id ASC`
+    )
+    if (!problems.length) {
+      return res.status(404).json({ message: 'No problems available' })
+    }
+    const dailyProblem = problems[doy % problems.length]
+    return res.json(dailyProblem)
+  } catch (err) {
+    console.error('[GET /problems/daily]', err)
+    return res.status(500).json({ message: 'internal server error' })
+  }
+})
+
 // GET /api/problems — list problems (filter by topic/difficulty, with fallback)
 router.get('/', authMiddleware, async (req, res) => {
   try {
@@ -86,11 +124,87 @@ router.post('/:id/run', authMiddleware, async (req, res) => {
         try {
           const sandbox = { console: { log: () => {} }, result: undefined }
           const script = new vm.Script(`
+            function TreeNode(val, left, right) {
+              this.val = (val===undefined ? 0 : val);
+              this.left = (left===undefined ? null : left);
+              this.right = (right===undefined ? null : right);
+            }
+            function ListNode(val, next) {
+              this.val = (val===undefined ? 0 : val);
+              this.next = (next===undefined ? null : next);
+            }
+            function __buildTree(arr) {
+              if (!Array.isArray(arr) || arr.length === 0 || arr[0] === null) return null;
+              const root = new TreeNode(arr[0]);
+              const q = [root];
+              let i = 1;
+              while (q.length > 0 && i < arr.length) {
+                const curr = q.shift();
+                if (curr) {
+                  if (i < arr.length) {
+                    const l = arr[i++];
+                    if (l !== null && l !== undefined) { curr.left = new TreeNode(l); q.push(curr.left); }
+                  }
+                  if (i < arr.length) {
+                    const r = arr[i++];
+                    if (r !== null && r !== undefined) { curr.right = new TreeNode(r); q.push(curr.right); }
+                  }
+                }
+              }
+              return root;
+            }
+            function __buildList(arr) {
+              if (!Array.isArray(arr) || arr.length === 0) return null;
+              const dummy = new ListNode(0);
+              let curr = dummy;
+              for (const v of arr) {
+                if (v !== null && v !== undefined) { curr.next = new ListNode(v); curr = curr.next; }
+              }
+              return dummy.next;
+            }
+            function __serialize(obj) {
+              if (obj === null || obj === undefined) return null;
+              if (obj instanceof TreeNode || (typeof obj === 'object' && ('left' in obj || 'right' in obj) && 'val' in obj)) {
+                const res = [];
+                const q = [obj];
+                while (q.length > 0) {
+                  const node = q.shift();
+                  if (node) { res.push(node.val); q.push(node.left || null); q.push(node.right || null); }
+                  else { res.push(null); }
+                }
+                while (res.length > 0 && res[res.length - 1] === null) res.pop();
+                return res;
+              }
+              if (obj instanceof ListNode || (typeof obj === 'object' && 'next' in obj && 'val' in obj)) {
+                const res = [];
+                let curr = obj;
+                while (curr) { res.push(curr.val); curr = curr.next; }
+                return res;
+              }
+              return obj;
+            }
+
             ${code}
+
             let __fn = typeof solution === 'function' ? solution :
-                       (typeof Solution === 'function' ? new Solution().solution : null);
+                       (typeof Solution === 'function' ? (new Solution().solution || Object.getOwnPropertyNames(Solution.prototype).filter(m => m !== 'constructor').map(m => new Solution()[m])[0]) : null);
             if (!__fn) throw new Error("No function named 'solution' found.");
-            result = __fn(${tc.input});
+
+            const __rawArgs = [${tc.input}];
+            let __ret;
+            try {
+              __ret = __fn(...__rawArgs);
+            } catch (err) {
+              const __converted = __rawArgs.map(arg => {
+                if (Array.isArray(arg)) {
+                  if (arg.includes(null)) return __buildTree(arg);
+                  return __buildList(arg) || arg;
+                }
+                return arg;
+              });
+              __ret = __fn(...__converted);
+            }
+            result = __serialize(__ret);
           `)
           script.runInContext(vm.createContext(sandbox), { timeout: 3000 })
           actualOutput = sandbox.result

@@ -49,18 +49,115 @@ const TIMEOUT_MS    = parseInt(process.env.SANDBOX_TIMEOUT_MS, 10) || 5000
 
 /**
  * Build a Node.js runner script.
- * The user function must be named `solution` at the top level.
+ * The user function can be named `solution` or defined on `Solution` class.
  */
 function buildJsRunner(testCases) {
   return `'use strict';
+
+function TreeNode(val, left, right) {
+  this.val = (val===undefined ? 0 : val);
+  this.left = (left===undefined ? null : left);
+  this.right = (right===undefined ? null : right);
+}
+
+function ListNode(val, next) {
+  this.val = (val===undefined ? 0 : val);
+  this.next = (next===undefined ? null : next);
+}
+
+function __buildTree(arr) {
+  if (!Array.isArray(arr) || arr.length === 0 || arr[0] === null) return null;
+  const root = new TreeNode(arr[0]);
+  const q = [root];
+  let i = 1;
+  while (q.length > 0 && i < arr.length) {
+    const curr = q.shift();
+    if (curr) {
+      if (i < arr.length) {
+        const l = arr[i++];
+        if (l !== null && l !== undefined) {
+          curr.left = new TreeNode(l);
+          q.push(curr.left);
+        }
+      }
+      if (i < arr.length) {
+        const r = arr[i++];
+        if (r !== null && r !== undefined) {
+          curr.right = new TreeNode(r);
+          q.push(curr.right);
+        }
+      }
+    }
+  }
+  return root;
+}
+
+function __buildList(arr) {
+  if (!Array.isArray(arr) || arr.length === 0) return null;
+  const dummy = new ListNode(0);
+  let curr = dummy;
+  for (const v of arr) {
+    if (v !== null && v !== undefined) {
+      curr.next = new ListNode(v);
+      curr = curr.next;
+    }
+  }
+  return dummy.next;
+}
+
+function __serialize(obj) {
+  if (obj === null || obj === undefined) return null;
+  if (obj instanceof TreeNode || (typeof obj === 'object' && ('left' in obj || 'right' in obj) && 'val' in obj)) {
+    const res = [];
+    const q = [obj];
+    while (q.length > 0) {
+      const node = q.shift();
+      if (node) {
+        res.push(node.val);
+        q.push(node.left || null);
+        q.push(node.right || null);
+      } else {
+        res.push(null);
+      }
+    }
+    while (res.length > 0 && res[res.length - 1] === null) res.pop();
+    return res;
+  }
+  if (obj instanceof ListNode || (typeof obj === 'object' && 'next' in obj && 'val' in obj)) {
+    const res = [];
+    let curr = obj;
+    while (curr) {
+      res.push(curr.val);
+      curr = curr.next;
+    }
+    return res;
+  }
+  return obj;
+}
 
 // ── Load user solution ──────────────────────────────────────────────
 let solution;
 try {
   const src = require('fs').readFileSync('/sandbox/solution.js', 'utf8');
-  // Execute user code and extract the 'solution' function
-  const fn = new Function(src + '\\nreturn typeof solution !== "undefined" ? solution : undefined;');
-  solution = fn();
+  const sandbox = {
+    TreeNode,
+    ListNode,
+    console: { log: () => {} }
+  };
+  const fn = new Function('sandbox', \`
+    with(sandbox) {
+      \${src}
+      if (typeof solution === 'function') return solution;
+      if (typeof Solution === 'function') {
+        const inst = new Solution();
+        const methods = Object.getOwnPropertyNames(Solution.prototype).filter(m => m !== 'constructor');
+        if (typeof inst.solution === 'function') return inst.solution.bind(inst);
+        if (methods.length > 0 && typeof inst[methods[0]] === 'function') return inst[methods[0]].bind(inst);
+      }
+      return undefined;
+    }
+  \`);
+  solution = fn(sandbox);
   if (typeof solution !== 'function') {
     throw new Error("No function named 'solution' found. Please define: function solution(...) { ... }");
   }
@@ -73,17 +170,28 @@ try {
 const testCases = ${JSON.stringify(testCases)};
 const results   = [];
 
+const fnStr = solution.toString();
+const isTreeFn = fnStr.includes('.left') || fnStr.includes('.right') || fnStr.includes('TreeNode') || fnStr.includes('root');
+const isListFn = fnStr.includes('.next') || fnStr.includes('ListNode') || fnStr.includes('head');
+
 for (let i = 0; i < testCases.length; i++) {
   const tc    = testCases[i];
   const start = Date.now();
   try {
-    // Parse input as function arguments: "2,7" → solution(2, 7)
-    // Wrap in array brackets so JSON.parse gives us an array
-    const args   = JSON.parse('[' + tc.input + ']');
-    const actual = solution(...args);
+    const rawArgs = JSON.parse('[' + tc.input + ']');
+    const convertedArgs = rawArgs.map(arg => {
+      if (Array.isArray(arg)) {
+        if (arg.includes(null) || isTreeFn) return __buildTree(arg);
+        if (isListFn) return __buildList(arg);
+      }
+      return arg;
+    });
+
+    const actual = solution(...convertedArgs);
+    const serialized = __serialize(actual);
     results.push({
       index:     i + 1,
-      actual:    JSON.stringify(actual !== undefined ? actual : null),
+      actual:    JSON.stringify(serialized !== undefined ? serialized : null),
       expected:  tc.output,
       runtimeMs: Date.now() - start,
       isHidden:  tc.is_hidden,
@@ -107,20 +215,107 @@ process.stdout.write(JSON.stringify({ results }) + '\\n');
 
 /**
  * Build a Python 3 runner script.
- * The user function must be named `solution` at the module level.
+ * Supports TreeNode and ListNode conversions and serializers.
  */
 function buildPyRunner(testCases) {
-  // Escape backlash in JSON for embedding in Python string
   const escapedTestCases = JSON.stringify(testCases).replace(/\\/g, '\\\\')
   return `import json, sys, time
+from typing import List, Optional, Dict, Set, Tuple
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def __build_tree(arr):
+    if not isinstance(arr, list) or len(arr) == 0 or arr[0] is None:
+        return None
+    root = TreeNode(arr[0])
+    q = [root]
+    i = 1
+    while q and i < len(arr):
+        curr = q.pop(0)
+        if curr:
+            if i < len(arr):
+                l = arr[i]
+                i += 1
+                if l is not None:
+                    curr.left = TreeNode(l)
+                    q.append(curr.left)
+            if i < len(arr):
+                r = arr[i]
+                i += 1
+                if r is not None:
+                    curr.right = TreeNode(r)
+                    q.append(curr.right)
+    return root
+
+def __build_list(arr):
+    if not isinstance(arr, list) or len(arr) == 0:
+        return None
+    dummy = ListNode(0)
+    curr = dummy
+    for v in arr:
+        if v is not None:
+            curr.next = ListNode(v)
+            curr = curr.next
+    return dummy.next
+
+def __serialize(obj):
+    if obj is None:
+        return None
+    if isinstance(obj, TreeNode):
+        res = []
+        q = [obj]
+        while q:
+            node = q.pop(0)
+            if node:
+                res.append(node.val)
+                q.append(node.left)
+                q.append(node.right)
+            else:
+                res.append(None)
+        while res and res[-1] is None:
+            res.pop()
+        return res
+    if isinstance(obj, ListNode):
+        res = []
+        curr = obj
+        while curr:
+            res.append(curr.val)
+            curr = curr.next
+        return res
+    return obj
 
 # ── Load user solution ──────────────────────────────────────────────
 try:
     with open('/sandbox/solution.py', 'r') as f:
         src = f.read()
-    ns = {}
+    ns = {
+        'TreeNode': TreeNode,
+        'ListNode': ListNode,
+        'List': List,
+        'Optional': Optional,
+        'Dict': Dict,
+        'Set': Set,
+        'Tuple': Tuple,
+    }
     exec(src, ns)
     solution = ns.get('solution')
+    if not callable(solution) and 'Solution' in ns:
+        inst = ns['Solution']()
+        if hasattr(inst, 'solution') and callable(getattr(inst, 'solution')):
+            solution = getattr(inst, 'solution')
+        else:
+            methods = [m for m in dir(inst) if not m.startswith('_') and callable(getattr(inst, m))]
+            if methods:
+                solution = getattr(inst, methods[0])
     if not callable(solution):
         raise Exception("No function named 'solution' found. Define: def solution(...):")
 except Exception as e:
@@ -130,14 +325,32 @@ except Exception as e:
 # ── Run each test case ──────────────────────────────────────────────
 test_cases = json.loads(r'${escapedTestCases}')
 results    = []
+
+fn_src = src.lower()
+is_tree = 'treenode' in fn_src or '.left' in fn_src or '.right' in fn_src or 'root' in fn_src
+is_list = 'listnode' in fn_src or '.next' in fn_src or 'head' in fn_src
+
 for i, tc in enumerate(test_cases):
     start = time.time()
     try:
-        args   = json.loads('[' + tc['input'] + ']')
-        actual = solution(*args)
+        raw_args = json.loads('[' + tc['input'] + ']')
+        converted_args = []
+        for arg in raw_args:
+            if isinstance(arg, list):
+                if None in arg or is_tree:
+                    converted_args.append(__build_tree(arg))
+                elif is_list:
+                    converted_args.append(__build_list(arg))
+                else:
+                    converted_args.append(arg)
+            else:
+                converted_args.append(arg)
+
+        actual = solution(*converted_args)
+        serialized = __serialize(actual)
         results.append({
             "index":     i + 1,
-            "actual":    json.dumps(actual),
+            "actual":    json.dumps(serialized),
             "expected":  tc['output'],
             "runtimeMs": int((time.time() - start) * 1000),
             "isHidden":  tc['is_hidden'],
@@ -199,7 +412,24 @@ function buildCppRunner(testCases) {
 using json = nlohmann::json;
 using namespace std;
 
-// User solution (free function named "solution")
+struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+};
+
+struct ListNode {
+    int val;
+    ListNode *next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode *next) : val(x), next(next) {}
+};
+
+// User solution
 #include "/sandbox/solution.cpp"
 
 int main() {
@@ -270,6 +500,9 @@ function compareOutputs(actual, expected) {
   const a = normalizeOutput(actual)
   const e = normalizeOutput(expected)
   if (a === e) return true
+
+  // Empty collection / null equivalency (for linked lists / trees / optional lists)
+  if ((a === 'null' && (e === '[]' || e === 'null')) || (a === '[]' && (e === 'null' || e === '[]'))) return true
 
   // Array sort-insensitive comparison (e.g. Two Sum: [0,1] and [1,0] both valid)
   try {

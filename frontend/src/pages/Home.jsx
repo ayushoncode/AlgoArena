@@ -415,8 +415,8 @@ function Spinner() {
 
 /** 1-Click OTP Verification Form */
 function OtpLoginForm({ onSwitchPassword }) {
-  const { sendOtp, loginWithOtp } = useAuth()
-  const navigate = useNavigate()
+  const { loginWithOtp, refreshUser } = useAuth()
+  const navigate      = useNavigate()
 
   const [step, setStep]         = useState(1) // 1: email, 2: 6-digit OTP
   const [email, setEmail]       = useState('')
@@ -425,6 +425,9 @@ function OtpLoginForm({ onSwitchPassword }) {
   const [busy, setBusy]         = useState(false)
   const [devOtp, setDevOtp]     = useState(null)
   const [cooldown, setCooldown] = useState(0)
+  const [showUsernameModal, setShowUsernameModal] = useState(false)
+  const [suggestedHandle, setSuggestedHandle]     = useState('')
+  const [usernameErr, setUsernameErr]             = useState('')
 
   useEffect(() => {
     if (cooldown <= 0) return
@@ -461,11 +464,16 @@ function OtpLoginForm({ onSwitchPassword }) {
     setBusy(true)
     setErr('')
     try {
-      await loginWithOtp({
+      const res = await loginWithOtp({
         email: email.trim().toLowerCase(),
         otp: otp.trim(),
       })
-      navigate('/lobby')
+      if (res?.isNewUser || !res?.user?.is_username_set) {
+        setSuggestedHandle(res?.user?.username || email.split('@')[0])
+        setShowUsernameModal(true)
+      } else {
+        navigate('/lobby')
+      }
     } catch (e) {
       setErr(e.response?.data?.message || e.message || 'Verification failed')
     } finally {
@@ -1117,7 +1125,7 @@ export default function Home() {
             <span className="text-[#dde1ea] font-semibold">1v1 Real-Time</span>
           </div>
           <span className="text-[#1e2130]">|</span>
-          <span className="shrink-0"><span className="text-[#f97316] font-bold">30+</span> Curated LeetCode DSA Problems</span>
+          <span className="shrink-0"><span className="text-[#f97316] font-bold">175+</span> Curated LeetCode DSA Problems</span>
           <span className="text-[#1e2130]">|</span>
           <span className="shrink-0"><span className="text-[#22d3ee] font-bold">4</span> Languages: JS · Py · C++ · Java</span>
           <span className="text-[#1e2130]">|</span>
