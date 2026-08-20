@@ -289,6 +289,35 @@ export default function Profile() {
   const startElo  = eloHistory[0]?.rating ?? 1200
   const netChange = elo - startElo
 
+  const [editingUsername, setEditingUsername] = useState(false)
+  const [newHandle, setNewHandle]             = useState('')
+  const [handleErr, setHandleErr]             = useState('')
+  const [savingHandle, setSavingHandle]       = useState(false)
+
+  async function handleSaveUsername(e) {
+    e.preventDefault()
+    if (!newHandle || !/^[a-zA-Z0-9_]{3,30}$/.test(newHandle.trim())) {
+      setHandleErr('Username must be 3–30 characters (letters, numbers, underscore)')
+      return
+    }
+    setSavingHandle(true)
+    setHandleErr('')
+    try {
+      const { data } = await api.patch('/api/users/me/username', { username: newHandle.trim().toLowerCase() })
+      if (data.token) {
+        localStorage.setItem('aa_token', data.token)
+        localStorage.setItem('aa_user', JSON.stringify(data.user))
+        refreshUser(data.user)
+        setProfileUser(data.user)
+      }
+      setEditingUsername(false)
+    } catch (err) {
+      setHandleErr(err.response?.data?.message || err.message || 'Failed to update username')
+    } finally {
+      setSavingHandle(false)
+    }
+  }
+
   return (
     <div className="min-h-[calc(100vh-3.5rem)]">
 
@@ -306,9 +335,59 @@ export default function Profile() {
             {/* Info */}
             <div className="flex-1">
               <div className="flex items-center gap-3 flex-wrap mb-1">
-                <h1 className="font-display font-black text-2xl" style={{ color: '#dde1ea' }}>
-                  {activeUser?.username}
-                </h1>
+                {/* Show inline edit form only when username not yet permanently set */}
+                {!activeUser?.is_username_set && editingUsername ? (
+                  <form onSubmit={handleSaveUsername} className="flex items-center gap-2">
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-mono text-xs text-[#f97316]">@</span>
+                      <input
+                        type="text"
+                        autoFocus
+                        maxLength={30}
+                        value={newHandle}
+                        onChange={e => setNewHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                        className="bg-[#0d0f17] border border-[#f97316] rounded px-6 py-1 font-mono text-sm text-[#dde1ea] outline-none"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={savingHandle}
+                      className="px-3 py-1 bg-[#f97316] text-[#07080c] text-xs font-mono font-bold rounded hover:bg-[#ea6c0a]"
+                    >
+                      {savingHandle ? '...' : 'Lock Handle'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setEditingUsername(false); setHandleErr('') }}
+                      className="px-3 py-1 bg-[#1e2130] text-[#9ca3af] text-xs font-mono rounded hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                  </form>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h1 className="font-display font-black text-2xl" style={{ color: '#dde1ea' }}>
+                      {activeUser?.username}
+                    </h1>
+                    {!activeUser?.is_username_set ? (
+                      <button
+                        onClick={() => { setNewHandle(activeUser?.username || ''); setEditingUsername(true); setHandleErr('') }}
+                        className="text-xs font-mono text-[#f97316] border border-[#f97316]/40 px-2 py-0.5 rounded hover:bg-[#f97316]/10 transition-colors"
+                        title="Set your permanent handle"
+                      >
+                        ✏️ Set Handle
+                      </button>
+                    ) : (
+                      <span
+                        className="text-[10px] font-mono text-[#4b5563] flex items-center gap-1"
+                        title="Username is permanently locked"
+                      >
+                        🔒 locked
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {/* Rank badge */}
                 {elo >= 1800
                   ? <span className="font-mono text-[11px] px-2 py-0.5 font-bold" style={{ background: 'rgba(250,204,21,0.12)', color: '#fbbf24', border: '1px solid rgba(250,204,21,0.3)', borderRadius: 3 }}>MASTER</span>
@@ -320,6 +399,7 @@ export default function Profile() {
                   joined {new Date(activeUser?.created_at ?? Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                 </span>
               </div>
+              {handleErr && <p className="font-mono text-xs text-[#f43f5e] mb-1">{handleErr}</p>}
               <div className="flex items-baseline gap-2">
                 <span className="font-display font-black text-5xl" style={{ color: '#f97316' }}>{elo}</span>
                 <span className="font-mono text-sm" style={{ color: '#4b5563' }}>elo</span>

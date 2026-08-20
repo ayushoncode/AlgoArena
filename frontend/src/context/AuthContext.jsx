@@ -72,6 +72,30 @@ export function AuthProvider({ children }) {
     localStorage.setItem('aa_user', JSON.stringify(userData))
   }, [])
 
+  /** Send OTP to email */
+  const sendOtp = useCallback(async (email) => {
+    const { data } = await api.post('/api/auth/send-otp', { email })
+    return data
+  }, [])
+
+  /** Verify OTP and login */
+  const loginWithOtp = useCallback(async ({ email, otp, username }) => {
+    const { data } = await api.post('/api/auth/verify-otp', { email, otp, username })
+    if (data.token && data.user) {
+      login(data)
+    }
+    return data
+  }, [login])
+
+  /** Login via Firebase ID Token */
+  const loginWithFirebase = useCallback(async ({ idToken, username }) => {
+    const { data } = await api.post('/api/auth/firebase', { idToken, username })
+    if (data.token && data.user) {
+      login(data)
+    }
+    return data
+  }, [login])
+
   /** Clears session */
   const logout = useCallback(() => {
     setUser(null)
@@ -85,7 +109,10 @@ export function AuthProvider({ children }) {
     login,
     logout,
     refreshUser,
-  }), [user, loading, login, logout, refreshUser])
+    sendOtp,
+    loginWithOtp,
+    loginWithFirebase,
+  }), [user, loading, login, logout, refreshUser, sendOtp, loginWithOtp, loginWithFirebase])
 
   return (
     <AuthContext.Provider value={value}>

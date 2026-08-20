@@ -86,20 +86,64 @@ router.get('/me/elo-history', authMiddleware, async (req, res) => {
   }
 })
 
-// GET /api/users/:id — public profile
-router.get('/:id', async (req, res) => {
+// PATCH /api/users/me/username — one-time initial handle setup (cannot be changed once set)
+router.patch('/me/username', authMiddleware, async (req, res) => {
   try {
-    const { rows } = await db.query(
-      `SELECT id, username, elo_rating, wins, losses, created_at
-       FROM users WHERE id = $1`,
-      [req.params.id]
+    const { username } = req.body
+    if (!username) {
+      return res.status(400).json({ message: 'Username is required' })
+    }
+
+    const cleanUsername = String(username).trim().toLowerCase()
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(cleanUsername)) {
+      return res.status(400).json({ message: 'Username must be 3–30 chars (letters, numbers, underscores only)' })
+    }
+
+    // Check if user already locked their username
+    const { rows: userCheck } = await db.query(
+      `SELECT is_username_set FROM users WHERE id = $1`,
+      [req.user.id]
     )
-    if (!rows[0]) return res.status(404).json({ message: 'user not found' })
-    return res.json(rows[0])
+    if (userCheck[0]?.is_username_set) {
+      return res.status(403).json({ message: 'Your username is permanently fixed and cannot be changed.' })
+    }
+
+    // Check if taken by another user
+    const { rows: conflict } = await db.query(
+      `SELECT id FROM users WHERE username = $1 AND id != $2`,
+      [cleanUsername, req.user.id]
+    )
+    if (conflict.length > 0) {
+      return res.status(409).json({ message: 'This username is already taken. Please pick another one.' })
+    }
+
+    const { rows: updated } = await db.query(
+      `UPDATE users SET username = $1, is_username_set = TRUE WHERE id = $2
+       RETURNING id, username, email, elo_rating, wins, losses, is_username_set, created_at`,
+      [cleanUsername, req.user.id]
+    )
+
+    if (!updated.length) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    const jwt = require('jsonwebtoken')
+    const user = updated[0]
+    const token = jwt.sign(
+      { id: user.id, username: user.username, elo_rating: user.elo_rating },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    )
+
+    return res.status(200).json({ message: 'Username permanently set', user, token })
   } catch (err) {
-    console.error('[GET /users/:id]', err)
-    return res.status(500).json({ message: 'internal server error' })
+    if (err.code === '23505') {
+      return res.status(409).json({ message: 'This username is already taken.' })
+    }
+    console.error('[PATCH /users/me/username]', err)
+    return res.status(500).json({ message: 'Failed to set username' })
   }
 })
 
 module.exports = router
+

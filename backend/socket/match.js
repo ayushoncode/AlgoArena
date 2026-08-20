@@ -165,17 +165,55 @@ function registerMatch(io) {
     const { id: userId, username, elo_rating } = socket.user
 
     /* ── rejoin_match (clear disconnect timer if reconnected) ────── */
-    socket.on('rejoin_match', ({ roomId }) => {
+    socket.on('rejoin_match', async ({ roomId }) => {
       if (roomId) socket.join(roomId)
 
       const match = activeMatches.get(roomId)
-      if (!match) return
+      if (match) {
+        if (match.disconnectTimers && match.disconnectTimers.has(userId)) {
+          clearTimeout(match.disconnectTimers.get(userId))
+          match.disconnectTimers.delete(userId)
+          console.log(`[Match] player reconnected user=${username} room=${roomId}`)
+          io.to(roomId).emit('player_reconnected', { userId, username })
+        }
 
-      if (match.disconnectTimers && match.disconnectTimers.has(userId)) {
-        clearTimeout(match.disconnectTimers.get(userId))
-        match.disconnectTimers.delete(userId)
-        console.log(`[Match] player reconnected user=${username} room=${roomId}`)
-        io.to(roomId).emit('player_reconnected', { userId, username })
+        socket.emit('match_state_restored', {
+          roomId,
+          dbMatchId: match.dbMatchId,
+          problemId: match.problemId,
+          topic: match.topic || 'arrays',
+          difficulty: match.difficulty || 'medium',
+          isCustom: match.isCustom || false,
+          players: match.players || [],
+          startedAt: match.startedAt,
+        })
+      } else if (roomId) {
+        try {
+          const { rows } = await db.query(
+            `SELECT m.*, u1.username as p1_name, u2.username as p2_name,
+                    w.username as winner_name, l.username as loser_name
+             FROM matches m
+             LEFT JOIN users u1 ON u1.id = m.player_one_id
+             LEFT JOIN users u2 ON u2.id = m.player_two_id
+             LEFT JOIN users w ON w.id = m.winner_id
+             LEFT JOIN users l ON l.id = (CASE WHEN m.winner_id = m.player_one_id THEN m.player_two_id ELSE m.player_one_id END)
+             WHERE (m.player_one_id = $1 OR m.player_two_id = $1)
+             ORDER BY m.created_at DESC LIMIT 1`,
+            [userId]
+          )
+          if (rows.length && rows[0].status !== 'active') {
+            const m = rows[0]
+            socket.emit('match_end', {
+              roomId,
+              topic: m.topic,
+              difficulty: m.difficulty,
+              winner: { userId: m.winner_id, username: m.winner_name },
+              loser: { userId: m.winner_id === m.player_one_id ? m.player_two_id : m.player_one_id, username: m.loser_name },
+            })
+          }
+        } catch (err) {
+          console.error('[rejoin_match DB lookup failed]', err.message)
+        }
       }
     })
 
@@ -525,15 +563,26 @@ async function handleVerdict(payload, io) {
 }
 
 /* ── Called by matchmaking or customRoom when a room is created ─ */
-function trackRoom(roomId, dbMatchId, problemId, isCustom = false, players = []) {
+function trackRoom(roomId, dbMatchId, problemId, isCustom = false, players = [], topic = 'arrays', difficulty = 'medium') {
   if (activeMatches.has(roomId)) {
     const entry = activeMatches.get(roomId)
-    entry.dbMatchId = dbMatchId
+    if (dbMatchId) entry.dbMatchId = dbMatchId
     if (problemId) entry.problemId = problemId
     entry.isCustom = isCustom
     if (players.length) entry.players = players
+    if (topic) entry.topic = topic
+    if (difficulty) entry.difficulty = difficulty
   } else {
-    activeMatches.set(roomId, { dbMatchId, problemId, isCustom, players, submissions: new Map(), startedAt: Date.now() })
+    activeMatches.set(roomId, {
+      dbMatchId,
+      problemId,
+      isCustom,
+      players,
+      topic,
+      difficulty,
+      submissions: new Map(),
+      startedAt: Date.now(),
+    })
   }
 }
 

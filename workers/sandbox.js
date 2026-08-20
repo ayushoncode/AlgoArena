@@ -159,89 +159,87 @@ print(json.dumps({"results": results}))
 
 /**
  * Build a C++ runner script.
- * Includes user solution and uses nlohmann/json for reflection-like argument unpacking.
+ * Infers arg types from first test case at JS time -> generates one exact dispatch call.
+ * Users write:  ReturnType solution(T1 a, T2 b, ...) { ... }  (free function, no class)
  */
 function buildCppRunner(testCases) {
-  const escapedTestCases = JSON.stringify(testCases).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-  return `#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <chrono>
-#include <sstream>
-#include <tuple>
-#include <type_traits>
-#include <algorithm>
-#include <unordered_map>
-#include <unordered_set>
-#include <queue>
-#include <stack>
-#include <cmath>
-#include <climits>
-#include <numeric>
-#include <nlohmann/json.hpp>
+  const escapedTestCases = JSON.stringify(testCases)
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
 
+  // Infer C++ type from a JSON value
+  function inferCppType(val) {
+    if (Array.isArray(val)) {
+      if (val.length === 0)                        return 'vector<int>'
+      if (typeof val[0] === 'number')
+        return Number.isInteger(val[0]) ? 'vector<long long>' : 'vector<double>'
+      if (typeof val[0] === 'string')              return 'vector<string>'
+      if (Array.isArray(val[0]))                   return 'vector<vector<int>>'
+      return 'vector<int>'
+    }
+    if (typeof val === 'number')  return Number.isInteger(val) ? 'long long' : 'double'
+    if (typeof val === 'string')  return 'string'
+    if (typeof val === 'boolean') return 'bool'
+    return 'int'
+  }
+
+  // Parse first test case args to determine types
+  let argTypes = ['int']
+  try {
+    const parsed = JSON.parse('[' + testCases[0].input + ']')
+    argTypes = parsed.map(inferCppType)
+  } catch { /* keep fallback */ }
+
+  // Generate dispatch call: solution(args[0].get<T0>(), args[1].get<T1>(), ...)
+  const getArgs = argTypes.map((t, i) => `args[${i}].get<${t}>()`).join(', ')
+
+  return `#include <bits/stdc++.h>
+#include <chrono>
+#include <nlohmann/json.hpp>
 using json = nlohmann::json;
 using namespace std;
 
-// Include user's solution AFTER std headers so vector/string/etc. are visible
+// User solution (free function named "solution")
 #include "/sandbox/solution.cpp"
-
-template<typename Ret, typename Class, typename... Args>
-json invokeMember(Ret (Class::*method)(Args...), Class& obj, const json& args) {
-    size_t idx = 0;
-    auto tupleArgs = make_tuple(args.at(idx++).get<decay_t<Args>>()...);
-    if constexpr (is_void_v<Ret>) {
-        apply([&](auto&&... unpacked) { (obj.*method)(unpacked...); }, tupleArgs);
-        return nullptr;
-    } else {
-        auto res = apply([&](auto&&... unpacked) { return (obj.*method)(unpacked...); }, tupleArgs);
-        return json(res);
-    }
-}
 
 int main() {
     try {
         json testCases = json::parse("${escapedTestCases}");
-        json results = json::array();
-
-        Solution solInstance;
+        json results   = json::array();
 
         for (size_t i = 0; i < testCases.size(); i++) {
             auto& tc = testCases[i];
-            auto start = chrono::high_resolution_clock::now();
+            auto  t0 = chrono::high_resolution_clock::now();
             try {
                 string rawInput = "[" + tc["input"].get<string>() + "]";
-                json args = json::parse(rawInput);
-                json actual = invokeMember(&Solution::solution, solInstance, args);
-                auto end = chrono::high_resolution_clock::now();
-                int runtimeMs = (int)chrono::duration_cast<chrono::milliseconds>(end - start).count();
-
+                json   args     = json::parse(rawInput);
+                json   actual   = json(solution(${getArgs}));
+                int    ms       = (int)chrono::duration_cast<chrono::milliseconds>(
+                                    chrono::high_resolution_clock::now() - t0).count();
                 results.push_back({
-                    {"index", i + 1},
-                    {"actual", actual.dump()},
+                    {"index",    (int)(i+1)},
+                    {"actual",   actual.dump()},
                     {"expected", tc["output"]},
-                    {"runtimeMs", runtimeMs},
+                    {"runtimeMs", ms},
                     {"isHidden", tc["is_hidden"]},
-                    {"error", nullptr}
+                    {"error",    nullptr}
                 });
             } catch (const exception& e) {
-                auto end = chrono::high_resolution_clock::now();
-                int runtimeMs = (int)chrono::duration_cast<chrono::milliseconds>(end - start).count();
+                int ms = (int)chrono::duration_cast<chrono::milliseconds>(
+                            chrono::high_resolution_clock::now() - t0).count();
                 results.push_back({
-                    {"index", i + 1},
-                    {"actual", nullptr},
+                    {"index",    (int)(i+1)},
+                    {"actual",   nullptr},
                     {"expected", tc["output"]},
-                    {"runtimeMs", runtimeMs},
+                    {"runtimeMs", ms},
                     {"isHidden", tc["is_hidden"]},
-                    {"error", e.what()}
+                    {"error",    e.what()}
                 });
             }
         }
-
         cout << json({{"results", results}}).dump() << endl;
     } catch (const exception& e) {
-        cout << json({{"fatal", e.what()}, {"results", json::array()}}).dump() << endl;
+        cout << json({{"fatal", e.what()},{"results",json::array()}}).dump() << endl;
     }
     return 0;
 }
@@ -429,8 +427,15 @@ async function runSandbox({ code, language, testCases }) {
         return makeErrorResult('TIME_LIMIT_EXCEEDED', testCases,
           `Time limit exceeded (${TIMEOUT_MS}ms)`, TIMEOUT_MS)
       }
-      const msg = String(err.message || '')
-      if (msg.includes('Cannot connect to the Docker daemon') || msg.includes('ENOENT') || msg.includes('not found') || msg.includes('docker:')) {
+      const msg = String(err.message || err.stderr || '')
+      if (
+        msg.includes('Cannot connect to the Docker daemon') ||
+        msg.includes('failed to connect to the docker API') ||   // Docker Desktop Mac (new format)
+        msg.includes('connect: no such file or directory') ||    // dead socket symlink
+        msg.includes('ENOENT') ||
+        msg.includes('not found') ||
+        msg.includes('docker:')
+      ) {
         isDockerUnavailable = true
       } else {
         return makeErrorResult('RUNTIME_ERROR', testCases, err.message, Date.now() - startTime)
