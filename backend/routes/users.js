@@ -86,7 +86,7 @@ router.get('/me/elo-history', authMiddleware, async (req, res) => {
   }
 })
 
-// PATCH /api/users/me/username — update username
+// PATCH /api/users/me/username — one-time initial handle setup (cannot be changed once set)
 router.patch('/me/username', authMiddleware, async (req, res) => {
   try {
     const { username } = req.body
@@ -99,6 +99,15 @@ router.patch('/me/username', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Username must be 3–30 chars (letters, numbers, underscores only)' })
     }
 
+    // Check if user already locked their username
+    const { rows: userCheck } = await db.query(
+      `SELECT is_username_set FROM users WHERE id = $1`,
+      [req.user.id]
+    )
+    if (userCheck[0]?.is_username_set) {
+      return res.status(403).json({ message: 'Your username is permanently fixed and cannot be changed.' })
+    }
+
     // Check if taken by another user
     const { rows: conflict } = await db.query(
       `SELECT id FROM users WHERE username = $1 AND id != $2`,
@@ -109,8 +118,8 @@ router.patch('/me/username', authMiddleware, async (req, res) => {
     }
 
     const { rows: updated } = await db.query(
-      `UPDATE users SET username = $1 WHERE id = $2
-       RETURNING id, username, email, elo_rating, wins, losses, created_at`,
+      `UPDATE users SET username = $1, is_username_set = TRUE WHERE id = $2
+       RETURNING id, username, email, elo_rating, wins, losses, is_username_set, created_at`,
       [cleanUsername, req.user.id]
     )
 
@@ -126,13 +135,13 @@ router.patch('/me/username', authMiddleware, async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     )
 
-    return res.status(200).json({ message: 'Username updated successfully', user, token })
+    return res.status(200).json({ message: 'Username permanently set', user, token })
   } catch (err) {
     if (err.code === '23505') {
       return res.status(409).json({ message: 'This username is already taken.' })
     }
     console.error('[PATCH /users/me/username]', err)
-    return res.status(500).json({ message: 'Failed to update username' })
+    return res.status(500).json({ message: 'Failed to set username' })
   }
 })
 

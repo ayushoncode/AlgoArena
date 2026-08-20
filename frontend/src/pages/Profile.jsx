@@ -335,7 +335,8 @@ export default function Profile() {
             {/* Info */}
             <div className="flex-1">
               <div className="flex items-center gap-3 flex-wrap mb-1">
-                {editingUsername ? (
+                {/* Show inline edit form only when username not yet permanently set */}
+                {!activeUser?.is_username_set && editingUsername ? (
                   <form onSubmit={handleSaveUsername} className="flex items-center gap-2">
                     <div className="relative">
                       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-mono text-xs text-[#f97316]">@</span>
@@ -353,7 +354,7 @@ export default function Profile() {
                       disabled={savingHandle}
                       className="px-3 py-1 bg-[#f97316] text-[#07080c] text-xs font-mono font-bold rounded hover:bg-[#ea6c0a]"
                     >
-                      {savingHandle ? '...' : 'Save'}
+                      {savingHandle ? '...' : 'Lock Handle'}
                     </button>
                     <button
                       type="button"
@@ -368,13 +369,22 @@ export default function Profile() {
                     <h1 className="font-display font-black text-2xl" style={{ color: '#dde1ea' }}>
                       {activeUser?.username}
                     </h1>
-                    <button
-                      onClick={() => { setNewHandle(activeUser?.username || ''); setEditingUsername(true); setHandleErr('') }}
-                      className="text-xs font-mono text-[#6b7280] hover:text-[#f97316] p-1 transition-colors"
-                      title="Change username"
-                    >
-                      ✏️ Edit
-                    </button>
+                    {!activeUser?.is_username_set ? (
+                      <button
+                        onClick={() => { setNewHandle(activeUser?.username || ''); setEditingUsername(true); setHandleErr('') }}
+                        className="text-xs font-mono text-[#f97316] border border-[#f97316]/40 px-2 py-0.5 rounded hover:bg-[#f97316]/10 transition-colors"
+                        title="Set your permanent handle"
+                      >
+                        ✏️ Set Handle
+                      </button>
+                    ) : (
+                      <span
+                        className="text-[10px] font-mono text-[#4b5563] flex items-center gap-1"
+                        title="Username is permanently locked"
+                      >
+                        🔒 locked
+                      </span>
+                    )}
                   </div>
                 )}
 

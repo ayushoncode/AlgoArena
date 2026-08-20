@@ -127,13 +127,15 @@ router.post('/verify-otp', async (req, res) => {
 
       const dummyHash = await bcrypt.hash('otp-auth-' + Math.random(), 10)
       const { rows: created } = await db.query(
-        `INSERT INTO users (username, email, password, elo_rating)
-         VALUES ($1, $2, $3, 1200)
-         RETURNING id, username, email, elo_rating, wins, losses, created_at`,
+        `INSERT INTO users (username, email, password, elo_rating, is_username_set)
+         VALUES ($1, $2, $3, 1200, FALSE)
+         RETURNING id, username, email, elo_rating, wins, losses, is_username_set, created_at`,
         [chosenUsername, cleanEmail, dummyHash]
       )
       user = created[0]
       isNewUser = true
+    } else {
+      isNewUser = !user.is_username_set
     }
 
     const token = signToken(user)
@@ -175,7 +177,7 @@ router.post('/firebase', async (req, res) => {
 
     // Look up by firebase_uid or email
     const { rows: existing } = await db.query(
-      `SELECT id, username, email, elo_rating, wins, losses, firebase_uid
+      `SELECT id, username, email, elo_rating, wins, losses, firebase_uid, is_username_set
        FROM users WHERE firebase_uid = $1 OR email = $2`,
       [firebaseUid, cleanEmail]
     )
@@ -194,15 +196,18 @@ router.post('/firebase', async (req, res) => {
 
       const dummyHash = await bcrypt.hash('firebase-auth-' + Math.random(), 10)
       const { rows: created } = await db.query(
-        `INSERT INTO users (username, email, password, firebase_uid, elo_rating)
-         VALUES ($1, $2, $3, $4, 1200)
-         RETURNING id, username, email, elo_rating, wins, losses, created_at`,
+        `INSERT INTO users (username, email, password, firebase_uid, elo_rating, is_username_set)
+         VALUES ($1, $2, $3, $4, 1200, FALSE)
+         RETURNING id, username, email, elo_rating, wins, losses, is_username_set, created_at`,
         [chosenUsername, cleanEmail, dummyHash, firebaseUid]
       )
       user = created[0]
       isNewUser = true
-    } else if (!user.firebase_uid && firebaseUid) {
-      await db.query(`UPDATE users SET firebase_uid = $1 WHERE id = $2`, [firebaseUid, user.id])
+    } else {
+      if (!user.firebase_uid && firebaseUid) {
+        await db.query(`UPDATE users SET firebase_uid = $1 WHERE id = $2`, [firebaseUid, user.id])
+      }
+      isNewUser = !user.is_username_set
     }
 
     const token = signToken(user)
@@ -234,9 +239,9 @@ router.post('/register', async (req, res) => {
     const hash = await bcrypt.hash(password, 12)
 
     const { rows } = await db.query(
-      `INSERT INTO users (username, email, password)
-       VALUES ($1, $2, $3)
-       RETURNING id, username, email, elo_rating, wins, losses, created_at`,
+      `INSERT INTO users (username, email, password, is_username_set)
+       VALUES ($1, $2, $3, TRUE)
+       RETURNING id, username, email, elo_rating, wins, losses, is_username_set, created_at`,
       [username.toLowerCase(), email.toLowerCase(), hash]
     )
     const user = rows[0]
