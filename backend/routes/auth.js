@@ -286,5 +286,105 @@ router.post('/login', async (req, res) => {
   }
 })
 
+// ── POST /api/auth/forgot-password ───────────────────────────
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      return res.status(400).json({ message: 'A valid email address is required' })
+    }
+
+    const cleanEmail = email.trim().toLowerCase()
+
+    // Check if user exists
+    const { rows } = await db.query(`SELECT id FROM users WHERE email = $1`, [cleanEmail])
+    if (!rows.length) {
+      return res.status(404).json({ message: 'No account found with this email address' })
+    }
+
+    // Generate 6-digit reset OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    const expiresAt = Date.now() + 10 * 60 * 1000 // 10 minutes validity
+
+    otpStore.set(`reset_${cleanEmail}`, { code: otp, expiresAt, attempts: 0 })
+
+    console.log(`\n🔑 [RESET PASSWORD OTP] Generated for ${cleanEmail} -> ${otp} (Valid for 10m)\n`)
+
+    return res.status(200).json({
+      message: 'Password reset code sent to your email',
+      email: cleanEmail,
+      devOtp: process.env.NODE_ENV !== 'production' ? otp : undefined,
+    })
+  } catch (err) {
+    console.error('[POST /auth/forgot-password]', err)
+    return res.status(500).json({ message: 'Failed to process forgot password request' })
+  }
+})
+
+// ── POST /api/auth/reset-password ────────────────────────────
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: 'Email, OTP code, and new password are required' })
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' })
+    }
+
+    const cleanEmail = email.trim().toLowerCase()
+    const key = `reset_${cleanEmail}`
+    const record = otpStore.get(key)
+
+    if (!record) {
+      return res.status(400).json({ message: 'Reset code expired or not requested. Please request a new code.' })
+    }
+
+    if (Date.now() > record.expiresAt) {
+      otpStore.delete(key)
+      return res.status(400).json({ message: 'Reset code has expired. Please request a new one.' })
+    }
+
+    if (record.attempts >= 5) {
+      otpStore.delete(key)
+      return res.status(429).json({ message: 'Too many incorrect attempts. Please request a new code.' })
+    }
+
+    if (record.code !== String(otp).trim()) {
+      record.attempts++
+      return res.status(400).json({ message: 'Invalid reset code. Please check and try again.' })
+    }
+
+    // Valid code -> consume it
+    otpStore.delete(key)
+
+    // Hash new password and update user
+    const hash = await bcrypt.hash(newPassword, 12)
+    const { rows } = await db.query(
+      `UPDATE users SET password = $1 WHERE email = $2
+       RETURNING id, username, email, elo_rating, wins, losses`,
+      [hash, cleanEmail]
+    )
+
+    if (!rows.length) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    const user = rows[0]
+    const token = signToken(user)
+
+    return res.status(200).json({
+      message: 'Password reset successful! You are now signed in.',
+      token,
+      user,
+    })
+  } catch (err) {
+    console.error('[POST /auth/reset-password]', err)
+    return res.status(500).json({ message: 'Failed to reset password' })
+  }
+})
+
 module.exports = router
+
 

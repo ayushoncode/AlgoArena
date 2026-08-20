@@ -286,14 +286,17 @@ function OtpDigitsInput({ length = 6, value, onChange }) {
 }
 
 /* ════════════════════════════════════════════════
-   AUTH FORMS: OTP (Passwordless) + Email/PW + Register
+   AUTH FORMS: OTP (Passwordless) + Email/PW + Register + Forgot Password
 ════════════════════════════════════════════════ */
-function Field({ id, label, type = 'text', placeholder, value, onChange, autoComplete }) {
+function Field({ id, label, type = 'text', placeholder, value, onChange, autoComplete, rightElement }) {
   return (
     <div>
-      <label htmlFor={id} className="font-mono text-[10.5px] uppercase tracking-wider block mb-1.5 text-[#6b7280]">
-        {label}
-      </label>
+      <div className="flex items-center justify-between mb-1.5">
+        <label htmlFor={id} className="font-mono text-[10.5px] uppercase tracking-wider text-[#6b7280]">
+          {label}
+        </label>
+        {rightElement}
+      </div>
       <input
         id={id}
         type={type}
@@ -307,11 +310,96 @@ function Field({ id, label, type = 'text', placeholder, value, onChange, autoCom
   )
 }
 
+function PasswordField({ id, label, placeholder, value, onChange, autoComplete, rightLabel, onRightClick }) {
+  const [show, setShow] = useState(false)
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <label htmlFor={id} className="font-mono text-[10.5px] uppercase tracking-wider text-[#6b7280]">
+          {label}
+        </label>
+        {rightLabel && (
+          <button
+            type="button"
+            onClick={onRightClick}
+            className="font-mono text-[10.5px] text-[#f97316] hover:underline"
+          >
+            {rightLabel}
+          </button>
+        )}
+      </div>
+      <div className="relative">
+        <input
+          id={id}
+          type={show ? 'text' : 'password'}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          className="input-field pr-8"
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => setShow(s => !s)}
+          className="absolute right-0 top-1/2 -translate-y-1/2 text-[#6b7280] hover:text-[#dde1ea] text-xs font-mono select-none"
+        >
+          {show ? '👁️' : '👁️‍🗨️'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function PasswordStrength({ password }) {
+  if (!password) return null
+  let score = 0
+  if (password.length >= 6) score++
+  if (password.length >= 10) score++
+  if (/[0-9]/.test(password)) score++
+  if (/[^A-Za-z0-9]/.test(password) || /[A-Z]/.test(password)) score++
+
+  const levels = [
+    { label: 'Too short', color: '#f43f5e' },
+    { label: 'Weak',      color: '#f43f5e' },
+    { label: 'Fair',      color: '#f59e0b' },
+    { label: 'Good',      color: '#22d3ee' },
+    { label: 'Strong 💪', color: '#10b981' },
+  ]
+  const cur = levels[score] || levels[0]
+
+  return (
+    <div className="space-y-1 pt-1">
+      <div className="flex gap-1 h-1">
+        {[1, 2, 3, 4].map(i => (
+          <div
+            key={i}
+            className="flex-1 rounded-full transition-all duration-300"
+            style={{ background: i <= score ? cur.color : '#1e2130' }}
+          />
+        ))}
+      </div>
+      <p className="font-mono text-[10px] text-right" style={{ color: cur.color }}>
+        {cur.label}
+      </p>
+    </div>
+  )
+}
+
 function Err({ msg }) {
   if (!msg) return null
   return (
     <p className="slide-up font-mono text-[11px] flex items-center gap-1.5 text-[#f43f5e] bg-[rgba(244,63,94,0.08)] p-2 rounded border border-[rgba(244,63,94,0.2)]">
       <span>✕</span>{msg}
+    </p>
+  )
+}
+
+function SuccessAlert({ msg }) {
+  if (!msg) return null
+  return (
+    <p className="slide-up font-mono text-[11px] flex items-center gap-1.5 text-[#10b981] bg-[rgba(16,185,129,0.08)] p-2 rounded border border-[rgba(16,185,129,0.2)]">
+      <span>✓</span>{msg}
     </p>
   )
 }
@@ -330,13 +418,19 @@ function OtpLoginForm({ onSwitchPassword }) {
   const { sendOtp, loginWithOtp } = useAuth()
   const navigate = useNavigate()
 
-  const [step, setStep]         = useState(1) // 1: email, 2: 6-digit OTP, 3: optional username setup
+  const [step, setStep]         = useState(1) // 1: email, 2: 6-digit OTP
   const [email, setEmail]       = useState('')
   const [otp, setOtp]           = useState('')
-  const [username, setUsername] = useState('')
   const [err, setErr]           = useState('')
   const [busy, setBusy]         = useState(false)
   const [devOtp, setDevOtp]     = useState(null)
+  const [cooldown, setCooldown] = useState(0)
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const t = setInterval(() => setCooldown(c => Math.max(0, c - 1)), 1000)
+    return () => clearInterval(t)
+  }, [cooldown])
 
   async function handleSendOtp(e) {
     if (e) e.preventDefault()
@@ -350,6 +444,7 @@ function OtpLoginForm({ onSwitchPassword }) {
       const res = await sendOtp(email.trim().toLowerCase())
       if (res.devOtp) setDevOtp(res.devOtp)
       setStep(2)
+      setCooldown(30)
     } catch (e) {
       setErr(e.response?.data?.message || e.message || 'Failed to send OTP')
     } finally {
@@ -366,14 +461,10 @@ function OtpLoginForm({ onSwitchPassword }) {
     setBusy(true)
     setErr('')
     try {
-      const res = await loginWithOtp({
+      await loginWithOtp({
         email: email.trim().toLowerCase(),
         otp: otp.trim(),
-        username: username.trim() || undefined,
       })
-      if (res.isNewUser && !username) {
-        // Optional quick welcome
-      }
       navigate('/lobby')
     } catch (e) {
       setErr(e.response?.data?.message || e.message || 'Verification failed')
@@ -450,8 +541,13 @@ function OtpLoginForm({ onSwitchPassword }) {
             <button type="button" onClick={() => setStep(1)} className="hover:text-white transition-colors">
               ← Change email
             </button>
-            <button type="button" onClick={handleSendOtp} className="hover:text-[#f97316] transition-colors">
-              Resend code
+            <button
+              type="button"
+              disabled={cooldown > 0 || busy}
+              onClick={handleSendOtp}
+              className="hover:text-[#f97316] transition-colors disabled:opacity-50"
+            >
+              {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
             </button>
           </div>
         </form>
@@ -461,7 +557,7 @@ function OtpLoginForm({ onSwitchPassword }) {
 }
 
 /** Standard Password Login */
-function PasswordLoginForm({ onSwitchOtp, onSwitchRegister }) {
+function PasswordLoginForm({ onSwitchOtp, onSwitchRegister, onSwitchForgot }) {
   const { login } = useAuth()
   const navigate  = useNavigate()
   const [form, setForm] = useState({ email:'', password:'' })
@@ -491,7 +587,16 @@ function PasswordLoginForm({ onSwitchOtp, onSwitchRegister }) {
     <form onSubmit={go} className="space-y-4 fade-in" noValidate>
       <Err msg={err} />
       <Field id="l-email" label="Email" type="email" placeholder="you@domain.com" autoComplete="email" value={form.email} onChange={set('email')} />
-      <Field id="l-password" label="Password" type="password" placeholder="••••••••" autoComplete="current-password" value={form.password} onChange={set('password')} />
+      <PasswordField
+        id="l-password"
+        label="Password"
+        placeholder="••••••••"
+        autoComplete="current-password"
+        value={form.password}
+        onChange={set('password')}
+        rightLabel="Forgot password?"
+        onRightClick={onSwitchForgot}
+      />
 
       <button id="login-submit" type="submit" disabled={busy} className="btn-primary w-full py-3">
         {busy ? <><Spinner/> Authenticating...</> : <>sign_in() →</>}
@@ -502,10 +607,187 @@ function PasswordLoginForm({ onSwitchOtp, onSwitchRegister }) {
           ⚡ Sign in with OTP
         </button>
         <button type="button" onClick={onSwitchRegister} className="text-[#6b7280] hover:text-[#dde1ea]">
-          Register new account →
+          Register account →
         </button>
       </div>
     </form>
+  )
+}
+
+/** Complete Forgot & Reset Password Form */
+function ForgotPasswordForm({ onBackToLogin }) {
+  const { login } = useAuth()
+  const navigate  = useNavigate()
+
+  const [step, setStep]         = useState(1) // 1: enter email, 2: enter OTP & new password
+  const [email, setEmail]       = useState('')
+  const [otp, setOtp]           = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [err, setErr]           = useState('')
+  const [success, setSuccess]   = useState('')
+  const [busy, setBusy]         = useState(false)
+  const [devOtp, setDevOtp]     = useState(null)
+  const [cooldown, setCooldown] = useState(0)
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const t = setInterval(() => setCooldown(c => Math.max(0, c - 1)), 1000)
+    return () => clearInterval(t)
+  }, [cooldown])
+
+  async function handleSendResetCode(e) {
+    if (e) e.preventDefault()
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      setErr('Please enter a valid email address')
+      return
+    }
+    setBusy(true)
+    setErr('')
+    setSuccess('')
+    try {
+      const { data } = await api.post('/api/auth/forgot-password', { email: email.trim().toLowerCase() })
+      if (data.devOtp) setDevOtp(data.devOtp)
+      setSuccess('Reset code sent to your email!')
+      setStep(2)
+      setCooldown(30)
+    } catch (e) {
+      setErr(e.response?.data?.message || e.message || 'Failed to send reset code')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleResetPassword(e) {
+    if (e) e.preventDefault()
+    if (otp.length < 6) { setErr('Please enter the 6-digit reset code'); return }
+    if (newPassword.length < 6) { setErr('New password must be at least 6 characters'); return }
+    if (newPassword !== confirmPassword) { setErr("Passwords do not match"); return }
+
+    setBusy(true)
+    setErr('')
+    try {
+      const { data } = await api.post('/api/auth/reset-password', {
+        email: email.trim().toLowerCase(),
+        otp: otp.trim(),
+        newPassword,
+      })
+      login(data)
+      navigate('/lobby')
+    } catch (e) {
+      setErr(e.response?.data?.message || e.message || 'Failed to reset password')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4 fade-in">
+      <Err msg={err} />
+      <SuccessAlert msg={success} />
+
+      {step === 1 && (
+        <form onSubmit={handleSendResetCode} className="space-y-4">
+          <div className="space-y-1">
+            <h3 className="font-semibold text-xs text-[#dde1ea]">Reset Your Password</h3>
+            <p className="text-[11px] text-[#6b7280]">
+              Enter your registered email and we'll send you a 6-digit verification code to reset your password.
+            </p>
+          </div>
+
+          <Field
+            id="forgot-email"
+            label="Account Email"
+            type="email"
+            placeholder="you@domain.com"
+            autoComplete="email"
+            value={email}
+            onChange={e => { setEmail(e.target.value); setErr('') }}
+          />
+
+          <button
+            id="forgot-submit"
+            type="submit"
+            disabled={busy}
+            className="btn-primary w-full py-3 shadow-lg shadow-orange-500/20"
+          >
+            {busy ? <><Spinner/> Sending Code...</> : <>Send Password Reset Code →</>}
+          </button>
+
+          <div className="text-center pt-1">
+            <button
+              type="button"
+              onClick={onBackToLogin}
+              className="font-mono text-[11px] text-[#6b7280] hover:text-[#dde1ea] transition-colors"
+            >
+              ← Back to Sign In
+            </button>
+          </div>
+        </form>
+      )}
+
+      {step === 2 && (
+        <form onSubmit={handleResetPassword} className="space-y-3.5">
+          <div className="text-center space-y-0.5">
+            <p className="font-mono text-xs text-[#9ca3af]">Enter 6-digit code sent to</p>
+            <p className="font-mono text-xs font-bold text-[#f97316]">{email}</p>
+          </div>
+
+          {devOtp && (
+            <div className="p-2 bg-[#111422] border border-[#22d3ee]/30 rounded text-center">
+              <span className="font-mono text-[10px] text-[#22d3ee]">Dev Code: </span>
+              <span className="font-mono text-xs font-bold text-white tracking-widest">{devOtp}</span>
+            </div>
+          )}
+
+          <div className="py-1">
+            <OtpDigitsInput length={6} value={otp} onChange={setOtp} />
+          </div>
+
+          <PasswordField
+            id="new-pw"
+            label="New Password"
+            placeholder="min. 6 characters"
+            autoComplete="new-password"
+            value={newPassword}
+            onChange={e => setNewPassword(e.target.value)}
+          />
+          <PasswordStrength password={newPassword} />
+
+          <PasswordField
+            id="conf-new-pw"
+            label="Confirm New Password"
+            placeholder="repeat new password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+          />
+
+          <button
+            id="reset-pw-submit"
+            type="submit"
+            disabled={busy || otp.length < 6 || newPassword.length < 6}
+            className="btn-primary w-full py-3 mt-2"
+          >
+            {busy ? <><Spinner/> Updating Password...</> : <>Update Password & Sign In →</>}
+          </button>
+
+          <div className="flex items-center justify-between font-mono text-[11px] text-[#6b7280] pt-1">
+            <button type="button" onClick={() => setStep(1)} className="hover:text-white transition-colors">
+              ← Change email
+            </button>
+            <button
+              type="button"
+              disabled={cooldown > 0 || busy}
+              onClick={handleSendResetCode}
+              className="hover:text-[#f97316] transition-colors disabled:opacity-50"
+            >
+              {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
   )
 }
 
@@ -546,8 +828,9 @@ function RegisterForm({ onSwitchLogin }) {
       <Err msg={err}/>
       <Field id="r-user" label="Username" placeholder="ninja_coder" autoComplete="username" value={form.username} onChange={set('username')}/>
       <Field id="r-email" label="Email" type="email" placeholder="you@domain.com" autoComplete="email" value={form.email} onChange={set('email')}/>
-      <Field id="r-pw" label="Password" type="password" placeholder="min. 6 characters" autoComplete="new-password" value={form.password} onChange={set('password')}/>
-      <Field id="r-conf" label="Confirm Password" type="password" placeholder="repeat password" autoComplete="new-password" value={form.confirm} onChange={set('confirm')}/>
+      <PasswordField id="r-pw" label="Password" placeholder="min. 6 characters" autoComplete="new-password" value={form.password} onChange={set('password')}/>
+      <PasswordStrength password={form.password} />
+      <PasswordField id="r-conf" label="Confirm Password" placeholder="repeat password" autoComplete="new-password" value={form.confirm} onChange={set('confirm')}/>
 
       <button id="register-submit" type="submit" disabled={busy} className="btn-primary w-full py-3 mt-2">
         {busy ? <><Spinner/> Creating Account...</> : <>create_account() →</>}
@@ -774,45 +1057,54 @@ export default function Home() {
               <GoogleAuthButton />
 
               {/* Header Tabs */}
-              <div className="flex items-center justify-between pb-3 border-b border-[#1e2130] mb-4">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setAuthMode('otp')}
-                    className="font-mono text-xs font-bold transition-colors pb-1"
-                    style={{
-                      color: authMode === 'otp' ? '#f97316' : '#6b7280',
-                      borderBottom: authMode === 'otp' ? '2px solid #f97316' : '2px solid transparent',
-                    }}
-                  >
-                    ⚡ Fast OTP
-                  </button>
-                  <button
-                    onClick={() => setAuthMode('password')}
-                    className="font-mono text-xs font-bold transition-colors pb-1"
-                    style={{
-                      color: authMode === 'password' ? '#dde1ea' : '#6b7280',
-                      borderBottom: authMode === 'password' ? '2px solid #dde1ea' : '2px solid transparent',
-                    }}
-                  >
-                    Password
-                  </button>
-                  <button
-                    onClick={() => setAuthMode('register')}
-                    className="font-mono text-xs font-bold transition-colors pb-1"
-                    style={{
-                      color: authMode === 'register' ? '#22d3ee' : '#6b7280',
-                      borderBottom: authMode === 'register' ? '2px solid #22d3ee' : '2px solid transparent',
-                    }}
-                  >
-                    Register
-                  </button>
+              {authMode !== 'forgot' && (
+                <div className="flex items-center justify-between pb-3 border-b border-[#1e2130] mb-4">
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => setAuthMode('otp')}
+                      className="font-mono text-xs font-bold transition-colors pb-1"
+                      style={{
+                        color: authMode === 'otp' ? '#f97316' : '#6b7280',
+                        borderBottom: authMode === 'otp' ? '2px solid #f97316' : '2px solid transparent',
+                      }}
+                    >
+                      ⚡ Fast OTP
+                    </button>
+                    <button
+                      onClick={() => setAuthMode('password')}
+                      className="font-mono text-xs font-bold transition-colors pb-1"
+                      style={{
+                        color: authMode === 'password' ? '#dde1ea' : '#6b7280',
+                        borderBottom: authMode === 'password' ? '2px solid #dde1ea' : '2px solid transparent',
+                      }}
+                    >
+                      Password
+                    </button>
+                    <button
+                      onClick={() => setAuthMode('register')}
+                      className="font-mono text-xs font-bold transition-colors pb-1"
+                      style={{
+                        color: authMode === 'register' ? '#22d3ee' : '#6b7280',
+                        borderBottom: authMode === 'register' ? '2px solid #22d3ee' : '2px solid transparent',
+                      }}
+                    >
+                      Register
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Form Body */}
               {authMode === 'otp' && <OtpLoginForm onSwitchPassword={() => setAuthMode('password')} />}
-              {authMode === 'password' && <PasswordLoginForm onSwitchOtp={() => setAuthMode('otp')} onSwitchRegister={() => setAuthMode('register')} />}
+              {authMode === 'password' && (
+                <PasswordLoginForm
+                  onSwitchOtp={() => setAuthMode('otp')}
+                  onSwitchRegister={() => setAuthMode('register')}
+                  onSwitchForgot={() => setAuthMode('forgot')}
+                />
+              )}
               {authMode === 'register' && <RegisterForm onSwitchLogin={() => setAuthMode('password')} />}
+              {authMode === 'forgot' && <ForgotPasswordForm onBackToLogin={() => setAuthMode('password')} />}
             </div>
 
             <div className="mt-8 pt-4 border-t border-[#1e2130] text-center">
