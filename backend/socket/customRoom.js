@@ -103,7 +103,7 @@ function registerCustomRoom(io) {
       }
 
       // 1. Track room state immediately in memory
-      trackRoom(roomId, null, null, true, matchPayload.players)
+      trackRoom(roomId, null, null, true, matchPayload.players, topic, difficulty)
 
       // 2. Emit match_found to both players in custom room
       io.to(roomId).emit('match_found', matchPayload)
@@ -123,8 +123,9 @@ function registerCustomRoom(io) {
           )
           const dbMatchId = rows[0]?.id ?? null
           if (dbMatchId) {
-            trackRoom(roomId, dbMatchId, problemId, true, matchPayload.players)
-            console.log(`[DB] custom match row created  id=${dbMatchId}  room=${roomId}`)
+            trackRoom(roomId, dbMatchId, problemId, true, matchPayload.players, topic, difficulty)
+            console.log(`[DB] custom match row created  id=${dbMatchId}  room=${roomId}  prob=${problemId}`)
+            io.to(roomId).emit('match_problem_set', { roomId, problemId })
           }
         } catch (err) {
           console.error('[DB] custom createMatchRow failed:', err.message)

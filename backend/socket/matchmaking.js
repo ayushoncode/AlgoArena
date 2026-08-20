@@ -141,11 +141,12 @@ function registerMatchmaking(io) {
             { userId: newEntry.userId,  username: newEntry.username,  rating: newEntry.rating  },
             { userId: opponent.userId,  username: opponent.username,  rating: opponent.rating  },
           ],
+          // problemId filled in below after DB insert
         }
 
         io.to(roomId).emit('match_found', matchPayload)
 
-        // Persist match to DB and link to room state
+        // Persist match to DB and link to room state; then update problem
         ;(async () => {
           try {
             const { rows: problems } = await db.query(
@@ -160,8 +161,10 @@ function registerMatchmaking(io) {
             )
             const dbMatchId = rows[0]?.id ?? null
             if (dbMatchId) {
-              trackRoom(roomId, dbMatchId, problemId, false, matchPayload.players)
+              trackRoom(roomId, dbMatchId, problemId, false, matchPayload.players, topic, difficulty)
               console.log(`[DB] match row created  id=${dbMatchId}  room=${roomId}  prob=${problemId}`)
+              // Now that we know problemId, push an update so clients can pin the exact problem
+              io.to(roomId).emit('match_problem_set', { roomId, problemId })
             }
           } catch (err) {
             console.error('[DB] createMatchRow failed:', err.message)

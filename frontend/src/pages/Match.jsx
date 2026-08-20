@@ -448,23 +448,33 @@ function PlayerHeader({ player, isMe, verdict }) {
    Width and collapsed state controlled entirely by parent.
    Parent passes: topic, difficulty, forcedWidth (px), onProblemLoaded, onToggleCollapse
 ════════════════════════════════════════════════ */
-function ProblemPanel({ topic, difficulty, forcedWidth, collapsed, onToggleCollapse, onProblemLoaded }) {
+function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, onToggleCollapse, onProblemLoaded }) {
   const [problem,   setProblem] = useState(null)
   const [loading,   setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('description')
 
   useEffect(() => {
-    if (!topic) return
-    api.get(`/api/problems?topic=${topic}&difficulty=${difficulty}`)
+    let url = ''
+    if (problemId) {
+      url = `/api/problems/${problemId}`
+    } else if (topic) {
+      url = `/api/problems?topic=${topic}&difficulty=${difficulty || 'medium'}`
+    } else {
+      return
+    }
+
+    setLoading(true)
+    api.get(url)
       .then(({ data }) => {
-        if (data?.length) {
-          setProblem(data[0])
-          if (onProblemLoaded) onProblemLoaded(data[0])
+        const prob = Array.isArray(data) ? data[0] : data
+        if (prob) {
+          setProblem(prob)
+          if (onProblemLoaded) onProblemLoaded(prob)
         }
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [topic, difficulty])
+  }, [problemId, topic, difficulty])
 
   const DIFF = {
     easy:   { col:'#10b981', bg:'rgba(16,185,129,0.1)',  border:'rgba(16,185,129,0.3)',  label:'Easy'   },
@@ -789,8 +799,25 @@ export default function Match() {
   const [probCollapsed, setProbCollapsed] = useState(false)
   const oppPanel  = useDragResize(180, 120, 360)
 
-  // Match state from navigation or socket
-  const [matchState, setMatchState] = useState(state ?? null)
+  // Match state from navigation, sessionStorage or socket
+  const [matchState, setMatchState] = useState(() => {
+    if (state) return state
+    if (!roomId) return null
+    try {
+      const saved = sessionStorage.getItem(`aa_match_${roomId}`)
+      if (saved) return JSON.parse(saved)
+    } catch {}
+    return null
+  })
+
+  // Persist match state to sessionStorage whenever it changes
+  useEffect(() => {
+    if (matchState && roomId) {
+      try {
+        sessionStorage.setItem(`aa_match_${roomId}`, JSON.stringify(matchState))
+      } catch {}
+    }
+  }, [matchState, roomId])
 
   // Persistent match start timestamp across browser refreshes
   const [startedAt, setStartedAt] = useState(() => {
@@ -832,7 +859,13 @@ export default function Match() {
   // ── Socket event listeners ─────────────────────────────────
   useEffect(() => {
     function onMatchFound(payload) {
-      setMatchState(payload)
+      setMatchState(prev => ({ ...(prev || {}), ...payload }))
+    }
+    function onMatchProblemSet({ problemId }) {
+      setMatchState(prev => ({ ...(prev || {}), problemId }))
+    }
+    function onMatchStateRestored(restored) {
+      setMatchState(prev => ({ ...(prev || {}), ...restored }))
     }
     function onSubmissionResult({ userId, verdict, totalTests, passedTests, testResults, runtimeMs }) {
       if (userId === user?.id) {
@@ -844,7 +877,10 @@ export default function Match() {
       }
     }
     function onMatchEnd(payload) {
-      if (roomId) localStorage.removeItem(`aa_start_${roomId}`)
+      if (roomId) {
+        localStorage.removeItem(`aa_start_${roomId}`)
+        sessionStorage.removeItem(`aa_match_${roomId}`)
+      }
       // Give 1.4s for user to see the green ACCEPTED indicator before going to results
       setTimeout(() => {
         navigate('/result', { state: { ...payload, roomId } })
@@ -866,25 +902,29 @@ export default function Match() {
       }
     }
 
-    // Rejoin match on page mount to clear server disconnect timers
+    // Rejoin match on page mount to clear server disconnect timers & restore match state
     emit('rejoin_match', { roomId })
 
-    on('match_found',          onMatchFound)
-    on('submission_result',    onSubmissionResult)
-    on('match_end',            onMatchEnd)
-    on('player_disconnected',  onPlayerDisconnected)
-    on('player_reconnected',   onPlayerReconnected)
-    on('opponent_code_change', onOpponentCodeChange)
+    on('match_found',           onMatchFound)
+    on('match_problem_set',     onMatchProblemSet)
+    on('match_state_restored',  onMatchStateRestored)
+    on('submission_result',     onSubmissionResult)
+    on('match_end',             onMatchEnd)
+    on('player_disconnected',   onPlayerDisconnected)
+    on('player_reconnected',    onPlayerReconnected)
+    on('opponent_code_change',  onOpponentCodeChange)
 
     return () => {
       off('match_found',          onMatchFound)
+      off('match_problem_set',    onMatchProblemSet)
+      off('match_state_restored', onMatchStateRestored)
       off('submission_result',    onSubmissionResult)
       off('match_end',            onMatchEnd)
       off('player_disconnected',  onPlayerDisconnected)
       off('player_reconnected',   onPlayerReconnected)
       off('opponent_code_change', onOpponentCodeChange)
     }
-  }, [on, off, emit, navigate, user, roomId, matchState])
+  }, [on, off, emit, navigate, user, roomId])
 
   // Re-initialize matchState if page was refreshed directly at /match/:roomId
   useEffect(() => {
@@ -1087,6 +1127,7 @@ export default function Match() {
           transition: 'width 0.2s cubic-bezier(.4,0,.2,1)',
         }}>
           <ProblemPanel
+            problemId={matchState?.problemId}
             topic={matchState?.topic}
             difficulty={matchState?.difficulty}
             forcedWidth={probPanel.width}

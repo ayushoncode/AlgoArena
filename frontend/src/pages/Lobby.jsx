@@ -316,6 +316,8 @@ export default function Lobby() {
   const [customModalOpen, setCustomModalOpen] = useState(false)
   const initialRoomCode = searchParams.get('room')
 
+  const { connected, emit, on, off, socket } = useSocket()
+
   useEffect(() => {
     if (!loading && !isAuthenticated) navigate('/?auth=login')
   }, [loading, isAuthenticated, navigate])
@@ -327,6 +329,16 @@ export default function Lobby() {
     }
   }, [initialRoomCode])
 
+  // Listen for match_found — navigate to match room
+  useEffect(() => {
+    function onMatchFound({ roomId, topic: t, difficulty: d, players, problemId }) {
+      console.log('[Lobby] match_found →', roomId)
+      navigate(`/match/${roomId}`, { state: { topic: t, difficulty: d, players, problemId } })
+    }
+    on('match_found', onMatchFound)
+    return () => off('match_found', onMatchFound)
+  }, [on, off, navigate])
+
   if (loading) return (
     <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
       <p className="font-mono text-sm" style={{ color:'#4b5563' }}>loading…</p>
@@ -337,17 +349,6 @@ export default function Lobby() {
   const elo     = user?.elo_rating ?? 1200
   const diffObj = DIFFS.find(d => d.id === diff)
   const ch      = todayChallenge()
-  const { connected, emit, on, off, socket } = useSocket()
-
-  // Listen for match_found — navigate to match room
-  useEffect(() => {
-    function onMatchFound({ roomId, topic: t, difficulty: d, players }) {
-      console.log('[Lobby] match_found →', roomId)
-      navigate(`/match/${roomId}`, { state: { topic: t, difficulty: d, players } })
-    }
-    on('match_found', onMatchFound)
-    return () => off('match_found', onMatchFound)
-  }, [on, off, navigate])
 
   function startQueue() {
     if (!topic) return
