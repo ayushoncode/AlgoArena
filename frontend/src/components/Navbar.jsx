@@ -47,12 +47,13 @@ export default function Navbar() {
         {/* Wordmark */}
         <Link
           to="/"
-          className="font-mono font-bold text-base tracking-tight transition-colors"
-          style={{ color:'#dde1ea', letterSpacing:'-0.02em', textDecoration:'none' }}
+          className="font-display font-black text-lg tracking-tight transition-colors flex items-center gap-1.5"
+          style={{ color:'#dde1ea', textDecoration:'none' }}
           onMouseOver={e => e.currentTarget.style.color = '#f97316'}
           onMouseOut={e  => e.currentTarget.style.color = '#dde1ea'}
         >
-          algo<span style={{ color:'#f97316' }}>_</span>arena
+          <span className="text-[#f97316]">⚡</span>
+          <span>Rivex</span>
         </Link>
 
         {/* Center nav */}

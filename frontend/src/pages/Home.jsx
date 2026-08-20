@@ -1176,7 +1176,7 @@ socket.on('match_found', ({ roomId, problem, opponent }) => {
       codePreview: `# Hardened Runner Benchmark
 docker run --network none --memory 512m --cpus 0.5 \\
   --security-opt no-new-privileges:true \\
-  algoarena-runner:latest --timeout 5000ms`
+  rivex-runner:latest --timeout 5000ms`
     },
     {
       id: 'radar',
@@ -1415,11 +1415,11 @@ function FaqSection() {
     },
     {
       q: 'Which programming languages are supported?',
-      a: 'AlgoArena natively supports JavaScript (Node.js 20), Python 3.11, C++ 20 (GCC 13), and Java 21 (OpenJDK). All complex data structures including TreeNodes and ListNodes are automatically parsed and serialized with BFS format.'
+      a: 'Rivex natively supports JavaScript (Node.js 20), Python 3.11, C++ 20 (GCC 13), and Java 21 (OpenJDK). All complex data structures including TreeNodes and ListNodes are automatically parsed and serialized with BFS format.'
     },
     {
       q: 'What happens if a player disconnects during a match?',
-      a: 'AlgoArena has built-in disconnect grace period. If a player momentarily loses connection, they have 30 seconds to reconnect before the match is declared a forfeit, preventing unfair Elo losses.'
+      a: 'Rivex has built-in disconnect grace period. If a player momentarily loses connection, they have 30 seconds to reconnect before the match is declared a forfeit, preventing unfair Elo losses.'
     }
   ]
 
@@ -1462,12 +1462,13 @@ function FooterSection() {
     <footer className="border-t border-[#1e2130] bg-[#05060a] py-12 px-5 sm:px-8">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-3">
-          <span className="font-display font-black text-lg text-[#dde1ea]">
-            algo<span className="text-[#f97316]">_</span>arena
+          <span className="font-display font-black text-lg text-[#dde1ea] flex items-center gap-1">
+            <span className="text-[#f97316]">⚡</span>
+            <span>Rivex</span>
           </span>
           <span className="text-[#1e2130]">|</span>
           <span className="font-mono text-xs text-[#6b7280]">
-            The 1v1 Competitive Coding Platform
+            Where Rivalries Are Settled in Code.
           </span>
         </div>
 
@@ -1505,104 +1506,119 @@ export default function Home() {
   }, [searchParams])
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col bg-[#07080c] relative hero-grid-bg">
+    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col bg-[#050609] relative overflow-hidden">
+
+      {/* Radiant Background Aura */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-orange-500/10 via-cyan-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
 
       {/* ── LIVE STATS TICKER STRIP ─────────────────────────── */}
-      <div className="border-b border-[#1e2130] bg-[#090b13]/80 backdrop-blur-md px-4 py-2 flex items-center justify-between text-[11px] font-mono text-[#6b7280]">
-        <div className="flex items-center gap-6 overflow-x-auto scrollbar-none">
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="dot-live" />
-            <span className="text-[#dde1ea] font-semibold">1v1 Real-Time</span>
+      <div className="border-b border-[#1e2130]/80 bg-[#07090e]/80 backdrop-blur-md px-4 py-2.5 flex items-center justify-between text-[11px] font-mono text-[#6b7280]">
+        <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
+          <div className="flex items-center gap-6 overflow-x-auto scrollbar-none">
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="dot-live" />
+              <span className="text-[#dde1ea] font-semibold">1v1 Real-Time</span>
+            </div>
+            <span className="text-[#1e2130]">|</span>
+            <span className="shrink-0"><span className="text-[#f97316] font-bold">175+</span> Curated LeetCode Problems</span>
+            <span className="text-[#1e2130]">|</span>
+            <span className="shrink-0"><span className="text-[#22d3ee] font-bold">4</span> Languages: JS · Py · C++ · Java</span>
+            <span className="text-[#1e2130]">|</span>
+            <span className="shrink-0"><span className="text-[#10b981] font-bold">0.5s</span> Docker Sandboxed Execution</span>
           </div>
-          <span className="text-[#1e2130]">|</span>
-          <span className="shrink-0"><span className="text-[#f97316] font-bold">175+</span> Curated LeetCode DSA Problems</span>
-          <span className="text-[#1e2130]">|</span>
-          <span className="shrink-0"><span className="text-[#22d3ee] font-bold">4</span> Languages: JS · Py · C++ · Java</span>
-          <span className="text-[#1e2130]">|</span>
-          <span className="shrink-0"><span className="text-[#10b981] font-bold">0.5s</span> Docker Sandboxed Execution</span>
-        </div>
-        <div className="hidden sm:flex items-center gap-2 text-[#4b5563]">
-          <span>K=32 Elo Engine</span>
+          <div className="hidden sm:flex items-center gap-2 text-[#4b5563]">
+            <span>FIDE Chess Elo Math</span>
+          </div>
         </div>
       </div>
 
-      {/* ── HERO & BATTLE SIMULATION ────────────────────────── */}
-      <section className="px-5 sm:px-8 pt-12 pb-16 max-w-6xl mx-auto w-full space-y-12">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10">
-          <div className="space-y-6 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-orange-500/25 bg-orange-500/10 text-orange-400 font-mono text-xs shadow-lg shadow-orange-500/10">
-              <span className="dot-live" />
-              <span>Season 1 Live • 1v1 Competitive Arena</span>
-            </div>
+      {/* ── HERO SECTION ────────────────────────────────────── */}
+      <section className="px-5 sm:px-8 pt-16 pb-12 max-w-6xl mx-auto w-full text-center space-y-8 relative">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 font-mono text-xs shadow-lg shadow-orange-500/10 backdrop-blur-md">
+          <span className="dot-live" />
+          <span className="font-semibold tracking-wide">Rivex Season 1 Live</span>
+          <span className="text-[#1e2130]">|</span>
+          <span className="text-[#9ca3af]">Where Rivalries Are Settled in Code</span>
+        </div>
 
-            <h1 className="font-display font-black tracking-tight leading-[1.06] text-4xl sm:text-5xl lg:text-6xl text-[#dde1ea]">
-              Code fast.<br/>
-              Steal Elo.<br/>
-              <span className="text-gradient-orange">Dominate the Arena.</span>
-            </h1>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <h1 className="font-display font-black tracking-tight leading-[1.04] text-4xl sm:text-6xl lg:text-7xl text-[#dde1ea]">
+            Where Rivalries Are<br />
+            <span className="text-gradient-orange">Settled in Code.</span>
+          </h1>
 
-            <p className="text-[#9ca3af] text-sm sm:text-base leading-relaxed">
-              Two developers enter with the exact same DSA problem. First to achieve a verified <span className="text-[#10b981] font-mono font-bold">ACCEPTED</span> verdict in the isolated Docker sandbox takes the match and climbs the global rankings.
-            </p>
+          <p className="text-[#9ca3af] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-sans">
+            The 1v1 real-time competitive coding arena. Two developers enter with the exact same DSA problem. First to achieve verified <span className="text-[#10b981] font-mono font-bold">ACCEPTED</span> inside the isolated Docker sandbox steals opponent Elo.
+          </p>
+        </div>
 
-            <div className="flex items-center gap-4 pt-2 flex-wrap">
-              {isAuthenticated ? (
-                <button onClick={() => navigate('/lobby')} className="btn-primary py-3.5 px-7 text-sm glow-orange">
-                  Enter Matchmaking Lobby ⚡
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setAuthMode('otp')
-                    document.getElementById('auth-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                  }}
-                  className="btn-primary py-3.5 px-7 text-sm glow-orange"
-                >
-                  Join Arena & Battle Now ⚡
-                </button>
-              )}
-              <Link to="/leaderboard" className="btn-ghost py-3.5 px-6 text-sm">
-                View Global Ranks 🏆
-              </Link>
-            </div>
+        {/* Hero Action CTAs */}
+        <div className="flex items-center justify-center gap-4 pt-2 flex-wrap">
+          {isAuthenticated ? (
+            <button
+              onClick={() => navigate('/lobby')}
+              className="btn-primary py-4 px-8 text-sm font-bold glow-orange shadow-xl shadow-orange-500/20 active:scale-95 transition-transform"
+            >
+              Enter Matchmaking Arena ⚡
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setAuthMode('otp')
+                document.getElementById('auth-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              }}
+              className="btn-primary py-4 px-8 text-sm font-bold glow-orange shadow-xl shadow-orange-500/20 active:scale-95 transition-transform"
+            >
+              Join Rivex & Battle Now ⚡
+            </button>
+          )}
+          <Link
+            to="/leaderboard"
+            className="btn-secondary py-4 px-7 text-sm font-semibold hover:border-[#f97316]/50 transition-colors"
+          >
+            Explore Leaderboard 🏆
+          </Link>
+        </div>
 
-            {/* Quick stats pills */}
-            <div className="flex items-center gap-4 pt-4 border-t border-[#1e2130]/80 flex-wrap text-xs font-mono text-[#6b7280]">
-              <div className="flex items-center gap-1.5">
-                <span className="text-orange-400 font-bold">✓</span> Real-Time Typing Radar
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-cyan-400 font-bold">✓</span> FIDE Chess Elo Math
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-emerald-400 font-bold">✓</span> Zero Cheats / Sandbox
-              </div>
-            </div>
-          </div>
+        {/* Quick Highlights Row */}
+        <div className="flex items-center justify-center gap-6 pt-4 text-xs font-mono text-[#6b7280] flex-wrap">
+          <span className="flex items-center gap-1.5">
+            <span className="text-emerald-400 font-bold">✓</span> Zero Cheats Sandbox
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-cyan-400 font-bold">✓</span> Live Keystroke Radar
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-orange-400 font-bold">✓</span> K=32 Elo Settlement
+          </span>
+        </div>
 
-          {/* Right side: Live Simulated Battle */}
-          <div className="w-full lg:max-w-xl">
-            <BattlePreview />
-          </div>
+        {/* ── LIVE SIMULATED DUEL ARENA (Hero Centerpiece) ─── */}
+        <div className="pt-6 max-w-4xl mx-auto text-left">
+          <BattlePreview />
         </div>
       </section>
 
-      {/* ── 1v1 DUEL ENGINE SHOWCASE ─────────────────────────── */}
-      <section className="border-t border-[#1e2130] bg-[#080a10] py-16 px-5 sm:px-8">
+      {/* ── 1v1 DUEL ARCHITECTURE SHOWCASE ──────────────────── */}
+      <section className="border-t border-[#1e2130] bg-[#07080d] py-20 px-5 sm:px-8">
         <div className="max-w-6xl mx-auto">
           <DuelEngineShowcase />
         </div>
       </section>
 
-      {/* ── FEATURES & AUTH GRID ────────────────────────────── */}
-      <section className="border-t border-[#1e2130] bg-[#090b13]/60 py-16 px-5 sm:px-8">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_380px] gap-10">
+      {/* ── FEATURES & AUTH SPLIT SECTION ───────────────────── */}
+      <section className="border-t border-[#1e2130] bg-[#05060a] py-20 px-5 sm:px-8">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_400px] gap-12 items-start">
 
           {/* Feature Highlights Left */}
-          <div className="space-y-8">
+          <div className="space-y-10">
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-widest text-[#f97316] mb-2">// Built for Competitive DSA</p>
-              <h2 className="font-display font-extrabold text-2xl sm:text-3xl text-[#dde1ea]">Engineered for Pure Speed & Security</h2>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#22d3ee]/10 border border-[#22d3ee]/25 font-mono text-[11px] text-[#22d3ee] mb-3">
+                <span>⚡ Competitive Infrastructure</span>
+              </div>
+              <h2 className="font-display font-black text-3xl sm:text-4xl text-[#dde1ea] tracking-tight">
+                Engineered for Peak Performance & Fair Play
+              </h2>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -1610,46 +1626,55 @@ export default function Home() {
                 {
                   icon: '⚡',
                   title: 'Instant Matchmaking',
-                  desc: 'Queue by topic and difficulty. Search window widens ±100 Elo every 10s so matches start lightning fast.',
+                  badge: '< 3s queue',
+                  desc: 'Pick your topic & difficulty. Smart rating algorithm expands ±100 Elo every 10s for zero-wait battles.',
                 },
                 {
                   icon: '🛡️',
                   title: 'Locked Docker Sandbox',
-                  desc: 'Network disabled, 512MB RAM cap, 0.5 CPU, 5s timeout. Zero exploits, sub-second execution.',
+                  badge: '512MB RAM cap',
+                  desc: 'Network disabled, 0.5 CPU quota, 5-second strict timeout. Absolute security and uniform benchmarks.',
                 },
                 {
                   icon: '🏆',
                   title: 'Live Elo Rating Engine',
-                  desc: 'Chess-grade Elo rating with dynamic K-factors, streak bonuses, and anti-forfeit disconnect recovery.',
+                  badge: 'Chess-Grade Math',
+                  desc: 'FIDE-standard rating math with dynamic K-factors, streak rewards, and anti-forfeit disconnect recovery.',
                 },
                 {
                   icon: '⚔️',
                   title: 'Private Friend Duels',
-                  desc: 'Create direct custom battle rooms with 6-digit invite codes and battle your friends or campus peers.',
+                  badge: 'Direct Room Codes',
+                  desc: 'Create custom 1v1 battle rooms with 6-character invite codes to challenge campus peers or friends.',
                 },
               ].map((feat, idx) => (
-                <div key={idx} className="glass-card p-5 rounded-xl space-y-2">
-                  <div className="text-3xl">{feat.icon}</div>
-                  <h3 className="font-bold text-sm text-[#dde1ea]">{feat.title}</h3>
-                  <p className="text-xs text-[#9ca3af] leading-relaxed">{feat.desc}</p>
+                <div key={idx} className="glass-card p-6 rounded-xl border border-[#1e2130] space-y-3 hover:border-orange-500/40 transition-all">
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl">{feat.icon}</span>
+                    <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-[#1e2130] text-[#9ca3af]">
+                      {feat.badge}
+                    </span>
+                  </div>
+                  <h3 className="font-display font-bold text-base text-[#dde1ea]">{feat.title}</h3>
+                  <p className="text-xs text-[#9ca3af] leading-relaxed font-sans">{feat.desc}</p>
                 </div>
               ))}
             </div>
 
-            {/* Step-by-Step Flow */}
-            <div className="space-y-4 pt-4 border-t border-[#1e2130]">
-              <p className="font-mono text-[11px] uppercase tracking-wider text-[#6b7280]">// How a match works</p>
+            {/* 3-Step Match Flow */}
+            <div className="p-6 rounded-2xl bg-[#090b13] border border-[#1e2130] space-y-4">
+              <p className="font-mono text-xs uppercase tracking-wider text-[#6b7280] font-bold">// How a Duel Works</p>
               <div className="grid sm:grid-cols-3 gap-3">
                 {[
-                  { n: '01', title: 'Queue & Match', desc: 'Pick topic & rank bracket' },
-                  { n: '02', title: 'Live Battle', desc: 'Real-time typing radar' },
+                  { n: '01', title: 'Queue & Match', desc: 'Symmetric problem assignment' },
+                  { n: '02', title: 'Real-Time Duel', desc: 'Live keystroke radar HUD' },
                   { n: '03', title: 'Steal Rating', desc: 'Instant Elo settlement' },
                 ].map((s) => (
-                  <div key={s.n} className="p-3.5 bg-[#0d0f17] border border-[#1e2130] rounded-lg flex items-start gap-3">
-                    <span className="font-mono text-base font-black text-[#f97316]">{s.n}</span>
+                  <div key={s.n} className="p-3 bg-[#0d0f17] border border-[#1e2130]/80 rounded-lg flex items-start gap-2.5">
+                    <span className="font-mono text-sm font-black text-[#f97316]">{s.n}</span>
                     <div>
                       <p className="font-bold text-xs text-[#dde1ea]">{s.title}</p>
-                      <p className="text-[11px] text-[#6b7280]">{s.desc}</p>
+                      <p className="text-[10px] text-[#6b7280]">{s.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -1657,47 +1682,55 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Authentication Panel Right */}
-          <div id="auth-box" className="glass-card p-6 rounded-2xl border border-[#1e2130] flex flex-col justify-between shadow-2xl">
+          {/* Instant Authentication Panel Right */}
+          <div id="auth-box" className="glass-card p-6 sm:p-8 rounded-2xl border border-[#1e2130] bg-[#07090e] shadow-2xl space-y-6 sticky top-20">
             <div>
-              {/* Google Sign In Option */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">⚡</span>
+                  <h3 className="font-display font-black text-lg text-[#dde1ea]">Enter Rivex Arena</h3>
+                </div>
+                <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+                  Instant Access
+                </span>
+              </div>
+
+              {/* 1-Click Google Sign In */}
               <GoogleAuthButton />
 
-              {/* Header Tabs */}
+              {/* Tabs */}
               {authMode !== 'forgot' && (
-                <div className="flex items-center justify-between pb-3 border-b border-[#1e2130] mb-4">
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => setAuthMode('otp')}
-                      className="font-mono text-xs font-bold transition-colors pb-1"
-                      style={{
-                        color: authMode === 'otp' ? '#f97316' : '#6b7280',
-                        borderBottom: authMode === 'otp' ? '2px solid #f97316' : '2px solid transparent',
-                      }}
-                    >
-                      ⚡ Fast OTP
-                    </button>
-                    <button
-                      onClick={() => setAuthMode('password')}
-                      className="font-mono text-xs font-bold transition-colors pb-1"
-                      style={{
-                        color: authMode === 'password' ? '#dde1ea' : '#6b7280',
-                        borderBottom: authMode === 'password' ? '2px solid #dde1ea' : '2px solid transparent',
-                      }}
-                    >
-                      Password
-                    </button>
-                    <button
-                      onClick={() => setAuthMode('register')}
-                      className="font-mono text-xs font-bold transition-colors pb-1"
-                      style={{
-                        color: authMode === 'register' ? '#22d3ee' : '#6b7280',
-                        borderBottom: authMode === 'register' ? '2px solid #22d3ee' : '2px solid transparent',
-                      }}
-                    >
-                      Register
-                    </button>
-                  </div>
+                <div className="flex items-center gap-4 pb-2 border-b border-[#1e2130] mb-5">
+                  <button
+                    onClick={() => setAuthMode('otp')}
+                    className="font-mono text-xs font-bold transition-colors pb-1 cursor-pointer"
+                    style={{
+                      color: authMode === 'otp' ? '#f97316' : '#6b7280',
+                      borderBottom: authMode === 'otp' ? '2px solid #f97316' : '2px solid transparent',
+                    }}
+                  >
+                    ⚡ Fast OTP
+                  </button>
+                  <button
+                    onClick={() => setAuthMode('password')}
+                    className="font-mono text-xs font-bold transition-colors pb-1 cursor-pointer"
+                    style={{
+                      color: authMode === 'password' ? '#dde1ea' : '#6b7280',
+                      borderBottom: authMode === 'password' ? '2px solid #dde1ea' : '2px solid transparent',
+                    }}
+                  >
+                    Password
+                  </button>
+                  <button
+                    onClick={() => setAuthMode('register')}
+                    className="font-mono text-xs font-bold transition-colors pb-1 cursor-pointer"
+                    style={{
+                      color: authMode === 'register' ? '#22d3ee' : '#6b7280',
+                      borderBottom: authMode === 'register' ? '2px solid #22d3ee' : '2px solid transparent',
+                    }}
+                  >
+                    Register
+                  </button>
                 </div>
               )}
 
@@ -1714,7 +1747,7 @@ export default function Home() {
               {authMode === 'forgot' && <ForgotPasswordForm onBackToLogin={() => setAuthMode('password')} />}
             </div>
 
-            <div className="mt-8 pt-4 border-t border-[#1e2130] text-center">
+            <div className="pt-4 border-t border-[#1e2130] text-center">
               <p className="font-mono text-[10px] text-[#4b5563]">
                 🔒 256-bit SSL • Docker Isolation • bcrypt Hashing
               </p>
@@ -1724,16 +1757,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── CODE MATRIX & LIVE LEADERBOARD SHOWCASE ─────────── */}
-      <section className="border-t border-[#1e2130] bg-[#07090e] py-16 px-5 sm:px-8">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_340px] gap-10">
+      {/* ── POLYGLOT MATRIX & LIVE MASTERS ──────────────────── */}
+      <section className="border-t border-[#1e2130] bg-[#07090e] py-20 px-5 sm:px-8">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_360px] gap-10 items-start">
           <LanguageMatrixShowcase />
           <LiveLeaderboardTeaser />
         </div>
       </section>
 
       {/* ── FAQ SECTION ─────────────────────────────────────── */}
-      <section className="border-t border-[#1e2130] bg-[#090b13]/50 py-16 px-5 sm:px-8">
+      <section className="border-t border-[#1e2130] bg-[#050609] py-20 px-5 sm:px-8">
         <div className="max-w-4xl mx-auto">
           <FaqSection />
         </div>

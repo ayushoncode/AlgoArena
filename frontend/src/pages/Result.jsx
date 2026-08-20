@@ -207,7 +207,7 @@ export default function Result() {
           {isWin && (
             <p className="font-mono text-[11px] text-center" style={{ color: '#374151' }}>
               🔥 <span style={{ color: '#f97316' }}>{getUserEmoji(user?.username)} {user?.username}</span> just beat{' '}
-              <span style={{ color: '#dde1ea' }}>{getUserEmoji(oppData?.username)} {oppData?.username}</span> on {topic} — algo_arena
+              <span style={{ color: '#dde1ea' }}>{getUserEmoji(oppData?.username)} {oppData?.username}</span> on {topic} — Rivex
             </p>
           )}
 
