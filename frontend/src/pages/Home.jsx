@@ -563,6 +563,66 @@ function RegisterForm({ onSwitchLogin }) {
   )
 }
 
+/** Google One-Click Sign-In */
+function GoogleAuthButton() {
+  const { loginWithFirebase } = useAuth()
+  const navigate = useNavigate()
+  const [busy, setBusy] = useState(false)
+  const [err, setErr]   = useState('')
+
+  async function handleGoogleSignIn() {
+    setBusy(true)
+    setErr('')
+    try {
+      const { auth, googleProvider, signInWithPopup } = await import('../utils/firebase')
+      const result = await signInWithPopup(auth, googleProvider)
+      const idToken = await result.user.getIdToken()
+      await loginWithFirebase({
+        idToken,
+        username: result.user.displayName?.replace(/\s+/g, '_')?.toLowerCase() || result.user.email?.split('@')[0],
+      })
+      navigate('/lobby')
+    } catch (e) {
+      console.error('[Google Sign-In Error]', e)
+      if (e.code === 'auth/api-key-not-valid' || e.code === 'auth/invalid-api-key' || e.code === 'auth/configuration-not-found') {
+        setErr('Firebase Google Auth: please configure VITE_FIREBASE_API_KEY in frontend/.env, or use Fast OTP below!')
+      } else if (e.code === 'auth/popup-closed-by-user') {
+        // user cancelled popup
+      } else {
+        setErr(e.message || 'Google sign-in failed')
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="space-y-3 mb-5">
+      <Err msg={err} />
+      <button
+        type="button"
+        onClick={handleGoogleSignIn}
+        disabled={busy}
+        className="w-full py-2.5 px-4 rounded border border-[#1e2130] bg-[#0d0f17] hover:bg-[#151928] hover:border-[#374151] text-[#dde1ea] font-medium text-xs flex items-center justify-center gap-2.5 transition-all shadow-sm active:scale-[0.98]"
+      >
+        <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+          <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
+          <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+          <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.2s.7 5.5 1.9 7.9l3.7-2.9z"/>
+          <path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"/>
+        </svg>
+        <span>{busy ? 'Signing in with Google...' : 'Continue with Google'}</span>
+      </button>
+
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-[#1e2130]" />
+        <span className="font-mono text-[10px] text-[#4b5563] uppercase tracking-wider">or sign in with</span>
+        <div className="h-px flex-1 bg-[#1e2130]" />
+      </div>
+    </div>
+  )
+}
+
 /* ════════════════════════════════════════════════
    MAIN LANDING PAGE
 ════════════════════════════════════════════════ */
@@ -710,8 +770,11 @@ export default function Home() {
           {/* Authentication Panel Right */}
           <div id="auth-box" className="glass-card p-6 rounded-xl border border-[#1e2130] flex flex-col justify-between">
             <div>
+              {/* Google Sign In Option */}
+              <GoogleAuthButton />
+
               {/* Header Tabs */}
-              <div className="flex items-center justify-between pb-4 border-b border-[#1e2130] mb-5">
+              <div className="flex items-center justify-between pb-3 border-b border-[#1e2130] mb-4">
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setAuthMode('otp')}
