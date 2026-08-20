@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
 
 /* ════════════════════════════════════════════════
    TYPEWRITER HOOK
-   Recursive setTimeout → realistic random cadence
+   Recursive setTimeout → realistic typing cadence
 ════════════════════════════════════════════════ */
 function useTypewriter(text, msPerChar = 28, startAfterMs = 0) {
   const [pos, setPos]     = useState(0)
@@ -29,21 +29,21 @@ function useTypewriter(text, msPerChar = 28, startAfterMs = 0) {
 }
 
 /* ════════════════════════════════════════════════
-   BATTLE CODE CONTENT
+   BATTLE CODE SNIPPETS
 ════════════════════════════════════════════════ */
-const YOU_CODE = `// HashMap — O(n)
+const YOU_CODE = `// Optimized Two-Pointer / Map — O(n)
 function twoSum(nums, target) {
-  const seen = new Map()
+  const map = new Map()
   for (let i = 0; i < nums.length; i++) {
-    const need = target - nums[i]
-    if (seen.has(need)) {
-      return [seen.get(need), i]
+    const complement = target - nums[i]
+    if (map.has(complement)) {
+      return [map.get(complement), i]
     }
-    seen.set(nums[i], i)
+    map.set(nums[i], i)
   }
 }`
 
-const OPP_CODE = `// Brute force — O(n²)
+const OPP_CODE = `// Brute force search — O(n²)
 function twoSum(nums, target) {
   for (let i = 0; i < nums.length; i++) {
     for (let j = i + 1; j < nums.length; j++) {
@@ -54,10 +54,7 @@ function twoSum(nums, target) {
   }
 }`
 
-/* ════════════════════════════════════════════════
-   CODE PANEL  (one side of the battle)
-════════════════════════════════════════════════ */
-const KW  = new Set(['function','const','let','var','return','if','for','new','of','has','get','set'])
+const KW = new Set(['function','const','let','var','return','if','for','new','of','has','get','set'])
 const COMMENT_RE = /^(\/\/.*)$/
 const NUM_RE = /\b(\d+)\b/g
 const KW_RE  = new RegExp(`\\b(${[...KW].join('|')})\\b`, 'g')
@@ -67,12 +64,11 @@ function CodeLine({ line, lineNo }) {
   if (isComment) {
     return (
       <div className="flex">
-        <span className="select-none w-8 text-right pr-4 shrink-0" style={{ color:'#3b4261' }}>{lineNo}</span>
-        <span style={{ color:'#4b5563' }}>{line}</span>
+        <span className="select-none w-7 text-right pr-3 shrink-0 text-[#3b4261]">{lineNo}</span>
+        <span className="text-[#4b5563] italic">{line}</span>
       </div>
     )
   }
-  // tokenize keywords + numbers
   const parts = []
   let last = 0
   const allMatches = []
@@ -82,15 +78,15 @@ function CodeLine({ line, lineNo }) {
 
   for (const { i, len, type, val } of allMatches) {
     if (i < last) continue
-    if (i > last) parts.push(<span key={last} style={{ color:'#dde1ea' }}>{line.slice(last, i)}</span>)
-    parts.push(<span key={i} style={{ color: type === 'kw' ? '#f97316' : '#22d3ee' }}>{val}</span>)
+    if (i > last) parts.push(<span key={last} className="text-[#dde1ea]">{line.slice(last, i)}</span>)
+    parts.push(<span key={i} className={type === 'kw' ? 'text-[#f97316] font-medium' : 'text-[#22d3ee]'}>{val}</span>)
     last = i + len
   }
-  if (last < line.length) parts.push(<span key={last} style={{ color:'#dde1ea' }}>{line.slice(last)}</span>)
+  if (last < line.length) parts.push(<span key={last} className="text-[#dde1ea]">{line.slice(last)}</span>)
 
   return (
     <div className="flex">
-      <span className="select-none w-8 text-right pr-4 shrink-0" style={{ color:'#3b4261' }}>{lineNo}</span>
+      <span className="select-none w-7 text-right pr-3 shrink-0 text-[#3b4261]">{lineNo}</span>
       <span>{parts}</span>
     </div>
   )
@@ -99,58 +95,45 @@ function CodeLine({ line, lineNo }) {
 function CodePanel({ typed, showCursor, verdict, label, rating, you }) {
   const lines = typed.split('\n')
   const borderColor = verdict === 'ACCEPTED' ? '#10b981'
-                    : verdict === 'WRONG'    ? '#f43f5e'
+                    : verdict === 'WRONG ANSWER' ? '#f43f5e'
                     : '#1e2130'
-  const transition = 'border-color 0.4s ease'
 
   return (
-    <div className="flex flex-col" style={{ border: `1px solid ${borderColor}`, transition, borderRadius: 4, overflow:'hidden' }}>
-
-      {/* Panel header */}
-      <div className="flex items-center justify-between px-3 py-2"
-           style={{ background:'#0b0d14', borderBottom:'1px solid #1e2130' }}>
+    <div className="flex flex-col border transition-all duration-300 rounded overflow-hidden"
+         style={{ borderColor, background: '#090b13' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 py-2 bg-[#0b0d14] border-b border-[#1e2130]">
         <div className="flex items-center gap-2">
-          {you
-            ? <span className="dot-live" />
-            : <span style={{ width:7, height:7, borderRadius:'50%', background:'#374151', display:'inline-block' }} />
-          }
-          <span className="font-mono text-xs" style={{ color: you ? '#dde1ea' : '#6b7280' }}>
+          {you ? <span className="dot-live" /> : <span className="w-1.5 h-1.5 rounded-full bg-[#4b5563]" />}
+          <span className="font-mono text-xs font-semibold" style={{ color: you ? '#dde1ea' : '#6b7280' }}>
             {label}
           </span>
-          <span className="font-mono text-xs font-bold" style={{ color: you ? '#f97316' : '#6b7280' }}>
+          <span className="font-mono text-[11px] font-bold" style={{ color: you ? '#f97316' : '#6b7280' }}>
             [{rating}]
           </span>
         </div>
 
-        {/* Verdict chip */}
         {verdict && (
-          <span
-            className="verdict-in font-mono text-[10px] font-bold px-2 py-0.5"
-            style={{
-              borderRadius: 3,
-              background: verdict === 'ACCEPTED' ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)',
-              color:       verdict === 'ACCEPTED' ? '#10b981'               : '#f43f5e',
-              border:      `1px solid ${verdict === 'ACCEPTED' ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)'}`,
-            }}
-          >
+          <span className="verdict-in font-mono text-[10px] font-bold px-2 py-0.5 rounded"
+                style={{
+                  background: verdict === 'ACCEPTED' ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)',
+                  color: verdict === 'ACCEPTED' ? '#10b981' : '#f43f5e',
+                  border: `1px solid ${verdict === 'ACCEPTED' ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)'}`,
+                }}>
             {verdict}
           </span>
         )}
       </div>
 
-      {/* Code area */}
-      <div className="p-4 font-mono text-[12.5px] leading-6 flex-1"
-           style={{ background:'#090b13', minHeight: 220, overflowY:'auto' }}>
+      {/* Code */}
+      <div className="p-3.5 font-mono text-[12px] leading-5.5 flex-1 overflow-hidden" style={{ minHeight: 190 }}>
         {lines.map((line, i) => (
           <CodeLine key={i} line={line} lineNo={i + 1} />
         ))}
         {showCursor && !verdict && (
           <div className="flex">
-            <span className="select-none w-8 text-right pr-4 shrink-0" style={{ color:'#3b4261' }}>
-              {lines.length + 1}
-            </span>
-            <span className="cursor-blink inline-block w-2 h-[1em] align-middle"
-                  style={{ background: you ? '#f97316' : '#6b7280' }} />
+            <span className="select-none w-7 text-right pr-3 shrink-0 text-[#3b4261]">{lines.length + 1}</span>
+            <span className="cursor-blink inline-block w-2 h-[1em] align-middle" style={{ background: you ? '#f97316' : '#6b7280' }} />
           </div>
         )}
       </div>
@@ -158,93 +141,78 @@ function CodePanel({ typed, showCursor, verdict, label, rating, you }) {
   )
 }
 
-/* ════════════════════════════════════════════════
-   BATTLE CYCLE  (remounts on each loop iteration)
-════════════════════════════════════════════════ */
 const PHASES = { CODING: 'coding', RUNNING: 'running', ACCEPTED: 'accepted', RESULT: 'result' }
 
 function BattleCycle({ onComplete }) {
-  const [phase,    setPhase]    = useState(PHASES.CODING)
+  const [phase, setPhase] = useState(PHASES.CODING)
   const [timerSec, setTimerSec] = useState(30 * 60)
 
-  // Typing — you are FASTER
-  const you = useTypewriter(YOU_CODE, 24, 300)
-  const opp = useTypewriter(OPP_CODE, 40, 600)
+  const you = useTypewriter(YOU_CODE, 22, 200)
+  const opp = useTypewriter(OPP_CODE, 38, 500)
 
-  // Countdown timer
   useEffect(() => {
     if (phase === PHASES.RESULT) return
     const t = setInterval(() => setTimerSec(s => Math.max(0, s - 1)), 1000)
     return () => clearInterval(t)
   }, [phase])
 
-  // Phase transitions when YOU finish typing
   useEffect(() => {
     if (!you.done || phase !== PHASES.CODING) return
     setPhase(PHASES.RUNNING)
-    const t1 = setTimeout(() => setPhase(PHASES.ACCEPTED), 1400)
-    const t2 = setTimeout(() => setPhase(PHASES.RESULT),   3200)
-    const t3 = setTimeout(() => onComplete(),               6000)
+    const t1 = setTimeout(() => setPhase(PHASES.ACCEPTED), 1200)
+    const t2 = setTimeout(() => setPhase(PHASES.RESULT),   2800)
+    const t3 = setTimeout(() => onComplete(),               5800)
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
   }, [you.done]) // eslint-disable-line
 
-  const mm   = String(Math.floor(timerSec / 60)).padStart(2, '0')
-  const ss   = String(timerSec % 60).padStart(2, '0')
-  const low  = timerSec < 300
+  const mm = String(Math.floor(timerSec / 60)).padStart(2, '0')
+  const ss = String(timerSec % 60).padStart(2, '0')
 
   return (
-    <div style={{ background:'#0b0d14', border:'1px solid #1e2130', borderRadius: 6, overflow:'hidden' }}>
-
-      {/* Match bar */}
-      <div className="flex items-center justify-between px-4 py-2.5"
-           style={{ borderBottom:'1px solid #1e2130', background:'#09090f' }}>
-
-        {/* You */}
+    <div className="glass-card rounded-lg overflow-hidden border border-[#1e2130] shadow-2xl">
+      {/* Match Bar */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-[#07090f] border-b border-[#1e2130]">
         <div className="flex items-center gap-2">
           <span className="dot-live" />
-          <span className="font-mono text-xs text-[#dde1ea]">ayush_dev</span>
-          <span className="font-mono text-[11px] font-bold" style={{ color:'#f97316' }}>1347</span>
+          <span className="font-mono text-xs font-semibold text-[#dde1ea]">you</span>
+          <span className="font-mono text-[11px] font-bold text-[#f97316]">1347</span>
         </div>
 
-        {/* Center: timer + topic */}
         <div className="text-center">
-          <div className="font-mono text-sm font-bold tabular-nums"
-               style={{ color: low ? '#f43f5e' : '#dde1ea', fontVariantNumeric:'tabular-nums' }}>
+          <div className="font-mono text-sm font-bold tabular-nums text-[#dde1ea]">
             {mm}:{ss}
           </div>
-          <div className="font-mono text-[10px]" style={{ color:'#4b5563', marginTop: 1 }}>
+          <div className="font-mono text-[10px] text-[#6b7280]">
             Two Sum · arrays · medium
           </div>
         </div>
 
-        {/* Opponent */}
         <div className="flex items-center gap-2 flex-row-reverse">
-          <span style={{ width:7, height:7, borderRadius:'50%', background:'#374151', display:'inline-block' }} />
-          <span className="font-mono text-xs text-[#6b7280]">cipher99</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-[#4b5563]" />
+          <span className="font-mono text-xs text-[#6b7280]">opponent</span>
           <span className="font-mono text-[11px] font-bold text-[#6b7280]">1389</span>
         </div>
       </div>
 
-      {/* Status bar */}
-      <div className="px-4 py-1.5 font-mono text-[11px] flex items-center gap-2"
-           style={{ background:'#07080c', borderBottom:'1px solid #1e2130', color:'#4b5563' }}>
-        {phase === PHASES.CODING  && <><span className="dot-live" style={{ width:5,height:5 }}/> live match in progress</>}
-        {phase === PHASES.RUNNING && <span style={{ color:'#f97316' }}>▶ running 247 test cases...</span>}
-        {phase === PHASES.ACCEPTED && <span style={{ color:'#10b981' }} className="verdict-in">✓ all tests passed — ACCEPTED</span>}
-        {phase === PHASES.RESULT  && (
-          <span style={{ color:'#10b981' }} className="verdict-in">
-            🏆 you win! +18 elo → 1365 &nbsp;·&nbsp; cipher99 loses −18 elo
+      {/* Status */}
+      <div className="px-4 py-1.5 font-mono text-[11px] flex items-center gap-2 bg-[#05060a] border-b border-[#1e2130] text-[#4b5563]">
+        {phase === PHASES.CODING   && <><span className="dot-live" style={{ width:5, height:5 }}/> 1v1 match in progress · live typing</>}
+        {phase === PHASES.RUNNING  && <span className="text-[#f97316]">▶ executing in docker sandbox...</span>}
+        {phase === PHASES.ACCEPTED && <span className="text-[#10b981] verdict-in">✓ 10/10 test cases passed — ACCEPTED</span>}
+        {phase === PHASES.RESULT   && (
+          <span className="text-[#10b981] font-semibold verdict-in">
+            🏆 Victory! +18 Elo → 1365 &nbsp;·&nbsp; Opponent loses −18 Elo
           </span>
         )}
       </div>
 
-      {/* Two code panels */}
-      <div className="grid grid-cols-2 gap-px" style={{ background:'#1e2130' }}>
+      {/* Split Code Panels */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#1e2130]">
         <CodePanel
           typed={you.typed}
           showCursor={!you.done}
           verdict={phase === PHASES.ACCEPTED || phase === PHASES.RESULT ? 'ACCEPTED' : null}
-          label="ayush_dev"
+          label="you (faster O(n))"
           rating={1347}
           you={true}
         />
@@ -252,7 +220,7 @@ function BattleCycle({ onComplete }) {
           typed={opp.typed}
           showCursor={!opp.done && phase === PHASES.CODING}
           verdict={phase === PHASES.RESULT ? 'WRONG ANSWER' : null}
-          label="cipher99"
+          label="opponent (O(n²))"
           rating={1389}
           you={false}
         />
@@ -267,18 +235,72 @@ function BattlePreview() {
 }
 
 /* ════════════════════════════════════════════════
-   AUTH FORMS
+   OTP DIGIT INPUT COMPONENT
+════════════════════════════════════════════════ */
+function OtpDigitsInput({ length = 6, value, onChange }) {
+  const inputs = useRef([])
+
+  function handleChange(e, index) {
+    const val = e.target.value.replace(/[^0-9]/g, '').slice(-1)
+    const newArr = value.split('')
+    newArr[index] = val || ''
+    const nextVal = newArr.join('')
+    onChange(nextVal)
+    if (val && index < length - 1) {
+      inputs.current[index + 1]?.focus()
+    }
+  }
+
+  function handleKeyDown(e, index) {
+    if (e.key === 'Backspace' && !value[index] && index > 0) {
+      inputs.current[index - 1]?.focus()
+    }
+  }
+
+  function handlePaste(e) {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, length)
+    onChange(pasted)
+    const nextFocus = Math.min(pasted.length, length - 1)
+    inputs.current[nextFocus]?.focus()
+  }
+
+  return (
+    <div className="flex gap-2 justify-center" onPaste={handlePaste}>
+      {Array.from({ length }).map((_, i) => (
+        <input
+          key={i}
+          ref={el => (inputs.current[i] = el)}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={1}
+          value={value[i] || ''}
+          onChange={e => handleChange(e, i)}
+          onKeyDown={e => handleKeyDown(e, i)}
+          className="otp-digit"
+        />
+      ))}
+    </div>
+  )
+}
+
+/* ════════════════════════════════════════════════
+   AUTH FORMS: OTP (Passwordless) + Email/PW + Register
 ════════════════════════════════════════════════ */
 function Field({ id, label, type = 'text', placeholder, value, onChange, autoComplete }) {
   return (
     <div>
-      <label htmlFor={id} className="font-mono text-[10px] uppercase tracking-widest block mb-1.5"
-             style={{ color:'#4b5563', letterSpacing:'0.12em' }}>
+      <label htmlFor={id} className="font-mono text-[10.5px] uppercase tracking-wider block mb-1.5 text-[#6b7280]">
         {label}
       </label>
       <input
-        id={id} type={type} autoComplete={autoComplete}
-        placeholder={placeholder} value={value} onChange={onChange}
+        id={id}
+        type={type}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
         className="input-field"
       />
     </div>
@@ -288,28 +310,9 @@ function Field({ id, label, type = 'text', placeholder, value, onChange, autoCom
 function Err({ msg }) {
   if (!msg) return null
   return (
-    <p className="slide-up font-mono text-[11px] flex items-center gap-1.5"
-       style={{ color:'#f43f5e' }}>
+    <p className="slide-up font-mono text-[11px] flex items-center gap-1.5 text-[#f43f5e] bg-[rgba(244,63,94,0.08)] p-2 rounded border border-[rgba(244,63,94,0.2)]">
       <span>✕</span>{msg}
     </p>
-  )
-}
-
-function StrBar({ pw }) {
-  if (!pw) return null
-  const score = [pw.length>=8, /[A-Z]/.test(pw), /[0-9]/.test(pw), /[^a-zA-Z0-9]/.test(pw)].filter(Boolean).length
-  const col   = ['#f43f5e','#f43f5e','#f59e0b','#f59e0b','#10b981'][score]
-  const lbl   = ['','weak','fair','fair','strong'][score]
-  return (
-    <div className="flex items-center gap-3 mt-2">
-      <div className="flex gap-1 flex-1">
-        {[1,2,3,4].map(i=>(
-          <div key={i} className="h-px flex-1 transition-all duration-300"
-               style={{ background: i<=score ? col : '#1e2130' }} />
-        ))}
-      </div>
-      <span className="font-mono text-[10px] w-8 text-right" style={{ color:'#4b5563' }}>{lbl}</span>
-    </div>
   )
 }
 
@@ -322,7 +325,143 @@ function Spinner() {
   )
 }
 
-function LoginForm({ onSwitch }) {
+/** 1-Click OTP Verification Form */
+function OtpLoginForm({ onSwitchPassword }) {
+  const { sendOtp, loginWithOtp } = useAuth()
+  const navigate = useNavigate()
+
+  const [step, setStep]         = useState(1) // 1: email, 2: 6-digit OTP, 3: optional username setup
+  const [email, setEmail]       = useState('')
+  const [otp, setOtp]           = useState('')
+  const [username, setUsername] = useState('')
+  const [err, setErr]           = useState('')
+  const [busy, setBusy]         = useState(false)
+  const [devOtp, setDevOtp]     = useState(null)
+
+  async function handleSendOtp(e) {
+    if (e) e.preventDefault()
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      setErr('Please enter a valid email address')
+      return
+    }
+    setBusy(true)
+    setErr('')
+    try {
+      const res = await sendOtp(email.trim().toLowerCase())
+      if (res.devOtp) setDevOtp(res.devOtp)
+      setStep(2)
+    } catch (e) {
+      setErr(e.response?.data?.message || e.message || 'Failed to send OTP')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleVerifyOtp(e) {
+    if (e) e.preventDefault()
+    if (otp.length < 6) {
+      setErr('Please enter the 6-digit OTP code')
+      return
+    }
+    setBusy(true)
+    setErr('')
+    try {
+      const res = await loginWithOtp({
+        email: email.trim().toLowerCase(),
+        otp: otp.trim(),
+        username: username.trim() || undefined,
+      })
+      if (res.isNewUser && !username) {
+        // Optional quick welcome
+      }
+      navigate('/lobby')
+    } catch (e) {
+      setErr(e.response?.data?.message || e.message || 'Verification failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="space-y-5 fade-in">
+      <Err msg={err} />
+
+      {step === 1 && (
+        <form onSubmit={handleSendOtp} className="space-y-4">
+          <Field
+            id="otp-email"
+            label="Email Address"
+            type="email"
+            placeholder="you@domain.com"
+            autoComplete="email"
+            value={email}
+            onChange={e => { setEmail(e.target.value); setErr('') }}
+          />
+
+          <button
+            id="send-otp-submit"
+            type="submit"
+            disabled={busy}
+            className="btn-primary w-full py-3 shadow-lg shadow-orange-500/20"
+          >
+            {busy ? <><Spinner/> Sending OTP...</> : <>Send 6-Digit Login Code →</>}
+          </button>
+
+          <div className="flex items-center justify-between pt-1">
+            <button
+              type="button"
+              onClick={onSwitchPassword}
+              className="font-mono text-[11px] text-[#6b7280] hover:text-[#f97316] transition-colors"
+            >
+              Sign in with password instead
+            </button>
+          </div>
+        </form>
+      )}
+
+      {step === 2 && (
+        <form onSubmit={handleVerifyOtp} className="space-y-4">
+          <div className="text-center space-y-1">
+            <p className="font-mono text-xs text-[#9ca3af]">Code sent to</p>
+            <p className="font-mono text-xs font-bold text-[#f97316]">{email}</p>
+          </div>
+
+          {devOtp && (
+            <div className="p-2 bg-[#111422] border border-[#22d3ee]/30 rounded text-center">
+              <span className="font-mono text-[10px] text-[#22d3ee]">Dev Code: </span>
+              <span className="font-mono text-xs font-bold text-white tracking-widest">{devOtp}</span>
+            </div>
+          )}
+
+          <div className="py-2">
+            <OtpDigitsInput length={6} value={otp} onChange={setOtp} />
+          </div>
+
+          <button
+            id="verify-otp-submit"
+            type="submit"
+            disabled={busy || otp.length < 6}
+            className="btn-primary w-full py-3"
+          >
+            {busy ? <><Spinner/> Verifying...</> : <>Enter Arena →</>}
+          </button>
+
+          <div className="flex items-center justify-between font-mono text-[11px] text-[#6b7280]">
+            <button type="button" onClick={() => setStep(1)} className="hover:text-white transition-colors">
+              ← Change email
+            </button>
+            <button type="button" onClick={handleSendOtp} className="hover:text-[#f97316] transition-colors">
+              Resend code
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  )
+}
+
+/** Standard Password Login */
+function PasswordLoginForm({ onSwitchOtp, onSwitchRegister }) {
   const { login } = useAuth()
   const navigate  = useNavigate()
   const [form, setForm] = useState({ email:'', password:'' })
@@ -332,59 +471,46 @@ function LoginForm({ onSwitch }) {
 
   async function go(e) {
     e.preventDefault()
-    if (!form.email||!form.password) { setErr('all fields required'); return }
+    if (!form.email||!form.password) { setErr('All fields required'); return }
     setBusy(true)
     try {
       const { data } = await api.post('/api/auth/login', {
-        email:    form.email.trim().toLowerCase(),
+        email: form.email.trim().toLowerCase(),
         password: form.password,
       })
-      login(data)           // stores token + user in context + localStorage
-      navigate('/lobby')    // redirect to lobby after login
+      login(data)
+      navigate('/lobby')
     } catch (err) {
-      setErr(err.message || 'login failed')
+      setErr(err.response?.data?.message || err.message || 'Login failed')
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <form onSubmit={go} className="space-y-6 fade-in" noValidate>
+    <form onSubmit={go} className="space-y-4 fade-in" noValidate>
       <Err msg={err} />
-      <Field id="l-email"    label="Email"    type="email"    placeholder="you@example.com" autoComplete="email"            value={form.email}    onChange={set('email')} />
-      <Field id="l-password" label="Password" type="password" placeholder="••••••••"       autoComplete="current-password" value={form.password} onChange={set('password')} />
+      <Field id="l-email" label="Email" type="email" placeholder="you@domain.com" autoComplete="email" value={form.email} onChange={set('email')} />
+      <Field id="l-password" label="Password" type="password" placeholder="••••••••" autoComplete="current-password" value={form.password} onChange={set('password')} />
 
-      <div className="flex items-center justify-between">
-        <label className="flex items-center gap-2 cursor-pointer select-none">
-          <input id="remember" type="checkbox" className="w-3.5 h-3.5 accent-orange-500" />
-          <span className="font-mono text-[11px]" style={{ color:'#4b5563' }}>remember me</span>
-        </label>
-        <button type="button" className="font-mono text-[11px] transition-colors"
-                style={{ color:'#f97316' }}
-                onMouseOver={e=>e.target.style.color='#22d3ee'}
-                onMouseOut={e=>e.target.style.color='#f97316'}>
-          forgot password?
-        </button>
-      </div>
-
-      <button id="login-submit" type="submit" disabled={busy} className="btn-primary w-full">
-        {busy ? <><Spinner/> authenticating...</> : <>sign_in() →</>}
+      <button id="login-submit" type="submit" disabled={busy} className="btn-primary w-full py-3">
+        {busy ? <><Spinner/> Authenticating...</> : <>sign_in() →</>}
       </button>
 
-      <p className="font-mono text-[11px] text-center" style={{ color:'#4b5563' }}>
-        no account?{' '}
-        <button type="button" id="switch-to-register" onClick={onSwitch}
-                className="transition-colors" style={{ color:'#f97316' }}
-                onMouseOver={e=>e.target.style.color='#22d3ee'}
-                onMouseOut={e=>e.target.style.color='#f97316'}>
-          register →
+      <div className="flex items-center justify-between font-mono text-[11px] pt-1">
+        <button type="button" onClick={onSwitchOtp} className="text-[#f97316] hover:underline">
+          ⚡ Sign in with OTP
         </button>
-      </p>
+        <button type="button" onClick={onSwitchRegister} className="text-[#6b7280] hover:text-[#dde1ea]">
+          Register new account →
+        </button>
+      </div>
     </form>
   )
 }
 
-function RegisterForm({ onSwitch }) {
+/** Standard Registration Form */
+function RegisterForm({ onSwitchLogin }) {
   const { login } = useAuth()
   const navigate  = useNavigate()
   const [form, setForm] = useState({ username:'', email:'', password:'', confirm:'' })
@@ -392,56 +518,45 @@ function RegisterForm({ onSwitch }) {
   const [busy, setBusy] = useState(false)
   const set = f => e => { setForm(p=>({...p,[f]:e.target.value})); setErr('') }
 
-  function validate() {
-    if (Object.values(form).some(v=>!v))               return 'all fields required'
-    if (!/^[a-zA-Z0-9_]{3,30}$/.test(form.username))  return 'username: 3–30 chars, letters/numbers/_'
-    if (!/\S+@\S+\.\S+/.test(form.email))              return 'invalid email'
-    if (form.password.length < 6)                       return 'password: min 6 chars'
-    if (form.password !== form.confirm)                 return "passwords don't match"
-    return null
-  }
-
   async function go(e) {
     e.preventDefault()
-    const validErr = validate(); if(validErr){ setErr(validErr); return }
+    if (Object.values(form).some(v=>!v)) { setErr('All fields required'); return }
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(form.username)) { setErr('Username: 3–30 chars (letters/numbers/_)'); return }
+    if (form.password.length < 6) { setErr('Password: min 6 chars'); return }
+    if (form.password !== form.confirm) { setErr("Passwords don't match"); return }
+
     setBusy(true)
     try {
       const { data } = await api.post('/api/auth/register', {
         username: form.username.trim(),
-        email:    form.email.trim().toLowerCase(),
+        email: form.email.trim().toLowerCase(),
         password: form.password,
       })
-      login(data)           // auto-login after registration
+      login(data)
       navigate('/lobby')
     } catch (err) {
-      setErr(err.message || 'registration failed')
+      setErr(err.response?.data?.message || err.message || 'Registration failed')
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <form onSubmit={go} className="space-y-5 fade-in" noValidate>
+    <form onSubmit={go} className="space-y-3.5 fade-in" noValidate>
       <Err msg={err}/>
-      <Field id="r-user"   label="Username" placeholder="coolcoder42"      autoComplete="username"     value={form.username} onChange={set('username')}/>
-      <Field id="r-email"  label="Email"    type="email" placeholder="you@example.com" autoComplete="email"    value={form.email}    onChange={set('email')}/>
-      <div>
-        <Field id="r-pw"   label="Password" type="password" placeholder="min. 6 characters" autoComplete="new-password" value={form.password} onChange={set('password')}/>
-        <StrBar pw={form.password}/>
-      </div>
-      <Field id="r-conf"   label="Confirm"  type="password" placeholder="repeat password"   autoComplete="new-password" value={form.confirm}  onChange={set('confirm')}/>
+      <Field id="r-user" label="Username" placeholder="ninja_coder" autoComplete="username" value={form.username} onChange={set('username')}/>
+      <Field id="r-email" label="Email" type="email" placeholder="you@domain.com" autoComplete="email" value={form.email} onChange={set('email')}/>
+      <Field id="r-pw" label="Password" type="password" placeholder="min. 6 characters" autoComplete="new-password" value={form.password} onChange={set('password')}/>
+      <Field id="r-conf" label="Confirm Password" type="password" placeholder="repeat password" autoComplete="new-password" value={form.confirm} onChange={set('confirm')}/>
 
-      <button id="register-submit" type="submit" disabled={busy} className="btn-primary w-full">
-        {busy ? <><Spinner/> creating account...</> : <>create_account() →</>}
+      <button id="register-submit" type="submit" disabled={busy} className="btn-primary w-full py-3 mt-2">
+        {busy ? <><Spinner/> Creating Account...</> : <>create_account() →</>}
       </button>
 
-      <p className="font-mono text-[11px] text-center" style={{ color:'#4b5563' }}>
-        have an account?{' '}
-        <button type="button" id="switch-to-login" onClick={onSwitch}
-                className="transition-colors" style={{ color:'#f97316' }}
-                onMouseOver={e=>e.target.style.color='#22d3ee'}
-                onMouseOut={e=>e.target.style.color='#f97316'}>
-          sign in →
+      <p className="font-mono text-[11px] text-center text-[#6b7280] pt-1">
+        Already have an account?{' '}
+        <button type="button" onClick={onSwitchLogin} className="text-[#f97316] hover:underline">
+          Sign in →
         </button>
       </p>
     </form>
@@ -449,160 +564,204 @@ function RegisterForm({ onSwitch }) {
 }
 
 /* ════════════════════════════════════════════════
-   HOME  —  final layout
+   MAIN LANDING PAGE
 ════════════════════════════════════════════════ */
 export default function Home() {
-  const [mode, setMode] = useState('login')
-  const [searchParams] = useSearchParams()
+  const [authMode, setAuthMode] = useState('otp') // 'otp' | 'password' | 'register'
+  const [searchParams]          = useSearchParams()
+  const { isAuthenticated }     = useAuth()
+  const navigate                = useNavigate()
 
-  // Sync tab from ?auth=login|register (set by Navbar buttons)
   useEffect(() => {
     const param = searchParams.get('auth')
-    if (param === 'login' || param === 'register') {
-      setMode(param)
-      // Scroll to auth panel
+    if (param === 'login') setAuthMode('otp')
+    if (param === 'register') setAuthMode('register')
+    if (param) {
       setTimeout(() => {
-        document.getElementById('auth')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        document.getElementById('auth-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }, 100)
     }
   }, [searchParams])
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col">
+    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col bg-[#07080c] relative hero-grid-bg">
 
-      {/* ── HERO STRIP: label + battle sim ──────────────────── */}
-      <section style={{ borderBottom:'1px solid #1e2130' }} className="px-5 sm:px-8 py-8">
-        <div className="max-w-6xl mx-auto space-y-5">
+      {/* ── LIVE STATS TICKER STRIP ─────────────────────────── */}
+      <div className="border-b border-[#1e2130] bg-[#090b13]/80 backdrop-blur-md px-4 py-2 flex items-center justify-between text-[11px] font-mono text-[#6b7280]">
+        <div className="flex items-center gap-6 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="dot-live" />
+            <span className="text-[#dde1ea] font-semibold">1v1 Real-Time</span>
+          </div>
+          <span className="text-[#1e2130]">|</span>
+          <span className="shrink-0"><span className="text-[#f97316] font-bold">30+</span> Curated LeetCode DSA Problems</span>
+          <span className="text-[#1e2130]">|</span>
+          <span className="shrink-0"><span className="text-[#22d3ee] font-bold">4</span> Languages: JS · Py · C++ · Java</span>
+          <span className="text-[#1e2130]">|</span>
+          <span className="shrink-0"><span className="text-[#10b981] font-bold">0.5s</span> Docker Sandboxed Execution</span>
+        </div>
+        <div className="hidden sm:flex items-center gap-2 text-[#4b5563]">
+          <span>K=32 Elo Engine</span>
+        </div>
+      </div>
 
-          {/* label row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="dot-live" />
-              <span className="font-mono text-[11px] uppercase tracking-widest" style={{ color:'#4b5563', letterSpacing:'0.14em' }}>
-                simulated live match
-              </span>
+      {/* ── HERO & BATTLE SIMULATION ────────────────────────── */}
+      <section className="px-5 sm:px-8 py-10 max-w-6xl mx-auto w-full space-y-8">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          <div className="space-y-4 max-w-xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/20 bg-orange-500/10 text-orange-400 font-mono text-[11px]">
+              <span className="dot-live" /> Live 1v1 Competitive Arena
             </div>
-            <span className="font-mono text-[11px]" style={{ color:'#4b5563' }}>
-              Two Sum · arrays · medium
-            </span>
+            <h1 className="font-display font-extrabold tracking-tight leading-[1.08] text-4xl sm:text-5xl lg:text-6xl text-[#dde1ea]">
+              Code fast.<br/>
+              Steal Elo.<br/>
+              <span className="text-gradient-orange">Dominate the Arena.</span>
+            </h1>
+            <p className="text-[#9ca3af] text-sm sm:text-base leading-relaxed">
+              Two developers enter with the exact same DSA problem. First to achieve a verified <span className="text-[#10b981] font-mono font-semibold">ACCEPTED</span> verdict in the isolated sandbox takes the match.
+            </p>
+
+            <div className="flex items-center gap-4 pt-2">
+              {isAuthenticated ? (
+                <button onClick={() => navigate('/lobby')} className="btn-primary py-3 px-6 text-sm glow-orange">
+                  Enter Matchmaking Lobby →
+                </button>
+              ) : (
+                <a href="#auth-box" className="btn-primary py-3 px-6 text-sm glow-orange">
+                  Quick Join Arena ⚡
+                </a>
+              )}
+              <Link to="/leaderboard" className="btn-ghost py-3 px-5 text-sm">
+                View Global Ranks 🏆
+              </Link>
+            </div>
           </div>
 
-          {/* The battle */}
-          <BattlePreview />
-
-          {/* Headline — underneath the battle, not above it */}
-          <div className="pt-2 flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-10">
-            <h1 className="font-display font-extrabold leading-none tracking-tighter text-[#dde1ea]"
-                style={{ fontSize:'clamp(2.2rem,5vw,3.5rem)' }}>
-              1v1 competitive<br/>
-              coding battles.<br/>
-              <span style={{ color:'#f97316' }}>Elo-ranked.</span>
-            </h1>
-            <p className="text-sm max-w-xs leading-relaxed" style={{ color:'#6b7280', paddingBottom:'0.2em' }}>
-              Two players. Same problem. First{' '}
-              <span className="font-mono text-[#10b981]">ACCEPTED</span>{' '}
-              verdict wins — and steals Elo. Matchmaking expands ±100 every 10 s.
-            </p>
+          {/* Right side: Live Simulated Battle */}
+          <div className="w-full lg:max-w-xl">
+            <BattlePreview />
           </div>
         </div>
       </section>
 
-      {/* ── BOTTOM: features left, auth right ───────────────── */}
-      <div className="flex-1 grid lg:grid-cols-[1fr_380px]" style={{ '--col-divide':'1px solid #1e2130' }}>
+      {/* ── FEATURES & AUTH GRID ────────────────────────────── */}
+      <section className="border-t border-[#1e2130] bg-[#090b13]/50">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-12 grid lg:grid-cols-[1fr_380px] gap-10">
 
-        {/* Features column */}
-        <section className="px-5 sm:px-8 py-10" style={{ borderRight:'1px solid #1e2130' }}>
-          <div className="max-w-lg space-y-8">
+          {/* Feature Highlights Left */}
+          <div className="space-y-8">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-widest text-[#f97316] mb-2">// Built for Competitive DSA</p>
+              <h2 className="font-display font-bold text-2xl text-[#dde1ea]">Engineered for pure speed & security</h2>
+            </div>
 
-            <p className="font-mono text-[11px] uppercase tracking-widest" style={{ color:'#4b5563', letterSpacing:'0.14em' }}>
-              // how it works
-            </p>
-
-            <ol className="space-y-6">
+            <div className="grid sm:grid-cols-2 gap-4">
               {[
                 {
-                  n: '01',
-                  title: 'Pick a topic + find a match',
-                  desc:  'Arrays, graphs, DP, strings. Elo band starts at ±100 and widens every 10 s so nobody waits forever.',
-                  code:  'arena.findMatch({ topic: "arrays" })',
+                  icon: '⚡',
+                  title: 'Instant Matchmaking',
+                  desc: 'Queue by topic and difficulty. Search window widens ±100 Elo every 10s so matches start fast.',
                 },
                 {
-                  n: '02',
-                  title: 'Race to solve — live',
-                  desc:  'Both players get the same problem. You can see when your opponent is typing. No sandbagging.',
-                  code:  'socket.on("opponent_typing", ...)',
+                  icon: '🛡️',
+                  title: 'Locked Docker Sandbox',
+                  desc: 'Network disabled, 512MB RAM cap, 0.5 CPU, 5s timeout. Zero exploits, sub-second execution.',
                 },
                 {
-                  n: '03',
-                  title: 'Verdict streams from the sandbox',
-                  desc:  'Code runs in Docker — network off, 256 MB RAM, 0.5 CPU, 5 s timeout. First ACCEPTED wins.',
-                  code:  'docker run --network none --memory 256m',
+                  icon: '🏆',
+                  title: 'Live Elo Rating Engine',
+                  desc: 'Chess-grade Elo rating with dynamic K-factors and anti-forfeit disconnect recovery.',
                 },
-              ].map(({ n, title, desc, code }) => (
-                <li key={n} className="flex gap-5 group">
-                  <span className="font-mono text-sm font-bold mt-0.5 w-5 shrink-0"
-                        style={{ color:'#f97316' }}>{n}</span>
-                  <div className="space-y-1.5">
-                    <p className="font-semibold text-sm" style={{ color:'#dde1ea' }}>{title}</p>
-                    <p className="text-sm leading-relaxed" style={{ color:'#6b7280' }}>{desc}</p>
-                    <p className="font-mono text-[11px]" style={{ color:'#374151' }}>{code}</p>
-                  </div>
-                </li>
+                {
+                  icon: '🌐',
+                  title: '4 Major Languages',
+                  desc: 'Write in JavaScript, Python, C++, or Java with full reflection and automatic type coercion.',
+                },
+              ].map((feat, idx) => (
+                <div key={idx} className="glass-card p-4 rounded-lg space-y-2">
+                  <div className="text-2xl">{feat.icon}</div>
+                  <h3 className="font-semibold text-sm text-[#dde1ea]">{feat.title}</h3>
+                  <p className="text-xs text-[#9ca3af] leading-relaxed">{feat.desc}</p>
+                </div>
               ))}
-            </ol>
+            </div>
 
-            {/* Security footnote */}
-            <div className="pt-2" style={{ borderTop:'1px solid #1e2130' }}>
-              <p className="font-mono text-[11px] leading-relaxed" style={{ color:'#374151' }}>
-                <span style={{ color:'#4b5563' }}>sandbox flags →</span>{' '}
-                --network none --memory 256m --cpus 0.5 --pids-limit 50 --read-only --rm
+            {/* Step-by-Step Flow */}
+            <div className="space-y-4 pt-4 border-t border-[#1e2130]">
+              <p className="font-mono text-[11px] uppercase tracking-wider text-[#6b7280]">// How a match works</p>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {[
+                  { n: '01', title: 'Queue & Match', desc: 'Pick topic & rank bracket' },
+                  { n: '02', title: 'Live Battle', desc: 'Real-time typing radar' },
+                  { n: '03', title: 'Steal Rating', desc: 'Instant Elo settlement' },
+                ].map((s) => (
+                  <div key={s.n} className="p-3 bg-[#0d0f17] border border-[#1e2130] rounded flex items-start gap-3">
+                    <span className="font-mono text-sm font-bold text-[#f97316]">{s.n}</span>
+                    <div>
+                      <p className="font-semibold text-xs text-[#dde1ea]">{s.title}</p>
+                      <p className="text-[11px] text-[#6b7280]">{s.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Authentication Panel Right */}
+          <div id="auth-box" className="glass-card p-6 rounded-xl border border-[#1e2130] flex flex-col justify-between">
+            <div>
+              {/* Header Tabs */}
+              <div className="flex items-center justify-between pb-4 border-b border-[#1e2130] mb-5">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setAuthMode('otp')}
+                    className="font-mono text-xs font-bold transition-colors pb-1"
+                    style={{
+                      color: authMode === 'otp' ? '#f97316' : '#6b7280',
+                      borderBottom: authMode === 'otp' ? '2px solid #f97316' : '2px solid transparent',
+                    }}
+                  >
+                    ⚡ Fast OTP
+                  </button>
+                  <button
+                    onClick={() => setAuthMode('password')}
+                    className="font-mono text-xs font-bold transition-colors pb-1"
+                    style={{
+                      color: authMode === 'password' ? '#dde1ea' : '#6b7280',
+                      borderBottom: authMode === 'password' ? '2px solid #dde1ea' : '2px solid transparent',
+                    }}
+                  >
+                    Password
+                  </button>
+                  <button
+                    onClick={() => setAuthMode('register')}
+                    className="font-mono text-xs font-bold transition-colors pb-1"
+                    style={{
+                      color: authMode === 'register' ? '#22d3ee' : '#6b7280',
+                      borderBottom: authMode === 'register' ? '2px solid #22d3ee' : '2px solid transparent',
+                    }}
+                  >
+                    Register
+                  </button>
+                </div>
+              </div>
+
+              {/* Form Body */}
+              {authMode === 'otp' && <OtpLoginForm onSwitchPassword={() => setAuthMode('password')} />}
+              {authMode === 'password' && <PasswordLoginForm onSwitchOtp={() => setAuthMode('otp')} onSwitchRegister={() => setAuthMode('register')} />}
+              {authMode === 'register' && <RegisterForm onSwitchLogin={() => setAuthMode('password')} />}
+            </div>
+
+            <div className="mt-8 pt-4 border-t border-[#1e2130] text-center">
+              <p className="font-mono text-[10px] text-[#4b5563]">
+                Protected by Docker Sandboxing & bcrypt hashing
               </p>
             </div>
           </div>
-        </section>
 
-        {/* Auth column — id="auth" is the scroll target for Navbar buttons */}
-        <section id="auth" className="px-8 py-10 flex flex-col">
+        </div>
+      </section>
 
-          {/* Tab row */}
-          <div className="flex items-center gap-6 mb-10" style={{ borderBottom:'1px solid #1e2130', paddingBottom: '0.75rem' }}>
-            {['login','register'].map(m => (
-              <button
-                key={m}
-                id={`tab-${m}`}
-                onClick={() => setMode(m)}
-                className="font-mono text-[12px] pb-0.5 transition-colors"
-                style={{
-                  color:       mode === m ? '#dde1ea' : '#4b5563',
-                  borderBottom: mode === m ? '2px solid #f97316' : '2px solid transparent',
-                  paddingBottom: '0.6rem',
-                  marginBottom: '-0.75rem',
-                }}
-              >
-                {m === 'login' ? 'sign_in' : 'register'}
-              </button>
-            ))}
-            <span className="ml-auto font-mono text-[10px]" style={{ color:'#374151' }}>
-              {mode === 'login' ? '// returning player' : '// new account'}
-            </span>
-          </div>
-
-          {/* Form */}
-          <div className="flex-1">
-            {mode === 'login'
-              ? <LoginForm    key="login"    onSwitch={() => setMode('register')} />
-              : <RegisterForm key="register" onSwitch={() => setMode('login')} />
-            }
-          </div>
-
-          {/* Footer */}
-          <div className="mt-auto pt-8" style={{ borderTop:'1px solid #1e2130' }}>
-            <p className="font-mono text-[10px] leading-5" style={{ color:'#374151' }}>
-              rating system → Elo K=32 (K=40 under 10 matches, K=16 above 2000)
-            </p>
-          </div>
-        </section>
-      </div>
     </div>
   )
 }

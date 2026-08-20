@@ -125,3 +125,72 @@
   background: #f97316;
   animation: dot-pulse-anim 1.4s ease-in-out infinite both;
 }
+
+/* ── Modern Glassmorphism & UI Utilities ──────────────────── */
+.glass-panel {
+  background: rgba(13, 15, 23, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-card {
+  background: linear-gradient(135deg, rgba(17, 21, 34, 0.6) 0%, rgba(9, 11, 19, 0.8) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-card:hover {
+  border-color: rgba(249, 115, 22, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(249, 115, 22, 0.15);
+}
+
+.glow-orange {
+  box-shadow: 0 0 24px -4px rgba(249, 115, 22, 0.3);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 24px -4px rgba(34, 211, 238, 0.3);
+}
+
+.text-gradient-orange {
+  background: linear-gradient(135deg, #ffffff 0%, #dde1ea 40%, #f97316 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #ffffff 0%, #dde1ea 50%, #22d3ee 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-grid-bg {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+/* ── OTP Digit Input ─────────────────────────────────────── */
+.otp-digit {
+  width: 44px;
+  height: 52px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #dde1ea;
+  background: #0d0f17;
+  border: 1px solid #1e2130;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+.otp-digit:focus {
+  outline: none;
+  border-color: #f97316;
+  background: #111422;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.25);
+}
