@@ -149,7 +149,7 @@ function FriendSearch() {
                   onMouseOver={e => e.currentTarget.style.background = '#0d0f17'}
                   onMouseOut={e  => e.currentTarget.style.background = 'transparent'}
                 >
-                  <UserAvatar username={s.username} size={24} />
+                  <UserAvatar username={s.username} seed={s.avatar_seed} style={s.avatar_style} size={24} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-[12px] font-bold truncate" style={{ color:'#dde1ea' }}>{s.username}</span>

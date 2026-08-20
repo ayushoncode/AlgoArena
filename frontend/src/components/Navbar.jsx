@@ -90,8 +90,8 @@ export default function Navbar() {
               onMouseOver={e => { if (!open) e.currentTarget.style.borderColor = 'rgba(249,115,22,0.25)' }}
               onMouseOut={e  => { if (!open) e.currentTarget.style.borderColor = '#1e2130' }}
             >
-              {/* Emoji Avatar */}
-              <UserAvatar username={user.username} size={22} isMe={true} />
+              {/* Custom Character Avatar */}
+              <UserAvatar username={user.username} seed={user.avatar_seed} style={user.avatar_style} size={22} isMe={true} />
 
               <span className="font-mono text-[11px]" style={{ color:'#dde1ea' }}>
                 {user.username}
