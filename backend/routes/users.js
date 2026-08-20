@@ -29,7 +29,7 @@ router.get('/stats', async (_req, res) => {
 router.get('/leaderboard', async (_req, res) => {
   try {
     const { rows } = await db.query(
-      `SELECT id, username, elo_rating, wins, losses,
+      `SELECT id, username, elo_rating, wins, losses, avatar_seed, avatar_style,
               RANK() OVER (ORDER BY elo_rating DESC) AS rank
        FROM users
        ORDER BY elo_rating DESC
@@ -46,7 +46,7 @@ router.get('/leaderboard', async (_req, res) => {
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const { rows } = await db.query(
-      `SELECT id, username, email, elo_rating, wins, losses, is_username_set, created_at
+      `SELECT id, username, email, elo_rating, wins, losses, is_username_set, avatar_seed, avatar_style, created_at
        FROM users WHERE id = $1`,
       [req.user.id]
     )
@@ -219,6 +219,32 @@ router.patch('/me/username', authMiddleware, async (req, res) => {
   }
 })
 
+// PATCH /api/users/me/avatar — update avatar seed and style
+router.patch('/me/avatar', authMiddleware, async (req, res) => {
+  try {
+    const { avatar_seed, avatar_style } = req.body
+    if (!avatar_seed) {
+      return res.status(400).json({ message: 'avatar_seed is required' })
+    }
+    const cleanSeed = String(avatar_seed).trim().slice(0, 100)
+    const cleanStyle = String(avatar_style || 'adventurer').trim().slice(0, 50)
+
+    const { rows } = await db.query(
+      `UPDATE users
+       SET avatar_seed = $1, avatar_style = $2
+       WHERE id = $3
+       RETURNING id, username, email, elo_rating, wins, losses, is_username_set, avatar_seed, avatar_style, created_at`,
+      [cleanSeed, cleanStyle, req.user.id]
+    )
+
+    if (!rows[0]) return res.status(404).json({ message: 'User not found' })
+    return res.status(200).json({ message: 'Avatar updated successfully', user: rows[0] })
+  } catch (err) {
+    console.error('[PATCH /users/me/avatar]', err)
+    return res.status(500).json({ message: 'Failed to update avatar' })
+  }
+})
+
 // GET /api/users/search?q=username — public username autocomplete (top 8 matches with true global rank)
 router.get('/search', async (req, res) => {
   try {
@@ -226,11 +252,11 @@ router.get('/search', async (req, res) => {
     if (!q || q.length < 1) return res.json([])
     const { rows } = await db.query(
       `WITH ranked_users AS (
-         SELECT id, username, elo_rating, wins, losses,
+         SELECT id, username, elo_rating, wins, losses, avatar_seed, avatar_style,
                 RANK() OVER (ORDER BY elo_rating DESC, id ASC) AS rank
          FROM users
        )
-       SELECT username, elo_rating, wins, losses, rank
+       SELECT username, elo_rating, wins, losses, avatar_seed, avatar_style, rank
        FROM ranked_users
        WHERE LOWER(username) LIKE $1
        ORDER BY elo_rating DESC
@@ -251,6 +277,7 @@ router.get('/:username/profile', async (req, res) => {
     const { rows } = await db.query(
       `WITH ranked_users AS (
          SELECT u.id, u.username, u.elo_rating, u.wins, u.losses, u.created_at, u.is_username_set,
+                u.avatar_seed, u.avatar_style,
                 RANK() OVER (ORDER BY u.elo_rating DESC, u.id ASC) AS rank
          FROM users u
        )

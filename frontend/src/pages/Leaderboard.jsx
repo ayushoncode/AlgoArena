@@ -88,8 +88,8 @@ function LeaderRow({ player, isMe, highlight, onSelect }) {
         <RankBadge rank={Number(player.rank)} />
       </div>
 
-      {/* Emoji Avatar */}
-      <UserAvatar username={player.username} size={30} isMe={isMe} />
+      {/* Avatar */}
+      <UserAvatar username={player.username} seed={player.avatar_seed} style={player.avatar_style} size={30} isMe={isMe} />
 
       {/* Name + tier */}
       <div className="flex-1 min-w-0">

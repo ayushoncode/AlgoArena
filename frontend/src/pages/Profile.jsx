@@ -44,8 +44,10 @@ function EloChart({ data = [], username = 'Coder' }) {
 
   const minRaw = Math.min(...ratings)
   const maxRaw = Math.max(...ratings)
-  const minR = Math.max(900, Math.floor((minRaw - 100) / 100) * 100)
-  const maxR = Math.max(2000, Math.ceil((maxRaw + 120) / 100) * 100)
+  const spread = maxRaw - minRaw
+  const pad = Math.max(30, Math.round(spread * 0.35))
+  const minR = Math.max(0, Math.floor((minRaw - pad) / 20) * 20)
+  const maxR = Math.ceil((maxRaw + pad) / 20) * 20
   const rangeR = maxR - minR || 1
 
   const xScale = i => data.length === 1 ? inner.w / 2 : (i / (data.length - 1)) * inner.w
@@ -78,8 +80,12 @@ function EloChart({ data = [], username = 'Coder' }) {
   const linePath = buildPath(pts)
   const areaPath = linePath + ` L ${pts[pts.length - 1][0]} ${inner.h} L ${pts[0][0]} ${inner.h} Z`
 
-  // Tier boundary lines
-  const boundaryRatings = [1200, 1400, 1600, 1900, 2200].filter(r => r > minR && r < maxR)
+  // Dynamic Y-axis gridlines
+  const yStep = Math.max(20, Math.round(rangeR / 4 / 10) * 10)
+  const boundaryRatings = []
+  for (let r = Math.ceil((minR + 5) / yStep) * yStep; r < maxR; r += yStep) {
+    boundaryRatings.push(r)
+  }
 
   // X-axis labels: use "Match N" when all dates are same day, else use "Aug 26"-style
   const step = Math.max(1, Math.floor(data.length / 5))
@@ -107,7 +113,7 @@ function EloChart({ data = [], username = 'Coder' }) {
       {/* Top Header Information */}
       <div className="flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-sm bg-[#f97316]" />
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: activeTier.text }} />
           <span className="font-bold text-[#dde1ea]">{username}</span>
           <span className="text-[#4b5563]">·</span>
           <span style={{ color: activeTier.text }} className="font-bold">
@@ -132,8 +138,8 @@ function EloChart({ data = [], username = 'Coder' }) {
               <rect x="0" y="0" width={inner.w} height={inner.h} />
             </clipPath>
             <linearGradient id="algoAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f97316" stopOpacity="0.22" />
-              <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
+              <stop offset="0%" stopColor={activeTier.text} stopOpacity="0.25" />
+              <stop offset="100%" stopColor={activeTier.text} stopOpacity="0" />
             </linearGradient>
           </defs>
 
@@ -153,25 +159,35 @@ function EloChart({ data = [], username = 'Coder' }) {
                   width={inner.w}
                   height={height}
                   fill={tier.bg}
-                  clipPath="url(#algoClip)"
+                  style={{ transition: 'all 0.3s ease' }}
                 />
               )
             })}
 
-            {/* 2. Boundary Grid Lines & Left Ticks */}
+            {/* 2. Grid lines & Y-axis labels */}
             {boundaryRatings.map((r) => {
               const y = yScale(r)
+              const t = getRankTier(r)
               return (
                 <g key={r}>
-                  <line x1={0} y1={y} x2={inner.w} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth={1} strokeDasharray="3 3" />
+                  <line
+                    x1={0}
+                    y1={y}
+                    x2={inner.w}
+                    y2={y}
+                    stroke={t.border}
+                    strokeWidth={1}
+                    strokeDasharray="4 4"
+                    strokeOpacity={0.4}
+                  />
                   <text
                     x={-8}
                     y={y + 3.5}
                     textAnchor="end"
-                    fontSize={9}
-                    fill="#64748b"
+                    fontSize={10}
+                    fill={t.text}
                     fontFamily="JetBrains Mono, monospace"
-                    fontWeight="500"
+                    opacity={0.85}
                   >
                     {r}
                   </text>
@@ -179,49 +195,55 @@ function EloChart({ data = [], username = 'Coder' }) {
               )
             })}
 
-            {/* Base axes */}
-            <line x1={0} y1={inner.h} x2={inner.w} y2={inner.h} stroke="#1e2130" strokeWidth={1} />
-            <line x1={0} y1={0} x2={0} y2={inner.h} stroke="#1e2130" strokeWidth={1} />
-
-            {/* 3. Date / Timeline Ticks */}
-            {xLabels.map(({ x, label }, idx) => (
-              <g key={idx}>
-                <line x1={x} y1={inner.h} x2={x} y2={inner.h + 4} stroke="#334155" strokeWidth={1} />
+            {/* 3. X-axis date / match markers */}
+            {xLabels.map((lbl) => (
+              <g key={lbl.i}>
+                <line
+                  x1={lbl.x}
+                  y1={0}
+                  x2={lbl.x}
+                  y2={inner.h}
+                  stroke="#1e293b"
+                  strokeWidth={1}
+                  strokeDasharray="2 4"
+                  strokeOpacity={0.3}
+                />
                 <text
-                  x={x}
-                  y={inner.h + 16}
+                  x={lbl.x}
+                  y={inner.h + 18}
                   textAnchor="middle"
-                  fontSize={9}
-                  fill="#64748b"
+                  fontSize={10}
+                  fill="#475569"
                   fontFamily="JetBrains Mono, monospace"
                 >
-                  {label}
+                  {lbl.label}
                 </text>
               </g>
             ))}
 
-            {/* 4. Smooth Area Glow & Flame Rating Curve */}
+            {/* 4. Smooth Area Glow & Rating Curve */}
             <path d={areaPath} fill="url(#algoAreaGrad)" clipPath="url(#algoClip)" />
             <path
               d={linePath}
               fill="none"
-              stroke="#f97316"
+              stroke={activeTier.text}
               strokeWidth={2.5}
               strokeLinecap="round"
               strokeLinejoin="round"
               clipPath="url(#algoClip)"
             />
 
-            {/* 5. Match Nodes */}
+            {/* 5. Match Nodes — colored by each node's rank tier */}
             {pts.map(([x, y], i) => {
               const isPeak = i === peakIdx && ratings.length > 1
+              const pointTier = getRankTier(data[i]?.rating || 1200)
               return (
                 <g key={i}>
                   <circle
                     cx={x}
                     cy={y}
                     r={isPeak ? 5 : 3.5}
-                    fill={isPeak ? '#22d3ee' : '#f97316'}
+                    fill={isPeak ? '#22d3ee' : pointTier.text}
                     stroke="#07090e"
                     strokeWidth={1.5}
                   />
@@ -246,7 +268,7 @@ function EloChart({ data = [], username = 'Coder' }) {
                   y1={0}
                   x2={hovered.x}
                   y2={inner.h}
-                  stroke="rgba(249,115,22,0.4)"
+                  stroke={getRankTier(hovered.rating).border}
                   strokeWidth={1}
                   strokeDasharray="3 3"
                 />
@@ -254,7 +276,7 @@ function EloChart({ data = [], username = 'Coder' }) {
                   cx={hovered.x}
                   cy={hovered.y}
                   r={5.5}
-                  fill="#f97316"
+                  fill={getRankTier(hovered.rating).text}
                   stroke="#ffffff"
                   strokeWidth={2}
                 />
@@ -418,6 +440,170 @@ function StatCard({ label, value, sub, color = '#dde1ea' }) {
 }
 
 /* ════════════════════════════════════════════════
+   AVATAR SELECTOR MODAL
+════════════════════════════════════════════════ */
+function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, username, onSave }) {
+  const [selectedStyle, setSelectedStyle] = useState(currentStyle || 'adventurer')
+  const [selectedSeed, setSelectedSeed]   = useState(currentSeed || username || 'coder')
+  const [customInput, setCustomInput]     = useState('')
+  const [saving, setSaving]               = useState(false)
+
+  const styles = [
+    { id: 'adventurer', label: 'Adventurer (Male)', icon: '👦' },
+    { id: 'lorelei', label: 'Lorelei (Female)', icon: '👧' },
+    { id: 'bottts', label: 'Cyber Bot', icon: '🤖' },
+    { id: 'pixel-art', label: 'Pixel Gamer', icon: '👾' },
+    { id: 'notionists', label: 'Tech Sketch', icon: '🎨' },
+  ]
+
+  const PRESETS = {
+    adventurer: ['Felix', 'Leo', 'Max', 'Alex', 'Oliver', 'Liam', 'Ethan', 'Aiden'],
+    lorelei: ['Sara', 'Maya', 'Luna', 'Chloe', 'Zoe', 'Lily', 'Emma', 'Aria'],
+    bottts: ['Glitch', 'Cyber', 'Neon', 'Pixel', 'Matrix', 'Vortex', 'Spark', 'Nova'],
+    'pixel-art': ['Shadow', 'Blaze', 'Cipher', 'Titan', 'Ghost', 'Phantom', 'Knight', 'Rogue'],
+    notionists: ['Code', 'Zen', 'Echo', 'Orbit', 'Pulse', 'Byte', 'Apex', 'Prism'],
+  }
+
+  const handleRandom = () => {
+    const pool = PRESETS[selectedStyle] || PRESETS.adventurer
+    const rand = pool[Math.floor(Math.random() * pool.length)] + Math.floor(Math.random() * 1000)
+    setSelectedSeed(rand)
+  }
+
+  const handleApplyCustom = (e) => {
+    e?.preventDefault()
+    if (customInput.trim()) {
+      setSelectedSeed(customInput.trim())
+      setCustomInput('')
+    }
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await onSave({ avatar_seed: selectedSeed, avatar_style: selectedStyle })
+      onClose()
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="w-full max-w-lg rounded-2xl border border-[#1e2130] bg-[#090b13] p-6 space-y-6 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-[#1e2130] pb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🎨</span>
+            <h2 className="font-display font-bold text-lg text-[#dde1ea]">Choose Your Arena Avatar</h2>
+          </div>
+          <button onClick={onClose} className="font-mono text-xs text-[#6b7280] hover:text-[#f97316] p-1">
+            ✕
+          </button>
+        </div>
+
+        {/* Live Preview */}
+        <div className="flex items-center justify-center gap-6 p-4 rounded-xl bg-[#07080c] border border-[#1e2130]">
+          <UserAvatar username={username} seed={selectedSeed} style={selectedStyle} size={76} isMe={true} />
+          <div className="space-y-1">
+            <p className="font-mono text-sm font-bold text-[#dde1ea]">@{username}</p>
+            <p className="font-mono text-xs text-[#f97316]">Style: {selectedStyle}</p>
+            <p className="font-mono text-[10px] text-[#6b7280] truncate max-w-[200px]">Seed: {selectedSeed}</p>
+          </div>
+        </div>
+
+        {/* Category Switcher */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {styles.map(st => (
+            <button
+              key={st.id}
+              onClick={() => { setSelectedStyle(st.id); setSelectedSeed(PRESETS[st.id]?.[0] || 'seed1') }}
+              className={`px-3 py-1.5 rounded-lg font-mono text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                selectedStyle === st.id
+                  ? 'bg-orange-500/20 text-[#f97316] border border-orange-500/50 shadow-sm'
+                  : 'bg-[#0d0f17] text-[#9ca3af] border border-[#1e2130] hover:border-[#374151]'
+              }`}
+            >
+              {st.icon} {st.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Preset Avatars Grid */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="font-mono text-[11px] text-[#6b7280] uppercase tracking-wider">// Curated Presets</p>
+            <button
+              onClick={handleRandom}
+              className="font-mono text-[11px] text-[#22d3ee] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              🎲 Randomize
+            </button>
+          </div>
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+            {(PRESETS[selectedStyle] || []).map((preset) => {
+              const active = selectedSeed === preset
+              return (
+                <button
+                  key={preset}
+                  onClick={() => setSelectedSeed(preset)}
+                  className={`p-1.5 rounded-xl border transition-all flex items-center justify-center cursor-pointer ${
+                    active
+                      ? 'bg-orange-500/20 border-orange-500 scale-105 shadow-lg shadow-orange-500/20'
+                      : 'bg-[#0d0f17] border-[#1e2130] hover:border-[#374151]'
+                  }`}
+                >
+                  <UserAvatar username={username} seed={preset} style={selectedStyle} size={36} />
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Custom Seed Input */}
+        <form onSubmit={handleApplyCustom} className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Type custom name / seed..."
+            value={customInput}
+            onChange={e => setCustomInput(e.target.value)}
+            className="flex-1 bg-[#07080c] border border-[#1e2130] rounded-lg px-3 py-2 text-xs font-mono text-[#dde1ea] focus:border-[#f97316] outline-none"
+          />
+          <button
+            type="submit"
+            className="px-3 py-2 rounded-lg bg-[#1e2130] text-xs font-mono font-bold text-[#dde1ea] hover:bg-[#2d3748] cursor-pointer"
+          >
+            Apply
+          </button>
+        </form>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#1e2130]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg font-mono text-xs text-[#9ca3af] hover:text-white bg-[#0d0f17] border border-[#1e2130] cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={handleSave}
+            className="btn-primary py-2 px-5 text-xs glow-orange"
+          >
+            {saving ? 'Saving...' : 'Save Avatar ⚡'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ════════════════════════════════════════════════
    PROFILE PAGE
 ════════════════════════════════════════════════ */
 export default function Profile() {
@@ -435,6 +621,7 @@ export default function Profile() {
   const [newHandle, setNewHandle]             = useState('')
   const [handleErr, setHandleErr]             = useState('')
   const [savingHandle, setSavingHandle]       = useState(false)
+  const [showAvatarModal, setShowAvatarModal] = useState(false)
 
   const isOwnProfileRoute = !routeUsername
   const isMe = isOwnProfileRoute || (user?.username && routeUsername?.toLowerCase() === user.username.toLowerCase())
@@ -651,6 +838,16 @@ export default function Profile() {
     }
   }
 
+  async function handleSaveAvatar({ avatar_seed, avatar_style }) {
+    const { data } = await api.patch('/api/users/me/avatar', { avatar_seed, avatar_style })
+    if (data?.user) {
+      localStorage.setItem('aa_user', JSON.stringify(data.user))
+      refreshUser(data.user)
+      setProfileUser(data.user)
+    }
+    return data
+  }
+
   return (
     <div className="min-h-[calc(100vh-3.5rem)]">
 
@@ -672,8 +869,25 @@ export default function Profile() {
 
           <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6">
 
-            {/* Avatar */}
-            <UserAvatar username={activeUser?.username} size={88} isMe={isMe} />
+            {/* Avatar with Customizer Button */}
+            <div className="relative group shrink-0">
+              <UserAvatar
+                username={activeUser?.username}
+                seed={activeUser?.avatar_seed}
+                style={activeUser?.avatar_style}
+                size={88}
+                isMe={isMe}
+              />
+              {isMe && (
+                <button
+                  onClick={() => setShowAvatarModal(true)}
+                  className="absolute -bottom-2 -right-2 px-2.5 py-1 rounded-full bg-[#0d0f17] border border-[#f97316] text-[10px] font-mono font-bold text-[#f97316] hover:bg-[#f97316] hover:text-[#07080c] transition-all shadow-lg flex items-center gap-1 cursor-pointer"
+                  title="Customize your avatar"
+                >
+                  <span>🎨</span> Change
+                </button>
+              )}
+            </div>
 
             {/* Info */}
             <div className="flex-1">
@@ -787,12 +1001,12 @@ export default function Profile() {
 
         {/* Stat grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <StatCard label="rating"     value={elo}               sub={`peak ${peakElo}`}        color="#f97316" />
-          <StatCard label="wins"       value={wins}              sub={`${wr}% win rate`}         color="#10b981" />
-          <StatCard label="losses"     value={losses}            sub={`${total} total`}          color="#f43f5e" />
-          <StatCard label="streak"     value={`${streak}d`}      sub="current"                   color="#f97316" />
-          <StatCard label="matches"    value={total}             sub="played"                              />
-          <StatCard label="fav topic"  value={favTopic.split('-')[0]} sub={favTopic}                        />
+          <StatCard label="rating"    value={elo}                    sub={`peak ${peakElo}`}   color={getRankTier(elo).text} subColor="#64748b" />
+          <StatCard label="wins"      value={wins}                   sub={`${wr}% win rate`}    color="#22d3ee" subColor="rgba(34,211,238,0.7)" />
+          <StatCard label="losses"    value={losses}                 sub={`${total} total`}     color="#f43f5e" subColor="rgba(244,63,94,0.7)" />
+          <StatCard label="streak"    value={`${streak}d`}           sub="active days"          color="#f97316" subColor="rgba(249,115,22,0.7)" />
+          <StatCard label="matches"   value={total}                  sub="battles"              color="#a78bfa" subColor="rgba(167,139,250,0.7)" />
+          <StatCard label="fav topic" value={favTopic.split('-')[0]} sub={favTopic}             color="#fbbf24" subColor="rgba(251,191,36,0.7)" />
         </div>
 
         {/* Elo chart */}
@@ -808,11 +1022,11 @@ export default function Profile() {
             <div className="flex items-center gap-4 text-right">
               <div>
                 <p className="font-mono text-[10px]" style={{ color: '#4b5563' }}>peak</p>
-                <p className="font-mono text-sm font-bold" style={{ color: '#f97316' }}>{peakElo}</p>
+                <p className="font-mono text-sm font-bold" style={{ color: getRankTier(peakElo).text }}>{peakElo}</p>
               </div>
               <div>
                 <p className="font-mono text-[10px]" style={{ color: '#4b5563' }}>current</p>
-                <p className="font-mono text-sm font-bold" style={{ color: '#dde1ea' }}>{elo}</p>
+                <p className="font-mono text-sm font-bold" style={{ color: getRankTier(elo).text }}>{elo}</p>
               </div>
             </div>
           </div>
@@ -926,6 +1140,18 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {/* Avatar Selector Modal */}
+      {isMe && (
+        <AvatarSelectorModal
+          isOpen={showAvatarModal}
+          onClose={() => setShowAvatarModal(false)}
+          currentSeed={activeUser?.avatar_seed}
+          currentStyle={activeUser?.avatar_style}
+          username={activeUser?.username}
+          onSave={handleSaveAvatar}
+        />
+      )}
     </div>
   )
 }

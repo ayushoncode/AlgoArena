@@ -47,20 +47,29 @@ export function detectGender(username = '') {
 }
 
 /**
- * Get distinct illustrated avatar image URL based on username & gender
+ * Get distinct illustrated avatar image URL based on username, gender, seed & style
  */
-export function getUserAvatarUrl(username = '') {
+export function getUserAvatarUrl(username = '', customSeed = null, customStyle = null) {
   const clean = String(username || 'coder').toLowerCase().trim()
   const gender = detectGender(clean)
-  const encoded = encodeURIComponent(clean)
+  const seed = encodeURIComponent(customSeed || clean)
+  const style = customStyle || (gender === 'female' ? 'lorelei' : 'adventurer')
 
-  if (gender === 'female') {
-    // Lorelei / Adventurer female avatars
-    return `https://api.dicebear.com/7.x/lorelei/svg?seed=${encoded}&backgroundColor=ffd5dc,ffdfbf,c0aede,b6e3f4`
+  if (style === 'lorelei') {
+    return `https://api.dicebear.com/7.x/lorelei/svg?seed=${seed}&backgroundColor=ffd5dc,ffdfbf,c0aede,b6e3f4`
+  }
+  if (style === 'bottts') {
+    return `https://api.dicebear.com/7.x/bottts/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf`
+  }
+  if (style === 'notionists') {
+    return `https://api.dicebear.com/7.x/notionists/svg?seed=${seed}&backgroundColor=ffd5dc,ffdfbf,c0aede,b6e3f4`
+  }
+  if (style === 'pixel-art') {
+    return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf`
   }
 
-  // Adventurer / Avataaars male avatars
-  return `https://api.dicebear.com/7.x/adventurer/svg?seed=${encoded}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf`
+  // Default: adventurer
+  return `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf`
 }
 
 /**
@@ -74,13 +83,13 @@ export function getUserEmoji(username = '') {
 /**
  * Illustrated Avatar Component with rounded border, glow, and fallback initial
  */
-export function UserAvatar({ username = '', size = 32, className = '', isMe = false }) {
+export function UserAvatar({ username = '', seed = null, style = null, size = 32, className = '', isMe = false }) {
   const [imgErr, setImgErr] = useState(false)
-  const avatarUrl = getUserAvatarUrl(username)
+  const avatarUrl = getUserAvatarUrl(username, seed, style)
   const gender = detectGender(username)
   const initial = (username?.[0] ?? (gender === 'female' ? 'G' : 'B')).toUpperCase()
 
-  const isPink = gender === 'female'
+  const isPink = gender === 'female' || style === 'lorelei'
   const borderColor = isMe
     ? '#f97316'
     : isPink
@@ -108,10 +117,11 @@ export function UserAvatar({ username = '', size = 32, className = '', isMe = fa
           ? '0 0 10px rgba(244,63,94,0.2)'
           : '0 0 10px rgba(34,211,238,0.2)',
       }}
-      title={`@${username} (${gender === 'female' ? 'Girl Persona' : 'Boy Persona'})`}
+      title={`@${username} (${style || (gender === 'female' ? 'Girl' : 'Boy')})`}
     >
       {!imgErr ? (
         <img
+          key={avatarUrl}
           src={avatarUrl}
           alt={username}
           loading="lazy"
