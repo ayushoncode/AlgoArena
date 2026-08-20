@@ -29,7 +29,8 @@ export default function App() {
           <Routes>
             <Route path="/"              element={<RootRoute    />} />
             <Route path="/lobby"         element={<Lobby        />} />
-            <Route path="/profile"       element={<Profile      />} />
+            <Route path="/profile"           element={<Profile      />} />
+            <Route path="/profile/:username" element={<Profile      />} />
             <Route path="/leaderboard"   element={<Leaderboard  />} />
             <Route path="/match/:roomId" element={<Match        />} />
             <Route path="/result"        element={<Result       />} />

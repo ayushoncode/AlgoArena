@@ -90,13 +90,70 @@ router.get('/me/history', authMiddleware, async (req, res) => {
 router.get('/me/elo-history', authMiddleware, async (req, res) => {
   try {
     const { rows } = await db.query(
-      `SELECT created_at AS date, new_rating AS rating, delta
-       FROM elo_history
-       WHERE user_id = $1
-       ORDER BY created_at ASC`,
+      `SELECT
+         e.id,
+         e.created_at AS date,
+         e.new_rating AS rating,
+         e.old_rating,
+         e.delta,
+         m.topic,
+         m.difficulty,
+         u_opp.username AS opponent
+       FROM elo_history e
+       LEFT JOIN matches m ON m.id = e.match_id
+       LEFT JOIN users u_opp ON (
+         CASE WHEN m.player_one_id = $1 THEN m.player_two_id ELSE m.player_one_id END = u_opp.id
+       )
+       WHERE e.user_id = $1
+       ORDER BY e.created_at ASC`,
       [req.user.id]
     )
-    return res.json(rows)
+
+    if (rows.length > 0) {
+      return res.json(rows)
+    }
+
+    // Fallback: If no explicit elo_history rows yet, compute from matches history
+    const { rows: matchRows } = await db.query(
+      `SELECT
+         m.id,
+         m.started_at,
+         m.ended_at AS date,
+         m.topic,
+         m.difficulty,
+         CASE WHEN m.winner_id = $1 THEN 'WIN' ELSE 'LOSS' END AS result,
+         u_opp.username AS opponent
+       FROM matches m
+       JOIN users u_opp ON (
+         CASE WHEN m.player_one_id = $1 THEN m.player_two_id ELSE m.player_one_id END = u_opp.id
+       )
+       WHERE (m.player_one_id = $1 OR m.player_two_id = $1)
+         AND m.status = 'finished'
+       ORDER BY m.ended_at ASC`,
+      [req.user.id]
+    )
+
+    if (matchRows.length > 0) {
+      let currentElo = 1200
+      const history = matchRows.map(m => {
+        const delta = m.result === 'WIN' ? 18 : -18
+        const oldRating = currentElo
+        currentElo += delta
+        return {
+          id: m.id,
+          date: m.date,
+          rating: currentElo,
+          old_rating: oldRating,
+          delta,
+          topic: m.topic,
+          difficulty: m.difficulty,
+          opponent: m.opponent,
+        }
+      })
+      return res.json(history)
+    }
+
+    return res.json([])
   } catch (err) {
     console.error('[GET /users/me/elo-history]', err)
     return res.status(500).json({ message: 'internal server error' })
@@ -159,6 +216,179 @@ router.patch('/me/username', authMiddleware, async (req, res) => {
     }
     console.error('[PATCH /users/me/username]', err)
     return res.status(500).json({ message: 'Failed to set username' })
+  }
+})
+
+// GET /api/users/search?q=username — public username autocomplete (top 8 matches with true global rank)
+router.get('/search', async (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim().toLowerCase()
+    if (!q || q.length < 1) return res.json([])
+    const { rows } = await db.query(
+      `WITH ranked_users AS (
+         SELECT id, username, elo_rating, wins, losses,
+                RANK() OVER (ORDER BY elo_rating DESC, id ASC) AS rank
+         FROM users
+       )
+       SELECT username, elo_rating, wins, losses, rank
+       FROM ranked_users
+       WHERE LOWER(username) LIKE $1
+       ORDER BY elo_rating DESC
+       LIMIT 8`,
+      [`${q}%`]
+    )
+    return res.json(rows)
+  } catch (err) {
+    console.error('[GET /users/search]', err)
+    return res.status(500).json({ message: 'internal server error' })
+  }
+})
+
+// GET /api/users/:username/profile — public full profile with true global rank
+router.get('/:username/profile', async (req, res) => {
+  try {
+    const username = String(req.params.username).trim().toLowerCase()
+    const { rows } = await db.query(
+      `WITH ranked_users AS (
+         SELECT u.id, u.username, u.elo_rating, u.wins, u.losses, u.created_at, u.is_username_set,
+                RANK() OVER (ORDER BY u.elo_rating DESC, u.id ASC) AS rank
+         FROM users u
+       )
+       SELECT * FROM ranked_users
+       WHERE LOWER(username) = $1`,
+      [username]
+    )
+    if (!rows[0]) return res.status(404).json({ message: 'Player not found' })
+
+    const user = rows[0]
+    const total = (user.wins || 0) + (user.losses || 0)
+
+    return res.json({
+      ...user,
+      total_matches: total,
+      win_rate: total > 0 ? Math.round((user.wins / total) * 100) : 0,
+    })
+  } catch (err) {
+    console.error('[GET /users/:username/profile]', err)
+    return res.status(500).json({ message: 'internal server error' })
+  }
+})
+
+// GET /api/users/:username/history — public match history by username
+router.get('/:username/history', async (req, res) => {
+  try {
+    const username = String(req.params.username).trim().toLowerCase()
+    const { rows: uRows } = await db.query(
+      `SELECT id FROM users WHERE LOWER(username) = $1`,
+      [username]
+    )
+    if (!uRows[0]) return res.status(404).json({ message: 'User not found' })
+    const targetUserId = uRows[0].id
+
+    const { rows } = await db.query(
+      `SELECT
+         m.id, m.topic, m.difficulty, m.started_at, m.ended_at, m.status,
+         CASE WHEN m.winner_id = $1 THEN 'WIN' ELSE 'LOSS' END AS result,
+         u_opp.username AS opponent,
+         e.delta       AS elo_delta
+       FROM matches m
+       JOIN users u_opp ON (
+         CASE WHEN m.player_one_id = $1 THEN m.player_two_id ELSE m.player_one_id END
+         = u_opp.id
+       )
+       LEFT JOIN elo_history e ON e.match_id = m.id AND e.user_id = $1
+       WHERE (m.player_one_id = $1 OR m.player_two_id = $1)
+         AND m.status = 'finished'
+       ORDER BY m.ended_at DESC
+       LIMIT 20`,
+      [targetUserId]
+    )
+    return res.json(rows)
+  } catch (err) {
+    console.error('[GET /users/:username/history]', err)
+    return res.status(500).json({ message: 'internal server error' })
+  }
+})
+
+// GET /api/users/:username/elo-history — public rating history points for chart by username
+router.get('/:username/elo-history', async (req, res) => {
+  try {
+    const username = String(req.params.username).trim().toLowerCase()
+    const { rows: uRows } = await db.query(
+      `SELECT id, elo_rating FROM users WHERE LOWER(username) = $1`,
+      [username]
+    )
+    if (!uRows[0]) return res.status(404).json({ message: 'User not found' })
+    const targetUserId = uRows[0].id
+
+    const { rows } = await db.query(
+      `SELECT
+         e.id,
+         e.created_at AS date,
+         e.new_rating AS rating,
+         e.old_rating,
+         e.delta,
+         m.topic,
+         m.difficulty,
+         u_opp.username AS opponent
+       FROM elo_history e
+       LEFT JOIN matches m ON m.id = e.match_id
+       LEFT JOIN users u_opp ON (
+         CASE WHEN m.player_one_id = $1 THEN m.player_two_id ELSE m.player_one_id END = u_opp.id
+       )
+       WHERE e.user_id = $1
+       ORDER BY e.created_at ASC`,
+      [targetUserId]
+    )
+
+    if (rows.length > 0) {
+      return res.json(rows)
+    }
+
+    // Fallback: If no explicit elo_history rows yet, compute from matches history
+    const { rows: matchRows } = await db.query(
+      `SELECT
+         m.id,
+         m.started_at,
+         m.ended_at AS date,
+         m.topic,
+         m.difficulty,
+         CASE WHEN m.winner_id = $1 THEN 'WIN' ELSE 'LOSS' END AS result,
+         u_opp.username AS opponent
+       FROM matches m
+       JOIN users u_opp ON (
+         CASE WHEN m.player_one_id = $1 THEN m.player_two_id ELSE m.player_one_id END = u_opp.id
+       )
+       WHERE (m.player_one_id = $1 OR m.player_two_id = $1)
+         AND m.status = 'finished'
+       ORDER BY m.ended_at ASC`,
+      [targetUserId]
+    )
+
+    if (matchRows.length > 0) {
+      let currentElo = 1200
+      const history = matchRows.map(m => {
+        const delta = m.result === 'WIN' ? 18 : -18
+        const oldRating = currentElo
+        currentElo += delta
+        return {
+          id: m.id,
+          date: m.date,
+          rating: currentElo,
+          old_rating: oldRating,
+          delta,
+          topic: m.topic,
+          difficulty: m.difficulty,
+          opponent: m.opponent,
+        }
+      })
+      return res.json(history)
+    }
+
+    return res.json([])
+  } catch (err) {
+    console.error('[GET /users/:username/elo-history]', err)
+    return res.status(500).json({ message: 'internal server error' })
   }
 })
 

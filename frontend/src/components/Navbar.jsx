@@ -18,10 +18,12 @@ export default function Navbar() {
   }, [])
 
   function goAuth(mode) {
-    navigate(`/?auth=${mode}`)
-    setTimeout(() => {
-      document.getElementById('auth')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 80)
+    if (pathname !== '/') {
+      navigate(`/?auth=${mode}`)
+    } else {
+      const el = document.getElementById('auth-box') || document.getElementById('auth')
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
   }
 
   function handleLogout() {
