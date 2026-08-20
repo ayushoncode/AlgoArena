@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { UserAvatar, getUserEmoji } from '../utils/avatar'
 
 /* ════════════════════════════════════════════════
    CONFETTI — pure CSS particles on WIN
@@ -145,14 +146,18 @@ export default function Result() {
                 </span>
               </div>
 
-              {/* Opponent line */}
-              {oppData && (
-                <p className="font-mono text-[12px]" style={{ color: '#4b5563' }}>
-                  vs{' '}
-                  <span style={{ color: '#dde1ea' }}>{oppData.username}</span>
-                  {' '}({oppData.rating} elo)
-                </p>
-              )}
+              {/* Players Faceoff Avatars */}
+              <div className="flex items-center justify-center gap-4 my-3 pt-2">
+                <div className="flex items-center gap-2">
+                  <UserAvatar username={user?.username} size={36} isMe={true} />
+                  <span className="font-mono text-xs font-bold" style={{ color: '#f97316' }}>{user?.username}</span>
+                </div>
+                <span className="font-mono text-xs font-bold text-[#4b5563]">VS</span>
+                <div className="flex items-center gap-2">
+                  <UserAvatar username={oppData?.username} size={36} isMe={false} />
+                  <span className="font-mono text-xs font-bold" style={{ color: '#22d3ee' }}>{oppData?.username ?? 'Opponent'}</span>
+                </div>
+              </div>
             </div>
 
             {/* Elo delta */}
@@ -201,8 +206,8 @@ export default function Result() {
           {/* ── Share line ─────────────────────────────────── */}
           {isWin && (
             <p className="font-mono text-[11px] text-center" style={{ color: '#374151' }}>
-              🔥 <span style={{ color: '#f97316' }}>{user?.username}</span> just beat{' '}
-              <span style={{ color: '#dde1ea' }}>{oppData?.username}</span> on {topic} — algo_arena
+              🔥 <span style={{ color: '#f97316' }}>{getUserEmoji(user?.username)} {user?.username}</span> just beat{' '}
+              <span style={{ color: '#dde1ea' }}>{getUserEmoji(oppData?.username)} {oppData?.username}</span> on {topic} — algo_arena
             </p>
           )}
 

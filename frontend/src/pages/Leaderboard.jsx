@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
+import { UserAvatar } from '../utils/avatar'
 
 /* ════════════════════════════════════════════════
    RANK BADGE
@@ -20,12 +21,23 @@ function RankBadge({ rank }) {
 /* ════════════════════════════════════════════════
    TIER LABEL
 ════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════
+   TIER SYSTEM — matches Profile.jsx RANK_TIERS exactly
+════════════════════════════════════════════════ */
+const RANK_TIERS = [
+  { name: 'Novice',      min: 0,    max: 1199, col: '#94a3b8', bg: 'rgba(100,116,139,0.07)', border: 'rgba(100,116,139,0.25)' },
+  { name: 'Challenger',  min: 1200, max: 1399, col: '#10b981', bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.25)'  },
+  { name: 'Specialist',  min: 1400, max: 1599, col: '#06b6d4', bg: 'rgba(6,182,212,0.08)',   border: 'rgba(6,182,212,0.25)'   },
+  { name: 'Elite',       min: 1600, max: 1899, col: '#818cf8', bg: 'rgba(129,140,248,0.10)', border: 'rgba(129,140,248,0.3)'  },
+  { name: 'Master',      min: 1900, max: 2199, col: '#c084fc', bg: 'rgba(192,132,252,0.12)', border: 'rgba(192,132,252,0.3)'  },
+  { name: 'Grandmaster', min: 2200, max: 9999, col: '#f97316', bg: 'rgba(249,115,22,0.14)',  border: 'rgba(249,115,22,0.3)'  },
+]
+
 function tierOf(elo) {
-  if (elo >= 2000) return { label:'MASTER',   col:'#fbbf24', bg:'rgba(251,191,36,0.1)',  border:'rgba(251,191,36,0.3)'  }
-  if (elo >= 1600) return { label:'EXPERT',   col:'#818cf8', bg:'rgba(129,140,248,0.1)', border:'rgba(129,140,248,0.3)' }
-  if (elo >= 1400) return { label:'ADVANCED', col:'#34d399', bg:'rgba(52,211,153,0.1)',  border:'rgba(52,211,153,0.3)'  }
-  if (elo >= 1200) return { label:'CODER',    col:'#22d3ee', bg:'rgba(34,211,238,0.1)',  border:'rgba(34,211,238,0.25)' }
-  return              { label:'NEWBIE',    col:'#6b7280', bg:'rgba(107,114,128,0.1)', border:'rgba(107,114,128,0.25)' }
+  for (const t of RANK_TIERS) {
+    if (elo >= t.min && elo <= t.max) return t
+  }
+  return RANK_TIERS[0]
 }
 
 /* ════════════════════════════════════════════════
@@ -49,34 +61,35 @@ function SkeletonRow() {
 /* ════════════════════════════════════════════════
    LEADERBOARD ROW
 ════════════════════════════════════════════════ */
-function LeaderRow({ player, isMe, prevElo }) {
+function LeaderRow({ player, isMe, highlight, onSelect }) {
   const tier    = tierOf(player.elo_rating)
   const total   = (player.wins ?? 0) + (player.losses ?? 0)
   const wr      = total > 0 ? Math.round(((player.wins ?? 0) / total) * 100) : 0
 
+  // When search is active, glow the row with tier color
+  const highlightBg = highlight
+    ? `rgba(${tier.col === '#10b981' ? '16,185,129' : tier.col === '#06b6d4' ? '6,182,212' : tier.col === '#818cf8' ? '129,140,248' : tier.col === '#c084fc' ? '192,132,252' : tier.col === '#f97316' ? '249,115,22' : '100,116,139'}, 0.06)`
+    : 'transparent'
+
   return (
     <div
-      className="flex items-center gap-4 px-5 py-3.5 transition-colors"
+      onClick={onSelect}
+      className="flex items-center gap-4 px-5 py-3.5 transition-colors cursor-pointer"
       style={{
         borderBottom: '1px solid #0d0f17',
-        background: isMe ? 'rgba(249,115,22,0.04)' : 'transparent',
-        borderLeft: isMe ? '2px solid #f97316' : '2px solid transparent',
+        background: isMe ? 'rgba(249,115,22,0.04)' : highlightBg,
+        borderLeft: isMe ? '2px solid #f97316' : highlight ? `2px solid ${tier.col}` : '2px solid transparent',
       }}
       onMouseOver={e => { if (!isMe) e.currentTarget.style.background = '#0d0f17' }}
-      onMouseOut={e  => { if (!isMe) e.currentTarget.style.background = 'transparent' }}
+      onMouseOut={e  => { if (!isMe) e.currentTarget.style.background = isMe ? 'rgba(249,115,22,0.04)' : highlightBg }}
     >
       {/* Rank */}
       <div className="shrink-0 w-6 flex justify-center">
         <RankBadge rank={Number(player.rank)} />
       </div>
 
-      {/* Avatar */}
-      <div className="flex items-center justify-center font-mono font-bold text-[11px] shrink-0"
-           style={{ width:30, height:30, background: isMe ? 'rgba(249,115,22,0.15)' : '#0d0f17',
-                    border:`1px solid ${isMe ? 'rgba(249,115,22,0.35)' : '#1e2130'}`, borderRadius:3,
-                    color: isMe ? '#f97316' : '#4b5563' }}>
-        {(player.username?.[0] ?? '?').toUpperCase()}
-      </div>
+      {/* Emoji Avatar */}
+      <UserAvatar username={player.username} size={30} isMe={isMe} />
 
       {/* Name + tier */}
       <div className="flex-1 min-w-0">
@@ -88,7 +101,7 @@ function LeaderRow({ player, isMe, prevElo }) {
           {isMe && <span className="font-mono text-[9px] px-1.5 py-0.5" style={{ background:'rgba(249,115,22,0.1)', color:'#f97316', border:'1px solid rgba(249,115,22,0.2)', borderRadius:2 }}>you</span>}
           <span className="font-mono text-[9px] px-1.5 py-0.5 shrink-0 hidden sm:inline"
                 style={{ background: tier.bg, color: tier.col, border:`1px solid ${tier.border}`, borderRadius:2 }}>
-            {tier.label}
+            {tier.name}
           </span>
         </div>
         <span className="font-mono text-[10px]" style={{ color:'#374151' }}>
@@ -96,10 +109,10 @@ function LeaderRow({ player, isMe, prevElo }) {
         </span>
       </div>
 
-      {/* Elo */}
+      {/* Elo — colored by tier */}
       <div className="text-right shrink-0">
         <p className="font-display font-black text-base tabular-nums"
-           style={{ color: isMe ? '#f97316' : '#dde1ea' }}>
+           style={{ color: isMe ? '#f97316' : tier.col }}>
           {player.elo_rating}
         </p>
       </div>
@@ -117,11 +130,13 @@ export default function Leaderboard() {
   const [loading, setLoading]   = useState(true)
   const [error,   setError]     = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
+  const [search, setSearch]     = useState('')
+  const searchRef               = React.useRef(null)
 
   async function fetchLeaderboard() {
     try {
       setLoading(true)
-      const { data } = await api.get('/users/leaderboard')
+      const { data } = await api.get('/api/users/leaderboard')
       setPlayers(data)
       setLastUpdated(new Date())
       setError(null)
@@ -140,6 +155,12 @@ export default function Leaderboard() {
   }, [])
 
   const myRank = players.find(p => p.username === user?.username)
+
+  // Live client-side filter
+  const q = search.trim().toLowerCase()
+  const filtered = q
+    ? players.filter(p => p.username?.toLowerCase().includes(q))
+    : players
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)]">
@@ -175,6 +196,60 @@ export default function Leaderboard() {
         </div>
       </div>
 
+      {/* ── SEARCH BAR ─────────────────────────────────────── */}
+      <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-5 pb-1">
+        <div
+          className="flex items-center gap-2 px-3 py-2.5"
+          style={{
+            background: '#090b13',
+            border: '1px solid #1e2130',
+            borderRadius: 4,
+            transition: 'border-color 0.15s',
+          }}
+          onFocusCapture={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.4)'}
+          onBlurCapture={e  => e.currentTarget.style.borderColor = '#1e2130'}
+        >
+          {/* Search icon */}
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ color: '#4b5563', flexShrink: 0 }}>
+            <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+
+          <input
+            ref={searchRef}
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Escape') setSearch('') }}
+            placeholder="Search player by username..."
+            className="flex-1 bg-transparent outline-none font-mono text-[12px]"
+            style={{ color: '#dde1ea', caretColor: '#f97316' }}
+            spellCheck={false}
+            autoComplete="off"
+          />
+
+          {/* Clear button */}
+          {search && (
+            <button
+              onClick={() => { setSearch(''); searchRef.current?.focus() }}
+              className="font-mono text-[11px] leading-none px-1.5 py-0.5 transition-colors"
+              style={{ color: '#4b5563', borderRadius: 2 }}
+              onMouseOver={e => e.currentTarget.style.color = '#f43f5e'}
+              onMouseOut={e  => e.currentTarget.style.color = '#4b5563'}
+              title="Clear search (Esc)"
+            >✕</button>
+          )}
+
+          {/* Match count badge */}
+          {search && (
+            <span className="font-mono text-[10px] px-2 py-0.5 shrink-0"
+                  style={{ background: 'rgba(249,115,22,0.08)', color: '#f97316', border: '1px solid rgba(249,115,22,0.2)', borderRadius: 3 }}>
+              {filtered.length} found
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* ── TABLE ─────────────────────────────────────────── */}
       <div className="max-w-3xl mx-auto px-5 sm:px-8 py-6">
 
@@ -196,16 +271,32 @@ export default function Leaderboard() {
             </div>
           ) : loading ? (
             Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i}/>)
+          ) : filtered.length === 0 && search ? (
+            <div className="px-5 py-10 text-center">
+              <p className="font-mono text-2xl mb-2">🔍</p>
+              <p className="font-mono text-sm" style={{ color:'#4b5563' }}>
+                No player found matching <span style={{ color:'#f97316' }}>"{ search }"</span>
+              </p>
+              <button
+                onClick={() => setSearch('')}
+                className="font-mono text-[11px] mt-3 transition-colors"
+                style={{ color:'#374151' }}
+                onMouseOver={e => e.currentTarget.style.color = '#f97316'}
+                onMouseOut={e  => e.currentTarget.style.color = '#374151'}
+              >clear search →</button>
+            </div>
           ) : players.length === 0 ? (
             <div className="px-5 py-12 text-center">
               <p className="font-mono text-sm" style={{ color:'#4b5563' }}>no players yet — be the first to register!</p>
             </div>
           ) : (
-            players.map(p => (
+            filtered.map(p => (
               <LeaderRow
                 key={p.id}
                 player={p}
                 isMe={p.username === user?.username}
+                highlight={!!search}
+                onSelect={() => navigate(`/profile/${encodeURIComponent(p.username)}`)}
               />
             ))
           )}

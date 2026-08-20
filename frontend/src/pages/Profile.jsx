@@ -1,28 +1,67 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useStreak } from '../hooks/useStreak'
 import api from '../utils/api'
+import { UserAvatar } from '../utils/avatar'
 
 /* ════════════════════════════════════════════════
    SVG ELO CHART
 ════════════════════════════════════════════════ */
-const W = 600, H = 180, PAD = { top: 20, right: 20, bottom: 32, left: 48 }
+/* ════════════════════════════════════════════════
+   ALGOARENA ELO PROGRESSION CHART
+   Features:
+   - Harmonious AlgoArena Tier Bands (Novice, Challenger, Specialist, Elite, Master, Grandmaster)
+   - Flame Orange Rating Curve with Gradient Area & Glow
+   - Peak Rating Indicator
+   - Real-Time Crosshair & Match Detail Tooltip
+════════════════════════════════════════════════ */
+const RANK_TIERS = [
+  { name: 'Novice',      min: 0,    max: 1199, bg: 'rgba(100,116,139,0.07)', border: '#334155', text: '#94a3b8' },
+  { name: 'Challenger',  min: 1200, max: 1399, bg: 'rgba(16,185,129,0.08)',  border: '#065f46', text: '#10b981' },
+  { name: 'Specialist',  min: 1400, max: 1599, bg: 'rgba(6,182,212,0.08)',   border: '#155e75', text: '#06b6d4' },
+  { name: 'Elite',       min: 1600, max: 1899, bg: 'rgba(129,140,248,0.10)', border: '#3730a3', text: '#818cf8' },
+  { name: 'Master',      min: 1900, max: 2199, bg: 'rgba(192,132,252,0.12)', border: '#6b21a8', text: '#c084fc' },
+  { name: 'Grandmaster', min: 2200, max: 3500, bg: 'rgba(249,115,22,0.14)',  border: '#9a3412', text: '#f97316' },
+]
 
-function EloChart({ data }) {
+export function getRankTier(rating = 1200) {
+  for (const tier of RANK_TIERS) {
+    if (rating >= tier.min && rating <= tier.max) return tier
+  }
+  return RANK_TIERS[0]
+}
+
+const W = 760, H = 250, PAD = { top: 25, right: 35, bottom: 35, left: 48 }
+
+function EloChart({ data = [], username = 'Coder' }) {
   const [hovered, setHovered] = useState(null)
+
   if (!data || data.length === 0) return null
 
   const inner = { w: W - PAD.left - PAD.right, h: H - PAD.top - PAD.bottom }
-  const ratings  = data.map(d => d.rating)
-  const minR     = Math.min(...ratings) - 20
-  const maxR     = Math.max(...ratings) + 20
-  const rangeR   = maxR - minR || 1
+  const ratings = data.map(d => Number(d.rating) || 1200)
+
+  const minRaw = Math.min(...ratings)
+  const maxRaw = Math.max(...ratings)
+  const minR = Math.max(900, Math.floor((minRaw - 100) / 100) * 100)
+  const maxR = Math.max(2000, Math.ceil((maxRaw + 120) / 100) * 100)
+  const rangeR = maxR - minR || 1
 
   const xScale = i => data.length === 1 ? inner.w / 2 : (i / (data.length - 1)) * inner.w
   const yScale = r => inner.h - ((r - minR) / rangeR) * inner.h
 
-  const pts = data.map((d, i) => [xScale(i), yScale(d.rating)])
+  const pts = data.map((d, i) => [xScale(i), yScale(Number(d.rating) || 1200)])
+
+  // Peak rating calculation
+  let peakIdx = 0
+  let maxVal = -1
+  data.forEach((d, i) => {
+    if (Number(d.rating) > maxVal) {
+      maxVal = Number(d.rating)
+      peakIdx = i
+    }
+  })
 
   function buildPath(points) {
     if (points.length === 1) return `M 0 ${points[0][1]} L ${inner.w} ${points[0][1]}`
@@ -37,82 +76,239 @@ function EloChart({ data }) {
   }
 
   const linePath = buildPath(pts)
-  const areaPath = linePath + ` L ${pts[pts.length-1][0]} ${inner.h} L ${pts[0][0]} ${inner.h} Z`
+  const areaPath = linePath + ` L ${pts[pts.length - 1][0]} ${inner.h} L ${pts[0][0]} ${inner.h} Z`
 
-  const gridCount = 4
-  const gridLines = Array.from({ length: gridCount + 1 }, (_, i) => {
-    const r = minR + (rangeR / gridCount) * i
-    const y = yScale(r)
-    return { y, label: Math.round(r) }
-  })
+  // Tier boundary lines
+  const boundaryRatings = [1200, 1400, 1600, 1900, 2200].filter(r => r > minR && r < maxR)
 
-  const step = Math.max(1, Math.floor(data.length / 6))
+  // X-axis labels: use "Match N" when all dates are same day, else use "Aug 26"-style
+  const step = Math.max(1, Math.floor(data.length / 5))
+  const allDatesStr = data.map(d => d.date ? new Date(d.date).toDateString() : '')
+  const uniqueDates = new Set(allDatesStr)
+  const useDateLabels = uniqueDates.size > 1
   const xLabels = data
-    .map((d, i) => ({ i, label: String(d.date).slice(5, 10), x: xScale(i) }))
+    .map((d, i) => {
+      let label
+      if (useDateLabels) {
+        const dt = d.date ? new Date(d.date) : new Date()
+        label = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      } else {
+        label = `#${i + 1}`
+      }
+      return { i, label, x: xScale(i) }
+    })
     .filter((_, i) => i % step === 0 || i === data.length - 1)
 
+  const activePoint = hovered || data[data.length - 1]
+  const activeTier = getRankTier(activePoint?.rating || 1200)
+
   return (
-    <div style={{ position: 'relative' }}>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
-        onMouseLeave={() => setHovered(null)}
-      >
-        <defs>
-          <linearGradient id="eloGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="#f97316" stopOpacity="0.25"/>
-            <stop offset="100%" stopColor="#f97316" stopOpacity="0"/>
-          </linearGradient>
-          <clipPath id="eloClip">
-            <rect x="0" y="0" width={inner.w} height={inner.h}/>
-          </clipPath>
-        </defs>
+    <div className="space-y-3">
+      {/* Top Header Information */}
+      <div className="flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-sm bg-[#f97316]" />
+          <span className="font-bold text-[#dde1ea]">{username}</span>
+          <span className="text-[#4b5563]">·</span>
+          <span style={{ color: activeTier.text }} className="font-bold">
+            {activeTier.name} ({activePoint?.rating ?? 1200} Elo)
+          </span>
+        </div>
 
-        <g transform={`translate(${PAD.left},${PAD.top})`}>
-          {gridLines.map(({ y, label }) => (
-            <g key={label}>
-              <line x1={0} y1={y} x2={inner.w} y2={y} stroke="#1e2130" strokeWidth={1}/>
-              <text x={-8} y={y + 4} textAnchor="end" fontSize={9} fill="#374151" fontFamily="JetBrains Mono, monospace">
-                {label}
-              </text>
-            </g>
-          ))}
+        <div className="flex items-center gap-2 text-[11px] text-[#6b7280]">
+          <span>{data.length} matches recorded</span>
+        </div>
+      </div>
 
-          <path d={areaPath} fill="url(#eloGrad)" clipPath="url(#eloClip)"/>
-          <path d={linePath} fill="none" stroke="#f97316" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" clipPath="url(#eloClip)"/>
+      {/* SVG Chart Frame */}
+      <div className="relative rounded-lg border border-[#1e2130] bg-[#07090e] overflow-hidden">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+          onMouseLeave={() => setHovered(null)}
+        >
+          <defs>
+            <clipPath id="algoClip">
+              <rect x="0" y="0" width={inner.w} height={inner.h} />
+            </clipPath>
+            <linearGradient id="algoAreaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f97316" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
+            </linearGradient>
+          </defs>
 
-          {xLabels.map(({ x, label }) => (
-            <text key={label} x={x} y={inner.h + 20} textAnchor="middle" fontSize={9} fill="#374151" fontFamily="JetBrains Mono, monospace">
-              {label}
-            </text>
-          ))}
+          <g transform={`translate(${PAD.left},${PAD.top})`}>
+            {/* 1. Horizontal Tier Colored Bands */}
+            {RANK_TIERS.map((tier) => {
+              const yTop = Math.max(0, Math.min(inner.h, yScale(Math.min(maxR, tier.max + 1))))
+              const yBottom = Math.max(0, Math.min(inner.h, yScale(Math.max(minR, tier.min))))
+              const height = yBottom - yTop
+              if (height <= 0) return null
 
-          {pts.map(([x, y], i) => (
-            <rect
-              key={i}
-              x={x - 10}
-              y={0}
-              width={20}
-              height={inner.h}
-              fill="transparent"
-              onMouseEnter={() => setHovered({ x, y, ...data[i] })}
-              style={{ cursor: 'crosshair' }}
-            />
-          ))}
+              return (
+                <rect
+                  key={tier.name}
+                  x={0}
+                  y={yTop}
+                  width={inner.w}
+                  height={height}
+                  fill={tier.bg}
+                  clipPath="url(#algoClip)"
+                />
+              )
+            })}
 
-          {hovered && (
-            <>
-              <line x1={hovered.x} y1={0} x2={hovered.x} y2={inner.h} stroke="rgba(249,115,22,0.3)" strokeWidth={1} strokeDasharray="4 2"/>
-              <circle cx={hovered.x} cy={hovered.y} r={4} fill="#f97316" stroke="#090b13" strokeWidth={2}/>
-              <g transform={`translate(${Math.min(hovered.x, inner.w - 90)}, ${Math.max(0, hovered.y - 40)})`}>
-                <rect x={0} y={0} width={80} height={32} rx={3} fill="#0d0f17" stroke="#1e2130"/>
-                <text x={8} y={13} fontSize={9} fill="#4b5563" fontFamily="JetBrains Mono, monospace">{String(hovered.date).slice(0, 10)}</text>
-                <text x={8} y={26} fontSize={11} fill="#f97316" fontFamily="JetBrains Mono, monospace" fontWeight="bold">{hovered.rating}</text>
+            {/* 2. Boundary Grid Lines & Left Ticks */}
+            {boundaryRatings.map((r) => {
+              const y = yScale(r)
+              return (
+                <g key={r}>
+                  <line x1={0} y1={y} x2={inner.w} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth={1} strokeDasharray="3 3" />
+                  <text
+                    x={-8}
+                    y={y + 3.5}
+                    textAnchor="end"
+                    fontSize={9}
+                    fill="#64748b"
+                    fontFamily="JetBrains Mono, monospace"
+                    fontWeight="500"
+                  >
+                    {r}
+                  </text>
+                </g>
+              )
+            })}
+
+            {/* Base axes */}
+            <line x1={0} y1={inner.h} x2={inner.w} y2={inner.h} stroke="#1e2130" strokeWidth={1} />
+            <line x1={0} y1={0} x2={0} y2={inner.h} stroke="#1e2130" strokeWidth={1} />
+
+            {/* 3. Date / Timeline Ticks */}
+            {xLabels.map(({ x, label }, idx) => (
+              <g key={idx}>
+                <line x1={x} y1={inner.h} x2={x} y2={inner.h + 4} stroke="#334155" strokeWidth={1} />
+                <text
+                  x={x}
+                  y={inner.h + 16}
+                  textAnchor="middle"
+                  fontSize={9}
+                  fill="#64748b"
+                  fontFamily="JetBrains Mono, monospace"
+                >
+                  {label}
+                </text>
               </g>
-            </>
-          )}
-        </g>
-      </svg>
+            ))}
+
+            {/* 4. Smooth Area Glow & Flame Rating Curve */}
+            <path d={areaPath} fill="url(#algoAreaGrad)" clipPath="url(#algoClip)" />
+            <path
+              d={linePath}
+              fill="none"
+              stroke="#f97316"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              clipPath="url(#algoClip)"
+            />
+
+            {/* 5. Match Nodes */}
+            {pts.map(([x, y], i) => {
+              const isPeak = i === peakIdx && ratings.length > 1
+              return (
+                <g key={i}>
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r={isPeak ? 5 : 3.5}
+                    fill={isPeak ? '#22d3ee' : '#f97316'}
+                    stroke="#07090e"
+                    strokeWidth={1.5}
+                  />
+                  <rect
+                    x={x - 12}
+                    y={0}
+                    width={24}
+                    height={inner.h}
+                    fill="transparent"
+                    onMouseEnter={() => setHovered({ x, y, index: i, ...data[i] })}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </g>
+              )
+            })}
+
+            {/* 6. Interactive Floating Tooltip */}
+            {hovered && (
+              <>
+                <line
+                  x1={hovered.x}
+                  y1={0}
+                  x2={hovered.x}
+                  y2={inner.h}
+                  stroke="rgba(249,115,22,0.4)"
+                  strokeWidth={1}
+                  strokeDasharray="3 3"
+                />
+                <circle
+                  cx={hovered.x}
+                  cy={hovered.y}
+                  r={5.5}
+                  fill="#f97316"
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                />
+                <g
+                  transform={`translate(${
+                    hovered.x > inner.w - 170 ? hovered.x - 175 : hovered.x + 12
+                  }, ${Math.max(10, Math.min(inner.h - 90, hovered.y - 45))})`}
+                >
+                  <rect
+                    x={0}
+                    y={0}
+                    width={165}
+                    height={72}
+                    rx={6}
+                    fill="#0d111c"
+                    stroke="#1e293b"
+                    strokeWidth={1}
+                    filter="drop-shadow(0 6px 16px rgba(0,0,0,0.6))"
+                  />
+                  <text x={10} y={18} fontSize={11} fill={getRankTier(hovered.rating).text} fontFamily="JetBrains Mono, monospace" fontWeight="bold">
+                    = {hovered.rating} ({getRankTier(hovered.rating).name})
+                  </text>
+                  <text x={10} y={34} fontSize={9} fill="#dde1ea" fontFamily="JetBrains Mono, monospace">
+                    {hovered.delta ? `Delta: ${hovered.delta > 0 ? `+${hovered.delta}` : hovered.delta}` : `Match #${hovered.index + 1}`}
+                  </text>
+                  <text x={10} y={48} fontSize={9} fill="#9ca3af" fontFamily="JetBrains Mono, monospace">
+                    {hovered.opponent ? `vs @${hovered.opponent}` : `${hovered.topic || '1v1 Duel'}`}
+                  </text>
+                  <text x={10} y={62} fontSize={8.5} fill="#64748b" fontFamily="JetBrains Mono, monospace">
+                    {hovered.date ? new Date(hovered.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent'}
+                  </text>
+                </g>
+              </>
+            )}
+          </g>
+        </svg>
+      </div>
+
+      {/* Tier Legend Bar */}
+      <div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-[#1e2130]/60 text-[10px] font-mono">
+        <div className="flex items-center gap-3 flex-wrap">
+          {RANK_TIERS.map(t => (
+            <div key={t.name} className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full" style={{ background: t.text }} />
+              <span style={{ color: t.text }}>{t.name}</span>
+              <span className="text-[#4b5563]">({t.min}+)</span>
+            </div>
+          ))}
+        </div>
+        <div className="text-[#64748b] flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-[#22d3ee]" />
+          <span>Peak Rating</span>
+        </div>
+      </div>
     </div>
   )
 }
@@ -120,13 +316,32 @@ function EloChart({ data }) {
 /* ════════════════════════════════════════════════
    STREAK MINI-CALENDAR (30 days)
 ════════════════════════════════════════════════ */
-function StreakCalendar({ history }) {
+function StreakCalendar({ history, matches = [] }) {
   const today = new Date().toISOString().slice(0, 10)
+
+  // Build a set of active dates from history Set, history Array, or match timestamps
+  const activeDates = new Set()
+  if (history instanceof Set) {
+    history.forEach(d => activeDates.add(d))
+  } else if (Array.isArray(history)) {
+    history.forEach(d => activeDates.add(typeof d === 'string' ? d.slice(0, 10) : new Date(d).toISOString().slice(0, 10)))
+  }
+  if (Array.isArray(matches)) {
+    matches.forEach(m => {
+      const dt = m.ended_at || m.started_at || m.date
+      if (dt) {
+        try {
+          activeDates.add(new Date(dt).toISOString().slice(0, 10))
+        } catch {}
+      }
+    })
+  }
+
   const days = Array.from({ length: 30 }, (_, i) => {
     const d = new Date()
     d.setDate(d.getDate() - (29 - i))
     const date = d.toISOString().slice(0, 10)
-    return { date, active: history.has(date), isToday: date === today }
+    return { date, active: activeDates.has(date), isToday: date === today }
   })
 
   return (
@@ -206,69 +421,177 @@ function StatCard({ label, value, sub, color = '#dde1ea' }) {
    PROFILE PAGE
 ════════════════════════════════════════════════ */
 export default function Profile() {
+  const { username: routeUsername } = useParams()
   const { user, isAuthenticated, loading: authLoading, refreshUser } = useAuth()
-  const { streak, history } = useStreak()
+  const { streak: myStreak, history: myHistory } = useStreak()
   const navigate = useNavigate()
 
   const [profileUser, setProfileUser] = useState(null)
   const [matches, setMatches]         = useState([])
   const [eloHistory, setEloHistory]   = useState([])
-  const [dataLoading, setDataLoading] = useState(false)
+  const [dataLoading, setDataLoading] = useState(true)
+  const [notFound, setNotFound]       = useState(false)
+  const [editingUsername, setEditingUsername] = useState(false)
+  const [newHandle, setNewHandle]             = useState('')
+  const [handleErr, setHandleErr]             = useState('')
+  const [savingHandle, setSavingHandle]       = useState(false)
 
-  // Redirect unauthenticated users — must be in useEffect, not during render
+  const isOwnProfileRoute = !routeUsername
+  const isMe = isOwnProfileRoute || (user?.username && routeUsername?.toLowerCase() === user.username.toLowerCase())
+
+  // Redirect only if visiting the private '/profile' route without being logged in
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated && isOwnProfileRoute) {
       navigate('/?auth=login')
     }
-  }, [authLoading, isAuthenticated, navigate])
+  }, [authLoading, isAuthenticated, isOwnProfileRoute, navigate])
 
-  // Sync profileUser from context whenever context user updates
+  // Fetch all profile data whenever route or auth changes
   useEffect(() => {
-    if (user) setProfileUser(prev => prev ?? user)
-  }, [user])
+    let unmounted = false
 
-  // Fetch all profile data once auth is confirmed
-  useEffect(() => {
-    if (authLoading || !isAuthenticated) return
-
-    async function fetchUserData() {
-      try {
-        setDataLoading(true)
-        const [meRes, histRes, eloRes] = await Promise.all([
-          api.get('/api/users/me').catch(() => ({ data: null })),
-          api.get('/api/users/me/history').catch(() => ({ data: [] })),
-          api.get('/api/users/me/elo-history').catch(() => ({ data: [] })),
-        ])
-        if (meRes.data) {
-          setProfileUser(meRes.data)
-          refreshUser(meRes.data)
+    async function loadData() {
+      // If visiting /profile, wait for auth to finish loading
+      if (isOwnProfileRoute) {
+        if (authLoading) return
+        if (!isAuthenticated) {
+          setDataLoading(false)
+          return
         }
-        setMatches(histRes.data || [])
-        setEloHistory(eloRes.data || [])
+      }
+
+      setDataLoading(true)
+      setNotFound(false)
+
+      try {
+        const [uRes, histRes, eloRes] = await Promise.all([
+          routeUsername
+            ? api.get(`/api/users/${encodeURIComponent(routeUsername)}/profile`)
+            : api.get('/api/users/me'),
+          routeUsername
+            ? api.get(`/api/users/${encodeURIComponent(routeUsername)}/history`).catch(() => ({ data: [] }))
+            : api.get('/api/users/me/history').catch(() => ({ data: [] })),
+          routeUsername
+            ? api.get(`/api/users/${encodeURIComponent(routeUsername)}/elo-history`).catch(() => ({ data: [] }))
+            : api.get('/api/users/me/elo-history').catch(() => ({ data: [] })),
+        ])
+
+        if (unmounted) return
+
+        if (!uRes?.data) {
+          setNotFound(true)
+          return
+        }
+
+        setProfileUser(uRes.data)
+        if (isMe && uRes.data) refreshUser(uRes.data)
+        setMatches(histRes?.data || [])
+        setEloHistory(eloRes?.data || [])
       } catch (err) {
-        console.error('[Profile API Error]', err)
+        if (unmounted) return
+        if (err.response?.status === 404) {
+          setNotFound(true)
+        } else {
+          console.error('[Profile API Error]', err)
+        }
       } finally {
-        setDataLoading(false)
+        if (!unmounted) setDataLoading(false)
       }
     }
 
-    fetchUserData()
-  }, [isAuthenticated, authLoading, refreshUser])
+    loadData()
+    return () => { unmounted = true }
+  }, [routeUsername, isOwnProfileRoute, isAuthenticated, authLoading])
 
-  if (authLoading) return (
+  if ((authLoading && isOwnProfileRoute) || dataLoading) return (
     <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
-      <p className="font-mono text-sm" style={{ color: '#4b5563' }}>loading profile...</p>
+      <p className="font-mono text-sm animate-pulse" style={{ color: '#4b5563' }}>loading profile...</p>
     </div>
   )
 
-  if (!isAuthenticated) return null
+  if (notFound) return (
+    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center p-8 text-center">
+      <p className="font-mono text-4xl mb-3">🔍</p>
+      <h2 className="font-display font-black text-2xl mb-2 text-[#dde1ea]">Player Not Found</h2>
+      <p className="font-mono text-sm text-[#4b5563] mb-6">No warrior exists with handle "@{routeUsername}"</p>
+      <div className="flex gap-4">
+        <button onClick={() => navigate('/lobby')} className="btn-primary py-2 px-5 text-xs">
+          ← Back to Lobby
+        </button>
+        <button onClick={() => navigate('/leaderboard')} className="btn-secondary py-2 px-5 text-xs">
+          View Leaderboard
+        </button>
+      </div>
+    </div>
+  )
 
-  const activeUser = profileUser || user
+  const activeUser = profileUser || (isMe ? user : null)
+  if (!activeUser) return (
+    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
+      <p className="font-mono text-sm animate-pulse" style={{ color: '#4b5563' }}>loading profile...</p>
+    </div>
+  )
   const elo    = activeUser?.elo_rating ?? 1200
   const wins   = activeUser?.wins   ?? 0
   const losses = activeUser?.losses ?? 0
   const total  = wins + losses
   const wr     = total > 0 ? Math.round((wins / total) * 100) : 0
+
+  // Dynamic Streak Calculation from real match & Elo activity history
+  const activeDates = new Set()
+  if (isMe && myHistory instanceof Set) {
+    myHistory.forEach(d => activeDates.add(d))
+  }
+  matches.forEach(m => {
+    const dt = m.ended_at || m.started_at || m.date
+    if (dt) {
+      try { activeDates.add(new Date(dt).toISOString().slice(0, 10)) } catch {}
+    }
+  })
+  eloHistory.forEach(e => {
+    if (e.date) {
+      try { activeDates.add(new Date(e.date).toISOString().slice(0, 10)) } catch {}
+    }
+  })
+
+  function getCalculatedStreak() {
+    if (activeDates.size === 0) return (wins + losses > 0 ? 1 : 0)
+    const today = new Date()
+    const todayStr = today.toISOString().slice(0, 10)
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayStr = yesterday.toISOString().slice(0, 10)
+
+    let checkDate = today
+    if (!activeDates.has(todayStr)) {
+      if (activeDates.has(yesterdayStr)) {
+        checkDate = yesterday
+      } else {
+        const sorted = Array.from(activeDates).sort().reverse()
+        if (sorted.length > 0) {
+          checkDate = new Date(sorted[0])
+        } else {
+          return 1
+        }
+      }
+    }
+
+    let count = 0
+    let curr = new Date(checkDate)
+    for (let i = 0; i < 30; i++) {
+      const dStr = curr.toISOString().slice(0, 10)
+      if (activeDates.has(dStr)) {
+        count++
+        curr.setDate(curr.getDate() - 1)
+      } else {
+        break
+      }
+    }
+    return Math.max(1, count)
+  }
+
+  const computedStreak = getCalculatedStreak()
+  const streak = isMe ? Math.max(myStreak || 0, computedStreak) : computedStreak
 
   // Topic distribution from actual match history
   const topicFreq = matches.reduce((acc, m) => {
@@ -277,22 +600,32 @@ export default function Profile() {
   }, {})
   const favTopic = Object.entries(topicFreq).sort((a,b) => b[1] - a[1])[0]?.[0] ?? '—'
 
-  // Construct chart points from real Elo history or single baseline
-  const chartData = eloHistory.length > 0
-    ? eloHistory.map(e => ({ date: e.date, rating: e.rating }))
+  // Construct chart points from real Elo history or single baseline.
+  // Always force the last point to be the ACTUAL current elo so chart & hero match.
+  const rawChartData = eloHistory.length > 0
+    ? eloHistory.map(e => ({
+        date: e.date,
+        rating: e.rating,
+        delta: e.delta,
+        topic: e.topic,
+        difficulty: e.difficulty,
+        opponent: e.opponent,
+      }))
     : [
-        { date: activeUser?.created_at ? new Date(activeUser.created_at).toISOString().slice(0,10) : 'Start', rating: 1200 },
-        { date: new Date().toISOString().slice(0,10), rating: elo }
+        { date: activeUser?.created_at ? new Date(activeUser.created_at).toISOString().slice(0,10) : 'Start', rating: 1200, delta: 0, topic: 'Initial' },
       ]
+
+  // Patch last point to match actual current elo (fixes drift from fallback computation)
+  const chartData = rawChartData.length > 0
+    ? [
+        ...rawChartData.slice(0, -1),
+        { ...rawChartData[rawChartData.length - 1], rating: elo },
+      ]
+    : [{ date: new Date().toISOString().slice(0,10), rating: elo, delta: 0, topic: 'Current' }]
 
   const peakElo   = eloHistory.length > 0 ? Math.max(...eloHistory.map(e => e.rating), elo) : elo
   const startElo  = eloHistory[0]?.rating ?? 1200
   const netChange = elo - startElo
-
-  const [editingUsername, setEditingUsername] = useState(false)
-  const [newHandle, setNewHandle]             = useState('')
-  const [handleErr, setHandleErr]             = useState('')
-  const [savingHandle, setSavingHandle]       = useState(false)
 
   async function handleSaveUsername(e) {
     e.preventDefault()
@@ -324,19 +657,29 @@ export default function Profile() {
       {/* ── PROFILE HERO ──────────────────────────────────── */}
       <div style={{ borderBottom: '1px solid #1e2130', background: '#07080c' }}>
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8">
+
+          {/* Navigation backlink if viewing friend */}
+          {!isMe && (
+            <div className="mb-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="font-mono text-xs text-[#6b7280] hover:text-[#f97316] transition-colors flex items-center gap-1.5"
+              >
+                ← Back
+              </button>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6">
 
             {/* Avatar */}
-            <div className="flex items-center justify-center font-display font-black text-4xl shrink-0"
-                 style={{ width: 88, height: 88, background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: 6, color: '#f97316' }}>
-              {(activeUser?.username?.[0] ?? 'A').toUpperCase()}
-            </div>
+            <UserAvatar username={activeUser?.username} size={88} isMe={isMe} />
 
             {/* Info */}
             <div className="flex-1">
               <div className="flex items-center gap-3 flex-wrap mb-1">
-                {/* Show inline edit form only when username not yet permanently set */}
-                {!activeUser?.is_username_set && editingUsername ? (
+                {/* Show inline edit form only when own username not yet permanently set */}
+                {isMe && !activeUser?.is_username_set && editingUsername ? (
                   <form onSubmit={handleSaveUsername} className="flex items-center gap-2">
                     <div className="relative">
                       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-mono text-xs text-[#f97316]">@</span>
@@ -369,39 +712,56 @@ export default function Profile() {
                     <h1 className="font-display font-black text-2xl" style={{ color: '#dde1ea' }}>
                       {activeUser?.username}
                     </h1>
-                    {!activeUser?.is_username_set ? (
-                      <button
-                        onClick={() => { setNewHandle(activeUser?.username || ''); setEditingUsername(true); setHandleErr('') }}
-                        className="text-xs font-mono text-[#f97316] border border-[#f97316]/40 px-2 py-0.5 rounded hover:bg-[#f97316]/10 transition-colors"
-                        title="Set your permanent handle"
-                      >
-                        ✏️ Set Handle
-                      </button>
+                    {isMe ? (
+                      !activeUser?.is_username_set ? (
+                        <button
+                          onClick={() => { setNewHandle(activeUser?.username || ''); setEditingUsername(true); setHandleErr('') }}
+                          className="text-xs font-mono text-[#f97316] border border-[#f97316]/40 px-2 py-0.5 rounded hover:bg-[#f97316]/10 transition-colors"
+                          title="Set your permanent handle"
+                        >
+                          ✏️ Set Handle
+                        </button>
+                      ) : (
+                        <span
+                          className="text-[10px] font-mono text-[#4b5563] flex items-center gap-1"
+                          title="Username is permanently locked"
+                        >
+                          🔒 locked
+                        </span>
+                      )
                     ) : (
-                      <span
-                        className="text-[10px] font-mono text-[#4b5563] flex items-center gap-1"
-                        title="Username is permanently locked"
-                      >
-                        🔒 locked
+                      <span className="font-mono text-[10px] px-2 py-0.5" style={{ background: 'rgba(34,211,238,0.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.25)', borderRadius: 3 }}>
+                        rank #{activeUser?.rank ?? '—'}
                       </span>
                     )}
                   </div>
                 )}
 
-                {/* Rank badge */}
-                {elo >= 1800
-                  ? <span className="font-mono text-[11px] px-2 py-0.5 font-bold" style={{ background: 'rgba(250,204,21,0.12)', color: '#fbbf24', border: '1px solid rgba(250,204,21,0.3)', borderRadius: 3 }}>MASTER</span>
-                  : elo >= 1500
-                  ? <span className="font-mono text-[11px] px-2 py-0.5 font-bold" style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 3 }}>EXPERT</span>
-                  : <span className="font-mono text-[11px] px-2 py-0.5 font-bold" style={{ background: 'rgba(34,211,238,0.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.25)', borderRadius: 3 }}>CODER</span>
-                }
+                {/* Rank badge — uses the same getRankTier as the chart */}
+                {(() => {
+                  const t = getRankTier(elo)
+                  return (
+                    <span
+                      className="font-mono text-[11px] px-2 py-0.5 font-bold uppercase"
+                      style={{
+                        background: `${t.bg}`,
+                        color: t.text,
+                        border: `1px solid ${t.border}`,
+                        borderRadius: 3,
+                      }}
+                    >
+                      {t.name}
+                    </span>
+                  )
+                })()}
                 <span className="font-mono text-[11px]" style={{ color: '#374151' }}>
                   joined {new Date(activeUser?.created_at ?? Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                 </span>
               </div>
               {handleErr && <p className="font-mono text-xs text-[#f43f5e] mb-1">{handleErr}</p>}
+              {/* Big Elo number — colored with rank tier */}
               <div className="flex items-baseline gap-2">
-                <span className="font-display font-black text-5xl" style={{ color: '#f97316' }}>{elo}</span>
+                <span className="font-display font-black text-5xl" style={{ color: getRankTier(elo).text }}>{elo}</span>
                 <span className="font-mono text-sm" style={{ color: '#4b5563' }}>elo</span>
                 <span className="font-mono text-sm font-bold" style={{ color: netChange >= 0 ? '#10b981' : '#f43f5e' }}>
                   {netChange >= 0 ? `+${netChange}` : netChange} total
@@ -457,7 +817,7 @@ export default function Profile() {
             </div>
           </div>
           <div className="px-5 py-5">
-            <EloChart data={chartData} />
+            <EloChart data={chartData} username={activeUser?.username} />
           </div>
         </div>
 
@@ -521,7 +881,7 @@ export default function Profile() {
                 <span className="font-mono text-sm" style={{ color: '#4b5563' }}>day streak</span>
               </div>
 
-              <StreakCalendar history={history} />
+              <StreakCalendar history={activeDates} matches={matches} />
 
               <div className="flex items-center gap-4 pt-2" style={{ borderTop: '1px solid #1e2130' }}>
                 {[

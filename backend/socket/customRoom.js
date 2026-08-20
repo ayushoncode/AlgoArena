@@ -91,24 +91,6 @@ function registerCustomRoom(io) {
 
       console.log(`[CustomRoom] MATCH  host=${hostUsername} vs guest=${username}  code=${formattedCode}`)
 
-      // Match payload for client navigation
-      const matchPayload = {
-        roomId,
-        topic,
-        difficulty,
-        players: [
-          { userId: hostUserId, username: hostUsername, rating: hostRating },
-          { userId, username, rating: guestRating },
-        ],
-      }
-
-      // 1. Track room state immediately in memory
-      trackRoom(roomId, null, null, true, matchPayload.players, topic, difficulty)
-
-      // 2. Emit match_found to both players in custom room
-      io.to(roomId).emit('match_found', matchPayload)
-
-      // 3. Persist match in DB asynchronously
       ;(async () => {
         try {
           const { rows: problems } = await db.query(
@@ -122,13 +104,39 @@ function registerCustomRoom(io) {
             [hostUserId, userId, problemId, topic, difficulty]
           )
           const dbMatchId = rows[0]?.id ?? null
-          if (dbMatchId) {
-            trackRoom(roomId, dbMatchId, problemId, true, matchPayload.players, topic, difficulty)
-            console.log(`[DB] custom match row created  id=${dbMatchId}  room=${roomId}  prob=${problemId}`)
-            io.to(roomId).emit('match_problem_set', { roomId, problemId })
+
+          const matchPayload = {
+            roomId,
+            topic,
+            difficulty,
+            problemId,
+            dbMatchId,
+            isCustom: true,
+            players: [
+              { userId: hostUserId, username: hostUsername, rating: hostRating },
+              { userId, username, rating: guestRating },
+            ],
           }
+
+          trackRoom(roomId, dbMatchId, problemId, true, matchPayload.players, topic, difficulty)
+          console.log(`[DB] custom match row created  id=${dbMatchId}  room=${roomId}  prob=${problemId}`)
+
+          io.to(roomId).emit('match_found', matchPayload)
         } catch (err) {
           console.error('[DB] custom createMatchRow failed:', err.message)
+          const fallbackPayload = {
+            roomId,
+            topic,
+            difficulty,
+            problemId: null,
+            isCustom: true,
+            players: [
+              { userId: hostUserId, username: hostUsername, rating: hostRating },
+              { userId, username, rating: guestRating },
+            ],
+          }
+          trackRoom(roomId, null, null, true, fallbackPayload.players, topic, difficulty)
+          io.to(roomId).emit('match_found', fallbackPayload)
         }
       })()
 

@@ -340,7 +340,7 @@ router.post('/login', async (req, res) => {
     }
 
     const { rows } = await db.query(
-      `SELECT id, username, email, password, elo_rating, wins, losses
+      `SELECT id, username, email, password, elo_rating, wins, losses, is_username_set
        FROM users WHERE email = $1`,
       [email.toLowerCase()]
     )

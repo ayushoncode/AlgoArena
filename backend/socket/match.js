@@ -359,11 +359,16 @@ function registerMatch(io) {
 
       // ── If ACCEPTED → End Match ───────────────────────────
       if (verdict === 'ACCEPTED') {
-        const sockets = io.sockets.adapter.rooms.get(roomId)
-        let opponent  = null
-        for (const sid of (sockets ?? [])) {
-          const s = io.sockets.sockets.get(sid)
-          if (s && s.user.id !== userId) { opponent = s.user; break }
+        let opponent = null
+        const oppPlayer = match?.players?.find(p => p.userId !== userId)
+        if (oppPlayer) {
+          opponent = { id: oppPlayer.userId, username: oppPlayer.username }
+        } else {
+          const sockets = io.sockets.adapter.rooms.get(roomId)
+          for (const sid of (sockets ?? [])) {
+            const s = io.sockets.sockets.get(sid)
+            if (s && s.user && s.user.id !== userId) { opponent = s.user; break }
+          }
         }
 
         // Clear any disconnect timers
@@ -375,7 +380,7 @@ function registerMatch(io) {
         const solveTimeSec = Math.round((Date.now() - (match.startedAt || Date.now())) / 1000)
 
         const winnerInfo = { userId, username }
-        const loserInfo  = opponent ? { userId: opponent.id, username: opponent.username } : null
+        const loserInfo  = opponent ? { userId: opponent.id || opponent.userId, username: opponent.username } : null
 
         const resolved = await resolveMatch({
           dbMatchId: match.dbMatchId,

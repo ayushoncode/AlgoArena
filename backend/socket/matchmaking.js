@@ -131,22 +131,9 @@ function registerMatchmaking(io) {
 
         // Both players join the Socket.io room
         socket.join(roomId)
-        io.sockets.sockets.get(opponent.socketId)?.join(roomId)
+        const oppSocket = io.sockets.sockets.get(opponent.socketId)
+        if (oppSocket) oppSocket.join(roomId)
 
-        const matchPayload = {
-          roomId,
-          topic,
-          difficulty,
-          players: [
-            { userId: newEntry.userId,  username: newEntry.username,  rating: newEntry.rating  },
-            { userId: opponent.userId,  username: opponent.username,  rating: opponent.rating  },
-          ],
-          // problemId filled in below after DB insert
-        }
-
-        io.to(roomId).emit('match_found', matchPayload)
-
-        // Persist match to DB and link to room state; then update problem
         ;(async () => {
           try {
             const { rows: problems } = await db.query(
@@ -160,14 +147,38 @@ function registerMatchmaking(io) {
               [newEntry.userId, opponent.userId, problemId, topic, difficulty]
             )
             const dbMatchId = rows[0]?.id ?? null
-            if (dbMatchId) {
-              trackRoom(roomId, dbMatchId, problemId, false, matchPayload.players, topic, difficulty)
-              console.log(`[DB] match row created  id=${dbMatchId}  room=${roomId}  prob=${problemId}`)
-              // Now that we know problemId, push an update so clients can pin the exact problem
-              io.to(roomId).emit('match_problem_set', { roomId, problemId })
+
+            const matchPayload = {
+              roomId,
+              topic,
+              difficulty,
+              problemId,
+              dbMatchId,
+              players: [
+                { userId: newEntry.userId,  username: newEntry.username,  rating: newEntry.rating  },
+                { userId: opponent.userId,  username: opponent.username,  rating: opponent.rating  },
+              ],
             }
+
+            trackRoom(roomId, dbMatchId, problemId, false, matchPayload.players, topic, difficulty)
+            console.log(`[DB] match row created  id=${dbMatchId}  room=${roomId}  prob=${problemId}`)
+
+            // Emit match_found with problemId guaranteed to both players
+            io.to(roomId).emit('match_found', matchPayload)
           } catch (err) {
             console.error('[DB] createMatchRow failed:', err.message)
+            const fallbackPayload = {
+              roomId,
+              topic,
+              difficulty,
+              problemId: null,
+              players: [
+                { userId: newEntry.userId,  username: newEntry.username,  rating: newEntry.rating  },
+                { userId: opponent.userId,  username: opponent.username,  rating: opponent.rating  },
+              ],
+            }
+            trackRoom(roomId, null, null, false, fallbackPayload.players, topic, difficulty)
+            io.to(roomId).emit('match_found', fallbackPayload)
           }
         })()
 

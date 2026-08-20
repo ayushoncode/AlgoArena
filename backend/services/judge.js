@@ -35,9 +35,13 @@ function normalizeOutput(val) {
 
 function compareOutputs(actual, expectedStr) {
   const normActual = normalizeOutput(actual)
-  const normExpected = expectedStr.trim()
+  const normExpected = (expectedStr || '').trim()
 
   if (normActual === normExpected) return true
+
+  // Empty collection / null equivalency (for linked lists / trees / optional lists)
+  if ((normActual === 'null' && (normExpected === '[]' || normExpected === 'null')) ||
+      (normActual === '[]' && (normExpected === 'null' || normExpected === '[]'))) return true
 
   // Try parsing JSON for structural comparison (e.g. [0,1] vs [0, 1])
   try {

@@ -1,7 +1,20 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useSocket } from '../hooks/useSocket'
+import api from '../utils/api'
+import { UserAvatar } from '../utils/avatar'
+
+/* Tier helper — kept in sync with Profile.jsx RANK_TIERS */
+const RANK_TIERS = [
+  { name: 'Novice',      min: 0,    max: 1199, col: '#94a3b8', bg: 'rgba(100,116,139,0.07)', border: 'rgba(100,116,139,0.25)' },
+  { name: 'Challenger',  min: 1200, max: 1399, col: '#10b981', bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.25)'  },
+  { name: 'Specialist',  min: 1400, max: 1599, col: '#06b6d4', bg: 'rgba(6,182,212,0.08)',   border: 'rgba(6,182,212,0.25)'   },
+  { name: 'Elite',       min: 1600, max: 1899, col: '#818cf8', bg: 'rgba(129,140,248,0.10)', border: 'rgba(129,140,248,0.3)'  },
+  { name: 'Master',      min: 1900, max: 2199, col: '#c084fc', bg: 'rgba(192,132,252,0.12)', border: 'rgba(192,132,252,0.3)'  },
+  { name: 'Grandmaster', min: 2200, max: 9999, col: '#f97316', bg: 'rgba(249,115,22,0.14)',  border: 'rgba(249,115,22,0.3)'  },
+]
+function getTier(elo) { return RANK_TIERS.find(t => elo >= t.min && elo <= t.max) || RANK_TIERS[0] }
 
 /* ════════════════════════════════════════════════
    DATA
@@ -23,34 +36,169 @@ const DIFFS = [
   { id:'hard',   label:'Hard',   col:'#f43f5e', bg:'rgba(244,63,94,0.1)'   },
 ]
 
-const DAILY_CHALLENGES = [
-  { topic:'arrays',        problem:'Two Sum',                difficulty:'easy',   desc:'Find indices of two numbers that add to target. HashMap solution.' },
-  { topic:'binary-search', problem:'Search Rotated Array',  difficulty:'medium', desc:'Binary search in an array that has been rotated at some pivot.' },
-  { topic:'dp',            problem:'Coin Change',            difficulty:'medium', desc:'Find the minimum number of coins to make up a given amount.' },
-  { topic:'graphs',        problem:'Number of Islands',      difficulty:'medium', desc:'Count connected components using BFS or DFS flood fill.' },
-  { topic:'trees',         problem:'Max Depth of Tree',      difficulty:'easy',   desc:'Find maximum depth using recursion or iterative BFS.' },
-  { topic:'strings',       problem:'Longest Palindrome',     difficulty:'medium', desc:'Expand around center technique for O(n²) solution.' },
-  { topic:'linked-lists',  problem:'Detect Cycle',           difficulty:'easy',   desc:"Floyd's tortoise and hare — O(1) space cycle detection." },
-]
+/* ════════════════════════════════════════════════
+   FRIEND SEARCH + PROFILE POPUP
+════════════════════════════════════════════════ */
+function FriendSearch() {
+  const navigate                  = useNavigate()
+  const [query, setQuery]         = useState('')
+  const [suggestions, setSuggestions] = useState([])
+  const [showDrop, setShowDrop]   = useState(false)
+  const inputRef  = useRef(null)
+  const wrapRef   = useRef(null)
+  const debounce  = useRef(null)
 
-function todayChallenge() {
-  const doy = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
-  return DAILY_CHALLENGES[doy % DAILY_CHALLENGES.length]
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handler(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setShowDrop(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Debounced autocomplete fetch
+  function handleInput(val) {
+    setQuery(val)
+    clearTimeout(debounce.current)
+    if (val.trim().length < 1) { setSuggestions([]); setShowDrop(false); return }
+    debounce.current = setTimeout(async () => {
+      try {
+        const { data } = await api.get(`/api/users/search?q=${encodeURIComponent(val.trim())}`)
+        setSuggestions(data)
+        setShowDrop(data.length > 0)
+      } catch { setSuggestions([]); setShowDrop(false) }
+    }, 200)
+  }
+
+  function goToProfile(username) {
+    setShowDrop(false)
+    setSuggestions([])
+    navigate(`/profile/${encodeURIComponent(username)}`)
+  }
+
+  function onSubmit(e) {
+    e.preventDefault()
+    const q = query.trim()
+    if (!q) return
+    goToProfile(q)
+  }
+
+  return (
+    <div style={{ borderTop: '1px solid #1e2130', paddingTop: '1rem' }}>
+      <p className="font-mono text-[10px] uppercase tracking-widest mb-2.5"
+         style={{ color:'#374151', letterSpacing:'0.12em' }}>// find a player</p>
+
+      {/* Search Input */}
+      <div ref={wrapRef} style={{ position: 'relative' }}>
+        <form onSubmit={onSubmit}>
+          <div
+            className="flex items-center gap-2 px-3 py-2.5"
+            style={{
+              background: '#090b13',
+              border: '1px solid #1e2130',
+              borderRadius: 4,
+              transition: 'border-color 0.15s',
+            }}
+            onFocusCapture={e => e.currentTarget.style.borderColor = 'rgba(34,211,238,0.4)'}
+            onBlurCapture={e  => e.currentTarget.style.borderColor = '#1e2130'}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ color:'#4b5563', flexShrink:0 }}>
+              <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={e => handleInput(e.target.value)}
+              onFocus={() => { if (suggestions.length) setShowDrop(true) }}
+              onKeyDown={e => { if (e.key === 'Escape') { setShowDrop(false); setQuery('') } }}
+              placeholder="Search username to view profile..."
+              className="flex-1 bg-transparent outline-none font-mono text-[12px]"
+              style={{ color:'#dde1ea', caretColor:'#22d3ee' }}
+              spellCheck={false}
+              autoComplete="off"
+            />
+            {query && (
+              <button type="button"
+                onClick={() => { setQuery(''); setSuggestions([]); inputRef.current?.focus() }}
+                style={{ color:'#4b5563', fontSize:11 }}
+                onMouseOver={e => e.currentTarget.style.color='#f43f5e'}
+                onMouseOut={e  => e.currentTarget.style.color='#4b5563'}
+              >✕</button>
+            )}
+          </div>
+        </form>
+
+        {/* Autocomplete Dropdown */}
+        {showDrop && (
+          <div style={{
+            position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+            background: '#090b13', border: '1px solid #1e2130', borderTop: 'none',
+            borderRadius: '0 0 4px 4px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          }}>
+            {suggestions.map(s => {
+              const st = getTier(s.elo_rating)
+              return (
+                <button
+                  key={s.username}
+                  onClick={() => goToProfile(s.username)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors cursor-pointer"
+                  style={{ borderBottom: '1px solid #0d0f17', background: 'transparent' }}
+                  onMouseOver={e => e.currentTarget.style.background = '#0d0f17'}
+                  onMouseOut={e  => e.currentTarget.style.background = 'transparent'}
+                >
+                  <UserAvatar username={s.username} size={24} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[12px] font-bold truncate" style={{ color:'#dde1ea' }}>{s.username}</span>
+                      <span className="font-mono text-[9px] px-1.5 py-0.5"
+                            style={{ background: st.bg, color: st.col, border:`1px solid ${st.border}`, borderRadius:2 }}>
+                        {st.name}
+                      </span>
+                    </div>
+                    <p className="font-mono text-[9px]" style={{ color:'#4b5563' }}>rank #{s.rank} · {s.wins || 0}W {s.losses || 0}L</p>
+                  </div>
+                  <span className="font-mono text-[12px] font-black" style={{ color: st.col }}>{s.elo_rating}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 /* ════════════════════════════════════════════════
-   LIVE COUNTER
+   LIVE ARENA STATS HOOK
 ════════════════════════════════════════════════ */
 function useLiveCounter() {
-  const [c, setC] = useState({ players:247, matches:12 })
+  const [stats, setStats] = useState({ players: 1, matches: 0, totalProblems: 175 })
+
   useEffect(() => {
-    const t = setInterval(() => setC(prev => ({
-      players: Math.max(150, prev.players + Math.floor(Math.random()*5-2)),
-      matches: Math.max(1,   prev.matches + (Math.random()>0.5?1:-1)),
-    })), 4000)
+    async function loadStats() {
+      try {
+        const [uRes, pRes] = await Promise.all([
+          api.get('/api/users/stats').catch(() => ({ data: {} })),
+          api.get('/api/problems/stats').catch(() => ({ data: {} })),
+        ])
+        setStats({
+          players: Math.max(1, uRes.data?.totalUsers || 1),
+          matches: uRes.data?.totalMatches || 0,
+          totalProblems: pRes.data?.totalProblems || 175,
+        })
+      } catch (err) {
+        console.error('[Lobby stats]', err)
+      }
+    }
+    loadStats()
+    const t = setInterval(loadStats, 15_000)
     return () => clearInterval(t)
   }, [])
-  return c
+
+  return stats
 }
 
 /* ════════════════════════════════════════════════
@@ -348,7 +496,17 @@ export default function Lobby() {
 
   const elo     = user?.elo_rating ?? 1200
   const diffObj = DIFFS.find(d => d.id === diff)
-  const ch      = todayChallenge()
+  const [dailyProblem, setDailyProblem] = useState(null)
+
+  useEffect(() => {
+    api.get('/api/problems/daily')
+      .then(({ data }) => setDailyProblem(data))
+      .catch(() => {})
+  }, [])
+
+  const ch = dailyProblem
+    ? { topic: dailyProblem.topic, problem: dailyProblem.title, difficulty: dailyProblem.difficulty, desc: (dailyProblem.description || '').slice(0, 90) + '...' }
+    : { topic: 'arrays', problem: 'Two Sum', difficulty: 'easy', desc: 'Find indices of two numbers that add to target.' }
 
   function startQueue() {
     if (!topic) return
@@ -411,9 +569,9 @@ export default function Lobby() {
                 <div className="flex items-center gap-1.5 justify-end">
                   <span className="dot-live"/>
                   <span className="font-mono text-[11px] font-bold tabular-nums" style={{ color:'#dde1ea' }}>{live.players}</span>
-                  <span className="font-mono text-[10px]" style={{ color:'#4b5563' }}>online</span>
+                  <span className="font-mono text-[10px]" style={{ color:'#4b5563' }}>registered</span>
                 </div>
-                <p className="font-mono text-[10px]" style={{ color:'#374151' }}>{live.matches} active</p>
+                <p className="font-mono text-[10px]" style={{ color:'#374151' }}>{live.totalProblems} problems</p>
               </div>
             </div>
           </div>
@@ -570,6 +728,9 @@ export default function Lobby() {
                 </div>
               ))}
             </div>
+
+            {/* Friend Search */}
+            <FriendSearch />
           </div>
         </div>
       </div>

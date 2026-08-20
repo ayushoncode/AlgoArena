@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
+import { UserAvatar } from '../utils/avatar'
 
 /* ════════════════════════════════════════════════
    TYPEWRITER HOOK
@@ -415,8 +416,8 @@ function Spinner() {
 
 /** 1-Click OTP Verification Form */
 function OtpLoginForm({ onSwitchPassword }) {
-  const { sendOtp, loginWithOtp } = useAuth()
-  const navigate = useNavigate()
+  const { sendOtp, loginWithOtp, refreshUser } = useAuth()
+  const navigate      = useNavigate()
 
   const [step, setStep]         = useState(1) // 1: email, 2: 6-digit OTP
   const [email, setEmail]       = useState('')
@@ -425,6 +426,9 @@ function OtpLoginForm({ onSwitchPassword }) {
   const [busy, setBusy]         = useState(false)
   const [devOtp, setDevOtp]     = useState(null)
   const [cooldown, setCooldown] = useState(0)
+  const [showUsernameModal, setShowUsernameModal] = useState(false)
+  const [suggestedHandle, setSuggestedHandle]     = useState('')
+  const [usernameErr, setUsernameErr]             = useState('')
 
   useEffect(() => {
     if (cooldown <= 0) return
@@ -461,11 +465,16 @@ function OtpLoginForm({ onSwitchPassword }) {
     setBusy(true)
     setErr('')
     try {
-      await loginWithOtp({
+      const res = await loginWithOtp({
         email: email.trim().toLowerCase(),
         otp: otp.trim(),
       })
-      navigate('/lobby')
+      if (res?.isNewUser || !res?.user?.is_username_set) {
+        setSuggestedHandle(res?.user?.username || email.split('@')[0])
+        setShowUsernameModal(true)
+      } else {
+        navigate('/lobby')
+      }
     } catch (e) {
       setErr(e.response?.data?.message || e.message || 'Verification failed')
     } finally {
@@ -1089,6 +1098,395 @@ function GoogleAuthButton() {
 /* ════════════════════════════════════════════════
    MAIN LANDING PAGE
 ════════════════════════════════════════════════ */
+/** Live Leaderboard Teaser */
+function LiveLeaderboardTeaser() {
+  const [players, setPlayers] = useState([])
+  useEffect(() => {
+    api.get('/api/users/leaderboard')
+      .then(({ data }) => setPlayers(data.slice(0, 5)))
+      .catch(() => {})
+  }, [])
+
+  if (!players.length) return null
+
+  return (
+    <div className="glass-card p-6 rounded-xl border border-[#1e2130] space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">🏆</span>
+          <h3 className="font-display font-bold text-base text-[#dde1ea]">Live Arena Masters</h3>
+        </div>
+        <Link to="/leaderboard" className="font-mono text-xs text-[#f97316] hover:underline">
+          View Full Ranks →
+        </Link>
+      </div>
+      <div className="space-y-2">
+        {players.map((p, idx) => (
+          <div key={p.id || idx} className="flex items-center justify-between p-2.5 rounded bg-[#0d0f17] border border-[#1e2130]/60 hover:border-orange-500/40 transition-colors">
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs font-bold text-[#6b7280] w-5 text-center">
+                {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+              </span>
+              <UserAvatar username={p.username} size={28} />
+              <div>
+                <p className="font-mono text-xs font-bold text-[#dde1ea]">{p.username}</p>
+                <p className="font-mono text-[9px] text-[#6b7280]">{p.wins || 0}W · {p.losses || 0}L</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="font-mono text-xs font-bold text-[#f97316]">{p.elo_rating}</span>
+              <p className="font-mono text-[9px] text-[#4b5563]">elo</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** 1v1 Duel Engine Showcase (Modern, High-Tech Architecture) */
+function DuelEngineShowcase() {
+  const [activeTab, setActiveTab] = useState(0)
+
+  const steps = [
+    {
+      id: 'matchmaking',
+      num: '01',
+      title: 'Real-Time Matchmaking',
+      badge: 'Latency < 25ms',
+      badgeColor: '#10b981',
+      tag: 'WebSocket Engine',
+      desc: 'Smart rating-balanced matchmaking finds an opponent near your Elo bracket. Window dynamically expands every 10s for zero-wait duels.',
+      highlight: 'Symmetric Problem Dispatch',
+      codePreview: `// Matchmaking Socket Handshake
+socket.emit('join_queue', { topic: 'trees', difficulty: 'medium' });
+socket.on('match_found', ({ roomId, problem, opponent }) => {
+  arena.initializeBattle({ roomId, symmetricClock: true });
+});`
+    },
+    {
+      id: 'sandbox',
+      num: '02',
+      title: 'Isolated Docker Sandbox',
+      badge: 'Zero Cheats',
+      badgeColor: '#22d3ee',
+      tag: 'Security & Runtime',
+      desc: 'Your code compiles and executes inside a locked, network-disabled Linux container with 512MB RAM cap and 0.5 CPU quota for pure fairness.',
+      highlight: 'Polyglot BFS Deserialization',
+      codePreview: `# Hardened Runner Benchmark
+docker run --network none --memory 512m --cpus 0.5 \\
+  --security-opt no-new-privileges:true \\
+  algoarena-runner:latest --timeout 5000ms`
+    },
+    {
+      id: 'radar',
+      num: '03',
+      title: 'Live Keystroke Radar',
+      badge: 'Real-Time Spectating',
+      badgeColor: '#f59e0b',
+      tag: 'Live Duel HUD',
+      desc: 'Watch real-time typing indicators, character count deltas, test run attempts, and compilation status for maximum esports adrenaline.',
+      highlight: 'Instant Verdict Broadcast',
+      codePreview: `// Real-Time Opponent Telemetry
+socket.on('opponent_typing', ({ charCount, activeLine }) => {
+  hud.updateRadar({ opponent: 'priya', speed: '84 WPM', progress: 0.72 });
+});`
+    },
+    {
+      id: 'elo',
+      num: '04',
+      title: 'True Elo Progression',
+      badge: 'Chess-Grade Math',
+      badgeColor: '#f97316',
+      tag: 'Dynamic K=32 Factor',
+      desc: 'Win duels to steal opponent Elo and climb through rank tiers from Novice to Grandmaster. Features full rating history charts.',
+      highlight: 'Codeforces-Style Tiers',
+      codePreview: `// Elo Settlement Matrix
+const expectedA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
+const deltaA = Math.round(K_FACTOR * (scoreA - expectedA));
+database.atomicUpdateElo({ userId, delta: deltaA });`
+    }
+  ]
+
+  const curr = steps[activeTab]
+
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f97316]/10 border border-[#f97316]/25 font-mono text-[11px] text-[#f97316] mb-3">
+            <span className="dot-live" />
+            <span>Architecture & Battle Engine</span>
+          </div>
+          <h2 className="font-display font-black text-2xl sm:text-4xl text-[#dde1ea] tracking-tight">
+            How 1v1 Arena Duels Work
+          </h2>
+        </div>
+        <p className="font-mono text-xs text-[#6b7280] max-w-md">
+          Built from the ground up for sub-millisecond responsiveness, anti-cheat isolation, and competitive adrenaline.
+        </p>
+      </div>
+
+      {/* Tabs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {steps.map((s, idx) => {
+          const sel = activeTab === idx
+          return (
+            <button
+              key={s.id}
+              onClick={() => setActiveTab(idx)}
+              className={`p-4 rounded-xl border text-left transition-all relative overflow-hidden cursor-pointer ${
+                sel
+                  ? 'bg-[#0e111a] border-[#f97316] shadow-lg shadow-orange-500/10'
+                  : 'bg-[#090b13] border-[#1e2130] hover:border-[#374151] opacity-75 hover:opacity-100'
+              }`}
+            >
+              {sel && (
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#f97316] to-[#22d3ee]" />
+              )}
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-mono text-xs font-black" style={{ color: sel ? '#f97316' : '#4b5563' }}>
+                  {s.num}
+                </span>
+                <span className="font-mono text-[9px] px-1.5 py-0.5 rounded" style={{ background: `${s.badgeColor}15`, color: s.badgeColor, border: `1px solid ${s.badgeColor}35` }}>
+                  {s.badge}
+                </span>
+              </div>
+              <p className="font-display font-bold text-sm text-[#dde1ea] mb-1">{s.title}</p>
+              <p className="font-mono text-[10px] text-[#6b7280] truncate">{s.tag}</p>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Detail Showcase Card */}
+      <div className="glass-card p-6 sm:p-8 rounded-2xl border border-[#1e2130] grid lg:grid-cols-[1.1fr_0.9fr] gap-8 items-center bg-[#07090f]">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-2xl font-black text-[#f97316]">{curr.num}</span>
+            <h3 className="font-display font-black text-xl sm:text-2xl text-[#dde1ea]">{curr.title}</h3>
+          </div>
+          <p className="text-sm text-[#9ca3af] leading-relaxed">
+            {curr.desc}
+          </p>
+          <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0d0f17] border border-[#1e2130] text-xs font-mono text-[#22d3ee]">
+              <span>⚡</span>
+              <span>{curr.highlight}</span>
+            </div>
+            <Link to="/lobby" className="font-mono text-xs text-[#f97316] hover:underline flex items-center gap-1">
+              Try it live in Arena →
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1e2130] bg-[#05060a] p-4 overflow-hidden">
+          <div className="flex items-center justify-between pb-2 mb-3 border-b border-[#1e2130] text-[10px] font-mono text-[#4b5563]">
+            <span>// engine_preview.js</span>
+            <span className="text-[#10b981]">● verified</span>
+          </div>
+          <pre className="font-mono text-xs text-[#dde1ea] leading-relaxed overflow-x-auto">
+            <code>{curr.codePreview}</code>
+          </pre>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** 4 Major Languages Matrix */
+function LanguageMatrixShowcase() {
+  const [activeLang, setActiveLang] = useState('javascript')
+  const snippets = {
+    javascript: `// JavaScript (Node.js 20 V8) - Sub-second Execution
+function twoSum(nums, target) {
+  const map = new Map();
+  for (let i = 0; i < nums.length; i++) {
+    const complement = target - nums[i];
+    if (map.has(complement)) return [map.get(complement), i];
+    map.set(nums[i], i);
+  }
+  return [];
+}`,
+    python: `# Python 3.11 - Clean, Expressive & Fast
+class Solution:
+    def solution(self, nums: list[int], target: int) -> list[int]:
+        seen = {}
+        for i, val in enumerate(nums):
+            diff = target - val
+            if diff in seen:
+                return [seen[diff], i]
+            seen[val] = i
+        return []`,
+    cpp: `// C++ 20 (GCC 13) - Peak Microsecond Performance
+#include <vector>
+#include <unordered_map>
+using namespace std;
+
+class Solution {
+public:
+    vector<int> solution(vector<int>& nums, int target) {
+        unordered_map<int, int> mp;
+        for (int i = 0; i < nums.size(); ++i) {
+            int complement = target - nums[i];
+            if (mp.count(complement)) return {mp[complement], i};
+            mp[nums[i]] = i;
+        }
+        return {};
+    }
+};`,
+    java: `// Java 21 (OpenJDK) - Strict Reflection Runner
+import java.util.HashMap;
+
+class Solution {
+    public int[] solution(int[] nums, int target) {
+        HashMap<Integer, Integer> map = new HashMap<>();
+        for (int i = 0; i < nums.length; i++) {
+            int complement = target - nums[i];
+            if (map.containsKey(complement)) {
+                return new int[] { map.get(complement), i };
+            }
+            map.put(nums[i], i);
+        }
+        return new int[] {};
+    }
+}`
+  }
+
+  const langs = [
+    { id: 'javascript', label: 'JavaScript', tag: 'Node 20' },
+    { id: 'python', label: 'Python', tag: 'Python 3.11' },
+    { id: 'cpp', label: 'C++', tag: 'GCC 20' },
+    { id: 'java', label: 'Java', tag: 'OpenJDK 21' },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="font-mono text-[11px] uppercase tracking-widest text-[#22d3ee] mb-1">// Polyglot Sandbox</p>
+        <h2 className="font-display font-bold text-2xl sm:text-3xl text-[#dde1ea]">Write in Your Favorite Language</h2>
+      </div>
+
+      <div className="glass-card rounded-xl border border-[#1e2130] overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-[#0b0d14] border-b border-[#1e2130] flex-wrap gap-2">
+          <div className="flex items-center gap-1.5">
+            {langs.map(l => (
+              <button
+                key={l.id}
+                onClick={() => setActiveLang(l.id)}
+                className={`px-3 py-1.5 rounded font-mono text-xs font-bold transition-all cursor-pointer ${
+                  activeLang === l.id
+                    ? 'bg-[#f97316]/15 text-[#f97316] border border-[#f97316]/40'
+                    : 'text-[#6b7280] hover:text-[#dde1ea] border border-transparent'
+                }`}
+              >
+                {l.label} <span className="text-[10px] font-normal opacity-70">({l.tag})</span>
+              </button>
+            ))}
+          </div>
+          <span className="font-mono text-[11px] text-[#10b981] flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" /> Auto BFS Serialization
+          </span>
+        </div>
+
+        <pre className="p-4 sm:p-6 font-mono text-xs sm:text-sm leading-relaxed overflow-x-auto text-[#dde1ea] bg-[#07090f]">
+          <code>{snippets[activeLang]}</code>
+        </pre>
+      </div>
+    </div>
+  )
+}
+
+/** FAQ Accordion */
+function FaqSection() {
+  const [openIdx, setOpenIdx] = useState(0)
+  const faqs = [
+    {
+      q: 'How does the 1v1 live duel matchmaking work?',
+      a: 'When you queue for a topic and difficulty, our matchmaking engine pairs you with an opponent near your Elo bracket (window expands ±100 Elo every 10s). Both players receive the exact same DSA problem at the exact same millisecond. The first developer whose code passes 100% of hidden test cases wins the duel and steals Elo rating.'
+    },
+    {
+      q: 'How is code executed and judged securely?',
+      a: 'Every submission runs inside an isolated, hardened Docker container with network access disabled, 512MB memory limit, 0.5 CPU cap, and a strict 5-second execution timeout. This guarantees zero cheats, sub-second judging, and fair benchmarks.'
+    },
+    {
+      q: 'Can I challenge my friends or college peers in private matches?',
+      a: 'Yes! From the Lobby, click "battle_friend() ⚔️ (private room)". You can choose the topic and difficulty, then generate a shareable 6-character room code or direct invite link. Once your friend enters the code, the private duel begins immediately.'
+    },
+    {
+      q: 'Which programming languages are supported?',
+      a: 'AlgoArena natively supports JavaScript (Node.js 20), Python 3.11, C++ 20 (GCC 13), and Java 21 (OpenJDK). All complex data structures including TreeNodes and ListNodes are automatically parsed and serialized with BFS format.'
+    },
+    {
+      q: 'What happens if a player disconnects during a match?',
+      a: 'AlgoArena has built-in disconnect grace period. If a player momentarily loses connection, they have 30 seconds to reconnect before the match is declared a forfeit, preventing unfair Elo losses.'
+    }
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="font-mono text-[11px] uppercase tracking-widest text-[#f97316] mb-1">// FAQ</p>
+        <h2 className="font-display font-bold text-2xl sm:text-3xl text-[#dde1ea]">Frequently Asked Questions</h2>
+      </div>
+      <div className="space-y-3">
+        {faqs.map((f, i) => (
+          <div
+            key={i}
+            className="glass-card rounded-lg border border-[#1e2130] overflow-hidden"
+          >
+            <button
+              onClick={() => setOpenIdx(openIdx === i ? null : i)}
+              className="w-full p-4 text-left font-semibold text-sm text-[#dde1ea] flex items-center justify-between gap-4"
+            >
+              <span>{f.q}</span>
+              <span className="font-mono text-sm text-[#f97316] shrink-0 w-6 text-center">
+                {openIdx === i ? '−' : '+'}
+              </span>
+            </button>
+            {openIdx === i && (
+              <div className="px-4 pb-4 text-xs text-[#9ca3af] leading-relaxed border-t border-[#1e2130]/50 pt-3">
+                {f.a}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Modern Footer */
+function FooterSection() {
+  return (
+    <footer className="border-t border-[#1e2130] bg-[#05060a] py-12 px-5 sm:px-8">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-3">
+          <span className="font-display font-black text-lg text-[#dde1ea]">
+            algo<span className="text-[#f97316]">_</span>arena
+          </span>
+          <span className="text-[#1e2130]">|</span>
+          <span className="font-mono text-xs text-[#6b7280]">
+            The 1v1 Competitive Coding Platform
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0d0f17] border border-[#1e2130] text-xs font-mono text-[#9ca3af]">
+          <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+          <span>All 4 Sandbox Runners Operational</span>
+        </div>
+
+        <p className="font-mono text-xs text-[#4b5563]">
+          Built with ⚡ for competitive programmers
+        </p>
+      </div>
+    </footer>
+  )
+}
+
+/* ════════════════════════════════════════════════
+   MAIN LANDING PAGE
+════════════════════════════════════════════════ */
 export default function Home() {
   const [authMode, setAuthMode] = useState('otp') // 'otp' | 'password' | 'register'
   const [searchParams]          = useSearchParams()
@@ -1117,7 +1515,7 @@ export default function Home() {
             <span className="text-[#dde1ea] font-semibold">1v1 Real-Time</span>
           </div>
           <span className="text-[#1e2130]">|</span>
-          <span className="shrink-0"><span className="text-[#f97316] font-bold">30+</span> Curated LeetCode DSA Problems</span>
+          <span className="shrink-0"><span className="text-[#f97316] font-bold">175+</span> Curated LeetCode DSA Problems</span>
           <span className="text-[#1e2130]">|</span>
           <span className="shrink-0"><span className="text-[#22d3ee] font-bold">4</span> Languages: JS · Py · C++ · Java</span>
           <span className="text-[#1e2130]">|</span>
@@ -1129,34 +1527,56 @@ export default function Home() {
       </div>
 
       {/* ── HERO & BATTLE SIMULATION ────────────────────────── */}
-      <section className="px-5 sm:px-8 py-10 max-w-6xl mx-auto w-full space-y-8">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-          <div className="space-y-4 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/20 bg-orange-500/10 text-orange-400 font-mono text-[11px]">
-              <span className="dot-live" /> Live 1v1 Competitive Arena
+      <section className="px-5 sm:px-8 pt-12 pb-16 max-w-6xl mx-auto w-full space-y-12">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10">
+          <div className="space-y-6 max-w-xl">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-orange-500/25 bg-orange-500/10 text-orange-400 font-mono text-xs shadow-lg shadow-orange-500/10">
+              <span className="dot-live" />
+              <span>Season 1 Live • 1v1 Competitive Arena</span>
             </div>
-            <h1 className="font-display font-extrabold tracking-tight leading-[1.08] text-4xl sm:text-5xl lg:text-6xl text-[#dde1ea]">
+
+            <h1 className="font-display font-black tracking-tight leading-[1.06] text-4xl sm:text-5xl lg:text-6xl text-[#dde1ea]">
               Code fast.<br/>
               Steal Elo.<br/>
               <span className="text-gradient-orange">Dominate the Arena.</span>
             </h1>
+
             <p className="text-[#9ca3af] text-sm sm:text-base leading-relaxed">
-              Two developers enter with the exact same DSA problem. First to achieve a verified <span className="text-[#10b981] font-mono font-semibold">ACCEPTED</span> verdict in the isolated sandbox takes the match.
+              Two developers enter with the exact same DSA problem. First to achieve a verified <span className="text-[#10b981] font-mono font-bold">ACCEPTED</span> verdict in the isolated Docker sandbox takes the match and climbs the global rankings.
             </p>
 
-            <div className="flex items-center gap-4 pt-2">
+            <div className="flex items-center gap-4 pt-2 flex-wrap">
               {isAuthenticated ? (
-                <button onClick={() => navigate('/lobby')} className="btn-primary py-3 px-6 text-sm glow-orange">
-                  Enter Matchmaking Lobby →
+                <button onClick={() => navigate('/lobby')} className="btn-primary py-3.5 px-7 text-sm glow-orange">
+                  Enter Matchmaking Lobby ⚡
                 </button>
               ) : (
-                <a href="#auth-box" className="btn-primary py-3 px-6 text-sm glow-orange">
-                  Quick Join Arena ⚡
-                </a>
+                <button
+                  onClick={() => {
+                    setAuthMode('otp')
+                    document.getElementById('auth-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  }}
+                  className="btn-primary py-3.5 px-7 text-sm glow-orange"
+                >
+                  Join Arena & Battle Now ⚡
+                </button>
               )}
-              <Link to="/leaderboard" className="btn-ghost py-3 px-5 text-sm">
+              <Link to="/leaderboard" className="btn-ghost py-3.5 px-6 text-sm">
                 View Global Ranks 🏆
               </Link>
+            </div>
+
+            {/* Quick stats pills */}
+            <div className="flex items-center gap-4 pt-4 border-t border-[#1e2130]/80 flex-wrap text-xs font-mono text-[#6b7280]">
+              <div className="flex items-center gap-1.5">
+                <span className="text-orange-400 font-bold">✓</span> Real-Time Typing Radar
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-cyan-400 font-bold">✓</span> FIDE Chess Elo Math
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-emerald-400 font-bold">✓</span> Zero Cheats / Sandbox
+              </div>
             </div>
           </div>
 
@@ -1167,15 +1587,22 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── 1v1 DUEL ENGINE SHOWCASE ─────────────────────────── */}
+      <section className="border-t border-[#1e2130] bg-[#080a10] py-16 px-5 sm:px-8">
+        <div className="max-w-6xl mx-auto">
+          <DuelEngineShowcase />
+        </div>
+      </section>
+
       {/* ── FEATURES & AUTH GRID ────────────────────────────── */}
-      <section className="border-t border-[#1e2130] bg-[#090b13]/50">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-12 grid lg:grid-cols-[1fr_380px] gap-10">
+      <section className="border-t border-[#1e2130] bg-[#090b13]/60 py-16 px-5 sm:px-8">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_380px] gap-10">
 
           {/* Feature Highlights Left */}
           <div className="space-y-8">
             <div>
               <p className="font-mono text-[11px] uppercase tracking-widest text-[#f97316] mb-2">// Built for Competitive DSA</p>
-              <h2 className="font-display font-bold text-2xl text-[#dde1ea]">Engineered for pure speed & security</h2>
+              <h2 className="font-display font-extrabold text-2xl sm:text-3xl text-[#dde1ea]">Engineered for Pure Speed & Security</h2>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -1183,7 +1610,7 @@ export default function Home() {
                 {
                   icon: '⚡',
                   title: 'Instant Matchmaking',
-                  desc: 'Queue by topic and difficulty. Search window widens ±100 Elo every 10s so matches start fast.',
+                  desc: 'Queue by topic and difficulty. Search window widens ±100 Elo every 10s so matches start lightning fast.',
                 },
                 {
                   icon: '🛡️',
@@ -1193,17 +1620,17 @@ export default function Home() {
                 {
                   icon: '🏆',
                   title: 'Live Elo Rating Engine',
-                  desc: 'Chess-grade Elo rating with dynamic K-factors and anti-forfeit disconnect recovery.',
+                  desc: 'Chess-grade Elo rating with dynamic K-factors, streak bonuses, and anti-forfeit disconnect recovery.',
                 },
                 {
-                  icon: '🌐',
-                  title: '4 Major Languages',
-                  desc: 'Write in JavaScript, Python, C++, or Java with full reflection and automatic type coercion.',
+                  icon: '⚔️',
+                  title: 'Private Friend Duels',
+                  desc: 'Create direct custom battle rooms with 6-digit invite codes and battle your friends or campus peers.',
                 },
               ].map((feat, idx) => (
-                <div key={idx} className="glass-card p-4 rounded-lg space-y-2">
-                  <div className="text-2xl">{feat.icon}</div>
-                  <h3 className="font-semibold text-sm text-[#dde1ea]">{feat.title}</h3>
+                <div key={idx} className="glass-card p-5 rounded-xl space-y-2">
+                  <div className="text-3xl">{feat.icon}</div>
+                  <h3 className="font-bold text-sm text-[#dde1ea]">{feat.title}</h3>
                   <p className="text-xs text-[#9ca3af] leading-relaxed">{feat.desc}</p>
                 </div>
               ))}
@@ -1218,10 +1645,10 @@ export default function Home() {
                   { n: '02', title: 'Live Battle', desc: 'Real-time typing radar' },
                   { n: '03', title: 'Steal Rating', desc: 'Instant Elo settlement' },
                 ].map((s) => (
-                  <div key={s.n} className="p-3 bg-[#0d0f17] border border-[#1e2130] rounded flex items-start gap-3">
-                    <span className="font-mono text-sm font-bold text-[#f97316]">{s.n}</span>
+                  <div key={s.n} className="p-3.5 bg-[#0d0f17] border border-[#1e2130] rounded-lg flex items-start gap-3">
+                    <span className="font-mono text-base font-black text-[#f97316]">{s.n}</span>
                     <div>
-                      <p className="font-semibold text-xs text-[#dde1ea]">{s.title}</p>
+                      <p className="font-bold text-xs text-[#dde1ea]">{s.title}</p>
                       <p className="text-[11px] text-[#6b7280]">{s.desc}</p>
                     </div>
                   </div>
@@ -1231,7 +1658,7 @@ export default function Home() {
           </div>
 
           {/* Authentication Panel Right */}
-          <div id="auth-box" className="glass-card p-6 rounded-xl border border-[#1e2130] flex flex-col justify-between">
+          <div id="auth-box" className="glass-card p-6 rounded-2xl border border-[#1e2130] flex flex-col justify-between shadow-2xl">
             <div>
               {/* Google Sign In Option */}
               <GoogleAuthButton />
@@ -1289,13 +1716,31 @@ export default function Home() {
 
             <div className="mt-8 pt-4 border-t border-[#1e2130] text-center">
               <p className="font-mono text-[10px] text-[#4b5563]">
-                Protected by Docker Sandboxing & bcrypt hashing
+                🔒 256-bit SSL • Docker Isolation • bcrypt Hashing
               </p>
             </div>
           </div>
 
         </div>
       </section>
+
+      {/* ── CODE MATRIX & LIVE LEADERBOARD SHOWCASE ─────────── */}
+      <section className="border-t border-[#1e2130] bg-[#07090e] py-16 px-5 sm:px-8">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_340px] gap-10">
+          <LanguageMatrixShowcase />
+          <LiveLeaderboardTeaser />
+        </div>
+      </section>
+
+      {/* ── FAQ SECTION ─────────────────────────────────────── */}
+      <section className="border-t border-[#1e2130] bg-[#090b13]/50 py-16 px-5 sm:px-8">
+        <div className="max-w-4xl mx-auto">
+          <FaqSection />
+        </div>
+      </section>
+
+      {/* ── FOOTER ──────────────────────────────────────────── */}
+      <FooterSection />
 
     </div>
   )
