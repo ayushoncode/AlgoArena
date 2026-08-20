@@ -846,12 +846,74 @@ function RegisterForm({ onSwitchLogin }) {
   )
 }
 
-/** Google One-Click Sign-In */
+/** Choose Username Onboarding Modal */
+function ChooseUsernameModal({ defaultUsername, onConfirm, busy, err }) {
+  const [handle, setHandle] = useState(defaultUsername || '')
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    onConfirm(handle.trim().toLowerCase())
+  }
+
+  const isValid = /^[a-zA-Z0-9_]{3,30}$/.test(handle.trim())
+
+  return (
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="glass-card max-w-md w-full p-6 rounded-xl border border-[#1e2130] shadow-2xl space-y-4 fade-in">
+        <div className="text-center space-y-1">
+          <div className="text-3xl mb-1">⚔️</div>
+          <h3 className="font-display font-bold text-lg text-[#dde1ea]">Choose Your Arena Handle</h3>
+          <p className="text-xs text-[#9ca3af]">
+            Pick a custom username for leaderboards and live match battles.
+          </p>
+        </div>
+
+        <Err msg={err} />
+
+        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+          <div>
+            <label className="font-mono text-[10.5px] uppercase tracking-wider block mb-1.5 text-[#6b7280]">
+              Arena Handle / Username
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-sm font-bold text-[#f97316]">@</span>
+              <input
+                type="text"
+                autoFocus
+                maxLength={30}
+                placeholder="algo_ninja"
+                value={handle}
+                onChange={e => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                className="w-full bg-[#0d0f17] border border-[#1e2130] focus:border-[#f97316] rounded px-8 py-2.5 text-sm font-mono text-[#dde1ea] outline-none transition-colors"
+              />
+            </div>
+            <p className="font-mono text-[10px] text-[#6b7280] mt-1.5">
+              3–30 chars (letters, numbers, underscore)
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={!isValid || busy}
+            className="btn-primary w-full py-3 shadow-lg shadow-orange-500/20 disabled:opacity-40"
+          >
+            {busy ? <><Spinner/> Saving Handle...</> : <>Enter Arena Lobby →</>}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+/** Google One-Click Sign-In with Custom Handle Setup */
 function GoogleAuthButton() {
-  const { loginWithFirebase } = useAuth()
+  const { loginWithFirebase, refreshUser } = useAuth()
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
   const [err, setErr]   = useState('')
+  const [showUsernameModal, setShowUsernameModal] = useState(false)
+  const [suggestedHandle, setSuggestedHandle]     = useState('')
+  const [usernameErr, setUsernameErr]             = useState('')
 
   async function handleGoogleSignIn() {
     setBusy(true)
@@ -860,11 +922,24 @@ function GoogleAuthButton() {
       const { auth, googleProvider, signInWithPopup } = await import('../utils/firebase')
       const result = await signInWithPopup(auth, googleProvider)
       const idToken = await result.user.getIdToken()
-      await loginWithFirebase({
+
+      const rawSuggest = (result.user.displayName || result.user.email?.split('@')[0] || 'coder')
+        .replace(/[^a-zA-Z0-9_]/g, '_')
+        .toLowerCase()
+        .slice(0, 20)
+
+      const authRes = await loginWithFirebase({
         idToken,
-        username: result.user.displayName?.replace(/\s+/g, '_')?.toLowerCase() || result.user.email?.split('@')[0],
+        username: rawSuggest,
       })
-      navigate('/lobby')
+
+      // If user is brand-new, prompt them to pick a custom handle
+      if (authRes?.isNewUser) {
+        setSuggestedHandle(rawSuggest)
+        setShowUsernameModal(true)
+      } else {
+        navigate('/lobby')
+      }
     } catch (e) {
       console.error('[Google Sign-In Error]', e)
       if (e.code === 'auth/api-key-not-valid' || e.code === 'auth/invalid-api-key' || e.code === 'auth/configuration-not-found') {
@@ -879,8 +954,36 @@ function GoogleAuthButton() {
     }
   }
 
+  async function handleConfirmUsername(chosenHandle) {
+    setBusy(true)
+    setUsernameErr('')
+    try {
+      const { data } = await api.patch('/api/users/me/username', { username: chosenHandle })
+      if (data.token) {
+        localStorage.setItem('aa_token', data.token)
+        localStorage.setItem('aa_user', JSON.stringify(data.user))
+        await refreshUser(data.user)
+      }
+      setShowUsernameModal(false)
+      navigate('/lobby')
+    } catch (err) {
+      setUsernameErr(err.response?.data?.message || err.message || 'Failed to update handle')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="space-y-3 mb-5">
+      {showUsernameModal && (
+        <ChooseUsernameModal
+          defaultUsername={suggestedHandle}
+          onConfirm={handleConfirmUsername}
+          busy={busy}
+          err={usernameErr}
+        />
+      )}
+
       <Err msg={err} />
       <button
         type="button"
