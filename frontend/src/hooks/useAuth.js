@@ -2,16 +2,13 @@ import { useAuthContext } from '../context/AuthContext'
 
 /**
  * useAuth — convenience wrapper over AuthContext.
- * Returns { user, loading, isAuthenticated, login, logout, refreshUser }
+ * Returns { user, loading, isAuthenticated, login, logout, refreshUser, sendOtp, loginWithOtp, loginWithFirebase }
  */
 export function useAuth() {
-  const { user, loading, login, logout, refreshUser } = useAuthContext()
+  const ctx = useAuthContext()
   return {
-    user,
-    loading,
-    login,
-    logout,
-    refreshUser,
-    isAuthenticated: !!user,
+    ...ctx,
+    isAuthenticated: !!ctx.user,
   }
 }
+
