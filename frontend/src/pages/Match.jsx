@@ -566,7 +566,7 @@ function PlayerHeader({ player, isMe, verdict }) {
          style={{ background: '#07080c', borderBottom: '1px solid #1e2130' }}>
       <div className="flex items-center gap-2.5">
         {/* Emoji Avatar */}
-        <UserAvatar username={player?.username} size={24} isMe={isMe} />
+        <UserAvatar username={player?.username} seed={player?.avatar_seed} style={player?.avatar_style} size={24} isMe={isMe} />
         <span className="font-mono text-[12px] font-bold" style={{ color: isMe ? '#f97316' : '#22d3ee' }}>
           {player?.username ?? '—'}
         </span>

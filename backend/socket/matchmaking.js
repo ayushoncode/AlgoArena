@@ -89,14 +89,20 @@ function registerMatchmaking(io) {
     /* ── join_queue ─────────────────────────────────────── */
     socket.on('join_queue', async ({ topic, difficulty }) => {
       let rating = elo_rating ?? 1200
+      let avatar_seed = socket.user.avatar_seed ?? null
+      let avatar_style = socket.user.avatar_style ?? null
       try {
-        const { rows } = await db.query('SELECT elo_rating FROM users WHERE id = $1', [userId])
-        if (rows[0]?.elo_rating) {
-          rating = Number(rows[0].elo_rating) || 1200
+        const { rows } = await db.query('SELECT elo_rating, avatar_seed, avatar_style FROM users WHERE id = $1', [userId])
+        if (rows[0]) {
+          rating = Number(rows[0].elo_rating) || rating
           socket.user.elo_rating = rating
+          avatar_seed = rows[0].avatar_seed ?? avatar_seed
+          avatar_style = rows[0].avatar_style ?? avatar_style
+          socket.user.avatar_seed = avatar_seed
+          socket.user.avatar_style = avatar_style
         }
       } catch (err) {
-        console.warn('[Queue] Could not fetch fresh rating from DB:', err.message)
+        console.warn('[Queue] Could not fetch fresh user info from DB:', err.message)
       }
 
       const topicKey = `${topic}:${difficulty}`
@@ -109,6 +115,8 @@ function registerMatchmaking(io) {
         userId,
         username,
         rating,
+        avatar_seed,
+        avatar_style,
         topic,
         difficulty,
         joinedAt:   Date.now(),
@@ -155,8 +163,8 @@ function registerMatchmaking(io) {
               problemId,
               dbMatchId,
               players: [
-                { userId: newEntry.userId,  username: newEntry.username,  rating: newEntry.rating  },
-                { userId: opponent.userId,  username: opponent.username,  rating: opponent.rating  },
+                { userId: newEntry.userId,  username: newEntry.username,  rating: newEntry.rating, avatar_seed: newEntry.avatar_seed, avatar_style: newEntry.avatar_style },
+                { userId: opponent.userId,  username: opponent.username,  rating: opponent.rating, avatar_seed: opponent.avatar_seed, avatar_style: opponent.avatar_style },
               ],
             }
 
@@ -173,8 +181,8 @@ function registerMatchmaking(io) {
               difficulty,
               problemId: null,
               players: [
-                { userId: newEntry.userId,  username: newEntry.username,  rating: newEntry.rating  },
-                { userId: opponent.userId,  username: opponent.username,  rating: opponent.rating  },
+                { userId: newEntry.userId,  username: newEntry.username,  rating: newEntry.rating, avatar_seed: newEntry.avatar_seed, avatar_style: newEntry.avatar_style },
+                { userId: opponent.userId,  username: opponent.username,  rating: opponent.rating, avatar_seed: opponent.avatar_seed, avatar_style: opponent.avatar_style },
               ],
             }
             trackRoom(roomId, null, null, false, fallbackPayload.players, topic, difficulty)

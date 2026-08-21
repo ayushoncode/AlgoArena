@@ -149,12 +149,12 @@ export default function Result() {
               {/* Players Faceoff Avatars */}
               <div className="flex items-center justify-center gap-4 my-3 pt-2">
                 <div className="flex items-center gap-2">
-                  <UserAvatar username={user?.username} size={36} isMe={true} />
+                  <UserAvatar username={user?.username} seed={user?.avatar_seed} style={user?.avatar_style} size={36} isMe={true} />
                   <span className="font-mono text-xs font-bold" style={{ color: '#f97316' }}>{user?.username}</span>
                 </div>
                 <span className="font-mono text-xs font-bold text-[#4b5563]">VS</span>
                 <div className="flex items-center gap-2">
-                  <UserAvatar username={oppData?.username} size={36} isMe={false} />
+                  <UserAvatar username={oppData?.username} seed={oppData?.avatar_seed} style={oppData?.avatar_style} size={36} isMe={false} />
                   <span className="font-mono text-xs font-bold" style={{ color: '#22d3ee' }}>{oppData?.username ?? 'Opponent'}</span>
                 </div>
               </div>
