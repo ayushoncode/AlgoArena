@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useSocket } from '../hooks/useSocket'
 import api from '../utils/api'
 import { UserAvatar, getUserEmoji } from '../utils/avatar'
+import LeetCodeProblemView from '../components/LeetCodeProblemView'
 
 /* ════════════════════════════════════════════════
    MATCH TIMER
@@ -91,6 +92,23 @@ function getParamInfo(token, index, total, title = '', topic = '') {
   const lowerTitle = (title || '').toLowerCase()
   const lowerTopic = (topic || '').toLowerCase()
 
+  // Specific Problem Overrides
+  if (lowerTitle.includes('merge') && lowerTitle.includes('sorted array') && total === 4) {
+    if (index === 0) return { name: 'nums1', jsType: 'number[]', pyType: 'List[int]', javaType: 'int[]', cppType: 'vector<int>&', defaultVal: 'new int[]{}', cppDefault: '{}' }
+    if (index === 1) return { name: 'm', jsType: 'number', pyType: 'int', javaType: 'int', cppType: 'int', defaultVal: '0', cppDefault: '0' }
+    if (index === 2) return { name: 'nums2', jsType: 'number[]', pyType: 'List[int]', javaType: 'int[]', cppType: 'vector<int>&', defaultVal: 'new int[]{}', cppDefault: '{}' }
+    if (index === 3) return { name: 'n', jsType: 'number', pyType: 'int', javaType: 'int', cppType: 'int', defaultVal: '0', cppDefault: '0' }
+  }
+
+  if (lowerTitle.includes('word break') && total === 2) {
+    if (index === 0) return { name: 's', jsType: 'string', pyType: 'str', javaType: 'String', cppType: 'string', defaultVal: '""', cppDefault: '""' }
+    if (index === 1) return { name: 'wordDict', jsType: 'string[]', pyType: 'List[str]', javaType: 'List<String>', cppType: 'vector<string>&', defaultVal: 'new ArrayList<>()', cppDefault: '{}' }
+  }
+
+  if (lowerTitle.includes('excel') && total === 1) {
+    return { name: 'columnTitle', jsType: 'string', pyType: 'str', javaType: 'String', cppType: 'string', defaultVal: '""', cppDefault: '""' }
+  }
+
   if (t.startsWith('[') && t.endsWith(']')) {
     let name = 'nums'
     const isTree = lowerTopic.includes('tree') || lowerTitle.includes('tree') || lowerTitle.includes('bst')
@@ -102,7 +120,7 @@ function getParamInfo(token, index, total, title = '', topic = '') {
     else if (lowerTitle.includes('water') || lowerTitle.includes('height')) name = 'height'
     else if (lowerTitle.includes('interval')) name = 'intervals'
     else if (lowerTitle.includes('matrix') || lowerTitle.includes('island') || lowerTitle.includes('board') || lowerTitle.includes('sudoku')) name = 'board'
-    else if (total > 1 && index === 0) name = 'nums1'
+    else if (total > 1 && index === 0) name = (lowerTitle.includes('4sum') || lowerTitle.includes('3sum') || lowerTitle.includes('two sum')) ? 'nums' : 'nums1'
     else if (total > 1 && index === 1) name = 'nums2'
 
     const isMatrix = t.startsWith('[[')
@@ -139,6 +157,19 @@ function getParamInfo(token, index, total, title = '', topic = '') {
         cppType: 'ListNode*',
         defaultVal: 'null',
         cppDefault: 'nullptr',
+      }
+    }
+
+    // Check if array contains strings e.g. ["cat", "dog"]
+    if (t.startsWith('["') || t.startsWith("['")) {
+      return {
+        name: (lowerTitle.includes('word') || lowerTitle.includes('dict')) ? 'wordDict' : 'strs',
+        jsType: 'string[]',
+        pyType: 'List[str]',
+        javaType: 'List<String>',
+        cppType: 'vector<string>&',
+        defaultVal: 'new ArrayList<>()',
+        cppDefault: '{}',
       }
     }
 
@@ -182,7 +213,7 @@ function getParamInfo(token, index, total, title = '', topic = '') {
 
   // Number
   let name = 'target'
-  if (lowerTitle.includes('stair') || lowerTitle.includes('fib') || total === 1) name = 'n'
+  if (lowerTitle.includes('stair') || lowerTitle.includes('fib') || lowerTitle.includes('spiral') || lowerTitle.includes('binary search tree') || total === 1) name = 'n'
   else if (lowerTitle.includes('kth') || lowerTitle.includes('rotate') || index === 1) name = 'k'
   else if (total === 3 && index === 1) name = 'p'
   else if (total === 3 && index === 2) name = 'q'
@@ -581,125 +612,18 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
   }, [problemId, topic, difficulty])
 
   const DIFF = {
-    easy:   { col:'#10b981', bg:'rgba(16,185,129,0.1)',  border:'rgba(16,185,129,0.3)',  label:'Easy'   },
-    medium: { col:'#f59e0b', bg:'rgba(245,158,11,0.1)', border:'rgba(245,158,11,0.3)',  label:'Medium' },
-    hard:   { col:'#f43f5e', bg:'rgba(244,63,94,0.1)',  border:'rgba(244,63,94,0.3)',   label:'Hard'   },
+    easy:   { col:'#00b8a3', bg:'rgba(0,184,163,0.12)',  border:'rgba(0,184,163,0.25)',  label:'Easy'   },
+    medium: { col:'#ffc01e', bg:'rgba(255,192,30,0.12)', border:'rgba(255,192,30,0.25)',  label:'Medium' },
+    hard:   { col:'#ff375f', bg:'rgba(255,55,95,0.12)',   border:'rgba(255,55,95,0.25)',   label:'Hard'   },
   }
   const diff = DIFF[difficulty] || DIFF.medium
-
-  /* ---- text parsers ---- */
-  function renderInline(text) {
-    if (!text) return null
-    return text.split(/(`[^`]+`|\*\*[^*]+\*\*|_[^_]+_)/g).map((chunk, i) => {
-      if (chunk.startsWith('`') && chunk.endsWith('`'))
-        return <code key={i} className="font-mono text-[10.5px] px-1 py-px rounded" style={{ background:'#1a2035', color:'#93c5fd', border:'1px solid #1e3050' }}>{chunk.slice(1,-1)}</code>
-      if (chunk.startsWith('**') && chunk.endsWith('**'))
-        return <strong key={i} style={{ color:'#e5e7eb', fontWeight:700 }}>{chunk.slice(2,-2)}</strong>
-      if (chunk.startsWith('_') && chunk.endsWith('_'))
-        return <em key={i} style={{ color:'#d1d5db', fontStyle:'italic' }}>{chunk.slice(1,-1)}</em>
-      return chunk
-    })
-  }
-
-  function parseSections(desc) {
-    if (!desc) return { paragraphs: [], examples: [], constraints: [] }
-    // Clean up redundant standalone 'Example 1:\nExample 2:' header blocks that LeetCode scraper dumps
-    const cleanedDesc = desc.replace(/(?:^|\n)(?:Example\s*\d+:?\s*\n)+(?:Constraints:?\s*\n)?/gi, '\n')
-    const lines = cleanedDesc.split('\n')
-    const paragraphs = []
-    const rawExamples = []
-    const constraints = []
-    let curExample = null
-    let mode = 'para' // 'para' | 'example' | 'constraints'
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-      const trimmed = line.trim()
-      if (!trimmed) continue
-
-      // Detect example headers (e.g. **Example 1:** or Example 1:)
-      if (/^(\*\*Example\s*\d+\*?:?|Example\s*\d+:?)/i.test(trimmed)) {
-        if (curExample && (curExample.input || curExample.output)) {
-          rawExamples.push(curExample)
-        }
-        curExample = { input:'', output:'', explanation:'' }
-        mode = 'example'
-        continue
-      }
-
-      // Detect constraints headers
-      if (/^(\*\*Constraints\*?:?|Constraints:?)/i.test(trimmed)) {
-        if (curExample && (curExample.input || curExample.output)) {
-          rawExamples.push(curExample)
-        }
-        curExample = null
-        mode = 'constraints'
-        continue
-      }
-
-      if (mode === 'example' && curExample !== null) {
-        if (trimmed.startsWith('```')) continue // skip code block fences
-
-        if (/^\*?\*?Input\*?\*?:?/i.test(trimmed)) {
-          curExample.input = trimmed.replace(/^\*?\*?Input\*?\*?:?\s*/i, '').trim()
-          continue
-        }
-        if (/^\*?\*?Output\*?\*?:?/i.test(trimmed)) {
-          curExample.output = trimmed.replace(/^\*?\*?Output\*?\*?:?\s*/i, '').trim()
-          continue
-        }
-        if (/^\*?\*?Explanation\*?\*?:?/i.test(trimmed)) {
-          curExample.explanation = trimmed.replace(/^\*?\*?Explanation\*?\*?:?\s*/i, '').trim()
-          continue
-        }
-
-        // Continuation lines
-        if (curExample.explanation) {
-          curExample.explanation += ' ' + trimmed
-        } else if (curExample.output) {
-          curExample.output += ' ' + trimmed
-        } else if (curExample.input) {
-          curExample.input += ' ' + trimmed
-        }
-        continue
-      }
-
-      if (mode === 'constraints') {
-        if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
-          constraints.push(trimmed.replace(/^[-*]\s*/, '').replace(/\*\*/g,''))
-        } else {
-          constraints.push(trimmed.replace(/\*\*/g,''))
-        }
-        continue
-      }
-
-      // Paragraph mode
-      if (!/^Example\s*\d+:?$/i.test(trimmed) && !/^Constraints:?$/i.test(trimmed)) {
-        paragraphs.push(trimmed)
-      }
-    }
-
-    if (curExample && (curExample.input || curExample.output)) {
-      rawExamples.push(curExample)
-    }
-
-    const examples = rawExamples.filter(ex => ex.input.trim() || ex.output.trim())
-    return { paragraphs, examples, constraints }
-  }
-
-  const parsed = parseSections(problem?.description)
-
-  // Fallback: if no structured examples found, use sample_input/sample_output
-  const sampleExamples = parsed.examples.length > 0
-    ? parsed.examples
-    : (problem?.sample_input ? [{ input: problem.sample_input, output: problem.sample_output || '', explanation: '' }] : [])
 
   return (
     <div
       className="flex flex-col shrink-0 overflow-hidden h-full"
       style={{
-        width: collapsed ? 40 : (forcedWidth || 320),
-        minWidth: collapsed ? 40 : 220,
+        width: collapsed ? 40 : (forcedWidth || 340),
+        minWidth: collapsed ? 40 : 260,
         height: '100%',
         borderRight: '1px solid #151929',
         background: '#0b0d14',
@@ -714,7 +638,7 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
         title={collapsed ? 'Expand problem' : 'Collapse'}
       >
         {!collapsed && (
-          <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color:'#374151' }}>Problem</span>
+          <span className="font-mono text-[9px] uppercase tracking-widest text-[#4b5563]">Problem Details</span>
         )}
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
           style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition:'transform 0.2s', color:'#4b5563' }}>
@@ -724,45 +648,15 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
 
       {!collapsed && (
         <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
-          {/* Title + metadata */}
-          <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom:'1px solid #151929' }}>
-            {loading ? (
-              <div className="space-y-2.5">
-                <div style={{ height:16, width:'80%', background:'#151929', borderRadius:4 }}/>
-                <div style={{ height:10, width:'45%', background:'#151929', borderRadius:4 }}/>
-              </div>
-            ) : problem ? (
-              <>
-                <h2 className="text-[14px] font-bold leading-snug mb-2"
-                    style={{ color:'#f3f4f6', fontFamily:"'Inter', system-ui, sans-serif", fontWeight:700 }}>
-                  {problem.title}
-                </h2>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full"
-                        style={{ background:diff.bg, color:diff.col, border:`1px solid ${diff.border}` }}>
-                    {diff.label}
-                  </span>
-                  <span className="font-mono text-[9px] px-2 py-0.5 rounded-full"
-                        style={{ background:'rgba(55,65,81,0.5)', color:'#9ca3af', border:'1px solid #1f2937' }}>
-                    {topic?.replace(':',' · ')}
-                  </span>
-                </div>
-              </>
-            ) : (
-              <p className="font-mono text-[11px]" style={{ color:'#4b5563' }}>No problem found</p>
-            )}
-          </div>
-
-          {/* Tab bar — Description / Solutions */}
+          {/* Tab bar — Description */}
           {problem && (
-            <div className="flex shrink-0" style={{ borderBottom:'1px solid #151929' }}>
+            <div className="flex shrink-0 px-2" style={{ borderBottom:'1px solid #151929' }}>
               {[['description','Description']].map(([id, label]) => (
                 <button key={id} onClick={() => setActiveTab(id)}
-                  className="px-4 font-sans text-[11px] py-2 transition-colors"
+                  className="px-3 font-sans text-[11.5px] py-2.5 transition-colors font-semibold"
                   style={{
-                    color: activeTab===id ? '#f97316' : '#4b5563',
+                    color: activeTab===id ? '#f97316' : '#64748b',
                     borderBottom: activeTab===id ? '2px solid #f97316' : '2px solid transparent',
-                    fontWeight: activeTab===id ? 600 : 400,
                     background: 'transparent',
                   }}>
                   {label}
@@ -772,75 +666,22 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
           )}
 
           {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth:'thin', scrollbarColor:'#1e2130 transparent' }}>
-            {problem && activeTab === 'description' && (
-              <div className="px-4 py-4 space-y-5">
-
-                {/* Problem statement paragraphs */}
-                {parsed.paragraphs.length > 0 ? (
-                  <div className="space-y-2.5">
-                    {parsed.paragraphs.map((p, i) => (
-                      <p key={i} className="text-[12px] leading-relaxed" style={{ color:'#9ca3af' }}>
-                        {renderInline(p)}
-                      </p>
-                    ))}
-                  </div>
-                ) : (
-                  /* fallback: render raw description if parser got nothing */
-                  <div className="space-y-2">
-                    {(problem.description || '').split('\n').filter(l => l.trim() && !l.trim().startsWith('```')).map((line, i) => (
-                      <p key={i} className="text-[12px] leading-relaxed" style={{ color:'#9ca3af' }}>
-                        {renderInline(line.trim())}
-                      </p>
-                    ))}
-                  </div>
-                )}
-
-                {/* Examples */}
-                {sampleExamples.map((ex, idx) => (
-                  <div key={idx}>
-                    <p className="text-[11px] font-semibold mb-2" style={{ color:'#e5e7eb' }}>Example {idx+1}:</p>
-                    <div className="rounded-lg overflow-hidden" style={{ border:'1px solid #1a2035', background:'#0d1120' }}>
-                      <div className="px-3.5 py-3 space-y-2.5">
-                        {ex.input && (
-                          <div>
-                            <span className="font-mono text-[10px] font-bold" style={{ color:'#6b7280' }}>Input: </span>
-                            <code className="font-mono text-[11px]" style={{ color:'#e5e7eb' }}>{ex.input.replace(/\\n/g,'\n')}</code>
-                          </div>
-                        )}
-                        {ex.output && (
-                          <div>
-                            <span className="font-mono text-[10px] font-bold" style={{ color:'#6b7280' }}>Output: </span>
-                            <code className="font-mono text-[11px]" style={{ color:'#e5e7eb' }}>{ex.output}</code>
-                          </div>
-                        )}
-                        {ex.explanation && (
-                          <div>
-                            <span className="font-mono text-[10px] font-bold" style={{ color:'#6b7280' }}>Explanation: </span>
-                            <span className="font-mono text-[10.5px]" style={{ color:'#9ca3af' }}>{ex.explanation}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Constraints */}
-                {parsed.constraints.length > 0 && (
-                  <div>
-                    <p className="text-[11px] font-semibold mb-2" style={{ color:'#e5e7eb' }}>Constraints:</p>
-                    <ul className="space-y-1.5">
-                      {parsed.constraints.map((c, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background:'#374151' }}/>
-                          <code className="font-mono text-[10.5px]" style={{ color:'#9ca3af' }}>{renderInline(c)}</code>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+          <div className="flex-1 overflow-y-auto px-4 py-3.5" style={{ scrollbarWidth:'thin', scrollbarColor:'#1e2130 transparent' }}>
+            {loading ? (
+              <div className="space-y-4 pt-2">
+                <div style={{ height: 22, width: '70%', background: '#151929', borderRadius: 4 }}/>
+                <div style={{ height: 16, width: '30%', background: '#151929', borderRadius: 12 }}/>
+                <div className="space-y-2 pt-2">
+                  <div style={{ height: 12, width: '100%', background: '#151929', borderRadius: 4 }}/>
+                  <div style={{ height: 12, width: '90%', background: '#151929', borderRadius: 4 }}/>
+                  <div style={{ height: 12, width: '95%', background: '#151929', borderRadius: 4 }}/>
+                </div>
               </div>
-            )}
+            ) : problem && activeTab === 'description' ? (
+              <LeetCodeProblemView problem={problem} difficulty={difficulty} topic={topic} />
+            ) : !problem ? (
+              <p className="font-mono text-[11px] text-[#6b7280] py-4">No problem found</p>
+            ) : null}
           </div>
         </div>
       )}
