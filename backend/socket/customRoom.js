@@ -93,6 +93,13 @@ function registerCustomRoom(io) {
 
       ;(async () => {
         try {
+          const { rows: hostRows } = await db.query('SELECT avatar_seed, avatar_style FROM users WHERE id = $1', [hostUserId])
+          const { rows: guestRows } = await db.query('SELECT avatar_seed, avatar_style FROM users WHERE id = $1', [userId])
+          const hostSeed = hostRows[0]?.avatar_seed ?? null
+          const hostStyle = hostRows[0]?.avatar_style ?? null
+          const guestSeed = guestRows[0]?.avatar_seed ?? null
+          const guestStyle = guestRows[0]?.avatar_style ?? null
+
           const { rows: problems } = await db.query(
             `SELECT id FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY RANDOM() LIMIT 1`,
             [topic, difficulty]
@@ -113,8 +120,8 @@ function registerCustomRoom(io) {
             dbMatchId,
             isCustom: true,
             players: [
-              { userId: hostUserId, username: hostUsername, rating: hostRating },
-              { userId, username, rating: guestRating },
+              { userId: hostUserId, username: hostUsername, rating: hostRating, avatar_seed: hostSeed, avatar_style: hostStyle },
+              { userId, username, rating: guestRating, avatar_seed: guestSeed, avatar_style: guestStyle },
             ],
           }
 

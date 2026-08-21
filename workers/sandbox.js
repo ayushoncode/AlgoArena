@@ -39,7 +39,7 @@ const { randomBytes } = require('crypto')
 const { buildJavaRunner } = require('./javaRunner')
 
 const DOCKER_IMAGE  = process.env.SANDBOX_IMAGE       || 'algoarena-sandbox'
-const TIMEOUT_MS    = parseInt(process.env.SANDBOX_TIMEOUT_MS, 10) || 5000
+const TIMEOUT_MS    = parseInt(process.env.SANDBOX_TIMEOUT_MS, 10) || 8000
 
 /* ═══════════════════════════════════════════════════════════════════
    RUNNER SCRIPT GENERATORS
@@ -137,27 +137,22 @@ function __serialize(obj) {
 
 // ── Load user solution ──────────────────────────────────────────────
 let solution;
+let src = '';
 try {
-  const src = require('fs').readFileSync('/sandbox/solution.js', 'utf8');
-  const sandbox = {
-    TreeNode,
-    ListNode,
-    console: { log: () => {} }
-  };
-  const fn = new Function('sandbox', \`
-    with(sandbox) {
-      \${src}
-      if (typeof solution === 'function') return solution;
-      if (typeof Solution === 'function') {
-        const inst = new Solution();
-        const methods = Object.getOwnPropertyNames(Solution.prototype).filter(m => m !== 'constructor');
-        if (typeof inst.solution === 'function') return inst.solution.bind(inst);
-        if (methods.length > 0 && typeof inst[methods[0]] === 'function') return inst[methods[0]].bind(inst);
-      }
-      return undefined;
-    }
-  \`);
-  solution = fn(sandbox);
+  src = require('fs').readFileSync('/sandbox/solution.js', 'utf8');
+  const loader = new Function(
+    'TreeNode', 'ListNode', 'exports', 'module', 'console',
+    src + '\\n\\n' +
+    'if (typeof solution === "function") return solution;\\n' +
+    'if (typeof Solution === "function") {\\n' +
+    '  const inst = new Solution();\\n' +
+    '  const methods = Object.getOwnPropertyNames(Solution.prototype).filter(m => m !== "constructor");\\n' +
+    '  if (typeof inst.solution === "function") return inst.solution.bind(inst);\\n' +
+    '  if (methods.length > 0 && typeof inst[methods[0]] === "function") return inst[methods[0]].bind(inst);\\n' +
+    '}\\n' +
+    'return undefined;'
+  );
+  solution = loader(TreeNode, ListNode, {}, {}, { log: () => {} });
   if (typeof solution !== 'function') {
     throw new Error("No function named 'solution' found. Please define: function solution(...) { ... }");
   }
@@ -167,27 +162,43 @@ try {
 }
 
 // ── Run each test case ──────────────────────────────────────────────
-const testCases = ${JSON.stringify(testCases)};
+const testCases = require('/sandbox/test_cases.json');
 const results   = [];
 
-const fnStr = solution.toString();
-const isTreeFn = fnStr.includes('.left') || fnStr.includes('.right') || fnStr.includes('TreeNode') || fnStr.includes('root');
-const isListFn = fnStr.includes('.next') || fnStr.includes('ListNode') || fnStr.includes('head');
+const fnSrc = src.replace(/\\/\\*[\\s\\S]*?\\*\\/|\\/\\/.*/g, '');
+const isTreeFn = fnSrc.includes('.left') || fnSrc.includes('.right') || fnSrc.includes('TreeNode') || fnSrc.includes('root');
+const isListFn = fnSrc.includes('.next') || fnSrc.includes('ListNode') || fnSrc.includes('head');
+
+let paramNames = [];
+try {
+  const match = fnSrc.match(/(?:function\\s+solution|\\bsolution)\\s*\\(([^)]*)\\)/i);
+  if (match && match[1]) {
+    paramNames = match[1].split(',').map(s => s.trim().replace(/^[^a-zA-Z_$]+|[^a-zA-Z0-9_$]+$/g, '').toLowerCase());
+  }
+} catch {}
 
 for (let i = 0; i < testCases.length; i++) {
   const tc    = testCases[i];
   const start = Date.now();
   try {
     const rawArgs = JSON.parse('[' + tc.input + ']');
-    const convertedArgs = rawArgs.map(arg => {
+    const convertedArgs = rawArgs.map((arg, argIdx) => {
       if (Array.isArray(arg)) {
-        if (arg.includes(null) || isTreeFn) return __buildTree(arg);
-        if (isListFn) return __buildList(arg);
+        const pName = paramNames[argIdx] || '';
+        const isTreeParam = ['root', 'p', 'q', 't1', 't2', 'node', 'tree'].includes(pName);
+        const isListParam = ['head', 'l1', 'l2', 'list'].includes(pName);
+        const isArrayParam = ['lists', 'preorder', 'inorder', 'postorder', 'nums', 'arr', 'edges', 'matrix', 'grid', 'words', 'dictionary'].includes(pName);
+
+        if (isTreeParam || arg.includes(null)) return __buildTree(arg);
+        if (isListParam) return __buildList(arg);
+        if (isTreeFn && !isListParam && !isArrayParam) return __buildTree(arg);
+        if (isListFn && !isTreeParam && !isArrayParam) return __buildList(arg);
       }
       return arg;
     });
 
-    const actual = solution(...convertedArgs);
+    const retVal = solution(...convertedArgs);
+    const actual = retVal !== undefined ? retVal : (convertedArgs.length > 0 ? convertedArgs[0] : null);
     const serialized = __serialize(actual);
     results.push({
       index:     i + 1,
@@ -204,7 +215,7 @@ for (let i = 0; i < testCases.length; i++) {
       expected:  tc.output,
       runtimeMs: Date.now() - start,
       isHidden:  tc.is_hidden,
-      error:     e.message,
+      error:     e.stack || e.message,
     });
   }
 }
@@ -219,7 +230,7 @@ process.stdout.write(JSON.stringify({ results }) + '\\n');
  */
 function buildPyRunner(testCases) {
   const escapedTestCases = JSON.stringify(testCases).replace(/\\/g, '\\\\')
-  return `import json, sys, time
+  return `import json, sys, time, inspect, collections, heapq, bisect, math
 from typing import List, Optional, Dict, Set, Tuple
 
 class TreeNode:
@@ -267,14 +278,16 @@ def __build_list(arr):
             curr = curr.next
     return dummy.next
 
-def __serialize(obj):
+def __serialize(obj, expected=''):
     if obj is None:
+        if isinstance(expected, str) and expected.strip() == '[]':
+            return []
         return None
     if isinstance(obj, TreeNode):
         res = []
-        q = [obj]
+        q = collections.deque([obj])
         while q:
-            node = q.pop(0)
+            node = q.popleft()
             if node:
                 res.append(node.val)
                 q.append(node.left)
@@ -305,6 +318,10 @@ try:
         'Dict': Dict,
         'Set': Set,
         'Tuple': Tuple,
+        'collections': collections,
+        'heapq': heapq,
+        'bisect': bisect,
+        'math': math,
     }
     exec(src, ns)
     solution = ns.get('solution')
@@ -323,31 +340,62 @@ except Exception as e:
     sys.exit(0)
 
 # ── Run each test case ──────────────────────────────────────────────
-test_cases = json.loads(r'${escapedTestCases}')
+with open('/sandbox/test_cases.json', 'r') as f:
+    test_cases = json.load(f)
 results    = []
 
 fn_src = src.lower()
 is_tree = 'treenode' in fn_src or '.left' in fn_src or '.right' in fn_src or 'root' in fn_src
 is_list = 'listnode' in fn_src or '.next' in fn_src or 'head' in fn_src
 
+try:
+    sig = inspect.signature(solution)
+    param_list = list(sig.parameters.values())
+    if param_list and param_list[0].name == 'self':
+        param_list = param_list[1:]
+except Exception:
+    param_list = []
+
 for i, tc in enumerate(test_cases):
     start = time.time()
     try:
         raw_args = json.loads('[' + tc['input'] + ']')
         converted_args = []
-        for arg in raw_args:
+        for arg_idx, arg in enumerate(raw_args):
+            p_name = param_list[arg_idx].name.lower() if arg_idx < len(param_list) else ''
+            p_anno = str(param_list[arg_idx].annotation) if arg_idx < len(param_list) else ''
+            is_tree_param = 'treenode' in p_anno.lower() or p_name in ('root', 'p', 'q', 't1', 't2', 'node', 'tree')
+            is_list_param = 'listnode' in p_anno.lower() or p_name in ('head', 'l1', 'l2', 'list')
+            is_array_param = p_name in ('lists', 'preorder', 'inorder', 'postorder', 'nums', 'arr', 'edges', 'matrix', 'grid', 'words', 'dictionary')
+
             if isinstance(arg, list):
-                if None in arg or is_tree:
+                if is_tree_param or None in arg:
                     converted_args.append(__build_tree(arg))
-                elif is_list:
+                elif is_list_param:
+                    if p_name == 'lists' or 'list[' in p_anno.lower():
+                        converted_args.append([__build_list(item) if isinstance(item, list) else item for item in arg])
+                    else:
+                        converted_args.append(__build_list(arg))
+                elif is_tree and not is_list_param and not is_array_param:
+                    converted_args.append(__build_tree(arg))
+                elif is_list and not is_tree_param and not is_array_param:
                     converted_args.append(__build_list(arg))
                 else:
                     converted_args.append(arg)
             else:
                 converted_args.append(arg)
 
-        actual = solution(*converted_args)
-        serialized = __serialize(actual)
+        ret_val = solution(*converted_args)
+        if ret_val is not None:
+            actual = ret_val
+        elif is_list or is_tree:
+            actual = None
+        elif len(converted_args) > 0 and isinstance(converted_args[0], (list, dict)):
+            actual = converted_args[0]
+        else:
+            actual = None
+
+        serialized = __serialize(actual, tc.get('output', ''))
         results.append({
             "index":     i + 1,
             "actual":    json.dumps(serialized),
@@ -372,42 +420,31 @@ print(json.dumps({"results": results}))
 
 /**
  * Build a C++ runner script.
- * Infers arg types from first test case at JS time -> generates one exact dispatch call.
- * Users write:  ReturnType solution(T1 a, T2 b, ...) { ... }  (free function, no class)
  */
-function buildCppRunner(testCases) {
+function buildCppRunner(testCases, code = '') {
   const escapedTestCases = JSON.stringify(testCases)
     .replace(/\\/g, '\\\\')
     .replace(/"/g, '\\"')
 
-  // Infer C++ type from a JSON value
-  function inferCppType(val) {
-    if (Array.isArray(val)) {
-      if (val.length === 0)                        return 'vector<int>'
-      if (typeof val[0] === 'number')
-        return Number.isInteger(val[0]) ? 'vector<long long>' : 'vector<double>'
-      if (typeof val[0] === 'string')              return 'vector<string>'
-      if (Array.isArray(val[0]))                   return 'vector<vector<int>>'
-      return 'vector<int>'
-    }
-    if (typeof val === 'number')  return Number.isInteger(val) ? 'long long' : 'double'
-    if (typeof val === 'string')  return 'string'
-    if (typeof val === 'boolean') return 'bool'
-    return 'int'
-  }
+  const hasClassSolution = /\b(class|struct)\s+Solution\b/.test(code)
+  const classDefine = hasClassSolution ? '#define USE_CLASS_SOLUTION 1\n' : ''
 
-  // Parse first test case args to determine types
-  let argTypes = ['int']
-  try {
-    const parsed = JSON.parse('[' + testCases[0].input + ']')
-    argTypes = parsed.map(inferCppType)
-  } catch { /* keep fallback */ }
-
-  // Generate dispatch call: solution(args[0].get<T0>(), args[1].get<T1>(), ...)
-  const getArgs = argTypes.map((t, i) => `args[${i}].get<${t}>()`).join(', ')
-
-  return `#include <bits/stdc++.h>
+  return `${classDefine}#include <iostream>
+#include <vector>
+#include <string>
+#include <queue>
+#include <stack>
+#include <unordered_map>
+#include <unordered_set>
+#include <map>
+#include <set>
+#include <algorithm>
+#include <numeric>
+#include <climits>
+#include <cmath>
 #include <chrono>
+#include <tuple>
+#include <type_traits>
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 using namespace std;
@@ -429,12 +466,174 @@ struct ListNode {
     ListNode(int x, ListNode *next) : val(x), next(next) {}
 };
 
-// User solution
+inline TreeNode* __build_tree(const json& j) {
+    if (j.is_null() || !j.is_array() || j.empty() || j[0].is_null()) return nullptr;
+    TreeNode* root = new TreeNode(j[0].get<int>());
+    queue<TreeNode*> q;
+    q.push(root);
+    size_t i = 1;
+    while (!q.empty() && i < j.size()) {
+        TreeNode* curr = q.front();
+        q.pop();
+        if (curr) {
+            if (i < j.size()) {
+                if (!j[i].is_null()) {
+                    curr->left = new TreeNode(j[i].get<int>());
+                    q.push(curr->left);
+                }
+                i++;
+            }
+            if (i < j.size()) {
+                if (!j[i].is_null()) {
+                    curr->right = new TreeNode(j[i].get<int>());
+                    q.push(curr->right);
+                }
+                i++;
+            }
+        }
+    }
+    return root;
+}
+
+inline ListNode* __build_list(const json& j) {
+    if (j.is_null() || !j.is_array() || j.empty()) return nullptr;
+    ListNode dummy(0);
+    ListNode* curr = &dummy;
+    for (const auto& item : j) {
+        if (!item.is_null()) {
+            curr->next = new ListNode(item.get<int>());
+            curr = curr->next;
+        }
+    }
+    return dummy.next;
+}
+
+inline json __serialize_tree(TreeNode* root) {
+    if (!root) return json::array();
+    json res = json::array();
+    queue<TreeNode*> q;
+    q.push(root);
+    while (!q.empty()) {
+        TreeNode* curr = q.front();
+        q.pop();
+        if (curr) {
+            res.push_back(curr->val);
+            q.push(curr->left);
+            q.push(curr->right);
+        } else {
+            res.push_back(nullptr);
+        }
+    }
+    while (!res.empty() && res.back().is_null()) {
+        res.erase(res.end() - 1);
+    }
+    return res;
+}
+
+inline json __serialize_list(ListNode* head) {
+    if (!head) return json::array();
+    json res = json::array();
+    ListNode* curr = head;
+    while (curr) {
+        res.push_back(curr->val);
+        curr = curr->next;
+    }
+    return res;
+}
+
+namespace nlohmann {
+    template <>
+    struct adl_serializer<TreeNode*> {
+        static void to_json(json& j, const TreeNode* ptr) {
+            j = __serialize_tree(const_cast<TreeNode*>(ptr));
+        }
+        static void from_json(const json& j, TreeNode*& ptr) {
+            ptr = __build_tree(j);
+        }
+    };
+
+    template <>
+    struct adl_serializer<ListNode*> {
+        static void to_json(json& j, const ListNode* ptr) {
+            j = __serialize_list(const_cast<ListNode*>(ptr));
+        }
+        static void from_json(const json& j, ListNode*& ptr) {
+            ptr = __build_list(j);
+        }
+    };
+}
+
+// User solution included here
 #include "/sandbox/solution.cpp"
+
+template<typename T>
+struct ArgParser {
+    static auto parse(const json& j) -> std::decay_t<T> {
+        using CleanT = std::decay_t<T>;
+        if constexpr (std::is_same_v<CleanT, TreeNode*>) {
+            return __build_tree(j);
+        } else if constexpr (std::is_same_v<CleanT, ListNode*>) {
+            return __build_list(j);
+        } else {
+            return j.get<CleanT>();
+        }
+    }
+};
+
+template<typename F, typename Tuple, size_t... I>
+json make_and_apply(F&& f, const json& args, std::index_sequence<I...>, Tuple*) {
+    auto parsed_tuple = std::make_tuple(ArgParser<std::tuple_element_t<I, Tuple>>::parse(args[I])...);
+    using Ret = decltype(std::apply(std::forward<F>(f), parsed_tuple));
+    if constexpr (std::is_void_v<Ret>) {
+        std::apply(std::forward<F>(f), parsed_tuple);
+        if constexpr (sizeof...(I) > 0) {
+            return json(std::get<0>(parsed_tuple));
+        } else {
+            return json(nullptr);
+        }
+    } else {
+        auto res = std::apply(std::forward<F>(f), parsed_tuple);
+        if constexpr (std::is_same_v<std::decay_t<Ret>, TreeNode*>) {
+            return __serialize_tree(res);
+        } else if constexpr (std::is_same_v<std::decay_t<Ret>, ListNode*>) {
+            return __serialize_list(res);
+        } else {
+            return json(res);
+        }
+    }
+}
+
+template<typename Ret, typename... Args>
+json run_function(Ret(*fn)(Args...), const json& args) {
+    using Tuple = std::tuple<Args...>;
+    return make_and_apply(fn, args, std::index_sequence_for<Args...>{}, static_cast<Tuple*>(nullptr));
+}
+
+template<typename Ret, typename Class, typename... Args>
+json run_function(Ret(Class::*fn)(Args...), Class& inst, const json& args) {
+    using Tuple = std::tuple<Args...>;
+    auto lambda = [&](auto&&... parsedArgs) -> Ret {
+        return (inst.*fn)(std::forward<decltype(parsedArgs)>(parsedArgs)...);
+    };
+    return make_and_apply(lambda, args, std::index_sequence_for<Args...>{}, static_cast<Tuple*>(nullptr));
+}
+
+#include <fstream>
+// Concept Dispatcher
+json dispatch_exec(const json& args) {
+#ifdef USE_CLASS_SOLUTION
+    Solution inst;
+    return run_function(&Solution::solution, inst, args);
+#else
+    return run_function(&solution, args);
+#endif
+}
 
 int main() {
     try {
-        json testCases = json::parse("${escapedTestCases}");
+        ifstream ifs("/sandbox/test_cases.json");
+        json testCases;
+        ifs >> testCases;
         json results   = json::array();
 
         for (size_t i = 0; i < testCases.size(); i++) {
@@ -443,7 +642,7 @@ int main() {
             try {
                 string rawInput = "[" + tc["input"].get<string>() + "]";
                 json   args     = json::parse(rawInput);
-                json   actual   = json(solution(${getArgs}));
+                json   actual   = dispatch_exec(args);
                 int    ms       = (int)chrono::duration_cast<chrono::milliseconds>(
                                     chrono::high_resolution_clock::now() - t0).count();
                 results.push_back({
@@ -478,22 +677,66 @@ int main() {
 
 
 /* buildJavaRunner is imported from ./javaRunner */
-
-
-
 /* ═══════════════════════════════════════════════════════════════════
    OUTPUT COMPARISON
    Flexible but deterministic: handles JSON arrays, numbers, booleans.
  ═══════════════════════════════════════════════════════════════════ */
 function normalizeOutput(val) {
   if (val === undefined || val === null) return 'null'
-  const s = String(val).trim()
+  if (typeof val === 'object') {
+    return JSON.stringify(val)
+  }
+  let s = String(val).trim()
   try {
-    // Re-serialise so whitespace differences don't matter
-    return JSON.stringify(JSON.parse(s))
+    let parsed = JSON.parse(s)
+    while (typeof parsed === 'string' && (parsed.startsWith('[') || parsed.startsWith('{') || (parsed.startsWith('"') && parsed.endsWith('"')))) {
+      try {
+        parsed = JSON.parse(parsed)
+      } catch {
+        break
+      }
+    }
+    return JSON.stringify(parsed)
   } catch {
     return s
   }
+}
+
+function canonicalizeVal(v) {
+  if (v === null || v === undefined) return null
+  if (typeof v === 'number') {
+    return Math.round(v * 1e5) / 1e5
+  }
+  if (typeof v === 'string') {
+    return stripQuotes(v)
+  }
+  if (Array.isArray(v)) {
+    const mapped = v.map(canonicalizeVal)
+    return mapped.sort((x, y) => JSON.stringify(x).localeCompare(JSON.stringify(y)))
+  }
+  if (typeof v === 'object') {
+    const sortedObj = {}
+    Object.keys(v).sort().forEach(k => {
+      sortedObj[k] = canonicalizeVal(v[k])
+    })
+    return sortedObj
+  }
+  return v
+}
+
+function stripQuotes(str) {
+  if (str === null || str === undefined) return ''
+  let s = String(str).trim()
+  while ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith('\\"') && s.endsWith('\\"'))) {
+    if (s.startsWith('\\"') && s.endsWith('\\"') && s.length >= 4) {
+      s = s.slice(2, -2).trim()
+    } else if (s.startsWith('"') && s.endsWith('"') && s.length >= 2) {
+      s = s.slice(1, -1).trim()
+    } else {
+      break
+    }
+  }
+  return s.replace(/\\"/g, '"').replace(/\\\\/g, '\\')
 }
 
 function compareOutputs(actual, expected) {
@@ -504,15 +747,16 @@ function compareOutputs(actual, expected) {
   // Empty collection / null equivalency (for linked lists / trees / optional lists)
   if ((a === 'null' && (e === '[]' || e === 'null')) || (a === '[]' && (e === 'null' || e === '[]'))) return true
 
-  // Array sort-insensitive comparison (e.g. Two Sum: [0,1] and [1,0] both valid)
+  // Deep string match ignoring quotes and JSON escape levels
+  if (stripQuotes(actual) === stripQuotes(expected)) return true
+
+  // Canonical unordered & floating comparison (e.g. 3Sum, Subsets, Word Break II, etc.)
   try {
     const pa = JSON.parse(a)
     const pe = JSON.parse(e)
-    if (Array.isArray(pa) && Array.isArray(pe) && pa.length === pe.length) {
-      const sortedA = [...pa].sort((x, y) => JSON.stringify(x).localeCompare(JSON.stringify(y)))
-      const sortedE = [...pe].sort((x, y) => JSON.stringify(x).localeCompare(JSON.stringify(y)))
-      if (JSON.stringify(sortedA) === JSON.stringify(sortedE)) return true
-    }
+    const ca = JSON.stringify(canonicalizeVal(pa))
+    const ce = JSON.stringify(canonicalizeVal(pe))
+    if (ca === ce) return true
   } catch { /* not JSON */ }
   return false
 }
@@ -595,7 +839,7 @@ function makeErrorResult(verdict, testCases, errorMsg, runtimeMs) {
  * @param   {Array}   testCases  [{ input, output, is_hidden }, ...]
  * @returns {Promise<{verdict, totalTests, passedTests, runtimeMs, testResults}>}
  */
-async function runSandbox({ code, language, testCases }) {
+async function runSandbox({ code, language, testCases, timeLimitMs }) {
   const jobId  = randomBytes(8).toString('hex')
   const tmpDir = path.join(os.tmpdir(), `aa-${jobId}`)
 
@@ -612,8 +856,8 @@ async function runSandbox({ code, language, testCases }) {
   } else if (lang === 'cpp' || lang === 'c++') {
     codeFile      = 'solution.cpp'
     runnerFile    = 'runner.cpp'
-    runnerContent = buildCppRunner(testCases)
-    dockerExecCmd = ['sh', '-c', 'g++ -O0 -std=c++17 /sandbox/runner.cpp -o /tmp/runner && /tmp/runner']
+    runnerContent = buildCppRunner(testCases, code)
+    dockerExecCmd = ['sh', '-c', 'g++ -O0 -std=c++20 /sandbox/runner.cpp -o /tmp/runner && /tmp/runner']
   } else if (lang === 'java') {
     codeFile      = 'Solution.java'
     runnerFile    = 'Runner.java'
@@ -626,10 +870,17 @@ async function runSandbox({ code, language, testCases }) {
     dockerExecCmd = ['node', '/sandbox/runner.js']
   }
 
+  let userCodeToWrite = code
+  if (lang === 'java') {
+    const javaImports = 'import java.util.*;\nimport java.util.stream.*;\nimport java.lang.reflect.*;\n'
+    userCodeToWrite = code.includes('import java.util') ? (code.includes('import java.lang.reflect') ? code : ('import java.lang.reflect.*;\n' + code)) : (javaImports + code)
+  }
+
   try {
     // ── Write user code and runner to temp dir ─────────────────
-    fs.writeFileSync(path.join(tmpDir, codeFile),   code,          'utf8')
-    fs.writeFileSync(path.join(tmpDir, runnerFile), runnerContent, 'utf8')
+    fs.writeFileSync(path.join(tmpDir, codeFile),   userCodeToWrite, 'utf8')
+    fs.writeFileSync(path.join(tmpDir, runnerFile), runnerContent,   'utf8')
+    fs.writeFileSync(path.join(tmpDir, 'test_cases.json'), JSON.stringify(testCases), 'utf8')
 
     // ── docker run with all security flags ─────────────────────
     const dockerArgs = [
@@ -648,17 +899,18 @@ async function runSandbox({ code, language, testCases }) {
       ...dockerExecCmd,
     ]
 
+    const timeout = timeLimitMs ? Math.max(TIMEOUT_MS, timeLimitMs) : TIMEOUT_MS
     const startTime = Date.now()
 
     let stdout
     let isDockerUnavailable = false
 
     try {
-      stdout = await spawnWithTimeout('docker', dockerArgs, TIMEOUT_MS)
+      stdout = await spawnWithTimeout('docker', dockerArgs, timeout)
     } catch (err) {
       if (err.timedOut) {
         return makeErrorResult('TIME_LIMIT_EXCEEDED', testCases,
-          `Time limit exceeded (${TIMEOUT_MS}ms)`, TIMEOUT_MS)
+          `Time limit exceeded (${timeout}ms)`, timeout)
       }
       const msg = String(err.message || err.stderr || '')
       if (
