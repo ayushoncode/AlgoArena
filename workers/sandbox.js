@@ -163,7 +163,6 @@ try {
 
 // ── Run each test case ──────────────────────────────────────────────
 const testCases = require('/sandbox/test_cases.json');
-const results   = [];
 
 const fnSrc = src.replace(/\\/\\*[\\s\\S]*?\\*\\/|\\/\\/.*/g, '');
 const isTreeFn = fnSrc.includes('.left') || fnSrc.includes('.right') || fnSrc.includes('TreeNode') || fnSrc.includes('root');
@@ -180,6 +179,8 @@ try {
 for (let i = 0; i < testCases.length; i++) {
   const tc    = testCases[i];
   const start = Date.now();
+  let resultObj = null;
+  
   try {
     const rawArgs = JSON.parse('[' + tc.input + ']');
     const convertedArgs = rawArgs.map((arg, argIdx) => {
@@ -200,27 +201,27 @@ for (let i = 0; i < testCases.length; i++) {
     const retVal = solution(...convertedArgs);
     const actual = retVal !== undefined ? retVal : (convertedArgs.length > 0 ? convertedArgs[0] : null);
     const serialized = __serialize(actual);
-    results.push({
+    
+    resultObj = {
       index:     i + 1,
       actual:    JSON.stringify(serialized !== undefined ? serialized : null),
       expected:  tc.output,
       runtimeMs: Date.now() - start,
       isHidden:  tc.is_hidden,
       error:     null,
-    });
+    };
   } catch (e) {
-    results.push({
+    resultObj = {
       index:     i + 1,
       actual:    null,
       expected:  tc.output,
       runtimeMs: Date.now() - start,
       isHidden:  tc.is_hidden,
       error:     e.stack || e.message,
-    });
+    };
   }
+  process.stdout.write(JSON.stringify(resultObj) + '\\n');
 }
-
-process.stdout.write(JSON.stringify({ results }) + '\\n');
 `
 }
 
@@ -342,7 +343,6 @@ except Exception as e:
 # ── Run each test case ──────────────────────────────────────────────
 with open('/sandbox/test_cases.json', 'r') as f:
     test_cases = json.load(f)
-results    = []
 
 fn_src = src.lower()
 is_tree = 'treenode' in fn_src or '.left' in fn_src or '.right' in fn_src or 'root' in fn_src
@@ -396,25 +396,27 @@ for i, tc in enumerate(test_cases):
             actual = None
 
         serialized = __serialize(actual, tc.get('output', ''))
-        results.append({
+        res_obj = {
             "index":     i + 1,
             "actual":    json.dumps(serialized),
             "expected":  tc['output'],
             "runtimeMs": int((time.time() - start) * 1000),
             "isHidden":  tc['is_hidden'],
             "error":     None,
-        })
+        }
+        print(json.dumps(res_obj))
+        sys.stdout.flush()
     except Exception as e:
-        results.append({
+        res_obj = {
             "index":     i + 1,
             "actual":    None,
             "expected":  tc['output'],
             "runtimeMs": int((time.time() - start) * 1000),
             "isHidden":  tc['is_hidden'],
             "error":     str(e),
-        })
-
-print(json.dumps({"results": results}))
+        }
+        print(json.dumps(res_obj))
+        sys.stdout.flush()
 `
 }
 
@@ -634,7 +636,6 @@ int main() {
         ifstream ifs("/sandbox/test_cases.json");
         json testCases;
         ifs >> testCases;
-        json results   = json::array();
 
         for (size_t i = 0; i < testCases.size(); i++) {
             auto& tc = testCases[i];
@@ -645,30 +646,31 @@ int main() {
                 json   actual   = dispatch_exec(args);
                 int    ms       = (int)chrono::duration_cast<chrono::milliseconds>(
                                     chrono::high_resolution_clock::now() - t0).count();
-                results.push_back({
+                json res_obj = {
                     {"index",    (int)(i+1)},
                     {"actual",   actual.dump()},
                     {"expected", tc["output"]},
                     {"runtimeMs", ms},
                     {"isHidden", tc["is_hidden"]},
                     {"error",    nullptr}
-                });
+                };
+                cout << res_obj.dump() << endl;
             } catch (const exception& e) {
                 int ms = (int)chrono::duration_cast<chrono::milliseconds>(
                             chrono::high_resolution_clock::now() - t0).count();
-                results.push_back({
+                json res_obj = {
                     {"index",    (int)(i+1)},
                     {"actual",   nullptr},
                     {"expected", tc["output"]},
                     {"runtimeMs", ms},
                     {"isHidden", tc["is_hidden"]},
                     {"error",    e.what()}
-                });
+                };
+                cout << res_obj.dump() << endl;
             }
         }
-        cout << json({{"results", results}}).dump() << endl;
     } catch (const exception& e) {
-        cout << json({{"fatal", e.what()},{"results",json::array()}}).dump() << endl;
+        cout << json({{"fatal", e.what()}}).dump() << endl;
     }
     return 0;
 }
@@ -769,8 +771,19 @@ function spawnWithTimeout(cmd, args, timeoutMs, opts = {}) {
     const proc       = spawn(cmd, args, opts)
     const stdoutBufs = []
     const stderrBufs = []
+    let leftover = ''
 
-    proc.stdout.on('data', d => stdoutBufs.push(d))
+    proc.stdout.on('data', d => {
+      stdoutBufs.push(d)
+      if (typeof opts.onStdoutLine === 'function') {
+        leftover += d.toString('utf8')
+        const lines = leftover.split('\n')
+        leftover = lines.pop()
+        for (const line of lines) {
+          if (line.trim()) opts.onStdoutLine(line.trim())
+        }
+      }
+    })
     proc.stderr.on('data', d => stderrBufs.push(d))
 
     let killed = false
@@ -839,7 +852,7 @@ function makeErrorResult(verdict, testCases, errorMsg, runtimeMs) {
  * @param   {Array}   testCases  [{ input, output, is_hidden }, ...]
  * @returns {Promise<{verdict, totalTests, passedTests, runtimeMs, testResults}>}
  */
-async function runSandbox({ code, language, testCases, timeLimitMs }) {
+async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }) {
   const jobId  = randomBytes(8).toString('hex')
   const tmpDir = path.join(os.tmpdir(), `aa-${jobId}`)
 
@@ -905,8 +918,48 @@ async function runSandbox({ code, language, testCases, timeLimitMs }) {
     let stdout
     let isDockerUnavailable = false
 
+    let overallVerdict = 'ACCEPTED'
+    let passedCount    = 0
+    const testResults  = []
+    let fatalError     = null
+
+    const onStdoutLine = (line) => {
+      try {
+        const r = JSON.parse(line)
+        if (r.fatal) {
+          fatalError = r.fatal
+          return
+        }
+        if (r.index !== undefined) {
+          const passed = !r.error && compareOutputs(r.actual, r.expected)
+          if (passed) {
+            passedCount++
+          } else if (overallVerdict === 'ACCEPTED') {
+            overallVerdict = r.error ? 'RUNTIME_ERROR' : 'WRONG_ANSWER'
+          }
+          const tr = {
+            testIndex: r.index,
+            passed,
+            input:     r.isHidden ? '[Hidden]'                         : (testCases[r.index - 1]?.input  ?? ''),
+            expected:  r.isHidden ? '[Hidden]'                         : r.expected,
+            actual:    r.isHidden ? (passed ? '[Passed]' : '[Failed]') : (r.actual ?? '[null]'),
+            error:     r.error    || null,
+            isHidden:  r.isHidden,
+            runtimeMs: r.runtimeMs || 0,
+            totalTests: testCases.length,
+          }
+          testResults.push(tr)
+          if (typeof onProgress === 'function') {
+            onProgress(tr)
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
     try {
-      stdout = await spawnWithTimeout('docker', dockerArgs, timeout)
+      stdout = await spawnWithTimeout('docker', dockerArgs, timeout, { onStdoutLine })
     } catch (err) {
       if (err.timedOut) {
         return makeErrorResult('TIME_LIMIT_EXCEEDED', testCases,
@@ -930,9 +983,9 @@ async function runSandbox({ code, language, testCases, timeLimitMs }) {
     if (isDockerUnavailable) {
       // Fallback: direct runner execution (e.g. inside Railway / cloud container without host Docker socket)
       const localCmd = dockerExecCmd[0]
-      const localArgs = dockerExecCmd.slice(1).map(arg => arg.replace(/\/sandbox/g, tmpDir))
+      const localArgs = dockerExecCmd.slice(1).map(arg => arg.replace(new RegExp('/sandbox', 'g'), tmpDir))
       try {
-        stdout = await spawnWithTimeout(localCmd, localArgs, TIMEOUT_MS, { cwd: tmpDir })
+        stdout = await spawnWithTimeout(localCmd, localArgs, TIMEOUT_MS, { cwd: tmpDir, onStdoutLine })
       } catch (err) {
         if (err.timedOut) {
           return makeErrorResult('TIME_LIMIT_EXCEEDED', testCases,
@@ -944,47 +997,12 @@ async function runSandbox({ code, language, testCases, timeLimitMs }) {
 
     const totalRuntimeMs = Date.now() - startTime
 
-    // ── Parse runner JSON output ───────────────────────────────
-    let parsed
-    try {
-      // Take the last non-empty line (runner always ends with one JSON blob)
-      const lastLine = stdout.trim().split('\n').filter(Boolean).pop() || '{}'
-      parsed = JSON.parse(lastLine)
-    } catch {
-      return makeErrorResult('RUNTIME_ERROR', testCases,
-        'Failed to parse sandbox output — runner crashed', totalRuntimeMs)
+    if (fatalError) {
+      return makeErrorResult('RUNTIME_ERROR', testCases, fatalError, totalRuntimeMs)
     }
-
-    if (parsed.fatal) {
-      return makeErrorResult('RUNTIME_ERROR', testCases, parsed.fatal, totalRuntimeMs)
-    }
-
-    // ── Evaluate each test case ────────────────────────────────
-    const rawResults = parsed.results || []
-    let overallVerdict = 'ACCEPTED'
-    let passedCount    = 0
-
-    const testResults = rawResults.map(r => {
-      const passed = !r.error && compareOutputs(r.actual, r.expected)
-      if (passed) {
-        passedCount++
-      } else if (overallVerdict === 'ACCEPTED') {
-        overallVerdict = r.error ? 'RUNTIME_ERROR' : 'WRONG_ANSWER'
-      }
-      return {
-        testIndex: r.index,
-        passed,
-        input:     r.isHidden ? '[Hidden]'                         : (testCases[r.index - 1]?.input  ?? ''),
-        expected:  r.isHidden ? '[Hidden]'                         : r.expected,
-        actual:    r.isHidden ? (passed ? '[Passed]' : '[Failed]') : (r.actual ?? '[null]'),
-        error:     r.error    || null,
-        isHidden:  r.isHidden,
-        runtimeMs: r.runtimeMs || 0,
-      }
-    })
 
     // Fill remaining tests if runner exited early (crash mid-loop)
-    for (let i = rawResults.length; i < testCases.length; i++) {
+    for (let i = testResults.length; i < testCases.length; i++) {
       if (overallVerdict === 'ACCEPTED') overallVerdict = 'RUNTIME_ERROR'
       testResults.push({
         testIndex: i + 1,

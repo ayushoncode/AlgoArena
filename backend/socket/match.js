@@ -326,7 +326,18 @@ function registerMatch(io) {
       }
 
       // ── Real Code Judge Evaluation ───────────────────────
-      const judgeResult = await evaluateSubmission(targetProblemId, code, language)
+      const judgeResult = await evaluateSubmission(targetProblemId, code, language, {
+        onProgress: (tr) => {
+          console.log(`[Progress] Emit to frontend: testIndex=${tr.testIndex}, totalTests=${tr.totalTests}, passed=${tr.passed}`)
+          io.to(roomId).emit('submission_progress', {
+            userId,
+            username,
+            testIndex: tr.testIndex,
+            passed: tr.passed,
+            totalTests: tr.totalTests
+          })
+        }
+      })
       const verdict = judgeResult.verdict
 
       match.submissions.set(userId, verdict)
@@ -422,8 +433,9 @@ function registerMatch(io) {
     })
 
     /* ── Disconnect & Forfeit Recovery ───────────────────── */
-    socket.on('disconnect', (reason) => {
+    socket.on('disconnecting', (reason) => {
       for (const [roomId, match] of activeMatches.entries()) {
+        if (!socket.rooms.has(roomId)) continue
         const isParticipant = match.players?.some(p => p.userId === userId)
         if (!isParticipant) continue
 
@@ -502,7 +514,18 @@ function registerMatch(io) {
 
 /* ── Called by verdictSubscriber for Docker sandbox verdicts ─── */
 async function handleVerdict(payload, io) {
-  const { roomId, userId, username, verdict, totalTests, passedTests, testResults, runtimeMs } = payload
+  const { type, roomId, userId, username, verdict, totalTests, passedTests, testResults, runtimeMs, testIndex, passed } = payload
+
+  if (type === 'progress') {
+    io.to(roomId).emit('submission_progress', {
+      userId,
+      username,
+      testIndex,
+      passed,
+      totalTests
+    })
+    return
+  }
 
   // Broadcast to the match room
   io.to(roomId).emit('submission_result', {
