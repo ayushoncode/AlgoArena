@@ -437,30 +437,51 @@ const LANGS = [
 /* ════════════════════════════════════════════════
    VERDICT BADGE
 ════════════════════════════════════════════════ */
-function VerdictBadge({ verdict }) {
+function VerdictBadge({ verdict, progress }) {
   if (!verdict) return null
+
   const cfg = {
-    ACCEPTED:             { col: '#10b981', bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.3)',  label: 'ACCEPTED ✓' },
-    WRONG_ANSWER:         { col: '#f43f5e', bg: 'rgba(244,63,94,0.12)',   border: 'rgba(244,63,94,0.3)',   label: 'WRONG ANSWER ✗' },
-    TIME_LIMIT_EXCEEDED:  { col: '#f59e0b', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.3)',  label: 'TIME LIMIT' },
-    RUNTIME_ERROR:        { col: '#f43f5e', bg: 'rgba(244,63,94,0.12)',   border: 'rgba(244,63,94,0.3)',   label: 'RUNTIME ERROR' },
+    ACCEPTED:             { col: '#10b981', bg: 'rgba(16,185,129,0.15)',  border: 'rgba(16,185,129,0.3)', label: 'ACCEPTED' },
+    WRONG_ANSWER:         { col: '#f43f5e', bg: 'rgba(244,63,94,0.15)',   border: 'rgba(244,63,94,0.3)',  label: 'WRONG ANSWER' },
+    RUNTIME_ERROR:        { col: '#f43f5e', bg: 'rgba(244,63,94,0.15)',   border: 'rgba(244,63,94,0.3)',  label: 'RUNTIME ERROR' },
+    TIME_LIMIT_EXCEEDED:  { col: '#f59e0b', bg: 'rgba(245,158,11,0.15)',  border: 'rgba(245,158,11,0.3)', label: 'TIME LIMIT' },
     PENDING:              { col: '#6b7280', bg: 'rgba(107,114,128,0.12)', border: 'rgba(107,114,128,0.3)', label: 'JUDGING...' },
   }
   const v = cfg[verdict] ?? cfg.PENDING
+
+  const displayLabel = verdict === 'PENDING' && progress 
+    ? `JUDGING (${progress.testIndex}/${progress.totalTests})` 
+    : v.label
+
   return (
     <span className="font-mono text-[11px] font-bold px-3 py-1.5 verdict-in"
           style={{ background: v.bg, color: v.col, border: `1px solid ${v.border}`, borderRadius: 3 }}>
-      {v.label}
+      {displayLabel}
     </span>
   )
 }
+
 /* ════════════════════════════════════════════════
    RESULTS DRAWER — LeetCode style (Run + Submit)
-════════════════════════════════════════════════ */
-function ResultsDrawer({ runResult, submitResult, onClose }) {
-  const [tab, setTab] = useState('run')
-  const details = tab === 'run' ? runResult : submitResult
-  if (!runResult && !submitResult) return null
+ ════════════════════════════════════════════════ */
+function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, onClose }) {
+  const [tab, setTab] = useState(submitting || submitResult ? 'submit' : 'run')
+
+  useEffect(() => {
+    if (submitting) setTab('submit')
+  }, [submitting])
+
+  useEffect(() => {
+    if (submitResult) setTab('submit')
+  }, [submitResult])
+
+  useEffect(() => {
+    if (runResult && !submitting && !submitResult) setTab('run')
+  }, [runResult, submitting, submitResult])
+
+  if (!runResult && !submitResult && !submitting) return null
+
+  const isLiveJudging = submitting && tab === 'submit'
 
   const verdictCfg = {
     ACCEPTED:            { col: '#10b981', label: 'Accepted ✓' },
@@ -470,12 +491,17 @@ function ResultsDrawer({ runResult, submitResult, onClose }) {
     PENDING:             { col: '#6b7280', label: 'Judging…' },
   }
 
+  const details = tab === 'run' ? runResult : submitResult
   const vc = verdictCfg[details?.verdict] ?? verdictCfg.PENDING
   const passed = details?.passedTests ?? 0
   const total  = details?.totalTests ?? 0
 
+  const currentTest = submitProgress?.testIndex || 1
+  const totalTestsCount = submitProgress?.totalTests || total || 0
+  const progressPercent = totalTestsCount > 0 ? Math.min(100, Math.round((currentTest / totalTestsCount) * 100)) : 15
+
   return (
-    <div className="shrink-0 border-t" style={{ background: '#0a0c14', borderColor: '#1e2130', maxHeight: 240, display:'flex', flexDirection:'column' }}>
+    <div className="shrink-0 border-t" style={{ background: '#0a0c14', borderColor: '#1e2130', maxHeight: 250, display:'flex', flexDirection:'column' }}>
       {/* Header bar */}
       <div className="flex items-center justify-between px-3 py-1.5 shrink-0" style={{ background: '#07080c', borderBottom: '1px solid #1e2130' }}>
         <div className="flex items-center gap-1">
@@ -487,20 +513,26 @@ function ResultsDrawer({ runResult, submitResult, onClose }) {
               ▶ Run
             </button>
           )}
-          {submitResult && (
+          {(submitResult || submitting) && (
             <button onClick={() => setTab('submit')}
-              className="font-mono text-[10px] px-2.5 py-1 transition-all"
+              className="font-mono text-[10px] px-2.5 py-1 transition-all flex items-center gap-1.5"
               style={{ borderRadius:3, background: tab==='submit' ? '#1e2130' : 'transparent',
                        color: tab==='submit' ? '#dde1ea' : '#4b5563', border:`1px solid ${tab==='submit'?'#374151':'transparent'}` }}>
-              ⬆ Submit
+              {isLiveJudging && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />}
+              ⬆ Submit {isLiveJudging ? `(${currentTest}/${totalTestsCount || '...'})` : ''}
             </button>
           )}
         </div>
         <div className="flex items-center gap-3">
-          {details && (
+          {isLiveJudging ? (
+            <span className="font-mono text-[10px] font-bold flex items-center gap-1.5" style={{ color: '#10b981' }}>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Judging ({currentTest}/${totalTestsCount || '...'})
+            </span>
+          ) : details && (
             <span className="font-mono text-[10px] font-bold" style={{ color: vc.col }}>{vc.label}</span>
           )}
-          {details && total > 0 && (
+          {!isLiveJudging && details && total > 0 && (
             <span className="font-mono text-[9px]" style={{ color: '#9ca3af' }}>
               {passed}/{total} cases · {details.runtimeMs || 0}ms
             </span>
@@ -509,58 +541,88 @@ function ResultsDrawer({ runResult, submitResult, onClose }) {
         </div>
       </div>
 
-      {/* Test case list */}
-      <div className="flex-1 overflow-y-auto p-2.5 space-y-2" style={{ scrollbarWidth:'thin' }}>
-        {details?.testResults?.map((tc, idx) => {
-          const isHiddenFailed = tc.isHidden && !tc.passed
-          const borderCol = tc.passed ? 'rgba(16,185,129,0.25)' : tc.error ? 'rgba(244,63,94,0.35)' : 'rgba(245,158,11,0.3)'
-          return (
-            <div key={idx} className="rounded overflow-hidden" style={{ border:`1px solid ${borderCol}`, background:'#0d0f17' }}>
-              {/* Row header */}
-              <div className="flex items-center justify-between px-3 py-1.5" style={{ background: tc.passed ? 'rgba(16,185,129,0.06)' : 'rgba(244,63,94,0.06)' }}>
-                <span className="font-mono text-[10px] font-bold" style={{ color: tc.passed ? '#10b981' : '#f43f5e' }}>
-                  {tc.passed ? '✓' : '✗'} Test {tc.testIndex}{tc.isHidden ? ' (Hidden)' : ''}
-                </span>
-                {tc.runtimeMs > 0 && <span className="font-mono text-[9px]" style={{ color:'#4b5563' }}>{tc.runtimeMs}ms</span>}
-              </div>
-
-              {/* Test content */}
-              {!isHiddenFailed && !tc.isHidden && (
-                <div className="px-3 py-2 space-y-1.5">
-                  <div className="font-mono text-[10px]">
-                    <span style={{ color:'#4b5563' }}>Input  </span>
-                    <code style={{ color:'#22d3ee' }}>{tc.input}</code>
-                  </div>
-                  <div className="font-mono text-[10px]">
-                    <span style={{ color:'#4b5563' }}>Expected </span>
-                    <code style={{ color:'#10b981' }}>{tc.expected}</code>
-                  </div>
-                  {!tc.passed && (
-                    <div className="font-mono text-[10px]">
-                      <span style={{ color:'#4b5563' }}>Got  </span>
-                      <code style={{ color: tc.error ? '#f43f5e' : '#f59e0b' }}>
-                        {tc.error ? tc.error.slice(0, 120) : (tc.actual ?? 'null')}
-                      </code>
-                    </div>
-                  )}
-                </div>
-              )}
-              {isHiddenFailed && (
-                <div className="px-3 py-2 font-mono text-[10px]" style={{ color:'#6b7280' }}>
-                  {tc.error ? `Error: ${tc.error.slice(0, 100)}` : 'Output does not match expected'}
-                </div>
-              )}
+      {/* Live Judging Progress Bar (LeetCode Style) */}
+      {isLiveJudging ? (
+        <div className="flex-1 flex flex-col justify-center px-6 py-4 space-y-3">
+          <div className="flex items-center justify-between font-mono text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-emerald-400">Evaluating Test Cases...</span>
+              <span className="text-gray-400 text-[11px]">Passing {currentTest} of {totalTestsCount || '...'}</span>
             </div>
-          )
-        })}
-      </div>
+            <span className="text-emerald-400 font-bold tabular-nums">{progressPercent}%</span>
+          </div>
+
+          <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background: '#1e2130', border: '1px solid #2e3346' }}>
+            <div
+              className="h-full rounded-full transition-all duration-150 ease-out"
+              style={{
+                width: `${progressPercent}%`,
+                background: 'linear-gradient(90deg, #10b981, #22d3ee)',
+                boxShadow: '0 0 10px rgba(34, 211, 238, 0.4)'
+              }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-[10px] font-mono text-gray-500">
+            <span>Running isolated test container...</span>
+            <span className="text-cyan-400/80">Test #{currentTest} active</span>
+          </div>
+        </div>
+      ) : (
+        /* Test case list */
+        <div className="flex-1 overflow-y-auto p-2.5 space-y-2" style={{ scrollbarWidth:'thin' }}>
+          {details?.testResults?.map((tc, idx) => {
+            const isHiddenFailed = tc.isHidden && !tc.passed
+            const borderCol = tc.passed ? 'rgba(16,185,129,0.25)' : tc.error ? 'rgba(244,63,94,0.35)' : 'rgba(245,158,11,0.3)'
+            return (
+              <div key={idx} className="rounded overflow-hidden" style={{ border:`1px solid ${borderCol}`, background:'#0d0f17' }}>
+                {/* Row header */}
+                <div className="flex items-center justify-between px-3 py-1.5" style={{ background: tc.passed ? 'rgba(16,185,129,0.06)' : 'rgba(244,63,94,0.06)' }}>
+                  <span className="font-mono text-[10px] font-bold" style={{ color: tc.passed ? '#10b981' : '#f43f5e' }}>
+                    {tc.passed ? '✓' : '✗'} Test {tc.testIndex}{tc.isHidden ? ' (Hidden)' : ''}
+                  </span>
+                  {tc.runtimeMs > 0 && <span className="font-mono text-[9px]" style={{ color:'#4b5563' }}>{tc.runtimeMs}ms</span>}
+                </div>
+
+                {/* Test content */}
+                {!isHiddenFailed && !tc.isHidden && (
+                  <div className="px-3 py-2 space-y-1.5">
+                    <div className="font-mono text-[10px]">
+                      <span style={{ color:'#4b5563' }}>Input  </span>
+                      <code style={{ color:'#22d3ee' }}>{typeof tc.input === 'object' ? JSON.stringify(tc.input) : String(tc.input ?? '')}</code>
+                    </div>
+                    <div className="font-mono text-[10px]">
+                      <span style={{ color:'#4b5563' }}>Expected </span>
+                      <code style={{ color:'#10b981' }}>{typeof tc.expected === 'object' ? JSON.stringify(tc.expected) : String(tc.expected ?? '')}</code>
+                    </div>
+                    {!tc.passed && (
+                      <div className="font-mono text-[10px]">
+                        <span style={{ color:'#4b5563' }}>Got  </span>
+                        <code style={{ color: tc.error ? '#f43f5e' : '#f59e0b' }}>
+                          {tc.error ? tc.error.slice(0, 120) : (typeof tc.actual === 'object' ? JSON.stringify(tc.actual) : String(tc.actual ?? 'null'))}
+                        </code>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {isHiddenFailed && (
+                  <div className="px-3 py-2 font-mono text-[10px]" style={{ color:'#6b7280' }}>
+                    {tc.error ? `Error: ${tc.error.slice(0, 100)}` : 'Output does not match expected'}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
 /* ════════════════════════════════════════════════
    PLAYER PANEL HEADER
 ════════════════════════════════════════════════ */
-function PlayerHeader({ player, isMe, verdict }) {
+function PlayerHeader({ player, isMe, verdict, progress }) {
+  if (!player) return null
   return (
     <div className="flex items-center justify-between px-4 py-2.5"
          style={{ background: '#07080c', borderBottom: '1px solid #1e2130' }}>
@@ -573,7 +635,7 @@ function PlayerHeader({ player, isMe, verdict }) {
         <span className="font-mono text-[10px]" style={{ color: '#4b5563' }}>{player?.rating ?? 1200}</span>
         {isMe && <span className="font-mono text-[9px] px-1.5 py-0.5" style={{ background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.2)', borderRadius: 2 }}>you</span>}
       </div>
-      <VerdictBadge verdict={verdict} />
+      <VerdictBadge verdict={verdict} progress={progress} />
     </div>
   )
 }
@@ -595,19 +657,37 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
     } else if (topic) {
       url = `/api/problems?topic=${topic}&difficulty=${difficulty || 'medium'}`
     } else {
-      return
+      url = `/api/problems`
     }
 
     setLoading(true)
     api.get(url)
       .then(({ data }) => {
-        const prob = Array.isArray(data) ? data[0] : data
+        let prob = Array.isArray(data) ? data[0] : data
         if (prob) {
           setProblem(prob)
           if (onProblemLoaded) onProblemLoaded(prob)
+        } else {
+          // Fallback if specific query returns empty
+          return api.get('/api/problems').then(({ data: allProbs }) => {
+            const fallback = Array.isArray(allProbs) ? allProbs[0] : allProbs
+            if (fallback) {
+              setProblem(fallback)
+              if (onProblemLoaded) onProblemLoaded(fallback)
+            }
+          })
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        // Safe network fallback
+        api.get('/api/problems').then(({ data: allProbs }) => {
+          const fallback = Array.isArray(allProbs) ? allProbs[0] : allProbs
+          if (fallback) {
+            setProblem(fallback)
+            if (onProblemLoaded) onProblemLoaded(fallback)
+          }
+        }).catch(() => {})
+      })
       .finally(() => setLoading(false))
   }, [problemId, topic, difficulty])
 
@@ -819,6 +899,7 @@ export default function Match() {
   const [oppVerdict,         setOppVerdict]         = useState(null)
   const [runResult,          setRunResult]          = useState(null)
   const [submitResult,       setSubmitResult]       = useState(null)
+  const [submitProgress,     setSubmitProgress]     = useState(null)
   const [oppDisconnectState, setOppDisconnectState] = useState(null)
   const [oppProgress,        setOppProgress]        = useState(null)
   const [showResignModal,    setShowResignModal]    = useState(false)
@@ -845,9 +926,17 @@ export default function Match() {
       if (userId === user?.id) {
         setMyVerdict(verdict)
         setSubmitting(false)
+        setSubmitProgress(null)
         setSubmitResult({ verdict, totalTests, passedTests, testResults, runtimeMs })
       } else {
         setOppVerdict(verdict)
+      }
+    }
+    function onSubmissionProgress({ userId, testIndex, passed, totalTests }) {
+      if (userId === user?.id) {
+        setSubmitProgress({ testIndex, passed, totalTests })
+      } else {
+        setOppProgress(prev => ({ ...prev, testIndex, passed, totalTests }))
       }
     }
     function onMatchEnd(payload) {
@@ -875,24 +964,31 @@ export default function Match() {
         setOppProgress(data)
       }
     }
+    function onSocketConnect() {
+      emit('rejoin_match', { roomId })
+    }
 
-    // Rejoin match on page mount to clear server disconnect timers & restore match state
-    emit('rejoin_match', { roomId })
-
+    on('connect',               onSocketConnect)
     on('match_found',           onMatchFound)
     on('match_problem_set',     onMatchProblemSet)
     on('match_state_restored',  onMatchStateRestored)
     on('submission_result',     onSubmissionResult)
+    on('submission_progress',   onSubmissionProgress)
     on('match_end',             onMatchEnd)
     on('player_disconnected',   onPlayerDisconnected)
     on('player_reconnected',    onPlayerReconnected)
     on('opponent_code_change',  onOpponentCodeChange)
 
+    // Rejoin match on page mount to clear server disconnect timers & restore match state
+    emit('rejoin_match', { roomId })
+
     return () => {
+      off('connect',              onSocketConnect)
       off('match_found',          onMatchFound)
       off('match_problem_set',    onMatchProblemSet)
       off('match_state_restored', onMatchStateRestored)
       off('submission_result',    onSubmissionResult)
+      off('submission_progress',  onSubmissionProgress)
       off('match_end',            onMatchEnd)
       off('player_disconnected',  onPlayerDisconnected)
       off('player_reconnected',   onPlayerReconnected)
@@ -966,9 +1062,10 @@ export default function Match() {
     }
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (submitting || myVerdict === 'ACCEPTED') return
     setSubmitting(true)
+    setSubmitProgress(null)
     setMyVerdict('PENDING')
     emit('submit_code', {
       roomId,
@@ -1128,7 +1225,7 @@ export default function Match() {
 
         {/* EDITOR PANEL — fills remaining space */}
         <div className="flex flex-col flex-1 min-w-0">
-          <PlayerHeader player={me ?? { username: user?.username, rating: user?.elo_rating }} isMe={true} verdict={myVerdict} />
+          <PlayerHeader player={me ?? { username: user?.username, rating: user?.elo_rating }} isMe={true} verdict={myVerdict} progress={submitProgress} />
 
           {/* Lang selector + submit */}
           <div className="flex items-center justify-between px-3 py-1.5 shrink-0"
@@ -1173,7 +1270,7 @@ export default function Match() {
                   border:     `1px solid ${myVerdict==='ACCEPTED'?'rgba(16,185,129,0.3)':submitting?'#1e2130':'#f97316'}`,
                   borderRadius: 3, cursor: (submitting||myVerdict==='ACCEPTED') ? 'not-allowed' : 'pointer',
                 }}>
-                {myVerdict==='ACCEPTED' ? '✓ accepted' : submitting ? 'judging…' : 'submit →'}
+                {myVerdict==='ACCEPTED' ? '✓ accepted' : submitting ? (submitProgress ? `judging (${submitProgress.testIndex}/${submitProgress.totalTests})` : 'judging…') : 'submit →'}
               </button>
             </div>
           </div>
@@ -1221,6 +1318,8 @@ export default function Match() {
           <ResultsDrawer
             runResult={runResult}
             submitResult={submitResult}
+            submitting={submitting}
+            submitProgress={submitProgress}
             onClose={() => { setRunResult(null); setSubmitResult(null) }}
           />
         </div>
@@ -1253,7 +1352,7 @@ export default function Match() {
         {/* OPPONENT PANEL — small by default, resizable */}
         <div className="flex flex-col shrink-0"
              style={{ width: oppPanel.width, minWidth: oppPanel.width, background:'#090b13', overflow:'hidden' }}>
-          <PlayerHeader player={opp} isMe={false} verdict={oppVerdict} />
+          <PlayerHeader player={opp} isMe={false} verdict={oppVerdict} progress={oppProgress} />
 
           <div className="flex-1 flex flex-col items-center justify-center gap-3 px-3">
             {oppDisconnectState ? (

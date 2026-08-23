@@ -116,7 +116,23 @@ const worker = new Worker(
     // ── 2. Run Docker sandbox ────────────────────────────────────
     let result
     try {
-      result = await runSandbox({ code, language, testCases })
+      result = await runSandbox({ 
+        code, 
+        language, 
+        testCases,
+        onProgress: (tr) => {
+          publishConnection.publish(VERDICT_CHANNEL, JSON.stringify({
+            type: 'progress',
+            roomId,
+            userId,
+            username,
+            submissionId,
+            testIndex: tr.testIndex,
+            passed: tr.passed,
+            totalTests: testCases.length
+          })).catch(err => console.error('[Worker] progress publish err:', err.message))
+        }
+      })
       console.log(
         `[Worker] sandbox done  verdict=${result.verdict}` +
         `  passed=${result.passedTests}/${result.totalTests}  ms=${result.runtimeMs}`
@@ -150,6 +166,7 @@ const worker = new Worker(
 
     // ── 4. Publish verdict to Redis pub/sub ──────────────────────
     const payload = {
+      type: 'verdict',
       roomId,
       userId,
       username,

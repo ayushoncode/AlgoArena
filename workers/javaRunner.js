@@ -13,13 +13,10 @@
 'use strict'
 
 function buildJavaRunner(testCases) {
-  const tc = JSON.stringify(testCases)
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-
   const lines = [
     'import java.lang.reflect.*;',
     'import java.util.*;',
+    'import java.nio.file.*;',
     '',
     'public class Runner {',
     '    // ── TreeNode definition ──────────────────────────────────────────',
@@ -69,13 +66,14 @@ function buildJavaRunner(testCases) {
     '            targetMethod.setAccessible(true);',
     '            Class<?>[] paramTypes = targetMethod.getParameterTypes();',
     '',
-    `            String rawTestCases = "${tc}";`,
+    '            String rawTestCases = "";',
+    '            try {',
+    '                rawTestCases = new String(Files.readAllBytes(Paths.get("/sandbox/test_cases.json")), "UTF-8");',
+    '            } catch (Exception ex) {',
+    '                rawTestCases = "[]";',
+    '            }',
     '            List<Map<String,Object>> tcs = parseJsonArrayOfObjects(rawTestCases);',
-    '            StringBuilder out = new StringBuilder();',
-    '            out.append("{\\"results\\":[");',
-    '',
     '            for (int i = 0; i < tcs.size(); i++) {',
-    '                if (i > 0) out.append(",");',
     '                Map<String,Object> tc = tcs.get(i);',
     '                String inputStr = (String) tc.get("input");',
     '                String expected = (String) tc.get("output");',
@@ -92,7 +90,7 @@ function buildJavaRunner(testCases) {
     '                    String actualStr = serializeJson(ret);',
     '                    String actualJson = actualStr != null ? actualStr : "null";',
     '                    String expectedJson = formatExpectedJson(expected);',
-    '                    out.append(String.format(',
+    '                    System.out.println(String.format(',
     '                        "{\\"index\\":%d,\\"actual\\":%s,\\"expected\\":%s,\\"runtimeMs\\":%d,\\"isHidden\\":%b,\\"error\\":null}",',
     '                        i+1, actualJson, expectedJson, runtime, isHidden));',
     '                } catch (Exception e) {',
@@ -100,13 +98,11 @@ function buildJavaRunner(testCases) {
     '                    Throwable cause = e.getCause() != null ? e.getCause() : e;',
     '                    String msg = cause.getMessage() != null ? cause.getMessage() : cause.toString();',
     '                    String expectedJson = formatExpectedJson(expected);',
-    '                    out.append(String.format(',
+    '                    System.out.println(String.format(',
     '                        "{\\"index\\":%d,\\"actual\\":null,\\"expected\\":%s,\\"runtimeMs\\":%d,\\"isHidden\\":%b,\\"error\\":%s}",',
     '                        i+1, expectedJson, runtime, isHidden, escapeJsonStr(msg)));',
     '                }',
     '            }',
-    '            out.append("]}");',
-    '            System.out.println(out.toString());',
     '        } catch (Exception e) {',
     '            String msg = e.getMessage() != null ? e.getMessage() : e.toString();',
     '            System.out.println("{\\"fatal\\":" + escapeJsonStr(msg) + ",\\"results\\":[]}");',

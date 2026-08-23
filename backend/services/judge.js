@@ -62,7 +62,7 @@ function compareOutputs(actual, expectedStr) {
 /**
  * Evaluate JavaScript submission against test cases (fast in-process vm).
  */
-async function evaluateJavaScript(code, testCases) {
+async function evaluateJavaScript(code, testCases, onProgress) {
   const testResults = []
   let passedCount = 0
   let overallVerdict = 'ACCEPTED'
@@ -121,7 +121,7 @@ async function evaluateJavaScript(code, testCases) {
       }
     }
 
-    testResults.push({
+    const tr = {
       testIndex: i + 1,
       passed,
       input: tc.is_hidden ? '[Hidden Test Case]' : tc.input,
@@ -129,11 +129,33 @@ async function evaluateJavaScript(code, testCases) {
       actual: tc.is_hidden ? (passed ? '[Passed]' : '[Failed]') : normalizeOutput(actualOutput),
       error: errorMsg,
       isHidden: tc.is_hidden,
-    })
+      totalTests: testCases.length,
+    }
+
+    testResults.push(tr)
+
+    if (typeof onProgress === 'function') {
+      onProgress(tr)
+    }
+
+    // Pacing delay so WebSocket has time to stream and UI displays smooth real-time test progression
+    await new Promise(r => setTimeout(r, 45))
+
+    // Break early if fatal error or timeout to prevent hanging the server
+    if (errorMsg) {
+      if (errorMsg.includes('timed out')) overallVerdict = 'TIME_LIMIT_EXCEEDED'
+      else overallVerdict = 'RUNTIME_ERROR'
+      break
+    } else if (!passed && overallVerdict === 'ACCEPTED') {
+      overallVerdict = 'WRONG_ANSWER'
+      // Keep going for wrong answers so they can see which ones failed, or break if preferred.
+      // Usually platforms stop at first WA. Let's stop to be fast.
+      break
+    }
   }
 
   const runtimeMs = Date.now() - startTime
-
+  
   return {
     verdict: overallVerdict,
     totalTests: testCases.length,
@@ -146,7 +168,7 @@ async function evaluateJavaScript(code, testCases) {
 /**
  * Evaluate Python / C++ / Java through the Docker sandbox.
  */
-async function evaluateSandbox(code, language, testCases) {
+async function evaluateSandbox(code, language, testCases, onProgress) {
   if (!sandboxRunner) {
     return {
       verdict: 'RUNTIME_ERROR',
@@ -161,13 +183,13 @@ async function evaluateSandbox(code, language, testCases) {
       })),
     }
   }
-  return sandboxRunner.runSandbox({ code, language, testCases })
+  return sandboxRunner.runSandbox({ code, language, testCases, onProgress })
 }
 
 /**
  * Main evaluation entry point.
  */
-async function evaluateSubmission(problemId, code, language = 'javascript') {
+async function evaluateSubmission(problemId, code, language = 'javascript', opts = {}) {
   try {
     // 1. Fetch test cases from PostgreSQL
     const { rows: testCases } = await db.query(
@@ -193,11 +215,11 @@ async function evaluateSubmission(problemId, code, language = 'javascript') {
 
     // 2. Route to correct evaluator by language
     if (lang === 'javascript' || lang === 'js') {
-      return await evaluateJavaScript(code, testCases)
+      return await evaluateJavaScript(code, testCases, opts.onProgress)
     }
 
     // Python, C++, Java → Docker sandbox
-    return await evaluateSandbox(code, lang, testCases)
+    return await evaluateSandbox(code, lang, testCases, opts.onProgress)
 
   } catch (err) {
     console.error('[Judge Error]', err)
