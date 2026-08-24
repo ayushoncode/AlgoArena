@@ -3,6 +3,9 @@ require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const part1 = require('./canonical_dataset/part1_trees_linked_lists');
 const part2 = require('./canonical_dataset/part2_arrays_matrix_twopointers');
 const part3 = require('./canonical_dataset/part3_strings_backtracking');
+const part4 = require('./canonical_dataset/part4_dp_math_greedy_graphs');
+const part5 = require('./canonical_dataset/part5_advanced_dp_graphs');
+const part6 = require('./canonical_dataset/part6_arrays_strings_math');
 const { runSandbox } = require('./sandbox');
 
 async function testBatch(batch, name) {
@@ -54,6 +57,9 @@ async function main() {
   await testBatch(part1, 'Part 1 (Trees & Linked Lists)');
   await testBatch(part2, 'Part 2 (Arrays & Mutations)');
   await testBatch(part3, 'Part 3 (Strings & Backtracking)');
+  await testBatch(part4, 'Part 4 (DP, Math, Greedy & Graphs)');
+  await testBatch(part5, 'Part 5 (Advanced DP & Graphs)');
+  await testBatch(part6, 'Part 6 (Arrays, Strings & Math)');
 }
 
 main().catch(console.error);

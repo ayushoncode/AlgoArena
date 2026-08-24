@@ -31,15 +31,15 @@
 
 'use strict'
 
-const { spawn }       = require('child_process')
-const fs              = require('fs')
-const path            = require('path')
-const os              = require('os')
+const { spawn } = require('child_process')
+const fs = require('fs')
+const path = require('path')
+const os = require('os')
 const { randomBytes } = require('crypto')
 const { buildJavaRunner } = require('./javaRunner')
 
-const DOCKER_IMAGE  = process.env.SANDBOX_IMAGE       || 'algoarena-sandbox'
-const TIMEOUT_MS    = parseInt(process.env.SANDBOX_TIMEOUT_MS, 10) || 8000
+const DOCKER_IMAGE = process.env.SANDBOX_IMAGE || 'algoarena-sandbox'
+const TIMEOUT_MS = parseInt(process.env.SANDBOX_TIMEOUT_MS, 10) || 8000
 
 /* ═══════════════════════════════════════════════════════════════════
    RUNNER SCRIPT GENERATORS
@@ -139,7 +139,7 @@ function __serialize(obj) {
 let solution;
 let src = '';
 try {
-  src = require('fs').readFileSync('/sandbox/solution.js', 'utf8');
+  src = require('fs').readFileSync('./solution.js', 'utf8');
   const loader = new Function(
     'TreeNode', 'ListNode', 'exports', 'module', 'console',
     src + '\\n\\n' +
@@ -162,7 +162,7 @@ try {
 }
 
 // ── Run each test case ──────────────────────────────────────────────
-const testCases = require('/sandbox/test_cases.json');
+const testCases = require('./test_cases.json');
 
 const fnSrc = src.replace(/\\/\\*[\\s\\S]*?\\*\\/|\\/\\/.*/g, '');
 const isTreeFn = fnSrc.includes('.left') || fnSrc.includes('.right') || fnSrc.includes('TreeNode') || fnSrc.includes('root');
@@ -309,7 +309,7 @@ def __serialize(obj, expected=''):
 
 # ── Load user solution ──────────────────────────────────────────────
 try:
-    with open('/sandbox/solution.py', 'r') as f:
+    with open('./solution.py', 'r') as f:
         src = f.read()
     ns = {
         'TreeNode': TreeNode,
@@ -341,7 +341,7 @@ except Exception as e:
     sys.exit(0)
 
 # ── Run each test case ──────────────────────────────────────────────
-with open('/sandbox/test_cases.json', 'r') as f:
+with open('./test_cases.json', 'r') as f:
     test_cases = json.load(f)
 
 fn_src = src.lower()
@@ -566,7 +566,7 @@ namespace nlohmann {
 }
 
 // User solution included here
-#include "/sandbox/solution.cpp"
+#include "./solution.cpp"
 
 template<typename T>
 struct ArgParser {
@@ -576,6 +576,51 @@ struct ArgParser {
             return __build_tree(j);
         } else if constexpr (std::is_same_v<CleanT, ListNode*>) {
             return __build_list(j);
+        } else if constexpr (std::is_same_v<CleanT, std::vector<std::vector<char>>>) {
+            std::vector<std::vector<char>> res;
+            if (!j.is_array()) return res;
+            for (const auto& row : j) {
+                std::vector<char> r;
+                if (row.is_array()) {
+                    for (const auto& item : row) {
+                        if (item.is_string()) {
+                            std::string s = item.get<std::string>();
+                            r.push_back(s.empty() ? ' ' : s[0]);
+                        } else if (item.is_number()) {
+                            r.push_back((char)item.get<int>());
+                        }
+                    }
+                } else if (row.is_string()) {
+                    std::string s = row.get<std::string>();
+                    for (char c : s) r.push_back(c);
+                }
+                res.push_back(r);
+            }
+            return res;
+        } else if constexpr (std::is_same_v<CleanT, std::vector<char>>) {
+            std::vector<char> res;
+            if (j.is_string()) {
+                std::string s = j.get<std::string>();
+                for (char c : s) res.push_back(c);
+            } else if (j.is_array()) {
+                for (const auto& item : j) {
+                    if (item.is_string()) {
+                        std::string s = item.get<std::string>();
+                        res.push_back(s.empty() ? ' ' : s[0]);
+                    } else if (item.is_number()) {
+                        res.push_back((char)item.get<int>());
+                    }
+                }
+            }
+            return res;
+        } else if constexpr (std::is_same_v<CleanT, char>) {
+            if (j.is_string()) {
+                std::string s = j.get<std::string>();
+                return s.empty() ? ' ' : s[0];
+            } else if (j.is_number()) {
+                return (char)j.get<int>();
+            }
+            return ' ';
         } else {
             return j.get<CleanT>();
         }
@@ -633,7 +678,7 @@ json dispatch_exec(const json& args) {
 
 int main() {
     try {
-        ifstream ifs("/sandbox/test_cases.json");
+        ifstream ifs("./test_cases.json");
         json testCases;
         ifs >> testCases;
 
@@ -768,7 +813,7 @@ function compareOutputs(actual, expected) {
  ═══════════════════════════════════════════════════════════════════ */
 function spawnWithTimeout(cmd, args, timeoutMs, opts = {}) {
   return new Promise((resolve, reject) => {
-    const proc       = spawn(cmd, args, opts)
+    const proc = spawn(cmd, args, opts)
     const stdoutBufs = []
     const stderrBufs = []
     let leftover = ''
@@ -791,8 +836,8 @@ function spawnWithTimeout(cmd, args, timeoutMs, opts = {}) {
       killed = true
       // SIGKILL bypasses all signal handlers — container stops immediately
       proc.kill('SIGKILL')
-      const err     = new Error(`Sandbox timed out after ${timeoutMs}ms`)
-      err.timedOut  = true
+      const err = new Error(`Sandbox timed out after ${timeoutMs}ms`)
+      err.timedOut = true
       reject(err)
     }, timeoutMs)
 
@@ -804,9 +849,9 @@ function spawnWithTimeout(cmd, args, timeoutMs, opts = {}) {
 
       if (code !== 0 && !stdout.trim()) {
         // Non-zero exit with no stdout = runtime error before any output
-        const err      = new Error(stderr.slice(0, 600) || `Exited with code ${code}`)
-        err.exitCode   = code
-        err.isRuntime  = true
+        const err = new Error(stderr.slice(0, 600) || `Exited with code ${code}`)
+        err.exitCode = code
+        err.isRuntime = true
         return reject(err)
       }
       resolve(stdout)
@@ -825,17 +870,17 @@ function spawnWithTimeout(cmd, args, timeoutMs, opts = {}) {
 function makeErrorResult(verdict, testCases, errorMsg, runtimeMs) {
   return {
     verdict,
-    totalTests:  testCases.length,
+    totalTests: testCases.length,
     passedTests: 0,
     runtimeMs,
     testResults: testCases.map((tc, i) => ({
       testIndex: i + 1,
-      passed:    false,
-      input:     tc.is_hidden ? '[Hidden]' : tc.input,
-      expected:  tc.is_hidden ? '[Hidden]' : tc.output,
-      actual:    '[Error]',
-      error:     errorMsg,
-      isHidden:  tc.is_hidden,
+      passed: false,
+      input: tc.is_hidden ? '[Hidden]' : tc.input,
+      expected: tc.is_hidden ? '[Hidden]' : tc.output,
+      actual: '[Error]',
+      error: errorMsg,
+      isHidden: tc.is_hidden,
       runtimeMs: 0,
     })),
   }
@@ -853,7 +898,7 @@ function makeErrorResult(verdict, testCases, errorMsg, runtimeMs) {
  * @returns {Promise<{verdict, totalTests, passedTests, runtimeMs, testResults}>}
  */
 async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }) {
-  const jobId  = randomBytes(8).toString('hex')
+  const jobId = randomBytes(8).toString('hex')
   const tmpDir = path.join(os.tmpdir(), `aa-${jobId}`)
 
   fs.mkdirSync(tmpDir, { recursive: true })
@@ -862,25 +907,25 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
   let codeFile, runnerFile, runnerContent, dockerExecCmd
 
   if (lang === 'python' || lang === 'py') {
-    codeFile      = 'solution.py'
-    runnerFile    = 'runner.py'
+    codeFile = 'solution.py'
+    runnerFile = 'runner.py'
     runnerContent = buildPyRunner(testCases)
-    dockerExecCmd = ['python3', '/sandbox/runner.py']
+    dockerExecCmd = ['python3', './runner.py']
   } else if (lang === 'cpp' || lang === 'c++') {
-    codeFile      = 'solution.cpp'
-    runnerFile    = 'runner.cpp'
+    codeFile = 'solution.cpp'
+    runnerFile = 'runner.cpp'
     runnerContent = buildCppRunner(testCases, code)
-    dockerExecCmd = ['sh', '-c', 'g++ -O0 -std=c++20 /sandbox/runner.cpp -o /tmp/runner && /tmp/runner']
+    dockerExecCmd = ['sh', '-c', 'g++ -O0 -std=c++20 ./runner.cpp -o /tmp/runner && /tmp/runner']
   } else if (lang === 'java') {
-    codeFile      = 'Solution.java'
-    runnerFile    = 'Runner.java'
+    codeFile = 'Solution.java'
+    runnerFile = 'Runner.java'
     runnerContent = buildJavaRunner(testCases)
-    dockerExecCmd = ['sh', '-c', 'javac -d /tmp /sandbox/Solution.java /sandbox/Runner.java && java -cp /tmp Runner']
+    dockerExecCmd = ['sh', '-c', 'javac -d /tmp ./Solution.java ./Runner.java && java -cp /tmp Runner']
   } else {
-    codeFile      = 'solution.js'
-    runnerFile    = 'runner.js'
+    codeFile = 'solution.js'
+    runnerFile = 'runner.js'
     runnerContent = buildJsRunner(testCases)
-    dockerExecCmd = ['node', '/sandbox/runner.js']
+    dockerExecCmd = ['node', './runner.js']
   }
 
   let userCodeToWrite = code
@@ -891,23 +936,24 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
 
   try {
     // ── Write user code and runner to temp dir ─────────────────
-    fs.writeFileSync(path.join(tmpDir, codeFile),   userCodeToWrite, 'utf8')
-    fs.writeFileSync(path.join(tmpDir, runnerFile), runnerContent,   'utf8')
+    fs.writeFileSync(path.join(tmpDir, codeFile), userCodeToWrite, 'utf8')
+    fs.writeFileSync(path.join(tmpDir, runnerFile), runnerContent, 'utf8')
     fs.writeFileSync(path.join(tmpDir, 'test_cases.json'), JSON.stringify(testCases), 'utf8')
 
     // ── docker run with all security flags ─────────────────────
     const dockerArgs = [
       'run',
-      '--network',     'none',            // no internet
-      '--memory',      '512m',            // 512 MB RAM cap (needed for C++ / Java compilation)
+      '--network', 'none',            // no internet
+      '--memory', '512m',            // 512 MB RAM cap (needed for C++ / Java compilation)
       '--memory-swap', '512m',            // no swap
-      '--cpus',        '0.5',             // half a CPU core
-      '--pids-limit',  '50',              // fork bomb prevention
+      '--cpus', '0.5',             // half a CPU core
+      '--pids-limit', '50',              // fork bomb prevention
       '--read-only',                      // immutable root filesystem
-      '--tmpfs',       '/tmp:exec,nosuid,nodev,size=64m', // scratch & binary execution permitted in tmpfs
+      '--tmpfs', '/tmp:exec,nosuid,nodev,size=64m', // scratch & binary execution permitted in tmpfs
       '--rm',                             // auto-remove after exit
-      '--user',        'sandbox',         // run as non-root
-      '-v',            `${tmpDir}:/sandbox:ro`, // user code — read only
+      '--user', 'sandbox',         // run as non-root
+      '-w', '/sandbox',                  // workdir
+      '-v', `${tmpDir}:/sandbox:ro`, // user code — read only
       DOCKER_IMAGE,
       ...dockerExecCmd,
     ]
@@ -919,9 +965,9 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
     let isDockerUnavailable = false
 
     let overallVerdict = 'ACCEPTED'
-    let passedCount    = 0
-    const testResults  = []
-    let fatalError     = null
+    let passedCount = 0
+    const testResults = []
+    let fatalError = null
 
     const onStdoutLine = (line) => {
       try {
@@ -940,11 +986,11 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
           const tr = {
             testIndex: r.index,
             passed,
-            input:     r.isHidden ? '[Hidden]'                         : (testCases[r.index - 1]?.input  ?? ''),
-            expected:  r.isHidden ? '[Hidden]'                         : r.expected,
-            actual:    r.isHidden ? (passed ? '[Passed]' : '[Failed]') : (r.actual ?? '[null]'),
-            error:     r.error    || null,
-            isHidden:  r.isHidden,
+            input: r.isHidden ? '[Hidden]' : (testCases[r.index - 1]?.input ?? ''),
+            expected: r.isHidden ? '[Hidden]' : r.expected,
+            actual: r.isHidden ? (passed ? '[Passed]' : '[Failed]') : (r.actual ?? '[null]'),
+            error: r.error || null,
+            isHidden: r.isHidden,
             runtimeMs: r.runtimeMs || 0,
             totalTests: testCases.length,
           }
@@ -983,7 +1029,16 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
     if (isDockerUnavailable) {
       // Fallback: direct runner execution (e.g. inside Railway / cloud container without host Docker socket)
       const localCmd = dockerExecCmd[0]
-      const localArgs = dockerExecCmd.slice(1).map(arg => arg.replace(new RegExp('/sandbox', 'g'), tmpDir))
+      let localArgs = dockerExecCmd.slice(1).map(arg =>
+        arg.replace(new RegExp('/sandbox', 'g'), tmpDir)
+           .replace(new RegExp('/tmp', 'g'), tmpDir)
+      )
+      if (lang === 'cpp' || lang === 'c++') {
+        const nlohmannDir = path.join(__dirname, 'nlohmann')
+        if (fs.existsSync(nlohmannDir)) {
+          localArgs = localArgs.map(arg => arg.replace('g++', `g++ -I "${nlohmannDir}" -I "${__dirname}"`))
+        }
+      }
       try {
         stdout = await spawnWithTimeout(localCmd, localArgs, TIMEOUT_MS, { cwd: tmpDir, onStdoutLine })
       } catch (err) {
@@ -1006,21 +1061,21 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
       if (overallVerdict === 'ACCEPTED') overallVerdict = 'RUNTIME_ERROR'
       testResults.push({
         testIndex: i + 1,
-        passed:    false,
-        input:     testCases[i].is_hidden ? '[Hidden]' : testCases[i].input,
-        expected:  testCases[i].is_hidden ? '[Hidden]' : testCases[i].output,
-        actual:    '[No output — runner exited early]',
-        error:     'Runner exited before completing all test cases',
-        isHidden:  testCases[i].is_hidden,
+        passed: false,
+        input: testCases[i].is_hidden ? '[Hidden]' : testCases[i].input,
+        expected: testCases[i].is_hidden ? '[Hidden]' : testCases[i].output,
+        actual: '[No output — runner exited early]',
+        error: 'Runner exited before completing all test cases',
+        isHidden: testCases[i].is_hidden,
         runtimeMs: 0,
       })
     }
 
     return {
-      verdict:     overallVerdict,
-      totalTests:  testCases.length,
+      verdict: overallVerdict,
+      totalTests: testCases.length,
       passedTests: passedCount,
-      runtimeMs:   totalRuntimeMs,
+      runtimeMs: totalRuntimeMs,
       testResults,
     }
 
@@ -1041,13 +1096,13 @@ if (require.main === module) {
     process.exit(0)
   }
 
-  ;(async () => {
+  ; (async () => {
     console.log('\n══════ AlgoArena Sandbox Self-Test ══════\n')
 
     // ── Test 1: Correct JavaScript solution ─────────────────────
     console.log('Test 1 — Correct JS (Two Sum, HashMap):')
     const r1 = await runSandbox({
-      language:  'javascript',
+      language: 'javascript',
       code: `function solution(nums, target) {
   const map = new Map();
   for (let i = 0; i < nums.length; i++) {
@@ -1058,8 +1113,8 @@ if (require.main === module) {
 }`,
       testCases: [
         { input: '[2,7,11,15], 9', output: '[0,1]', is_hidden: false },
-        { input: '[3,2,4], 6',     output: '[1,2]', is_hidden: false },
-        { input: '[3,3], 6',       output: '[0,1]', is_hidden: false },
+        { input: '[3,2,4], 6', output: '[1,2]', is_hidden: false },
+        { input: '[3,3], 6', output: '[0,1]', is_hidden: false },
       ],
     })
     console.log(
@@ -1070,7 +1125,7 @@ if (require.main === module) {
     // ── Test 2: Wrong answer ─────────────────────────────────────
     console.log('\nTest 2 — Wrong answer JS:')
     const r2 = await runSandbox({
-      language:  'javascript',
+      language: 'javascript',
       code: `function solution(nums, target) { return [0, 0]; }`,
       testCases: [{ input: '[2,7,11,15], 9', output: '[0,1]', is_hidden: false }],
     })
@@ -1082,7 +1137,7 @@ if (require.main === module) {
     // ── Test 3: Infinite loop → TIME_LIMIT_EXCEEDED ──────────────
     console.log('\nTest 3 — Infinite loop → TLE (wait ~5s):')
     const r3 = await runSandbox({
-      language:  'javascript',
+      language: 'javascript',
       code: `function solution() { while(true) {} }`,
       testCases: [{ input: '[]', output: '0', is_hidden: false }],
     })
@@ -1094,7 +1149,7 @@ if (require.main === module) {
     // ── Test 4: Runtime error ────────────────────────────────────
     console.log('\nTest 4 — Runtime error JS:')
     const r4 = await runSandbox({
-      language:  'javascript',
+      language: 'javascript',
       code: `function solution(nums) { return nums.nonExistentMethod(); }`,
       testCases: [{ input: '[1,2]', output: '0', is_hidden: false }],
     })
@@ -1106,7 +1161,7 @@ if (require.main === module) {
     // ── Test 5: Correct Python solution ──────────────────────────
     console.log('\nTest 5 — Correct Python (Two Sum):')
     const r5 = await runSandbox({
-      language:  'python',
+      language: 'python',
       code: `def solution(nums, target):
     seen = {}
     for i, n in enumerate(nums):
@@ -1116,7 +1171,7 @@ if (require.main === module) {
         seen[n] = i`,
       testCases: [
         { input: '[2,7,11,15], 9', output: '[0,1]', is_hidden: false },
-        { input: '[3,2,4], 6',     output: '[1,2]', is_hidden: false },
+        { input: '[3,2,4], 6', output: '[1,2]', is_hidden: false },
       ],
     })
     console.log(
@@ -1128,7 +1183,7 @@ if (require.main === module) {
     if (argv.includes('--test-network')) {
       console.log('\nTest 6 — Network blocked (JS fetch attempt):')
       const r6 = await runSandbox({
-        language:  'javascript',
+        language: 'javascript',
         code: `const https = require('https');
 function solution() {
   return new Promise((res, rej) => {

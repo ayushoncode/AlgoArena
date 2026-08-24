@@ -33,10 +33,10 @@ const TREE_PROBLEMS_SOLUTIONS = {
             return max(l, r) + 1
         return check(root) != -1`,
     java: `class Solution {
-      public boolean solution(Runner.TreeNode root) {
+      public boolean solution(TreeNode root) {
         return check(root) != -1;
       }
-      private int check(Runner.TreeNode node) {
+      private int check(TreeNode node) {
         if (node == null) return 0;
         int l = check(node.left), r = check(node.right);
         if (l == -1 || r == -1 || Math.abs(l - r) > 1) return -1;
@@ -91,16 +91,16 @@ const TREE_PROBLEMS_SOLUTIONS = {
             res.append(level)
         return res`,
     java: `class Solution {
-      public List<List<Integer>> solution(Runner.TreeNode root) {
+      public List<List<Integer>> solution(TreeNode root) {
         List<List<Integer>> res = new ArrayList<>();
         if (root == null) return res;
-        Queue<Runner.TreeNode> q = new LinkedList<>();
+        Queue<TreeNode> q = new LinkedList<>();
         q.add(root);
         while (!q.isEmpty()) {
           int sz = q.size();
           List<Integer> level = new ArrayList<>();
           for (int i = 0; i < sz; i++) {
-            Runner.TreeNode curr = q.poll();
+            TreeNode curr = q.poll();
             level.add(curr.val);
             if (curr.left != null) q.add(curr.left);
             if (curr.right != null) q.add(curr.right);
@@ -147,7 +147,7 @@ const TREE_PROBLEMS_SOLUTIONS = {
         if not root.left and not root.right: return root.val == targetSum
         return self.solution(root.left, targetSum - root.val) or self.solution(root.right, targetSum - root.val)`,
     java: `class Solution {
-      public boolean solution(Runner.TreeNode root, int targetSum) {
+      public boolean solution(TreeNode root, int targetSum) {
         if (root == null) return false;
         if (root.left == null && root.right == null) return root.val == targetSum;
         return solution(root.left, targetSum - root.val) || solution(root.right, targetSum - root.val);
@@ -177,7 +177,7 @@ const TREE_PROBLEMS_SOLUTIONS = {
         if not p or not q or p.val != q.val: return False
         return self.solution(p.left, q.left) and self.solution(p.right, q.right)`,
     java: `class Solution {
-      public boolean solution(Runner.TreeNode p, Runner.TreeNode q) {
+      public boolean solution(TreeNode p, TreeNode q) {
         if (p == null && q == null) return true;
         if (p == null || q == null || p.val != q.val) return false;
         return solution(p.left, q.left) && solution(p.right, q.right);
@@ -204,7 +204,7 @@ const TREE_PROBLEMS_SOLUTIONS = {
         if not root: return 0
         return 1 + max(self.solution(root.left), self.solution(root.right))`,
     java: `class Solution {
-      public int solution(Runner.TreeNode root) {
+      public int solution(TreeNode root) {
         if (root == null) return 0;
         return 1 + Math.max(solution(root.left), solution(root.right));
       }
@@ -242,13 +242,13 @@ const TREE_PROBLEMS_SOLUTIONS = {
             return node
         return helper(0, len(nums) - 1)`,
     java: `class Solution {
-      public Runner.TreeNode solution(int[] nums) {
+      public TreeNode solution(int[] nums) {
         return helper(nums, 0, nums.length - 1);
       }
-      private Runner.TreeNode helper(int[] nums, int l, int r) {
+      private TreeNode helper(int[] nums, int l, int r) {
         if (l > r) return null;
         int mid = (l + r + 1) / 2;
-        Runner.TreeNode node = new Runner.TreeNode(nums[mid]);
+        TreeNode node = new TreeNode(nums[mid]);
         node.left = helper(nums, l, mid - 1);
         node.right = helper(nums, mid + 1, r);
         return node;
@@ -309,17 +309,17 @@ const TREE_PROBLEMS_SOLUTIONS = {
             l2r = not l2r
         return res`,
     java: `class Solution {
-      public List<List<Integer>> solution(Runner.TreeNode root) {
+      public List<List<Integer>> solution(TreeNode root) {
         List<List<Integer>> res = new ArrayList<>();
         if (root == null) return res;
-        Queue<Runner.TreeNode> q = new LinkedList<>();
+        Queue<TreeNode> q = new LinkedList<>();
         q.add(root);
         boolean l2r = true;
         while (!q.isEmpty()) {
           int sz = q.size();
           List<Integer> level = new LinkedList<>();
           for (int i = 0; i < sz; i++) {
-            Runner.TreeNode curr = q.poll();
+            TreeNode curr = q.poll();
             if (l2r) level.add(curr.val);
             else level.add(0, curr.val);
             if (curr.left != null) q.add(curr.left);
@@ -382,12 +382,12 @@ const TREE_PROBLEMS_SOLUTIONS = {
         dfs(root)
         return res`,
     java: `class Solution {
-      public List<Integer> solution(Runner.TreeNode root) {
+      public List<Integer> solution(TreeNode root) {
         List<Integer> res = new ArrayList<>();
         dfs(root, res);
         return res;
       }
-      private void dfs(Runner.TreeNode node, List<Integer> res) {
+      private void dfs(TreeNode node, List<Integer> res) {
         if (node == null) return;
         dfs(node.left, res);
         dfs(node.right, res);
@@ -430,10 +430,10 @@ const TREE_PROBLEMS_SOLUTIONS = {
             return validate(node.left, min_val, node.val) and validate(node.right, node.val, max_val)
         return validate(root, None, None)`,
     java: `class Solution {
-      public boolean solution(Runner.TreeNode root) {
+      public boolean solution(TreeNode root) {
         return validate(root, null, null);
       }
-      private boolean validate(Runner.TreeNode node, Long min, Long max) {
+      private boolean validate(TreeNode node, Long min, Long max) {
         if (node == null) return true;
         if (min != null && node.val <= min) return false;
         if (max != null && node.val >= max) return false;
@@ -473,10 +473,10 @@ const TREE_PROBLEMS_SOLUTIONS = {
             return dfs(node.left, cur) + dfs(node.right, cur)
         return dfs(root, 0)`,
     java: `class Solution {
-      public int solution(Runner.TreeNode root) {
+      public int solution(TreeNode root) {
         return dfs(root, 0);
       }
-      private int dfs(Runner.TreeNode node, int cur) {
+      private int dfs(TreeNode node, int cur) {
         if (node == null) return 0;
         cur = cur * 10 + node.val;
         if (node.left == null && node.right == null) return cur;
@@ -517,11 +517,11 @@ const TREE_PROBLEMS_SOLUTIONS = {
             return t1.val == t2.val and isMirror(t1.left, t2.right) and isMirror(t1.right, t2.left)
         return isMirror(root.left, root.right)`,
     java: `class Solution {
-      public boolean solution(Runner.TreeNode root) {
+      public boolean solution(TreeNode root) {
         if (root == null) return true;
         return isMirror(root.left, root.right);
       }
-      private boolean isMirror(Runner.TreeNode t1, Runner.TreeNode t2) {
+      private boolean isMirror(TreeNode t1, TreeNode t2) {
         if (t1 == null && t2 == null) return true;
         if (t1 == null || t2 == null) return false;
         return t1.val == t2.val && isMirror(t1.left, t2.right) && isMirror(t1.right, t2.left);
@@ -565,12 +565,12 @@ const TREE_PROBLEMS_SOLUTIONS = {
         dfs(root)
         return res`,
     java: `class Solution {
-      public List<Integer> solution(Runner.TreeNode root) {
+      public List<Integer> solution(TreeNode root) {
         List<Integer> res = new ArrayList<>();
         dfs(root, res);
         return res;
       }
-      private void dfs(Runner.TreeNode node, List<Integer> res) {
+      private void dfs(TreeNode node, List<Integer> res) {
         if (node == null) return;
         dfs(node.left, res);
         res.add(node.val);
@@ -617,12 +617,12 @@ const TREE_PROBLEMS_SOLUTIONS = {
         dfs(root)
         return res`,
     java: `class Solution {
-      public List<Integer> solution(Runner.TreeNode root) {
+      public List<Integer> solution(TreeNode root) {
         List<Integer> res = new ArrayList<>();
         dfs(root, res);
         return res;
       }
-      private void dfs(Runner.TreeNode node, List<Integer> res) {
+      private void dfs(TreeNode node, List<Integer> res) {
         if (node == null) return;
         res.add(node.val);
         dfs(node.left, res);
@@ -660,7 +660,7 @@ const TREE_PROBLEMS_SOLUTIONS = {
         if not root.right: return 1 + self.solution(root.left)
         return 1 + min(self.solution(root.left), self.solution(root.right))`,
     java: `class Solution {
-      public int solution(Runner.TreeNode root) {
+      public int solution(TreeNode root) {
         if (root == null) return 0;
         if (root.left == null) return 1 + solution(root.right);
         if (root.right == null) return 1 + solution(root.left);
@@ -712,16 +712,16 @@ const TREE_PROBLEMS_SOLUTIONS = {
             res.insert(0, level)
         return res`,
     java: `class Solution {
-      public List<List<Integer>> solution(Runner.TreeNode root) {
+      public List<List<Integer>> solution(TreeNode root) {
         List<List<Integer>> res = new LinkedList<>();
         if (root == null) return res;
-        Queue<Runner.TreeNode> q = new LinkedList<>();
+        Queue<TreeNode> q = new LinkedList<>();
         q.add(root);
         while (!q.isEmpty()) {
           int sz = q.size();
           List<Integer> level = new ArrayList<>();
           for (int i = 0; i < sz; i++) {
-            Runner.TreeNode curr = q.poll();
+            TreeNode curr = q.poll();
             level.add(curr.val);
             if (curr.left != null) q.add(curr.left);
             if (curr.right != null) q.add(curr.right);
@@ -785,11 +785,11 @@ const TREE_PROBLEMS_SOLUTIONS = {
         return int(max_path)`,
     java: `class Solution {
       private int maxPath = Integer.MIN_VALUE;
-      public int solution(Runner.TreeNode root) {
+      public int solution(TreeNode root) {
         maxGain(root);
         return maxPath;
       }
-      private int maxGain(Runner.TreeNode node) {
+      private int maxGain(TreeNode node) {
         if (node == null) return 0;
         int leftGain = Math.max(maxGain(node.left), 0);
         int rightGain = Math.max(maxGain(node.right), 0);
@@ -847,14 +847,14 @@ const TREE_PROBLEMS_SOLUTIONS = {
     java: `class Solution {
       private int preIdx = 0;
       private Map<Integer, Integer> map = new HashMap<>();
-      public Runner.TreeNode solution(int[] preorder, int[] inorder) {
+      public TreeNode solution(int[] preorder, int[] inorder) {
         for (int i = 0; i < inorder.length; i++) map.put(inorder[i], i);
         return build(preorder, 0, inorder.length - 1);
       }
-      private Runner.TreeNode build(int[] preorder, int l, int r) {
+      private TreeNode build(int[] preorder, int l, int r) {
         if (l > r) return null;
         int val = preorder[preIdx++];
-        Runner.TreeNode root = new Runner.TreeNode(val);
+        TreeNode root = new TreeNode(val);
         int mid = map.get(val);
         root.left = build(preorder, l, mid - 1);
         root.right = build(preorder, mid + 1, r);
