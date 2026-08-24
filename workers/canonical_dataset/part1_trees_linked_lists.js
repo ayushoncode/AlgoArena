@@ -77,10 +77,10 @@ A **height-balanced** binary tree is a binary tree in which the depth of the two
             return 1 + max(l, r)
         return height(root) != -1`,
       java: `class Solution {
-        public boolean solution(Runner.TreeNode root) {
+        public boolean solution(TreeNode root) {
           return height(root) != -1;
         }
-        private int height(Runner.TreeNode node) {
+        private int height(TreeNode node) {
           if (node == null) return 0;
           int l = height(node.left);
           if (l == -1) return -1;
@@ -167,12 +167,12 @@ A **height-balanced** binary tree is a binary tree in which the depth of the two
         inorder(root)
         return res`,
       java: `class Solution {
-        public List<Integer> solution(Runner.TreeNode root) {
+        public List<Integer> solution(TreeNode root) {
           List<Integer> res = new ArrayList<>();
           inorder(root, res);
           return res;
         }
-        private void inorder(Runner.TreeNode node, List<Integer> res) {
+        private void inorder(TreeNode node, List<Integer> res) {
           if (node == null) return;
           inorder(node.left, res);
           res.add(node.val);
@@ -261,16 +261,16 @@ A **height-balanced** binary tree is a binary tree in which the depth of the two
             res.append(level)
         return res`,
       java: `class Solution {
-        public List<List<Integer>> solution(Runner.TreeNode root) {
+        public List<List<Integer>> solution(TreeNode root) {
           List<List<Integer>> res = new ArrayList<>();
           if (root == null) return res;
-          Queue<Runner.TreeNode> q = new LinkedList<>();
+          Queue<TreeNode> q = new LinkedList<>();
           q.add(root);
           while (!q.isEmpty()) {
             int len = q.size();
             List<Integer> level = new ArrayList<>();
             for (int i = 0; i < len; i++) {
-              Runner.TreeNode node = q.poll();
+              TreeNode node = q.poll();
               level.add(node.val);
               if (node.left != null) q.add(node.left);
               if (node.right != null) q.add(node.right);
@@ -370,16 +370,16 @@ A **height-balanced** binary tree is a binary tree in which the depth of the two
             res.insert(0, level)
         return res`,
       java: `class Solution {
-        public List<List<Integer>> solution(Runner.TreeNode root) {
+        public List<List<Integer>> solution(TreeNode root) {
           List<List<Integer>> res = new ArrayList<>();
           if (root == null) return res;
-          Queue<Runner.TreeNode> q = new LinkedList<>();
+          Queue<TreeNode> q = new LinkedList<>();
           q.add(root);
           while (!q.isEmpty()) {
             int len = q.size();
             List<Integer> level = new ArrayList<>();
             for (int i = 0; i < len; i++) {
-              Runner.TreeNode node = q.poll();
+              TreeNode node = q.poll();
               level.add(node.val);
               if (node.left != null) q.add(node.left);
               if (node.right != null) q.add(node.right);
@@ -485,12 +485,12 @@ Given the \`root\` of a binary tree, return *the maximum **path sum** of any non
         return max_sum`,
       java: `class Solution {
         private int maxPath = Integer.MIN_VALUE;
-        public int solution(Runner.TreeNode root) {
+        public int solution(TreeNode root) {
           maxPath = Integer.MIN_VALUE;
           helper(root);
           return maxPath;
         }
-        private int helper(Runner.TreeNode node) {
+        private int helper(TreeNode node) {
           if (node == null) return 0;
           int left = Math.max(0, helper(node.left));
           int right = Math.max(0, helper(node.right));
@@ -576,12 +576,12 @@ Given the \`root\` of a binary tree, return *the maximum **path sum** of any non
         postorder(root)
         return res`,
       java: `class Solution {
-        public List<Integer> solution(Runner.TreeNode root) {
+        public List<Integer> solution(TreeNode root) {
           List<Integer> res = new ArrayList<>();
           postorder(root, res);
           return res;
         }
-        private void postorder(Runner.TreeNode node, List<Integer> res) {
+        private void postorder(TreeNode node, List<Integer> res) {
           if (node == null) return;
           postorder(node.left, res);
           postorder(node.right, res);
@@ -664,12 +664,12 @@ Given the \`root\` of a binary tree, return *the maximum **path sum** of any non
         preorder(root)
         return res`,
       java: `class Solution {
-        public List<Integer> solution(Runner.TreeNode root) {
+        public List<Integer> solution(TreeNode root) {
           List<Integer> res = new ArrayList<>();
           preorder(root, res);
           return res;
         }
-        private void preorder(Runner.TreeNode node, List<Integer> res) {
+        private void preorder(TreeNode node, List<Integer> res) {
           if (node == null) return;
           res.add(node.val);
           preorder(node.left, res);
@@ -763,17 +763,17 @@ Given the \`root\` of a binary tree, return *the maximum **path sum** of any non
             ltr = not ltr
         return res`,
       java: `class Solution {
-        public List<List<Integer>> solution(Runner.TreeNode root) {
+        public List<List<Integer>> solution(TreeNode root) {
           List<List<Integer>> res = new ArrayList<>();
           if (root == null) return res;
-          Queue<Runner.TreeNode> q = new LinkedList<>();
+          Queue<TreeNode> q = new LinkedList<>();
           q.add(root);
           boolean ltr = true;
           while (!q.isEmpty()) {
             int len = q.size();
             List<Integer> level = new ArrayList<>();
             for (int i = 0; i < len; i++) {
-              Runner.TreeNode node = q.poll();
+              TreeNode node = q.poll();
               if (ltr) level.add(node.val);
               else level.add(0, node.val);
               if (node.left != null) q.add(node.left);
@@ -883,16 +883,16 @@ Given the \`root\` of a binary tree, return *the maximum **path sum** of any non
       java: `class Solution {
         private int postIdx;
         private Map<Integer, Integer> map = new HashMap<>();
-        public Runner.TreeNode solution(int[] inorder, int[] postorder) {
+        public TreeNode solution(int[] inorder, int[] postorder) {
           map.clear();
           for (int i = 0; i < inorder.length; i++) map.put(inorder[i], i);
           postIdx = postorder.length - 1;
           return build(inorder, postorder, 0, inorder.length - 1);
         }
-        private Runner.TreeNode build(int[] inorder, int[] postorder, int l, int r) {
+        private TreeNode build(int[] inorder, int[] postorder, int l, int r) {
           if (l > r) return null;
           int val = postorder[postIdx--];
-          Runner.TreeNode root = new Runner.TreeNode(val);
+          TreeNode root = new TreeNode(val);
           int mid = map.get(val);
           root.right = build(inorder, postorder, mid + 1, r);
           root.left = build(inorder, postorder, l, mid - 1);
@@ -992,16 +992,16 @@ Given the \`root\` of a binary tree, return *the maximum **path sum** of any non
       java: `class Solution {
         private int preIdx = 0;
         private Map<Integer, Integer> map = new HashMap<>();
-        public Runner.TreeNode solution(int[] preorder, int[] inorder) {
+        public TreeNode solution(int[] preorder, int[] inorder) {
           map.clear();
           for (int i = 0; i < inorder.length; i++) map.put(inorder[i], i);
           preIdx = 0;
           return build(preorder, inorder, 0, inorder.length - 1);
         }
-        private Runner.TreeNode build(int[] preorder, int[] inorder, int l, int r) {
+        private TreeNode build(int[] preorder, int[] inorder, int l, int r) {
           if (l > r) return null;
           int val = preorder[preIdx++];
-          Runner.TreeNode root = new Runner.TreeNode(val);
+          TreeNode root = new TreeNode(val);
           int mid = map.get(val);
           root.left = build(preorder, inorder, l, mid - 1);
           root.right = build(preorder, inorder, mid + 1, r);
@@ -1093,13 +1093,13 @@ Given the \`root\` of a binary tree, return *the maximum **path sum** of any non
             return node
         return helper(0, len(nums) - 1)`,
       java: `class Solution {
-        public Runner.TreeNode solution(int[] nums) {
+        public TreeNode solution(int[] nums) {
           return helper(nums, 0, nums.length - 1);
         }
-        private Runner.TreeNode helper(int[] nums, int l, int r) {
+        private TreeNode helper(int[] nums, int l, int r) {
           if (l > r) return null;
           int mid = (l + r + 1) / 2;
-          Runner.TreeNode node = new Runner.TreeNode(nums[mid]);
+          TreeNode node = new TreeNode(nums[mid]);
           node.left = helper(nums, l, mid - 1);
           node.right = helper(nums, mid + 1, r);
           return node;
@@ -1184,19 +1184,19 @@ Given the \`root\` of a binary tree, return *the maximum **path sum** of any non
             return node
         return helper(0, len(nums) - 1)`,
       java: `class Solution {
-        public Runner.TreeNode solution(Runner.ListNode head) {
+        public TreeNode solution(ListNode head) {
           List<Integer> nums = new ArrayList<>();
-          Runner.ListNode curr = head;
+          ListNode curr = head;
           while (curr != null) {
             nums.add(curr.val);
             curr = curr.next;
           }
           return helper(nums, 0, nums.size() - 1);
         }
-        private Runner.TreeNode helper(List<Integer> nums, int l, int r) {
+        private TreeNode helper(List<Integer> nums, int l, int r) {
           if (l > r) return null;
           int mid = (l + r + 1) / 2;
-          Runner.TreeNode node = new Runner.TreeNode(nums.get(mid));
+          TreeNode node = new TreeNode(nums.get(mid));
           node.left = helper(nums, l, mid - 1);
           node.right = helper(nums, mid + 1, r);
           return node;
@@ -1296,8 +1296,8 @@ According to the **definition of LCA on Wikipedia**: "The lowest common ancestor
                 return curr.val
         return 0`,
       java: `class Solution {
-        public int solution(Runner.TreeNode root, int p, int q) {
-          Runner.TreeNode curr = root;
+        public int solution(TreeNode root, int p, int q) {
+          TreeNode curr = root;
           while (curr != null) {
             if (p < curr.val && q < curr.val) curr = curr.left;
             else if (p > curr.val && q > curr.val) curr = curr.right;
@@ -1364,7 +1364,7 @@ A binary tree's **maximum depth** is the number of nodes along the longest path 
         if not root: return 0
         return 1 + max(self.solution(root.left), self.solution(root.right))`,
       java: `class Solution {
-        public int solution(Runner.TreeNode root) {
+        public int solution(TreeNode root) {
           if (root == null) return 0;
           return 1 + Math.max(solution(root.left), solution(root.right));
         }
@@ -1428,7 +1428,7 @@ The **minimum depth** is the number of nodes along the shortest path from the ro
         if not root.right: return 1 + self.solution(root.left)
         return 1 + min(self.solution(root.left), self.solution(root.right))`,
       java: `class Solution {
-        public int solution(Runner.TreeNode root) {
+        public int solution(TreeNode root) {
           if (root == null) return 0;
           if (root.left == null) return 1 + solution(root.right);
           if (root.right == null) return 1 + solution(root.left);
@@ -1507,7 +1507,7 @@ A **leaf** is a node with no children.
             return targetSum == root.val
         return self.solution(root.left, targetSum - root.val) or self.solution(root.right, targetSum - root.val)`,
       java: `class Solution {
-        public boolean solution(Runner.TreeNode root, int targetSum) {
+        public boolean solution(TreeNode root, int targetSum) {
           if (root == null) return false;
           if (root.left == null && root.right == null) return targetSum == root.val;
           return solution(root.left, targetSum - root.val) || solution(root.right, targetSum - root.val);
@@ -1596,12 +1596,12 @@ A **root-to-leaf** path is a path starting from the root and ending at any leaf 
         dfs(root, targetSum, [])
         return res`,
       java: `class Solution {
-        public List<List<Integer>> solution(Runner.TreeNode root, int targetSum) {
+        public List<List<Integer>> solution(TreeNode root, int targetSum) {
           List<List<Integer>> res = new ArrayList<>();
           dfs(root, targetSum, new ArrayList<>(), res);
           return res;
         }
-        private void dfs(Runner.TreeNode node, int sum, List<Integer> path, List<List<Integer>> res) {
+        private void dfs(TreeNode node, int sum, List<Integer> path, List<List<Integer>> res) {
           if (node == null) return;
           path.add(node.val);
           if (node.left == null && node.right == null && sum == node.val) {
@@ -1689,7 +1689,7 @@ Two binary trees are considered the same if they are structurally identical, and
         if not p or not q or p.val != q.val: return False
         return self.solution(p.left, q.left) and self.solution(p.right, q.right)`,
       java: `class Solution {
-        public boolean solution(Runner.TreeNode p, Runner.TreeNode q) {
+        public boolean solution(TreeNode p, TreeNode q) {
           if (p == null && q == null) return true;
           if (p == null || q == null || p.val != q.val) return false;
           return solution(p.left, q.left) && solution(p.right, q.right);
@@ -1778,10 +1778,10 @@ Therefore, sum = 495 + 491 + 40 = 1026.
             return dfs(node.left, curr) + dfs(node.right, curr)
         return dfs(root, 0)`,
       java: `class Solution {
-        public int solution(Runner.TreeNode root) {
+        public int solution(TreeNode root) {
           return dfs(root, 0);
         }
-        private int dfs(Runner.TreeNode node, int curr) {
+        private int dfs(TreeNode node, int curr) {
           if (node == null) return 0;
           curr = curr * 10 + node.val;
           if (node.left == null && node.right == null) return curr;
@@ -1860,11 +1860,11 @@ Therefore, sum = 495 + 491 + 40 = 1026.
             return is_mirror(t1.left, t2.right) and is_mirror(t1.right, t2.left)
         return is_mirror(root.left, root.right)`,
       java: `class Solution {
-        public boolean solution(Runner.TreeNode root) {
+        public boolean solution(TreeNode root) {
           if (root == null) return true;
           return isMirror(root.left, root.right);
         }
-        private boolean isMirror(Runner.TreeNode t1, Runner.TreeNode t2) {
+        private boolean isMirror(TreeNode t1, TreeNode t2) {
           if (t1 == null && t2 == null) return true;
           if (t1 == null || t2 == null || t1.val != t2.val) return false;
           return isMirror(t1.left, t2.right) && isMirror(t1.right, t2.left);
@@ -2028,10 +2028,10 @@ A **valid BST** is defined as follows:
             return validate(node.left, low, node.val) and validate(node.right, node.val, high)
         return validate(root, float('-inf'), float('inf'))`,
       java: `class Solution {
-        public boolean solution(Runner.TreeNode root) {
+        public boolean solution(TreeNode root) {
           return validate(root, Long.MIN_VALUE, Long.MAX_VALUE);
         }
-        private boolean validate(Runner.TreeNode node, long min, long max) {
+        private boolean validate(TreeNode node, long min, long max) {
           if (node == null) return true;
           if (node.val <= min || node.val >= max) return false;
           return validate(node.left, min, node.val) && validate(node.right, node.val, max);
@@ -2118,14 +2118,14 @@ You may assume the two numbers do not contain any leading zero, except the numbe
             l2 = l2.next if l2 else None
         return dummy.next`,
       java: `class Solution {
-        public Runner.ListNode solution(Runner.ListNode l1, Runner.ListNode l2) {
-          Runner.ListNode dummy = new Runner.ListNode(0);
-          Runner.ListNode curr = dummy;
+        public ListNode solution(ListNode l1, ListNode l2) {
+          ListNode dummy = new ListNode(0);
+          ListNode curr = dummy;
           int carry = 0;
           while (l1 != null || l2 != null || carry != 0) {
             int sum = (l1 != null ? l1.val : 0) + (l2 != null ? l2.val : 0) + carry;
             carry = sum / 10;
-            curr.next = new Runner.ListNode(sum % 10);
+            curr.next = new ListNode(sum % 10);
             curr = curr.next;
             if (l1 != null) l1 = l1.next;
             if (l2 != null) l2 = l2.next;
@@ -2225,9 +2225,9 @@ Return *the head of the merged linked list*.
         curr.next = list1 or list2
         return dummy.next`,
       java: `class Solution {
-        public Runner.ListNode solution(Runner.ListNode list1, Runner.ListNode list2) {
-          Runner.ListNode dummy = new Runner.ListNode(0);
-          Runner.ListNode curr = dummy;
+        public ListNode solution(ListNode list1, ListNode list2) {
+          ListNode dummy = new ListNode(0);
+          ListNode curr = dummy;
           while (list1 != null && list2 != null) {
             if (list1.val <= list2.val) {
               curr.next = list1;
@@ -2324,10 +2324,10 @@ Return *the head of the merged linked list*.
             curr = nxt
         return prev`,
       java: `class Solution {
-        public Runner.ListNode solution(Runner.ListNode head) {
-          Runner.ListNode prev = null, curr = head;
+        public ListNode solution(ListNode head) {
+          ListNode prev = null, curr = head;
           while (curr != null) {
-            Runner.ListNode next = curr.next;
+            ListNode next = curr.next;
             curr.next = prev;
             prev = curr;
             curr = next;
@@ -2416,15 +2416,15 @@ Return *the head of the merged linked list*.
             prev.next = temp
         return dummy.next`,
       java: `class Solution {
-        public Runner.ListNode solution(Runner.ListNode head, int left, int right) {
+        public ListNode solution(ListNode head, int left, int right) {
           if (head == null || left == right) return head;
-          Runner.ListNode dummy = new Runner.ListNode(0);
+          ListNode dummy = new ListNode(0);
           dummy.next = head;
-          Runner.ListNode prev = dummy;
+          ListNode prev = dummy;
           for (int i = 1; i < left; i++) prev = prev.next;
-          Runner.ListNode curr = prev.next;
+          ListNode curr = prev.next;
           for (int i = 0; i < right - left; i++) {
-            Runner.ListNode temp = curr.next;
+            ListNode temp = curr.next;
             curr.next = temp.next;
             temp.next = prev.next;
             prev.next = temp;
@@ -2511,8 +2511,8 @@ Return *the head of the merged linked list*.
                 curr = curr.next
         return head`,
       java: `class Solution {
-        public Runner.ListNode solution(Runner.ListNode head) {
-          Runner.ListNode curr = head;
+        public ListNode solution(ListNode head) {
+          ListNode curr = head;
           while (curr != null && curr.next != null) {
             if (curr.val == curr.next.val) {
               curr.next = curr.next.next;
@@ -2607,10 +2607,10 @@ Return *the head of the merged linked list*.
             head = head.next
         return dummy.next`,
       java: `class Solution {
-        public Runner.ListNode solution(Runner.ListNode head) {
-          Runner.ListNode dummy = new Runner.ListNode(0);
+        public ListNode solution(ListNode head) {
+          ListNode dummy = new ListNode(0);
           dummy.next = head;
-          Runner.ListNode prev = dummy;
+          ListNode prev = dummy;
           while (head != null) {
             if (head.next != null && head.val == head.next.val) {
               while (head.next != null && head.val == head.next.val) head = head.next;
@@ -2706,10 +2706,10 @@ Return *the head of the merged linked list*.
         slow.next = slow.next.next
         return dummy.next`,
       java: `class Solution {
-        public Runner.ListNode solution(Runner.ListNode head, int n) {
-          Runner.ListNode dummy = new Runner.ListNode(0);
+        public ListNode solution(ListNode head, int n) {
+          ListNode dummy = new ListNode(0);
           dummy.next = head;
-          Runner.ListNode fast = dummy, slow = dummy;
+          ListNode fast = dummy, slow = dummy;
           for (int i = 0; i <= n; i++) fast = fast.next;
           while (fast != null) {
             fast = fast.next;
@@ -2801,13 +2801,13 @@ Return *the head of the merged linked list*.
             prev = first
         return dummy.next`,
       java: `class Solution {
-        public Runner.ListNode solution(Runner.ListNode head) {
-          Runner.ListNode dummy = new Runner.ListNode(0);
+        public ListNode solution(ListNode head) {
+          ListNode dummy = new ListNode(0);
           dummy.next = head;
-          Runner.ListNode prev = dummy;
+          ListNode prev = dummy;
           while (prev.next != null && prev.next.next != null) {
-            Runner.ListNode first = prev.next;
-            Runner.ListNode second = prev.next.next;
+            ListNode first = prev.next;
+            ListNode second = prev.next.next;
             first.next = second.next;
             second.next = first;
             prev.next = second;
@@ -2906,18 +2906,18 @@ Return *the head of the merged linked list*.
         new_tail.next = None
         return new_head`,
       java: `class Solution {
-        public Runner.ListNode solution(Runner.ListNode head, int k) {
+        public ListNode solution(ListNode head, int k) {
           if (head == null || head.next == null || k == 0) return head;
           int len = 1;
-          Runner.ListNode tail = head;
+          ListNode tail = head;
           while (tail.next != null) { tail = tail.next; len++; }
           k %= len;
           if (k == 0) return head;
           tail.next = head;
           int steps = len - k;
-          Runner.ListNode newTail = head;
+          ListNode newTail = head;
           for (int i = 1; i < steps; i++) newTail = newTail.next;
-          Runner.ListNode newHead = newTail.next;
+          ListNode newHead = newTail.next;
           newTail.next = null;
           return newHead;
         }
@@ -3005,9 +3005,9 @@ You should **preserve** the original relative order of the nodes in each of the 
         c1.next = d2.next
         return d1.next`,
       java: `class Solution {
-        public Runner.ListNode solution(Runner.ListNode head, int x) {
-          Runner.ListNode d1 = new Runner.ListNode(0), d2 = new Runner.ListNode(0);
-          Runner.ListNode c1 = d1, c2 = d2;
+        public ListNode solution(ListNode head, int x) {
+          ListNode d1 = new ListNode(0), d2 = new ListNode(0);
+          ListNode c1 = d1, c2 = d2;
           while (head != null) {
             if (head.val < x) { c1.next = head; c1 = c1.next; }
             else { c2.next = head; c2 = c2.next; }
@@ -3104,15 +3104,15 @@ You should **preserve** the original relative order of the nodes in each of the 
             c = c.next
         return dummy.next`,
       java: `class Solution {
-        public Runner.ListNode solution(Runner.ListNode head) {
+        public ListNode solution(ListNode head) {
           if (head == null || head.next == null) return head;
           List<Integer> nums = new ArrayList<>();
-          Runner.ListNode curr = head;
+          ListNode curr = head;
           while (curr != null) { nums.add(curr.val); curr = curr.next; }
           Collections.sort(nums);
-          Runner.ListNode dummy = new Runner.ListNode(0);
-          Runner.ListNode c = dummy;
-          for (int v : nums) { c.next = new Runner.ListNode(v); c = c.next; }
+          ListNode dummy = new ListNode(0);
+          ListNode c = dummy;
+          for (int v : nums) { c.next = new ListNode(v); c = c.next; }
           return dummy.next;
         }
       }`,
@@ -3208,10 +3208,10 @@ You may not modify the values in the list's nodes. Only nodes themselves may be 
         nodes[l].next = None
         return head`,
       java: `class Solution {
-        public Runner.ListNode solution(Runner.ListNode head) {
+        public ListNode solution(ListNode head) {
           if (head == null || head.next == null) return head;
-          List<Runner.ListNode> nodes = new ArrayList<>();
-          Runner.ListNode curr = head;
+          List<ListNode> nodes = new ArrayList<>();
+          ListNode curr = head;
           while (curr != null) { nodes.add(curr); curr = curr.next; }
           int l = 0, r = nodes.size() - 1;
           while (l < r) {
@@ -3327,7 +3327,7 @@ You may not modify the values in the list's nodes. Only nodes themselves may be 
             curr = curr.next
         return dummy.next`,
       java: `class Solution {
-        public Runner.ListNode solution(List<Object> lists) {
+        public ListNode solution(List<Object> lists) {
           List<Integer> nums = new ArrayList<>();
           for (Object obj : lists) {
             if (obj instanceof List) {
@@ -3348,9 +3348,9 @@ You may not modify the values in the list's nodes. Only nodes themselves may be 
             }
           }
           Collections.sort(nums);
-          Runner.ListNode dummy = new Runner.ListNode(0);
-          Runner.ListNode curr = dummy;
-          for (int v : nums) { curr.next = new Runner.ListNode(v); curr = curr.next; }
+          ListNode dummy = new ListNode(0);
+          ListNode curr = dummy;
+          for (int v : nums) { curr.next = new ListNode(v); curr = curr.next; }
           return dummy.next;
         }
       }`,

@@ -374,7 +374,7 @@ exection -> execution (insert 'u')
     test_cases: [
       { input: '"horse", "ros"', output: '3', is_hidden: false },
       { input: '"intention", "execution"', output: '5', is_hidden: false },
-      { input: '""', output: '0', is_hidden: false },
+      { input: '\"\", \"\"', output: '0', is_hidden: false },
       { input: '"a", "b"', output: '1', is_hidden: true }
     ],
     solutions: {
