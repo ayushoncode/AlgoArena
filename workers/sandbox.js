@@ -849,7 +849,7 @@ function spawnWithTimeout(cmd, args, timeoutMs, opts = {}) {
 
       if (code !== 0 && !stdout.trim()) {
         // Non-zero exit with no stdout = runtime error before any output
-        const err = new Error(stderr.slice(0, 600) || `Exited with code ${code}`)
+        const err = new Error(stderr.slice(0, 2000) || `Exited with code ${code}`)
         err.exitCode = code
         err.isRuntime = true
         return reject(err)
@@ -904,28 +904,32 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
   fs.mkdirSync(tmpDir, { recursive: true })
 
   const lang = (language || 'javascript').toLowerCase()
-  let codeFile, runnerFile, runnerContent, dockerExecCmd
+  let codeFile, runnerFile, runnerContent, dockerCompileCmd, dockerRunCmd
 
   if (lang === 'python' || lang === 'py') {
     codeFile = 'solution.py'
     runnerFile = 'runner.py'
     runnerContent = buildPyRunner(testCases)
-    dockerExecCmd = ['python3', './runner.py']
+    dockerCompileCmd = null
+    dockerRunCmd = ['python3', './runner.py']
   } else if (lang === 'cpp' || lang === 'c++') {
     codeFile = 'solution.cpp'
     runnerFile = 'runner.cpp'
     runnerContent = buildCppRunner(testCases, code)
-    dockerExecCmd = ['sh', '-c', 'g++ -O0 -std=c++20 ./runner.cpp -o /tmp/runner && /tmp/runner']
+    dockerCompileCmd = ['g++', '-O0', '-std=c++20', './runner.cpp', '-o', '/sandbox/runner']
+    dockerRunCmd = ['/sandbox/runner']
   } else if (lang === 'java') {
     codeFile = 'Solution.java'
     runnerFile = 'Runner.java'
     runnerContent = buildJavaRunner(testCases)
-    dockerExecCmd = ['sh', '-c', 'javac -d /tmp ./Solution.java ./Runner.java && java -cp /tmp Runner']
+    dockerCompileCmd = ['javac', '-d', '/sandbox', './Solution.java', './Runner.java']
+    dockerRunCmd = ['java', '-cp', '/sandbox', 'Runner']
   } else {
     codeFile = 'solution.js'
     runnerFile = 'runner.js'
     runnerContent = buildJsRunner(testCases)
-    dockerExecCmd = ['node', './runner.js']
+    dockerCompileCmd = null
+    dockerRunCmd = ['node', './runner.js']
   }
 
   let userCodeToWrite = code
@@ -935,13 +939,25 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
   }
 
   try {
+    // ── Development Debug Logging ───────────────────────────────
+    if (process.env.NODE_ENV !== 'production' || process.env.DEBUG_SANDBOX) {
+      console.log('\n[Sandbox Debug] Compiling/Running Code');
+      console.log('Language:', lang);
+      console.log('Test Input (Sample):', testCases[0]?.input);
+      console.log('--- Source Code Reaching Compiler ---');
+      console.log(userCodeToWrite);
+      console.log('-------------------------------------\n');
+    } else {
+      console.log(`[Sandbox] Running code lang=${lang} tests=${testCases.length}`);
+    }
+
     // ── Write user code and runner to temp dir ─────────────────
     fs.writeFileSync(path.join(tmpDir, codeFile), userCodeToWrite, 'utf8')
     fs.writeFileSync(path.join(tmpDir, runnerFile), runnerContent, 'utf8')
     fs.writeFileSync(path.join(tmpDir, 'test_cases.json'), JSON.stringify(testCases), 'utf8')
 
     // ── docker run with all security flags ─────────────────────
-    const dockerArgs = [
+    const baseDockerArgs = [
       'run',
       '--network', 'none',            // no internet
       '--memory', '512m',            // 512 MB RAM cap (needed for C++ / Java compilation)
@@ -953,9 +969,6 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
       '--rm',                             // auto-remove after exit
       '--user', 'sandbox',         // run as non-root
       '-w', '/sandbox',                  // workdir
-      '-v', `${tmpDir}:/sandbox:ro`, // user code — read only
-      DOCKER_IMAGE,
-      ...dockerExecCmd,
     ]
 
     const timeout = timeLimitMs ? Math.max(TIMEOUT_MS, timeLimitMs) : TIMEOUT_MS
@@ -963,6 +976,26 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
 
     let stdout
     let isDockerUnavailable = false
+
+    // ── 1. Explicit Compilation Phase ────────────────────────────
+    if (dockerCompileCmd) {
+      const compileArgs = [...baseDockerArgs, '-v', `${tmpDir}:/sandbox:rw`, DOCKER_IMAGE, ...dockerCompileCmd]
+      try {
+        await spawnWithTimeout('docker', compileArgs, 15000)
+      } catch (err) {
+        const msg = String(err.message || err.stderr || '')
+        if (
+          msg.includes('Cannot connect to the Docker daemon') ||
+          msg.includes('failed to connect to the docker API') ||
+          msg.includes('connect: no such file or directory') ||
+          msg.includes('ENOENT') || msg.includes('not found') || msg.includes('docker:')
+        ) {
+          isDockerUnavailable = true
+        } else {
+          return makeErrorResult('COMPILATION_ERROR', testCases, err.message, Date.now() - startTime)
+        }
+      }
+    }
 
     let overallVerdict = 'ACCEPTED'
     let passedCount = 0
@@ -1004,41 +1037,42 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
       }
     }
 
-    try {
-      stdout = await spawnWithTimeout('docker', dockerArgs, timeout, { onStdoutLine })
-    } catch (err) {
-      if (err.timedOut) {
-        return makeErrorResult('TIME_LIMIT_EXCEEDED', testCases,
-          `Time limit exceeded (${timeout}ms)`, timeout)
-      }
-      const msg = String(err.message || err.stderr || '')
-      if (
-        msg.includes('Cannot connect to the Docker daemon') ||
-        msg.includes('failed to connect to the docker API') ||   // Docker Desktop Mac (new format)
-        msg.includes('connect: no such file or directory') ||    // dead socket symlink
-        msg.includes('ENOENT') ||
-        msg.includes('not found') ||
-        msg.includes('docker:')
-      ) {
-        isDockerUnavailable = true
-      } else {
+    // ── 2. Explicit Execution Phase ──────────────────────────────
+    if (!isDockerUnavailable) {
+      const runArgs = [...baseDockerArgs, '-v', `${tmpDir}:/sandbox:ro`, DOCKER_IMAGE, ...dockerRunCmd]
+      try {
+        stdout = await spawnWithTimeout('docker', runArgs, timeout, { onStdoutLine })
+      } catch (err) {
+        if (err.timedOut) {
+          return makeErrorResult('TIME_LIMIT_EXCEEDED', testCases,
+            `Time limit exceeded (${timeout}ms)`, timeout)
+        }
         return makeErrorResult('RUNTIME_ERROR', testCases, err.message, Date.now() - startTime)
       }
-    }
-
-    if (isDockerUnavailable) {
+    } else {
       // Fallback: direct runner execution (e.g. inside Railway / cloud container without host Docker socket)
-      const localCmd = dockerExecCmd[0]
-      let localArgs = dockerExecCmd.slice(1).map(arg =>
-        arg.replace(new RegExp('/sandbox', 'g'), tmpDir)
-           .replace(new RegExp('/tmp', 'g'), tmpDir)
-      )
-      if (lang === 'cpp' || lang === 'c++') {
-        const nlohmannDir = path.join(__dirname, 'nlohmann')
-        if (fs.existsSync(nlohmannDir)) {
-          localArgs = localArgs.map(arg => arg.replace('g++', `g++ -I "${nlohmannDir}" -I "${__dirname}"`))
+      if (dockerCompileCmd) {
+        let localCompileCmd = dockerCompileCmd[0]
+        let localCompileArgs = dockerCompileCmd.slice(1).map(arg =>
+          arg.replace(new RegExp('/sandbox', 'g'), tmpDir)
+        )
+        if (lang === 'cpp' || lang === 'c++') {
+          const nlohmannDir = path.join(__dirname, 'nlohmann')
+          if (fs.existsSync(nlohmannDir)) {
+            localCompileArgs = localCompileArgs.map(arg => arg.replace('g++', `g++ -I "${nlohmannDir}" -I "${__dirname}"`))
+          }
+        }
+        try {
+          await spawnWithTimeout(localCompileCmd, localCompileArgs, 15000, { cwd: tmpDir })
+        } catch (err) {
+          return makeErrorResult('COMPILATION_ERROR', testCases, err.message, Date.now() - startTime)
         }
       }
+
+      const localCmd = dockerRunCmd[0]
+      const localArgs = dockerRunCmd.slice(1).map(arg =>
+        arg.replace(new RegExp('/sandbox', 'g'), tmpDir)
+      )
       try {
         stdout = await spawnWithTimeout(localCmd, localArgs, TIMEOUT_MS, { cwd: tmpDir, onStdoutLine })
       } catch (err) {

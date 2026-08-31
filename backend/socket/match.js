@@ -9,7 +9,7 @@ const { calculateElo }      = require('../utils/elo')
 const { evaluateSubmission } = require('../services/judge')
 
 // ── In-memory active matches ───────────────────────────────────
-// Map<roomId, { dbMatchId, problemId, topic, difficulty, players, isCustom, submissions, startedAt, disconnectTimers }>
+// Map<roomId, { dbMatchId, problemId, topic, difficulty, players, isCustom, submissions, evaluating, isResolved, winnerId, matchEndPayload, startedAt, disconnectTimers }>
 const activeMatches = new Map()
 
 /* ── Create match row in DB ──────────────────────────────────── */
@@ -48,9 +48,39 @@ async function resolveMatch({ dbMatchId, winner, loser, isCustom = false, diffic
   let winnerNewRating = winnerOldRating
   let loserNewRating  = loserOldRating
 
+  if (!dbMatchId && !winner?.userId) {
+    return { winnerDelta, loserDelta, winnerOldRating, winnerNewRating, loserOldRating, loserNewRating }
+  }
+
   const client = await db.pool.connect()
   try {
     await client.query('BEGIN')
+
+    // ── Concurrency Check: Check if match is already marked 'finished' in DB
+    if (dbMatchId) {
+      const { rows: matchRows } = await client.query(
+        `SELECT id, status, winner_id FROM matches WHERE id = $1 FOR UPDATE`,
+        [dbMatchId]
+      )
+      if (matchRows.length > 0 && matchRows[0].status === 'finished') {
+        console.log(`[DB] resolveMatch: match ${dbMatchId} is already resolved. Skipping redundant Elo calculation.`)
+        const { rows: eloRows } = await client.query(
+          `SELECT user_id, old_rating, new_rating, delta FROM elo_history WHERE match_id = $1`,
+          [dbMatchId]
+        )
+        await client.query('COMMIT')
+        const wElo = eloRows.find(r => r.user_id === winner?.userId)
+        const lElo = eloRows.find(r => r.user_id === loser?.userId)
+        return {
+          winnerDelta: wElo?.delta ?? 0,
+          loserDelta: lElo?.delta ?? 0,
+          winnerOldRating: wElo?.old_rating ?? winnerOldRating,
+          winnerNewRating: wElo?.new_rating ?? winnerOldRating,
+          loserOldRating: lElo?.old_rating ?? loserOldRating,
+          loserNewRating: lElo?.new_rating ?? loserOldRating,
+        }
+      }
+    }
 
     let winnerMatches = 0
     let loserMatches  = 0
@@ -177,6 +207,11 @@ function registerMatch(io) {
           io.to(roomId).emit('player_reconnected', { userId, username })
         }
 
+        if (match.isResolved && match.matchEndPayload) {
+          socket.emit('match_end', match.matchEndPayload)
+          return
+        }
+
         socket.emit('match_state_restored', {
           roomId,
           dbMatchId: match.dbMatchId,
@@ -198,7 +233,7 @@ function registerMatch(io) {
              LEFT JOIN users w ON w.id = m.winner_id
              LEFT JOIN users l ON l.id = (CASE WHEN m.winner_id = m.player_one_id THEN m.player_two_id ELSE m.player_one_id END)
              WHERE (m.player_one_id = $1 OR m.player_two_id = $1)
-             ORDER BY m.created_at DESC LIMIT 1`,
+             ORDER BY m.started_at DESC LIMIT 1`,
             [userId]
           )
           if (rows.length && rows[0].status !== 'active') {
@@ -233,13 +268,19 @@ function registerMatch(io) {
       console.log(`[Match] resign_match user=${username} room=${roomId}`)
       const match = activeMatches.get(roomId) || {}
 
+      if (match.isResolved) {
+        console.log(`[Match] resign_match ignored — match ${roomId} already resolved`)
+        return
+      }
+      match.isResolved = true
+
       // Find opponent from match.players or socket room
       let opponent = match.players?.find(p => p.userId !== userId)
       if (!opponent && roomId) {
         const sockets = io.sockets.adapter.rooms.get(roomId)
         for (const sid of (sockets ?? [])) {
           const s = io.sockets.sockets.get(sid)
-          if (s && s.user.id !== userId) {
+          if (s && s.user && s.user.id !== userId) {
             opponent = { userId: s.user.id, username: s.user.username, rating: s.user.elo_rating }
             break
           }
@@ -253,8 +294,8 @@ function registerMatch(io) {
       const isCustom = match.isCustom || String(roomId).includes('custom')
       const difficulty = match.difficulty || 'medium'
 
-      const winnerInfo = opponent ? { userId: opponent.userId, username: opponent.username } : { userId: null, username: 'Opponent' }
-      const loserInfo  = { userId, username }
+      const winnerInfo = opponent ? { userId: opponent.userId, username: opponent.username, rating: opponent.rating } : { userId: null, username: 'Opponent' }
+      const loserInfo  = { userId, username, rating: elo_rating }
 
       const resolved = await resolveMatch({
         dbMatchId: match.dbMatchId,
@@ -289,58 +330,89 @@ function registerMatch(io) {
         },
       }
 
+      match.matchEndPayload = payload
+
       // Emit to room and directly to resigning socket
       io.to(roomId).emit('match_end', payload)
       socket.emit('match_end', payload)
 
       console.log(`[Match] RESIGNED ENDED winner=${payload.winner.username} loser=${username} room=${roomId}`)
-      activeMatches.delete(roomId)
+      setTimeout(() => {
+        if (activeMatches.get(roomId) === match) activeMatches.delete(roomId)
+      }, 60_000)
     })
 
     /* ── submit_code ──────────────────────────────────────── */
     socket.on('submit_code', async ({ roomId, code, language, topic, difficulty }) => {
-      console.log(`[Match] submit_code  user=${username}  room=${roomId}  lang=${language}`)
+      const submittedAt = Date.now()
+      console.log(`[Match] submit_code  user=${username}  room=${roomId}  lang=${language}  t=${submittedAt}`)
 
       if (!activeMatches.has(roomId)) {
         activeMatches.set(roomId, {
           dbMatchId:   null,
           problemId:   null,
-          topic,
-          difficulty,
+          topic:       topic || 'arrays',
+          difficulty:  difficulty || 'medium',
           submissions: new Map(),
+          evaluating:  new Map(),
+          isResolved:  false,
+          winnerId:    null,
+          matchEndPayload: null,
           startedAt:   Date.now(),
+          disconnectTimers: new Map(),
         })
       }
       const match = activeMatches.get(roomId)
-      if (match.submissions.get(userId) === 'ACCEPTED') return
+      if (!match.evaluating) match.evaluating = new Map()
+
+      // If user already solved it, ignore
+      if (match.submissions?.get(userId) === 'ACCEPTED') return
 
       // Look up problem ID if not cached
       let targetProblemId = match.problemId
       if (!targetProblemId) {
         const { rows } = await db.query(
           `SELECT id FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY created_at DESC LIMIT 1`,
-          [topic, difficulty]
+          [topic || match.topic, difficulty || match.difficulty]
         )
         targetProblemId = rows[0]?.id ?? null
         match.problemId = targetProblemId
       }
 
+      // Broadcast immediate submission notice to both clients so UI shows live judging state
+      io.to(roomId).emit('submission_started', {
+        userId,
+        username,
+        submittedAt,
+      })
+
+      // Setup tracking promise for this submission evaluation
+      let evalResolver
+      const evalPromise = new Promise((resolve) => { evalResolver = resolve })
+      match.evaluating.set(userId, {
+        submittedAt,
+        promise: evalPromise,
+        resolve: evalResolver,
+      })
+
       // ── Real Code Judge Evaluation ───────────────────────
       const judgeResult = await evaluateSubmission(targetProblemId, code, language, {
         onProgress: (tr) => {
-          console.log(`[Progress] Emit to frontend: testIndex=${tr.testIndex}, totalTests=${tr.totalTests}, passed=${tr.passed}`)
           io.to(roomId).emit('submission_progress', {
             userId,
             username,
             testIndex: tr.testIndex,
             passed: tr.passed,
-            totalTests: tr.totalTests
+            totalTests: tr.totalTests,
           })
         }
       })
       const verdict = judgeResult.verdict
-
+      if (!match.submissions) match.submissions = new Map()
       match.submissions.set(userId, verdict)
+
+      // Resolve evaluation promise
+      evalResolver({ verdict, judgeResult })
 
       console.log(`[Match] verdict user=${username} verdict=${verdict} (${judgeResult.passedTests}/${judgeResult.totalTests} tests) room=${roomId}`)
 
@@ -368,68 +440,106 @@ function registerMatch(io) {
         runtimeMs: judgeResult.runtimeMs,
       })
 
-      // ── If ACCEPTED → End Match ───────────────────────────
+      // ── If ACCEPTED → Win Resolution with Concurrency Protection ──
       if (verdict === 'ACCEPTED') {
-        let opponent = null
-        const oppPlayer = match?.players?.find(p => p.userId !== userId)
-        if (oppPlayer) {
-          opponent = { id: oppPlayer.userId, username: oppPlayer.username }
-        } else {
-          const sockets = io.sockets.adapter.rooms.get(roomId)
-          for (const sid of (sockets ?? [])) {
-            const s = io.sockets.sockets.get(sid)
-            if (s && s.user && s.user.id !== userId) { opponent = s.user; break }
+        // Concurrency Check: If opponent submitted BEFORE this submission and is still evaluating, wait for them!
+        const earlierOppEntry = Array.from(match.evaluating.entries())
+          .find(([otherId, entry]) => otherId !== userId && entry.submittedAt < submittedAt)
+
+        if (earlierOppEntry) {
+          console.log(`[Match] Concurrency: opponent ${earlierOppEntry[0]} submitted earlier (${earlierOppEntry[1].submittedAt} < ${submittedAt}). Waiting for evaluation...`)
+          try {
+            const oppResult = await Promise.race([
+              earlierOppEntry[1].promise,
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+            ])
+            if (oppResult && oppResult.verdict === 'ACCEPTED') {
+              console.log(`[Match] Earlier opponent submission passed! Opponent wins. Current user did not win the race.`)
+            }
+          } catch (e) {
+            console.log(`[Match] Earlier opponent evaluation timed out or rejected:`, e.message)
           }
         }
 
-        // Clear any disconnect timers
-        if (match.disconnectTimers) {
-          for (const timer of match.disconnectTimers.values()) clearTimeout(timer)
+        // Check if match is already resolved by another submission or forfeit
+        if (!match.isResolved) {
+          match.isResolved = true
+          match.winnerId = userId
+
+          let opponent = null
+          const oppPlayer = match?.players?.find(p => p.userId !== userId)
+          if (oppPlayer) {
+            opponent = { userId: oppPlayer.userId, username: oppPlayer.username, rating: oppPlayer.rating }
+          } else {
+            const sockets = io.sockets.adapter.rooms.get(roomId)
+            for (const sid of (sockets ?? [])) {
+              const s = io.sockets.sockets.get(sid)
+              if (s && s.user && s.user.id !== userId) {
+                opponent = { userId: s.user.id, username: s.user.username, rating: s.user.elo_rating }
+                break
+              }
+            }
+          }
+
+          // Clear any disconnect timers
+          if (match.disconnectTimers) {
+            for (const timer of match.disconnectTimers.values()) clearTimeout(timer)
+          }
+
+          const isCustom = match.isCustom || roomId.includes('custom')
+          const solveTimeSec = Math.round((Date.now() - (match.startedAt || Date.now())) / 1000)
+
+          const winnerInfo = { userId, username, rating: elo_rating }
+          const loserInfo  = opponent ? { userId: opponent.userId, username: opponent.username, rating: opponent.rating } : null
+
+          const resolved = await resolveMatch({
+            dbMatchId: match.dbMatchId,
+            winner: winnerInfo,
+            loser: loserInfo,
+            isCustom,
+            difficulty: difficulty || match.difficulty || 'medium',
+            solveTimeSec,
+          })
+
+          const payload = {
+            roomId,
+            topic: topic || match.topic || 'arrays',
+            difficulty: difficulty || match.difficulty || 'medium',
+            isCustom,
+            winner: {
+              userId: winnerInfo.userId,
+              username: winnerInfo.username,
+              oldRating: resolved.winnerOldRating,
+              rating: resolved.winnerOldRating,
+              newRating: resolved.winnerNewRating,
+              delta: resolved.winnerDelta,
+            },
+            loser: loserInfo ? {
+              userId: loserInfo.userId,
+              username: loserInfo.username,
+              oldRating: resolved.loserOldRating,
+              rating: resolved.loserOldRating,
+              newRating: resolved.loserNewRating,
+              delta: resolved.loserDelta,
+            } : null,
+          }
+
+          match.matchEndPayload = payload
+          io.to(roomId).emit('match_end', payload)
+          console.log(`[Match] ENDED winner=${username}(+${resolved.winnerDelta}) loser=${loserInfo?.username ?? '?'}(${resolved.loserDelta}) room=${roomId} custom=${isCustom}`)
+
+          // Retain match state for 60 seconds so late submissions / queries don't crash
+          setTimeout(() => {
+            if (activeMatches.get(roomId) === match) activeMatches.delete(roomId)
+          }, 60_000)
+        } else if (match.matchEndPayload) {
+          // Send cached match_end payload to this socket
+          socket.emit('match_end', match.matchEndPayload)
         }
-
-        const isCustom = match.isCustom || roomId.includes('custom')
-        const solveTimeSec = Math.round((Date.now() - (match.startedAt || Date.now())) / 1000)
-
-        const winnerInfo = { userId, username }
-        const loserInfo  = opponent ? { userId: opponent.id || opponent.userId, username: opponent.username } : null
-
-        const resolved = await resolveMatch({
-          dbMatchId: match.dbMatchId,
-          winner: winnerInfo,
-          loser: loserInfo,
-          isCustom,
-          difficulty: difficulty || match.difficulty || 'medium',
-          solveTimeSec,
-        })
-
-        const payload = {
-          roomId,
-          topic: topic || match.topic || 'arrays',
-          difficulty: difficulty || match.difficulty || 'medium',
-          isCustom,
-          winner: {
-            userId: winnerInfo.userId,
-            username: winnerInfo.username,
-            oldRating: resolved.winnerOldRating,
-            rating: resolved.winnerOldRating,
-            newRating: resolved.winnerNewRating,
-            delta: resolved.winnerDelta,
-          },
-          loser: loserInfo ? {
-            userId: loserInfo.userId,
-            username: loserInfo.username,
-            oldRating: resolved.loserOldRating,
-            rating: resolved.loserOldRating,
-            newRating: resolved.loserNewRating,
-            delta: resolved.loserDelta,
-          } : null,
-        }
-
-        io.to(roomId).emit('match_end', payload)
-        console.log(`[Match] ENDED winner=${username}(+${resolved.winnerDelta}) loser=${loserInfo?.username ?? '?'}(${resolved.loserDelta}) room=${roomId} custom=${isCustom}`)
-
-        activeMatches.delete(roomId)
       }
+
+      // Cleanup user from evaluating map
+      match.evaluating.delete(userId)
     })
 
     /* ── Disconnect & Forfeit Recovery ───────────────────── */
@@ -439,8 +549,8 @@ function registerMatch(io) {
         const isParticipant = match.players?.some(p => p.userId === userId)
         if (!isParticipant) continue
 
-        // Ignore if user already solved it
-        if (match.submissions.get(userId) === 'ACCEPTED') continue
+        // Ignore if user already solved it or match already ended
+        if (match.isResolved || match.submissions?.get(userId) === 'ACCEPTED') continue
 
         console.log(`[Match] player disconnected user=${username} room=${roomId} reason=${reason}`)
 
@@ -456,6 +566,8 @@ function registerMatch(io) {
         // 30-Second Forfeit Countdown Timer
         const timer = setTimeout(async () => {
           if (!activeMatches.has(roomId)) return
+          if (match.isResolved) return
+          match.isResolved = true
 
           console.log(`[Match] FORFEIT EXPIRED user=${username} room=${roomId}`)
           const opponent = match.players?.find(p => p.userId !== userId)
@@ -464,8 +576,8 @@ function registerMatch(io) {
           const isCustom = match.isCustom || roomId.includes('custom')
           const difficulty = match.difficulty || 'medium'
 
-          const winnerInfo = { userId: opponent.userId, username: opponent.username }
-          const loserInfo  = { userId, username }
+          const winnerInfo = { userId: opponent.userId, username: opponent.username, rating: opponent.rating }
+          const loserInfo  = { userId, username, rating: elo_rating }
 
           const resolved = await resolveMatch({
             dbMatchId: match.dbMatchId,
@@ -500,10 +612,13 @@ function registerMatch(io) {
             },
           }
 
+          match.matchEndPayload = payload
           io.to(roomId).emit('match_end', payload)
           console.log(`[Match] FORFEIT ENDED winner=${opponent.username}(+${resolved.winnerDelta}) loser=${username}(${resolved.loserDelta}) room=${roomId}`)
 
-          activeMatches.delete(roomId)
+          setTimeout(() => {
+            if (activeMatches.get(roomId) === match) activeMatches.delete(roomId)
+          }, 60_000)
         }, 30_000)
 
         match.disconnectTimers.set(userId, timer)
@@ -540,6 +655,9 @@ async function handleVerdict(payload, io) {
 
   if (verdict === 'ACCEPTED') {
     const match = activeMatches.get(roomId)
+    if (!match || match.isResolved) return
+    match.isResolved = true
+
     const opponent = match?.players?.find(p => p.userId !== userId)
 
     if (match?.disconnectTimers) {
@@ -551,7 +669,7 @@ async function handleVerdict(payload, io) {
     const solveTimeSec = Math.round((Date.now() - (match?.startedAt || Date.now())) / 1000)
 
     const winnerInfo = { userId, username }
-    const loserInfo  = opponent ? { userId: opponent.userId, username: opponent.username } : null
+    const loserInfo  = opponent ? { userId: opponent.userId, username: opponent.username, rating: opponent.rating } : null
 
     const resolved = await resolveMatch({
       dbMatchId: match?.dbMatchId,
@@ -585,8 +703,11 @@ async function handleVerdict(payload, io) {
       } : null,
     }
 
+    match.matchEndPayload = endPayload
     io.to(roomId).emit('match_end', endPayload)
-    activeMatches.delete(roomId)
+    setTimeout(() => {
+      if (activeMatches.get(roomId) === match) activeMatches.delete(roomId)
+    }, 60_000)
   }
 }
 
@@ -609,7 +730,12 @@ function trackRoom(roomId, dbMatchId, problemId, isCustom = false, players = [],
       topic,
       difficulty,
       submissions: new Map(),
+      evaluating: new Map(),
+      isResolved: false,
+      winnerId: null,
+      matchEndPayload: null,
       startedAt: Date.now(),
+      disconnectTimers: new Map(),
     })
   }
 }

@@ -139,7 +139,7 @@ async function evaluateJavaScript(code, testCases, onProgress) {
     }
 
     // Pacing delay so WebSocket has time to stream and UI displays smooth real-time test progression
-    await new Promise(r => setTimeout(r, 45))
+    await new Promise(r => setTimeout(r, 20))
 
     // Break early if fatal error or timeout to prevent hanging the server
     if (errorMsg) {

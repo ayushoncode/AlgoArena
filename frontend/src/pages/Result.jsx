@@ -8,7 +8,7 @@ import { UserAvatar, getUserEmoji } from '../utils/avatar'
 ════════════════════════════════════════════════ */
 function Confetti() {
   const pieces = Array.from({ length: 24 }, (_, i) => i)
-  const colors = ['#f97316','#22d3ee','#10b981','#f59e0b','#c084fc','#f43f5e']
+  const colors = ['#f97316', '#22d3ee', '#10b981', '#f59e0b', '#c084fc', '#f43f5e']
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
       {pieces.map(i => (
@@ -16,15 +16,15 @@ function Confetti() {
           key={i}
           className="absolute"
           style={{
-            left:            `${4 + (i * 3.9)}%`,
-            top:             '-10px',
-            width:           `${4 + Math.random() * 6}px`,
-            height:          `${8 + Math.random() * 8}px`,
-            background:      colors[i % colors.length],
-            borderRadius:    Math.random() > 0.5 ? '50%' : 2,
-            animation:       `confetti-fall ${1.5 + (i % 7) * 0.3}s ease-in ${(i % 5) * 0.15}s forwards`,
-            transform:       `rotate(${Math.random() * 360}deg)`,
-            opacity:         0,
+            left: `${4 + (i * 3.9)}%`,
+            top: '-10px',
+            width: `${4 + Math.random() * 6}px`,
+            height: `${8 + Math.random() * 8}px`,
+            background: colors[i % colors.length],
+            borderRadius: Math.random() > 0.5 ? '50%' : 2,
+            animation: `confetti-fall ${1.5 + (i % 7) * 0.3}s ease-in ${(i % 5) * 0.15}s forwards`,
+            transform: `rotate(${Math.random() * 360}deg)`,
+            opacity: 0,
           }}
         />
       ))}
@@ -39,7 +39,7 @@ function EloCounter({ delta, from }) {
   const [displayed, setDisplayed] = useState(from)
   useEffect(() => {
     const target = from + delta
-    const step   = delta > 0 ? 1 : -1
+    const step = delta > 0 ? 1 : -1
     let cur = from
     const t = setInterval(() => {
       cur += step
@@ -60,9 +60,9 @@ function EloCounter({ delta, from }) {
    RESULT PAGE
 ════════════════════════════════════════════════ */
 export default function Result() {
-  const { state }  = useLocation()
-  const navigate   = useNavigate()
-  const { user, refreshUser }   = useAuth()
+  const { state } = useLocation()
+  const navigate = useNavigate()
+  const { user, refreshUser } = useAuth()
 
   // Refresh user data from server so Navbar and Context have live DB ratings immediately
   useEffect(() => {
@@ -70,29 +70,29 @@ export default function Result() {
   }, [refreshUser])
 
   const winner = state?.winner
-  const loser  = state?.loser
+  const loser = state?.loser
 
   // Determine if current user is the winner
   const isIWinner = winner
-    ? (winner.userId ? winner.userId === user?.id : (winner.username && user?.username && winner.username.toLowerCase() === user.username.toLowerCase()))
+    ? (winner.userId ? String(winner.userId) === String(user?.id) : (winner.username && user?.username && winner.username.toLowerCase() === user.username.toLowerCase()))
     : false
 
-  const isWin  = state?.result === 'WIN' || isIWinner
+  const isWin = state?.result === 'WIN' || isIWinner
   const isDraw = state?.result === 'DRAW' || (!state?.result && !winner && !loser)
   const isLoss = !isWin && !isDraw
 
   // Who am I?
-  const myData  = isWin ? winner : (loser ?? { username: user?.username, rating: user?.elo_rating, delta: -18 })
+  const myData = isWin ? winner : (loser ?? { username: user?.username, rating: user?.elo_rating, delta: -18 })
   const oppData = isWin ? (loser ?? { username: 'Opponent', rating: 1200 }) : (winner ?? { username: 'Opponent', rating: 1200 })
 
   const isCustomMatch = state?.isCustom || state?.roomId?.includes('custom')
-  const myDelta  = isCustomMatch ? 0 : (myData?.delta ?? (isWin ? 18 : isDraw ? 0 : -18))
+  const myDelta = isCustomMatch ? 0 : (myData?.delta ?? (isWin ? 18 : isDraw ? 0 : -18))
 
   // Exact before and after rating
   const fromRating = myData?.oldRating ?? myData?.rating ?? user?.elo_rating ?? 1200
-  const toRating   = myData?.newRating ?? (fromRating + myDelta)
+  const toRating = myData?.newRating ?? (fromRating + myDelta)
 
-  const topic      = state?.topic      ?? state?.matchState?.topic      ?? '—'
+  const topic = state?.topic ?? state?.matchState?.topic ?? '—'
   const difficulty = state?.difficulty ?? state?.matchState?.difficulty ?? '—'
 
   return (
@@ -113,21 +113,21 @@ export default function Result() {
 
           {/* ── Big result card ────────────────────────────── */}
           <div style={{
-            background:   isWin ? 'rgba(16,185,129,0.05)' : isDraw ? 'rgba(107,114,128,0.05)' : 'rgba(244,63,94,0.05)',
-            border:       `1px solid ${isWin ? 'rgba(16,185,129,0.35)' : isDraw ? '#1e2130' : 'rgba(244,63,94,0.3)'}`,
+            background: isWin ? 'rgba(16,185,129,0.05)' : isDraw ? 'rgba(107,114,128,0.05)' : 'rgba(244,63,94,0.05)',
+            border: `1px solid ${isWin ? 'rgba(16,185,129,0.35)' : isDraw ? '#1e2130' : 'rgba(244,63,94,0.3)'}`,
             borderRadius: 6,
-            overflow:     'hidden',
+            overflow: 'hidden',
           }}>
             {/* Header */}
             <div className="px-8 py-8 text-center"
-                 style={{ borderBottom: '1px solid #1e2130' }}>
+              style={{ borderBottom: '1px solid #1e2130' }}>
               <p className="font-mono text-[11px] uppercase tracking-widest mb-3"
-                 style={{ color: state?.isForfeit ? '#f97316' : isCustomMatch ? '#22d3ee' : '#4b5563', letterSpacing: '0.14em' }}>
+                style={{ color: state?.isForfeit ? '#f97316' : isCustomMatch ? '#22d3ee' : '#4b5563', letterSpacing: '0.14em' }}>
                 {state?.isForfeit
                   ? `// ${state.forfeitUser === user?.username ? 'match forfeited (disconnected)' : 'forfeit victory (opponent disconnected)'}`
                   : isCustomMatch
-                  ? '// casual friend match (unranked)'
-                  : '// ranked match complete'}
+                    ? '// casual friend match (unranked)'
+                    : '// ranked match complete'}
               </p>
 
               {/* Result label */}
@@ -136,12 +136,12 @@ export default function Result() {
                   {isWin ? '🏆' : isDraw ? '🤝' : '💀'}
                 </span>
                 <span className="font-display font-black"
-                      style={{
-                        fontSize: 64,
-                        lineHeight: 1,
-                        color: isWin ? '#10b981' : isDraw ? '#9ca3af' : '#f43f5e',
-                        letterSpacing: '-0.03em',
-                      }}>
+                  style={{
+                    fontSize: 64,
+                    lineHeight: 1,
+                    color: isWin ? '#10b981' : isDraw ? '#9ca3af' : '#f43f5e',
+                    letterSpacing: '-0.03em',
+                  }}>
                   {isWin ? 'WIN' : isDraw ? 'DRAW' : 'LOSS'}
                 </span>
               </div>
@@ -163,13 +163,13 @@ export default function Result() {
             {/* Elo delta */}
             <div className="px-8 py-6 text-center" style={{ borderBottom: '1px solid #1e2130' }}>
               <p className="font-mono text-[10px] uppercase tracking-widest mb-3"
-                 style={{ color: '#4b5563', letterSpacing: '0.13em' }}>
+                style={{ color: '#4b5563', letterSpacing: '0.13em' }}>
                 // rating change
               </p>
               {isCustomMatch ? (
                 <div className="flex items-center justify-center gap-2">
                   <span className="font-mono text-sm px-3 py-1 font-bold"
-                        style={{ background: 'rgba(34,211,238,0.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.25)', borderRadius: 3 }}>
+                    style={{ background: 'rgba(34,211,238,0.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.25)', borderRadius: 3 }}>
                     Unranked Casual Match · Rating Unchanged ({fromRating})
                   </span>
                 </div>
@@ -179,7 +179,7 @@ export default function Result() {
                   <span className="font-mono text-2xl" style={{ color: '#374151' }}>→</span>
                   <EloCounter delta={myDelta} from={fromRating} />
                   <span className="font-mono text-xl font-bold"
-                        style={{ color: myDelta >= 0 ? '#10b981' : '#f43f5e' }}>
+                    style={{ color: myDelta >= 0 ? '#10b981' : '#f43f5e' }}>
                     ({myDelta > 0 ? `+${myDelta}` : myDelta})
                   </span>
                 </div>
@@ -189,14 +189,14 @@ export default function Result() {
             {/* Match summary */}
             <div className="px-8 py-5 grid grid-cols-2 gap-4">
               {[
-                { lbl:'topic',      val: topic },
-                { lbl:'difficulty', val: difficulty },
-                { lbl:'my verdict', val: isWin ? 'ACCEPTED' : isLoss ? 'ACCEPTED (opp)' : 'TIME UP' },
-                { lbl:'room',       val: state?.roomId?.slice(0,16) ?? '—' },
+                { lbl: 'topic', val: topic },
+                { lbl: 'difficulty', val: difficulty },
+                { lbl: 'my verdict', val: isWin ? 'ACCEPTED' : isLoss ? 'ACCEPTED (opp)' : 'TIME UP' },
+                { lbl: 'room', val: state?.roomId?.slice(0, 16) ?? '—' },
               ].map(r => (
                 <div key={r.lbl}>
                   <p className="font-mono text-[9px] uppercase tracking-widest mb-0.5"
-                     style={{ color: '#374151', letterSpacing: '0.12em' }}>{r.lbl}</p>
+                    style={{ color: '#374151', letterSpacing: '0.12em' }}>{r.lbl}</p>
                   <p className="font-mono text-[12px] font-bold" style={{ color: '#dde1ea' }}>{r.val}</p>
                 </div>
               ))}
@@ -227,7 +227,7 @@ export default function Result() {
               className="flex-1 py-3 font-mono text-sm transition-all active:scale-[0.98]"
               style={{ background: 'transparent', color: '#9ca3af', border: '1px solid #1e2130', borderRadius: 4 }}
               onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'}
-              onMouseOut={e  => e.currentTarget.style.borderColor = '#1e2130'}
+              onMouseOut={e => e.currentTarget.style.borderColor = '#1e2130'}
             >
               view_profile()
             </button>
@@ -238,8 +238,8 @@ export default function Result() {
             {isWin
               ? `rating ${fromRating} → ${toRating} · keep the streak going`
               : isDraw
-              ? 'no rating change · comeback starts now'
-              : `rating ${fromRating} → ${toRating} · study the topic and rematch`}
+                ? 'no rating change · comeback starts now'
+                : `rating ${fromRating} → ${toRating} · study the topic and rematch`}
           </p>
         </div>
       </div>
