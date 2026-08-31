@@ -81,6 +81,7 @@ function VerdictBadge({ verdict, progress }) {
     ACCEPTED:             { col: '#10b981', bg: 'rgba(16,185,129,0.15)',  border: 'rgba(16,185,129,0.3)', label: 'ACCEPTED' },
     WRONG_ANSWER:         { col: '#f43f5e', bg: 'rgba(244,63,94,0.15)',   border: 'rgba(244,63,94,0.3)',  label: 'WRONG ANSWER' },
     RUNTIME_ERROR:        { col: '#f43f5e', bg: 'rgba(244,63,94,0.15)',   border: 'rgba(244,63,94,0.3)',  label: 'RUNTIME ERROR' },
+    COMPILATION_ERROR:    { col: '#eab308', bg: 'rgba(234,179,8,0.15)',   border: 'rgba(234,179,8,0.3)',  label: 'COMPILATION ERROR' },
     TIME_LIMIT_EXCEEDED:  { col: '#f59e0b', bg: 'rgba(245,158,11,0.15)',  border: 'rgba(245,158,11,0.3)', label: 'TIME LIMIT' },
     PENDING:              { col: '#6b7280', bg: 'rgba(107,114,128,0.12)', border: 'rgba(107,114,128,0.3)', label: 'JUDGING...' },
   }
@@ -125,6 +126,7 @@ function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, on
     WRONG_ANSWER:        { col: '#f43f5e', label: 'Wrong Answer ✗' },
     TIME_LIMIT_EXCEEDED: { col: '#f59e0b', label: 'Time Limit Exceeded' },
     RUNTIME_ERROR:       { col: '#f43f5e', label: 'Runtime Error' },
+    COMPILATION_ERROR:   { col: '#eab308', label: 'Compilation Error' },
     PENDING:             { col: '#6b7280', label: 'Judging…' },
   }
 
@@ -559,6 +561,15 @@ export default function Match() {
     function onMatchStateRestored(restored) {
       setMatchState(prev => ({ ...(prev || {}), ...restored }))
     }
+    function onSubmissionStarted({ userId }) {
+      if (userId === user?.id) {
+        setMyVerdict('PENDING')
+        setSubmitting(true)
+      } else {
+        setOppVerdict('PENDING')
+        setOppProgress(null)
+      }
+    }
     function onSubmissionResult({ userId, verdict, totalTests, passedTests, testResults, runtimeMs }) {
       if (userId === user?.id) {
         setMyVerdict(verdict)
@@ -567,6 +578,7 @@ export default function Match() {
         setSubmitResult({ verdict, totalTests, passedTests, testResults, runtimeMs })
       } else {
         setOppVerdict(verdict)
+        setOppProgress(null)
       }
     }
     function onSubmissionProgress({ userId, testIndex, passed, totalTests }) {
@@ -577,6 +589,19 @@ export default function Match() {
       }
     }
     function onMatchEnd(payload) {
+      setSubmitting(false)
+      setSubmitProgress(null)
+
+      const isIWinner = payload?.winner
+        ? (payload.winner.userId ? String(payload.winner.userId) === String(user?.id) : (payload.winner.username && user?.username && payload.winner.username.toLowerCase() === user.username.toLowerCase()))
+        : false
+
+      if (isIWinner) {
+        setMyVerdict('ACCEPTED')
+      } else if (payload?.winner) {
+        setOppVerdict('ACCEPTED')
+      }
+
       if (roomId) {
         localStorage.removeItem(`aa_start_${roomId}`)
         sessionStorage.removeItem(`aa_match_${roomId}`)
@@ -609,6 +634,7 @@ export default function Match() {
     on('match_found',           onMatchFound)
     on('match_problem_set',     onMatchProblemSet)
     on('match_state_restored',  onMatchStateRestored)
+    on('submission_started',    onSubmissionStarted)
     on('submission_result',     onSubmissionResult)
     on('submission_progress',   onSubmissionProgress)
     on('match_end',             onMatchEnd)
@@ -624,6 +650,7 @@ export default function Match() {
       off('match_found',          onMatchFound)
       off('match_problem_set',    onMatchProblemSet)
       off('match_state_restored', onMatchStateRestored)
+      off('submission_started',   onSubmissionStarted)
       off('submission_result',    onSubmissionResult)
       off('submission_progress',  onSubmissionProgress)
       off('match_end',            onMatchEnd)
@@ -677,11 +704,15 @@ export default function Match() {
 
   async function handleRun() {
     if (running || !activeProblem?.id) return
+    
+    // Get the most up-to-date code directly from Monaco, fallback to React state if not mounted
+    const currentCode = editorRef.current ? editorRef.current.getValue() : code;
+    
     setRunning(true)
     setRunResult(null)
     try {
       const { data } = await api.post(`/api/problems/${activeProblem.id}/run`, {
-        code,
+        code: currentCode,
         language: lang,
       })
       setRunResult(data)
@@ -701,12 +732,15 @@ export default function Match() {
 
   async function handleSubmit() {
     if (submitting || myVerdict === 'ACCEPTED') return
+    
+    const currentCode = editorRef.current ? editorRef.current.getValue() : code;
+
     setSubmitting(true)
     setSubmitProgress(null)
     setMyVerdict('PENDING')
     emit('submit_code', {
       roomId,
-      code,
+      code: currentCode,
       language: lang,
       topic: matchState?.topic,
       difficulty: matchState?.difficulty,

@@ -72,7 +72,11 @@ router.get('/me/history', authMiddleware, async (req, res) => {
          CASE WHEN m.player_one_id = $1 THEN m.player_two_id ELSE m.player_one_id END
          = u_opp.id
        )
-       LEFT JOIN elo_history e ON e.match_id = m.id AND e.user_id = $1
+       LEFT JOIN (
+         SELECT DISTINCT ON (match_id, user_id) match_id, user_id, delta
+         FROM elo_history
+         ORDER BY match_id, user_id, created_at DESC
+       ) e ON e.match_id = m.id AND e.user_id = $1
        WHERE (m.player_one_id = $1 OR m.player_two_id = $1)
          AND m.status = 'finished'
        ORDER BY m.ended_at DESC
@@ -323,7 +327,11 @@ router.get('/:username/history', async (req, res) => {
          CASE WHEN m.player_one_id = $1 THEN m.player_two_id ELSE m.player_one_id END
          = u_opp.id
        )
-       LEFT JOIN elo_history e ON e.match_id = m.id AND e.user_id = $1
+       LEFT JOIN (
+         SELECT DISTINCT ON (match_id, user_id) match_id, user_id, delta
+         FROM elo_history
+         ORDER BY match_id, user_id, created_at DESC
+       ) e ON e.match_id = m.id AND e.user_id = $1
        WHERE (m.player_one_id = $1 OR m.player_two_id = $1)
          AND m.status = 'finished'
        ORDER BY m.ended_at DESC
