@@ -202,7 +202,7 @@ Open **`http://localhost:5173`** to enter the arena! ⚔️
 
 Distributed under the **ISC License**.
 
-Created by **[Ayush](https://github.com/ayushoncode)**.
+
 
 <div align="center">
   <sub>⭐ Star this repository if you find it helpful!</sub>
