@@ -47,14 +47,14 @@ function makeRoomId() {
   return `room:${randomBytes(6).toString('hex')}`
 }
 
-/** Remove a socketId from every queue bucket */
-function removeFromQueues(socketId) {
+/** Remove a socketId or userId from every queue bucket */
+function removeFromQueues(socketId, userId = null) {
   for (const [key, bucket] of queues.entries()) {
     const before = bucket.length
-    const filtered = bucket.filter(e => e.socketId !== socketId)
+    const filtered = bucket.filter(e => e.socketId !== socketId && (!userId || e.userId !== userId))
     if (filtered.length !== before) {
       queues.set(key, filtered)
-      console.log(`[Queue] removed ${socketId} from ${key} (${before} → ${filtered.length})`)
+      console.log(`[Queue] removed socket=${socketId} user=${userId} from ${key} (${before} → ${filtered.length})`)
     }
   }
 }
@@ -66,7 +66,7 @@ function removeFromQueues(socketId) {
 function findOpponent(bucket, newEntry) {
   for (let i = 0; i < bucket.length; i++) {
     const candidate = bucket[i]
-    if (candidate.socketId === newEntry.socketId) continue
+    if (candidate.socketId === newEntry.socketId || candidate.userId === newEntry.userId) continue
 
     // Use the LARGER band (the player who has been waiting longer)
     const band = Math.max(currentBand(candidate.joinedAt), currentBand(newEntry.joinedAt))
@@ -151,7 +151,7 @@ function sweepQueues(io) {
       for (let j = i + 1; j < bucket.length; j++) {
         const p1 = bucket[i]
         const p2 = bucket[j]
-        if (p1.socketId === p2.socketId) continue
+        if (p1.socketId === p2.socketId || p1.userId === p2.userId) continue
         const band = Math.max(currentBand(p1.joinedAt), currentBand(p2.joinedAt))
         const diff = Math.abs(p1.rating - p2.rating)
         if (diff <= band) {
@@ -178,6 +178,17 @@ function registerMatchmaking(io) {
 
     console.log(`[Socket] authed  user=${username}  id=${socket.id}  transport=${socket.conn.transport.name}`)
 
+    // ── Single Active Session Enforcement ─────────────────────
+    // Disconnect any older sockets for the same user ID so a single account cannot be active in 2 places
+    for (const [sId, existingSocket] of io.sockets.sockets) {
+      if (sId !== socket.id && existingSocket.user && existingSocket.user.id === userId) {
+        console.log(`[Socket] Single session enforcement: disconnecting older socket ${sId} for user ${username}`)
+        existingSocket.emit('force_logout', { message: 'Your account was logged in from another browser or window.' })
+        removeFromQueues(sId, userId)
+        existingSocket.disconnect(true)
+      }
+    }
+
     /* ── join_queue ─────────────────────────────────────── */
     socket.on('join_queue', async ({ topic, difficulty }) => {
       let rating = elo_rating ?? 1200
@@ -199,8 +210,8 @@ function registerMatchmaking(io) {
 
       const topicKey = `${topic}:${difficulty}`
 
-      // Guard: don't let same user join twice
-      removeFromQueues(socket.id)
+      // Guard: don't let same user join twice from any window
+      removeFromQueues(socket.id, userId)
 
       const newEntry = {
         socketId:   socket.id,
