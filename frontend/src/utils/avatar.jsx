@@ -52,14 +52,17 @@ export function detectGender(username = '') {
 export function getUserAvatarUrl(username = '', customSeed = null, customStyle = null) {
   const clean = String(username || 'coder').toLowerCase().trim()
   const gender = detectGender(clean)
-  const seed = encodeURIComponent(customSeed || clean)
-  const style = customStyle || (gender === 'female' ? 'lorelei' : 'adventurer')
+  const effectiveSeed = (customSeed && customSeed !== 'bot' && customSeed !== 'default') ? customSeed : clean
+  const seed = encodeURIComponent(effectiveSeed)
+  let style = customStyle || (gender === 'female' ? 'lorelei' : 'adventurer')
+
+  // Map legacy default 'bottts' to illustrated character face for consistency
+  if (style === 'bottts' || style === 'bot') {
+    style = gender === 'female' ? 'lorelei' : 'adventurer'
+  }
 
   if (style === 'lorelei') {
     return `https://api.dicebear.com/7.x/lorelei/svg?seed=${seed}&backgroundColor=ffd5dc,ffdfbf,c0aede,b6e3f4`
-  }
-  if (style === 'bottts') {
-    return `https://api.dicebear.com/7.x/bottts/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf`
   }
   if (style === 'notionists') {
     return `https://api.dicebear.com/7.x/notionists/svg?seed=${seed}&backgroundColor=ffd5dc,ffdfbf,c0aede,b6e3f4`

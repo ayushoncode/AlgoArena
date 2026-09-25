@@ -41,7 +41,13 @@ try {
 
 function signToken(user) {
   return jwt.sign(
-    { id: user.id, username: user.username, elo_rating: user.elo_rating },
+    {
+      id: user.id,
+      username: user.username,
+      elo_rating: user.elo_rating,
+      avatar_seed: user.avatar_seed,
+      avatar_style: user.avatar_style,
+    },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   )
