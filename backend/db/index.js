@@ -18,12 +18,18 @@ let pool = null
 if (DATABASE_URL && !DATABASE_URL.includes('<password>')) {
   pool = new Pool({
     connectionString: DATABASE_URL,
-    // Force IPv4 — Supabase direct connection resolves to IPv6 on some networks
-    // which causes ETIMEDOUT. This pins DNS resolution to IPv4.
-    ssl: process.env.NODE_ENV === 'production'
+    // Force SSL for Supabase / production to prevent socket hangup & timeout issues
+    ssl: DATABASE_URL.includes('supabase.com') || process.env.NODE_ENV === 'production'
       ? { rejectUnauthorized: false }
       : false,
+    max: 10,
+    idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
+  })
+
+  // CRITICAL: Handle error on idle clients so unexpected connection drops don't crash Node process
+  pool.on('error', (err) => {
+    console.error('[DB] Unexpected error on idle client (auto-recovering):', err.message)
   })
 
   // Verify connectivity on startup

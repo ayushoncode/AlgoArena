@@ -140,3 +140,11 @@ process.on('SIGTERM', () => {
     process.exit(0)
   })
 })
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Server] Unhandled Rejection:', reason)
+})
+
+process.on('uncaughtException', (err) => {
+  console.error('[Server] Uncaught Exception:', err)
+})

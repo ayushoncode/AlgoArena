@@ -1179,7 +1179,7 @@ socket.on('match_found', ({ roomId, problem, opponent }) => {
       codePreview: `# Hardened Runner Benchmark
 docker run --network none --memory 512m --cpus 0.5 \\
   --security-opt no-new-privileges:true \\
-  rivex-runner:latest --timeout 5000ms`
+  algoarena-runner:latest --timeout 5000ms`
     },
     {
       id: 'radar',
@@ -1239,8 +1239,8 @@ database.atomicUpdateElo({ userId, delta: deltaA });`
               key={s.id}
               onClick={() => setActiveTab(idx)}
               className={`p-5 rounded-xl border text-left transition-all relative overflow-hidden cursor-pointer ${sel
-                  ? 'bg-[#0d1117] border-[#ff5a00] shadow-[0_0_20px_rgba(255,90,0,0.15)] scale-[1.02]'
-                  : 'bg-[#010409] border-[#30363d] hover:border-[#8b949e] opacity-80 hover:opacity-100 hover:scale-[1.01]'
+                ? 'bg-[#0d1117] border-[#ff5a00] shadow-[0_0_20px_rgba(255,90,0,0.15)] scale-[1.02]'
+                : 'bg-[#010409] border-[#30363d] hover:border-[#8b949e] opacity-80 hover:opacity-100 hover:scale-[1.01]'
                 }`}
             >
               {sel && (
@@ -1384,8 +1384,8 @@ class Solution {
                   key={l.id}
                   onClick={() => setActiveLang(l.id)}
                   className={`px-3 py-1.5 rounded-md font-mono text-xs font-bold transition-all cursor-pointer ${activeLang === l.id
-                      ? 'bg-[#161b22] text-[#ff5a00] border border-[#30363d] shadow-sm'
-                      : 'text-[#6e7681] hover:text-[#8b949e] border border-transparent hover:bg-[#161b22]/50'
+                    ? 'bg-[#161b22] text-[#ff5a00] border border-[#30363d] shadow-sm'
+                    : 'text-[#6e7681] hover:text-[#8b949e] border border-transparent hover:bg-[#161b22]/50'
                     }`}
                 >
                   {l.label} <span className="text-[10px] font-normal opacity-70">({l.tag})</span>
@@ -1424,11 +1424,11 @@ function FaqSection() {
     },
     {
       q: 'Which programming languages are supported?',
-      a: 'Rivex natively supports JavaScript (Node.js 20), Python 3.11, C++ 20 (GCC 13), and Java 21 (OpenJDK). All complex data structures including TreeNodes and ListNodes are automatically parsed and serialized with BFS format.'
+      a: 'AlgoArena natively supports JavaScript (Node.js 20), Python 3.11, C++ 20 (GCC 13), and Java 21 (OpenJDK). All complex data structures including TreeNodes and ListNodes are automatically parsed and serialized with BFS format.'
     },
     {
       q: 'What happens if a player disconnects during a match?',
-      a: 'Rivex has built-in disconnect grace period. If a player momentarily loses connection, they have 30 seconds to reconnect before the match is declared a forfeit, preventing unfair Elo losses.'
+      a: 'AlgoArena has built-in disconnect grace period. If a player momentarily loses connection, they have 30 seconds to reconnect before the match is declared a forfeit, preventing unfair Elo losses.'
     }
   ]
 
@@ -1473,7 +1473,7 @@ function FooterSection() {
         <div className="flex items-center gap-3">
           <span className="font-display font-black text-lg text-[#dde1ea] flex items-center gap-1">
             <span className="text-[#f97316]">⚡</span>
-            <span>Rivex</span>
+            <span>AlgoArena</span>
           </span>
           <span className="text-[#1e2130]">|</span>
           <span className="font-mono text-xs text-[#6b7280]">
@@ -1547,7 +1547,7 @@ export default function Home() {
       <section className="px-5 sm:px-8 pt-20 pb-16 max-w-6xl mx-auto w-full text-center space-y-10 relative z-10 animate-slide-up-fade">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-orange-500/20 bg-orange-500/5 text-orange-400 font-mono text-xs shadow-[0_0_15px_rgba(249,115,22,0.1)] backdrop-blur-md hover:border-orange-500/40 transition-colors cursor-default">
           <span className="dot-live" />
-          <span className="font-semibold tracking-wide uppercase">Rivex Season 1 Active</span>
+          <span className="font-semibold tracking-wide uppercase">AlgoArena Season 1 Active</span>
         </div>
 
         <div className="max-w-4xl mx-auto space-y-8">
@@ -1618,7 +1618,7 @@ export default function Home() {
                 <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
                 <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
               </div>
-              <div className="flex-1 text-center font-mono text-[10px] text-[#6e7681]">rivex-battle-engine.sh</div>
+              <div className="flex-1 text-center font-mono text-[10px] text-[#6e7681]">algoarena-battle-engine.sh</div>
             </div>
             <BattlePreview />
           </div>
@@ -1734,8 +1734,8 @@ export default function Home() {
                   <button
                     onClick={() => setAuthMode('otp')}
                     className={`flex-1 py-2 rounded-md transition-all ${authMode === 'otp'
-                        ? 'bg-[#161b22] text-[#ff5a00] shadow-sm border border-[#30363d]'
-                        : 'text-[#6e7681] hover:text-[#8b949e]'
+                      ? 'bg-[#161b22] text-[#ff5a00] shadow-sm border border-[#30363d]'
+                      : 'text-[#6e7681] hover:text-[#8b949e]'
                       }`}
                   >
                     ⚡ Fast OTP
@@ -1743,8 +1743,8 @@ export default function Home() {
                   <button
                     onClick={() => setAuthMode('password')}
                     className={`flex-1 py-2 rounded-md transition-all ${authMode === 'password'
-                        ? 'bg-[#161b22] text-[#e6edf3] shadow-sm border border-[#30363d]'
-                        : 'text-[#6e7681] hover:text-[#8b949e]'
+                      ? 'bg-[#161b22] text-[#e6edf3] shadow-sm border border-[#30363d]'
+                      : 'text-[#6e7681] hover:text-[#8b949e]'
                       }`}
                   >
                     Password
@@ -1752,8 +1752,8 @@ export default function Home() {
                   <button
                     onClick={() => setAuthMode('register')}
                     className={`flex-1 py-2 rounded-md transition-all ${authMode === 'register'
-                        ? 'bg-[#161b22] text-cyan-400 shadow-sm border border-[#30363d]'
-                        : 'text-[#6e7681] hover:text-[#8b949e]'
+                      ? 'bg-[#161b22] text-cyan-400 shadow-sm border border-[#30363d]'
+                      : 'text-[#6e7681] hover:text-[#8b949e]'
                       }`}
                   >
                     Register

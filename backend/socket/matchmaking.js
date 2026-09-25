@@ -77,10 +77,102 @@ function findOpponent(bucket, newEntry) {
   return null
 }
 
+/**
+ * Execute a match between two waiting entries
+ */
+async function executeMatch(io, entryA, entryB, topic, difficulty) {
+  const roomId = makeRoomId()
+  const socketA = io.sockets.sockets.get(entryA.socketId)
+  const socketB = io.sockets.sockets.get(entryB.socketId)
+
+  if (socketA) socketA.join(roomId)
+  if (socketB) socketB.join(roomId)
+
+  try {
+    const { rows: problems } = await db.query(
+      `SELECT id FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY RANDOM() LIMIT 1`,
+      [topic, difficulty]
+    )
+    const problemId = problems[0]?.id ?? null
+    const { rows } = await db.query(
+      `INSERT INTO matches (player_one_id, player_two_id, problem_id, topic, difficulty, status)
+       VALUES ($1, $2, $3, $4, $5, 'active') RETURNING id`,
+      [entryA.userId, entryB.userId, problemId, topic, difficulty]
+    )
+    const dbMatchId = rows[0]?.id ?? null
+
+    const matchPayload = {
+      roomId,
+      topic,
+      difficulty,
+      problemId,
+      dbMatchId,
+      players: [
+        { userId: entryA.userId, username: entryA.username, rating: entryA.rating, avatar_seed: entryA.avatar_seed, avatar_style: entryA.avatar_style },
+        { userId: entryB.userId, username: entryB.username, rating: entryB.rating, avatar_seed: entryB.avatar_seed, avatar_style: entryB.avatar_style },
+      ],
+    }
+
+    trackRoom(roomId, dbMatchId, problemId, false, matchPayload.players, topic, difficulty)
+    console.log(`[DB] match row created id=${dbMatchId} room=${roomId} prob=${problemId}`)
+
+    // Emit to room and directly to both sockets to guarantee arrival
+    io.to(roomId).emit('match_found', matchPayload)
+    if (socketA) socketA.emit('match_found', matchPayload)
+    if (socketB) socketB.emit('match_found', matchPayload)
+  } catch (err) {
+    console.error('[DB] createMatchRow failed:', err.message)
+    const fallbackPayload = {
+      roomId,
+      topic,
+      difficulty,
+      problemId: null,
+      players: [
+        { userId: entryA.userId, username: entryA.username, rating: entryA.rating, avatar_seed: entryA.avatar_seed, avatar_style: entryA.avatar_style },
+        { userId: entryB.userId, username: entryB.username, rating: entryB.rating, avatar_seed: entryB.avatar_seed, avatar_style: entryB.avatar_style },
+      ],
+    }
+    trackRoom(roomId, null, null, false, fallbackPayload.players, topic, difficulty)
+    io.to(roomId).emit('match_found', fallbackPayload)
+    if (socketA) socketA.emit('match_found', fallbackPayload)
+    if (socketB) socketB.emit('match_found', fallbackPayload)
+  }
+
+  console.log(`[Queue] MATCH ${entryA.username} (${entryA.rating}) vs ${entryB.username} (${entryB.rating}) room=${roomId}`)
+}
+
+/**
+ * Periodically evaluate waiting queues to match players whose Elo bands expanded
+ */
+function sweepQueues(io) {
+  for (const [topicKey, bucket] of queues.entries()) {
+    if (bucket.length < 2) continue
+    for (let i = 0; i < bucket.length; i++) {
+      for (let j = i + 1; j < bucket.length; j++) {
+        const p1 = bucket[i]
+        const p2 = bucket[j]
+        if (p1.socketId === p2.socketId) continue
+        const band = Math.max(currentBand(p1.joinedAt), currentBand(p2.joinedAt))
+        const diff = Math.abs(p1.rating - p2.rating)
+        if (diff <= band) {
+          bucket.splice(j, 1)
+          bucket.splice(i, 1)
+          const [t, d] = topicKey.split(':')
+          executeMatch(io, p1, p2, t, d)
+          return
+        }
+      }
+    }
+  }
+}
+
 /* ════════════════════════════════════════════════
    REGISTER
 ════════════════════════════════════════════════ */
 function registerMatchmaking(io) {
+  // Start queue evaluation interval (every 1s)
+  setInterval(() => sweepQueues(io), 1000)
+
   io.on('connection', (socket) => {
     const { id: userId, username, elo_rating } = socket.user
 
@@ -134,63 +226,7 @@ function registerMatchmaking(io) {
         // ── Match found! ──────────────────────────────────
         const { opponent, index } = result
         bucket.splice(index, 1)   // remove opponent from queue
-
-        const roomId = makeRoomId()
-
-        // Both players join the Socket.io room
-        socket.join(roomId)
-        const oppSocket = io.sockets.sockets.get(opponent.socketId)
-        if (oppSocket) oppSocket.join(roomId)
-
-        ;(async () => {
-          try {
-            const { rows: problems } = await db.query(
-              `SELECT id FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY RANDOM() LIMIT 1`,
-              [topic, difficulty]
-            )
-            const problemId = problems[0]?.id ?? null
-            const { rows } = await db.query(
-              `INSERT INTO matches (player_one_id, player_two_id, problem_id, topic, difficulty, status)
-               VALUES ($1, $2, $3, $4, $5, 'active') RETURNING id`,
-              [newEntry.userId, opponent.userId, problemId, topic, difficulty]
-            )
-            const dbMatchId = rows[0]?.id ?? null
-
-            const matchPayload = {
-              roomId,
-              topic,
-              difficulty,
-              problemId,
-              dbMatchId,
-              players: [
-                { userId: newEntry.userId,  username: newEntry.username,  rating: newEntry.rating, avatar_seed: newEntry.avatar_seed, avatar_style: newEntry.avatar_style },
-                { userId: opponent.userId,  username: opponent.username,  rating: opponent.rating, avatar_seed: opponent.avatar_seed, avatar_style: opponent.avatar_style },
-              ],
-            }
-
-            trackRoom(roomId, dbMatchId, problemId, false, matchPayload.players, topic, difficulty)
-            console.log(`[DB] match row created  id=${dbMatchId}  room=${roomId}  prob=${problemId}`)
-
-            // Emit match_found with problemId guaranteed to both players
-            io.to(roomId).emit('match_found', matchPayload)
-          } catch (err) {
-            console.error('[DB] createMatchRow failed:', err.message)
-            const fallbackPayload = {
-              roomId,
-              topic,
-              difficulty,
-              problemId: null,
-              players: [
-                { userId: newEntry.userId,  username: newEntry.username,  rating: newEntry.rating, avatar_seed: newEntry.avatar_seed, avatar_style: newEntry.avatar_style },
-                { userId: opponent.userId,  username: opponent.username,  rating: opponent.rating, avatar_seed: opponent.avatar_seed, avatar_style: opponent.avatar_style },
-              ],
-            }
-            trackRoom(roomId, null, null, false, fallbackPayload.players, topic, difficulty)
-            io.to(roomId).emit('match_found', fallbackPayload)
-          }
-        })()
-
-        console.log(`[Queue] MATCH  ${username} (${rating}) vs ${opponent.username} (${opponent.rating})  room=${roomId}  topic=${topicKey}`)
+        executeMatch(io, newEntry, opponent, topic, difficulty)
       } else {
         // ── No match yet — push into queue ────────────────
         bucket.push(newEntry)
