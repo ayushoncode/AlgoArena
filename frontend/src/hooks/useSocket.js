@@ -23,7 +23,7 @@ import socket from '../utils/socket'
 import { useAuth } from './useAuth'
 
 export function useSocket() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, logout } = useAuth()
   const [connected, setConnected] = useState(socket.connected)
 
   useEffect(() => {
@@ -35,17 +35,23 @@ export function useSocket() {
     }
 
     // Track connection state for consumers
-    function onConnect()    { setConnected(true)  }
-    function onDisconnect() { setConnected(false) }
+    function onConnect()     { setConnected(true)  }
+    function onDisconnect()  { setConnected(false) }
+    function onForceLogout({ message }) {
+      console.warn('[Socket] force_logout received:', message)
+      logout()
+    }
 
-    socket.on('connect',    onConnect)
-    socket.on('disconnect', onDisconnect)
+    socket.on('connect',      onConnect)
+    socket.on('disconnect',   onDisconnect)
+    socket.on('force_logout', onForceLogout)
 
     return () => {
-      socket.off('connect',    onConnect)
-      socket.off('disconnect', onDisconnect)
+      socket.off('connect',      onConnect)
+      socket.off('disconnect',   onDisconnect)
+      socket.off('force_logout', onForceLogout)
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, logout])
 
   /** emit(event, data) — fire-and-forget */
   const emit = useCallback((event, data) => {
