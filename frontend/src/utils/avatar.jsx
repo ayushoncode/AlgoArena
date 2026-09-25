@@ -52,14 +52,17 @@ export function detectGender(username = '') {
 export function getUserAvatarUrl(username = '', customSeed = null, customStyle = null) {
   const clean = String(username || 'coder').toLowerCase().trim()
   const gender = detectGender(clean)
-  const seed = encodeURIComponent(customSeed || clean)
-  const style = customStyle || (gender === 'female' ? 'lorelei' : 'adventurer')
+  const effectiveSeed = (customSeed && customSeed !== 'bot' && customSeed !== 'default') ? customSeed : clean
+  const seed = encodeURIComponent(effectiveSeed)
+  let style = customStyle || (gender === 'female' ? 'lorelei' : 'adventurer')
+
+  // Map legacy default 'bottts' to illustrated character face for consistency
+  if (style === 'bottts' || style === 'bot') {
+    style = gender === 'female' ? 'lorelei' : 'adventurer'
+  }
 
   if (style === 'lorelei') {
     return `https://api.dicebear.com/7.x/lorelei/svg?seed=${seed}&backgroundColor=ffd5dc,ffdfbf,c0aede,b6e3f4`
-  }
-  if (style === 'bottts') {
-    return `https://api.dicebear.com/7.x/bottts/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf`
   }
   if (style === 'notionists') {
     return `https://api.dicebear.com/7.x/notionists/svg?seed=${seed}&backgroundColor=ffd5dc,ffdfbf,c0aede,b6e3f4`
@@ -80,23 +83,42 @@ export function getUserEmoji(username = '') {
   return gender === 'female' ? '👧' : '👦'
 }
 
+export const RANK_TIERS = [
+  { name: 'Novice',      min: 0,    max: 1199, col: '#94a3b8', bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.3)' },
+  { name: 'Challenger',  min: 1200, max: 1399, col: '#10b981', bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.3)'  },
+  { name: 'Specialist',  min: 1400, max: 1599, col: '#06b6d4', bg: 'rgba(6,182,212,0.12)',   border: 'rgba(6,182,212,0.3)'   },
+  { name: 'Elite',       min: 1600, max: 1899, col: '#818cf8', bg: 'rgba(129,140,248,0.14)', border: 'rgba(129,140,248,0.35)' },
+  { name: 'Master',      min: 1900, max: 2199, col: '#c084fc', bg: 'rgba(192,132,252,0.15)', border: 'rgba(192,132,252,0.35)' },
+  { name: 'Grandmaster', min: 2200, max: 9999, col: '#f97316', bg: 'rgba(249,115,22,0.16)',  border: 'rgba(249,115,22,0.35)' },
+]
+
+export function getTier(elo) {
+  const rating = Number(elo) || 1200
+  return RANK_TIERS.find(t => rating >= t.min && rating <= t.max) || RANK_TIERS[0]
+}
+
 /**
  * Illustrated Avatar Component with rounded border, glow, and fallback initial
  */
-export function UserAvatar({ username = '', seed = null, style = null, size = 32, className = '', isMe = false }) {
+export function UserAvatar({ username = '', seed = null, style = null, elo = null, size = 32, className = '', isMe = false }) {
   const [imgErr, setImgErr] = useState(false)
   const avatarUrl = getUserAvatarUrl(username, seed, style)
   const gender = detectGender(username)
   const initial = (username?.[0] ?? (gender === 'female' ? 'G' : 'B')).toUpperCase()
 
+  const tier = elo != null ? getTier(elo) : null
   const isPink = gender === 'female' || style === 'lorelei'
-  const borderColor = isMe
+  const borderColor = tier
+    ? tier.col
+    : isMe
     ? '#f97316'
     : isPink
     ? '#f43f5e'
     : '#22d3ee'
 
-  const bg = isMe
+  const bg = tier
+    ? tier.bg
+    : isMe
     ? 'rgba(249,115,22,0.1)'
     : isPink
     ? 'rgba(244,63,94,0.1)'
@@ -111,13 +133,9 @@ export function UserAvatar({ username = '', seed = null, style = null, size = 32
         borderRadius: size > 48 ? 12 : 6,
         border: `1.5px solid ${borderColor}`,
         background: bg,
-        boxShadow: isMe
-          ? '0 0 10px rgba(249,115,22,0.25)'
-          : isPink
-          ? '0 0 10px rgba(244,63,94,0.2)'
-          : '0 0 10px rgba(34,211,238,0.2)',
+        boxShadow: `0 0 10px ${borderColor}33`,
       }}
-      title={`@${username} (${style || (gender === 'female' ? 'Girl' : 'Boy')})`}
+      title={`@${username} (${tier ? tier.name : 'Player'})`}
     >
       {!imgErr ? (
         <img

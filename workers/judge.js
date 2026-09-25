@@ -63,11 +63,16 @@ const publishConnection = new Redis(REDIS_URL, {
 // ── PostgreSQL ─────────────────────────────────────────────────────
 const db = new Pool({
   connectionString: DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production'
+  ssl: DATABASE_URL.includes('supabase.com') || process.env.NODE_ENV === 'production'
     ? { rejectUnauthorized: false }
     : false,
   max: 5,
+  idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 10_000,
+})
+
+db.on('error', (err) => {
+  console.error('[Worker DB] Unexpected error on idle client (auto-recovering):', err.message)
 })
 
 // ── BullMQ Worker ─────────────────────────────────────────────────

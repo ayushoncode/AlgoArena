@@ -215,41 +215,344 @@ function useQueueTimer(running) {
 }
 
 /* ════════════════════════════════════════════════
-   SEARCHING OVERLAY
+   SEARCHING OVERLAY (NodeClash Radar Style)
 ════════════════════════════════════════════════ */
 function SearchingOverlay({ topic, difficulty, rating, onCancel }) {
+  const { user } = useAuth()
   const { sec } = useQueueTimer(true)
   const mm   = String(Math.floor(sec/60)).padStart(2,'0')
   const ss   = String(sec%60).padStart(2,'0')
   const diff = DIFFS.find(d => d.id === difficulty)
 
+  const username = user?.username || 'Player'
+  const userInitials = username.slice(0, 2).toUpperCase()
+  const userTier = getTier(rating)
+
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center"
-         style={{ background:'rgba(5,6,10,0.96)', backdropFilter:'blur(8px)' }}>
-      <div className="flex flex-col items-center gap-8">
-        <div className="relative">
-          <div className="searching-ring-1"/>
-          <div className="searching-ring-2"/>
-          <div className="searching-ring-3"/>
-          <div className="relative z-10 flex flex-col items-center justify-center"
-               style={{ width:160,height:160,borderRadius:'50%',background:'#090b13',border:'1px solid rgba(249,115,22,0.3)' }}>
-            <span className="font-mono text-3xl font-bold tabular-nums" style={{ color:'#f97316' }}>{mm}:{ss}</span>
-            <span className="font-mono text-[10px] mt-1" style={{ color:'#4b5563' }}>searching</span>
-          </div>
-        </div>
-
-        <div className="text-center space-y-3">
-          <p className="font-display font-bold text-xl" style={{ color:'#dde1ea' }}>Finding your opponent…</p>
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            <span className="font-mono text-[11px] px-2 py-1" style={{ background:'rgba(249,115,22,0.1)',color:'#f97316',border:'1px solid rgba(249,115,22,0.25)',borderRadius:3 }}>{topic}</span>
-            <span className="font-mono text-[11px] px-2 py-1" style={{ background:diff.bg,color:diff.col,border:`1px solid ${diff.col}40`,borderRadius:3 }}>{difficulty}</span>
-          </div>
-        </div>
-
-        <button onClick={onCancel} className="font-mono text-xs px-6 py-2.5 transition-colors" style={{ color:'#6b7280', border:'1px solid #1e2130', borderRadius:4 }}>
-          cancel search ✕
-        </button>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-between py-10 px-4 radar-bg-grid"
+         style={{ background:'#050608', color:'#dde1ea' }}>
+      
+      {/* Top Branding Header */}
+      <div className="flex items-center gap-2 pt-2">
+        <span className="font-display font-black text-xl tracking-tight text-white">AlgoArena</span>
       </div>
+
+      {/* Center Radar & Matchmaking Area */}
+      <div className="flex flex-col items-center max-w-2xl w-full text-center space-y-8 my-auto">
+        
+        {/* Radar Scanner Container */}
+        <div className="relative w-48 h-48 sm:w-56 sm:h-56 flex items-center justify-center">
+          {/* Concentric Radar Rings */}
+          <div className="absolute inset-0 rounded-full border border-white/10" />
+          <div className="absolute inset-6 rounded-full border border-white/10" />
+          <div className="absolute inset-16 rounded-full border border-white/10" />
+          
+          {/* Crosshair Lines */}
+          <div className="absolute inset-x-0 top-1/2 h-[1px] bg-white/10" />
+          <div className="absolute inset-y-0 left-1/2 w-[1px] bg-white/10" />
+
+          {/* Rotating Conical Sweep Beam */}
+          <div className="absolute inset-0 rounded-full animate-radar-sweep pointer-events-none"
+               style={{
+                 background: `conic-gradient(from 0deg at 50% 50%, ${userTier.col}55 0deg, ${userTier.col}15 45deg, transparent 90deg)`,
+               }} />
+
+          {/* Center Radar Core Dot */}
+          <div className="w-4 h-4 rounded-full relative z-10" style={{ background: userTier.col, boxShadow: `0 0 15px ${userTier.col}` }} />
+
+          {/* Radar Blip 1 (Top-Right Green Ping) */}
+          <div className="absolute top-10 right-12 w-2.5 h-2.5 rounded-full bg-[#10b981] animate-radar-blip-1" />
+
+          {/* Radar Blip 2 (Left-Bottom Green Ping) */}
+          <div className="absolute bottom-12 left-10 w-2.5 h-2.5 rounded-full bg-[#10b981] animate-radar-blip-2" />
+        </div>
+
+        {/* Title & Subtitle */}
+        <div className="space-y-1.5">
+          <h2 className="font-display font-black text-3xl sm:text-4xl text-white tracking-tight">
+            Finding Match
+          </h2>
+          <p className="font-sans text-sm text-[#8b949e]">
+            Searching for real players near your <span style={{ color: userTier.col, fontWeight: 700 }}>{userTier.name} ({rating})</span> rating
+          </p>
+          <div className="flex items-center justify-center gap-2 pt-1 font-mono text-[11px]">
+            <span className="px-2.5 py-1 rounded bg-white/5 border border-white/10 text-white font-semibold">
+              {topic}
+            </span>
+            <span className="px-2.5 py-1 rounded bg-white/5 border border-white/10 font-semibold" style={{ color: diff?.col }}>
+              {difficulty}
+            </span>
+          </div>
+        </div>
+
+        {/* VS Player Cards Grid */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 sm:gap-8 w-full max-w-xl">
+          {/* User Player Card (Left) */}
+          <div className="p-6 rounded-2xl bg-[#0e1017] shadow-xl flex flex-col items-center text-center space-y-3 relative overflow-hidden"
+               style={{ border: `1px solid ${userTier.col}50` }}>
+            <div className="absolute top-0 inset-x-0 h-1" style={{ background: userTier.col }} />
+            <UserAvatar username={username} seed={user?.avatar_seed} style={user?.avatar_style} elo={rating} size={56} />
+            <div>
+              <p className="font-sans font-bold text-base text-white truncate max-w-[130px]">{username}</p>
+              <p className="font-mono text-xs font-semibold mt-0.5" style={{ color: userTier.col }}>⭐ {rating} ELO ({userTier.name})</p>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono text-[10px] font-bold"
+                 style={{ background: userTier.bg, color: userTier.col, border: `1px solid ${userTier.col}50` }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: userTier.col }} />
+              <span>READY</span>
+            </div>
+          </div>
+
+          {/* VS Divider & Timer */}
+          <div className="flex flex-col items-center justify-center space-y-1">
+            <span className="font-display font-black text-3xl text-[#8b949e] tracking-wider">VS</span>
+            <span className="font-mono text-xs text-[#8b949e] tabular-nums font-bold">{mm}:{ss}</span>
+          </div>
+
+          {/* Opponent Placeholder Card (Right) */}
+          <div className="p-6 rounded-2xl bg-[#090b11]/80 border border-dashed border-white/15 flex flex-col items-center text-center space-y-3 relative overflow-hidden">
+            <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-display font-black text-white/30 text-lg animate-pulse">
+              ??
+            </div>
+            <div>
+              <p className="font-sans font-bold text-base text-white/50 truncate max-w-[130px] animate-pulse">Searching...</p>
+              <p className="font-mono text-xs text-white/40 font-semibold mt-0.5">⭐ ~{rating} ELO</p>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-[#8b949e] font-mono text-[10px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-ping" />
+              <span>WAITING</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Cancel Button */}
+      {/* Bottom Cancel Button */}
+      <button
+        onClick={onCancel}
+        className="font-mono text-xs px-6 py-2.5 rounded-full border border-white/20 text-[#8b949e] hover:text-white hover:border-white/40 hover:bg-white/5 transition-all flex items-center gap-2 cursor-pointer"
+      >
+        <span>✕</span>
+        <span>Cancel</span>
+      </button>
+    </div>
+  )
+}
+
+/* ════════════════════════════════════════════════
+   3D MATCH FOUND FACE-OFF OVERLAY
+════════════════════════════════════════════════ */
+function MatchFoundOverlay({ matchData, onComplete }) {
+  const { user } = useAuth()
+  const [countdown, setCountdown] = useState(3)
+  const [isZooming, setIsZooming] = useState(false)
+
+  // Identify 'you' vs 'opponent'
+  const players = matchData?.players || []
+  const you = players.find(p => p.username === user?.username) || players[0] || { username: user?.username || 'You', rating: user?.elo_rating || 1200 }
+  const opponent = players.find(p => p.username !== user?.username) || players[1] || { username: 'RivalCoder', rating: 1200 }
+
+  const youTier = getTier(you.rating || 1200)
+  const oppTier = getTier(opponent.rating || 1200)
+
+  const diffObj = DIFFS.find(d => d.id === matchData?.difficulty) || DIFFS[1]
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(c => {
+        if (c <= 1) {
+          clearInterval(timer)
+          setIsZooming(true)
+          setTimeout(() => {
+            onComplete()
+          }, 400)
+          return 0
+        }
+        return c - 1
+      })
+    }, 900)
+
+    return () => clearInterval(timer)
+  }, [onComplete])
+
+  return (
+    <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-between py-8 px-4 overflow-hidden select-none transition-all duration-500 ${isZooming ? 'scale-125 opacity-0 blur-md' : 'scale-100 opacity-100'}`}
+         style={{ background: '#040508', color: '#dde1ea' }}>
+      
+      {/* Background Energy Grid & Radial Glows */}
+      <div className="absolute inset-0 radar-bg-grid opacity-30 pointer-events-none" />
+      
+      {/* Ambient background glow left & right */}
+      <div className="absolute top-1/2 -left-32 w-96 h-96 rounded-full blur-[140px] pointer-events-none"
+           style={{ background: youTier.col, opacity: 0.18 }} />
+      <div className="absolute top-1/2 -right-32 w-96 h-96 rounded-full blur-[140px] pointer-events-none"
+           style={{ background: oppTier.col, opacity: 0.18 }} />
+
+      {/* Screen Entry Slash Flash */}
+      <div className="absolute inset-0 bg-white animate-match-flash pointer-events-none z-10" />
+
+      {/* Diagonal 3D Lightning Slash Beam across screen center */}
+      <div className="absolute top-1/2 left-1/2 w-[200vw] h-[3px] animate-slash-beam pointer-events-none z-0"
+           style={{
+             background: `linear-gradient(90deg, transparent, ${youTier.col}, #ffffff, ${oppTier.col}, transparent)`,
+             boxShadow: `0 0 40px ${youTier.col}, 0 0 60px ${oppTier.col}`,
+           }} />
+
+      {/* ── TOP BANNER ──────────────────────────────────────── */}
+      <div className="relative z-20 flex flex-col items-center pt-2 space-y-1 text-center">
+        <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full font-mono text-xs font-bold uppercase tracking-widest"
+             style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.3)', color: '#f97316' }}>
+          <span className="w-2 h-2 rounded-full bg-[#f97316] animate-ping" />
+          <span>MATCH FOUND • 1v1 DUEL</span>
+        </div>
+        <div className="flex items-center gap-3 pt-1">
+          <span className="font-mono text-xs text-[#8b949e] font-semibold uppercase">{matchData?.topic || 'BATTLE'}</span>
+          <span className="text-[#374151]">|</span>
+          <span className="font-mono text-xs font-bold uppercase" style={{ color: diffObj.col }}>
+            {matchData?.difficulty || 'MEDIUM'}
+          </span>
+        </div>
+      </div>
+
+      {/* ── CENTER 3D FACE-OFF STAGE ────────────────────────── */}
+      <div className="relative z-20 w-full max-w-5xl mx-auto my-auto flex flex-col md:flex-row items-center justify-between gap-6 px-4">
+        
+        {/* LEFT PLAYER CARD (YOU) */}
+        <div className="w-full md:w-[380px] animate-clash-left">
+          <div className="relative p-6 sm:p-8 rounded-3xl overflow-hidden backdrop-blur-xl flex flex-col items-center text-center space-y-4 shadow-2xl transition-transform hover:scale-[1.02]"
+               style={{
+                 background: 'linear-gradient(145deg, rgba(14,16,23,0.95) 0%, rgba(9,11,17,0.9) 100%)',
+                 border: `2px solid ${youTier.col}`,
+                 boxShadow: `0 0 35px ${youTier.col}35, inset 0 0 20px ${youTier.col}10`,
+               }}>
+            
+            {/* Top Rank Badge Accent Strip */}
+            <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: `linear-gradient(90deg, ${youTier.col}, transparent)` }} />
+
+            <div className="absolute top-3 left-4 px-2.5 py-0.5 rounded font-mono text-[9px] font-black uppercase tracking-wider"
+                 style={{ background: youTier.bg, color: youTier.col, border: `1px solid ${youTier.border}` }}>
+              YOU
+            </div>
+
+            {/* 3D Avatar Halo Ring */}
+            <div className="relative mt-2">
+              <div className="absolute -inset-3 rounded-full blur-md opacity-60 animate-pulse"
+                   style={{ background: youTier.col }} />
+              <div className="relative p-1 rounded-full" style={{ background: `linear-gradient(135deg, ${youTier.col}, #ffffff33)` }}>
+                <UserAvatar username={you.username} seed={you.avatar_seed} style={you.avatar_style} elo={you.rating} size={90} />
+              </div>
+            </div>
+
+            {/* Player Info */}
+            <div className="space-y-1 w-full">
+              <h3 className="font-display font-black text-2xl sm:text-3xl text-white truncate px-2 tracking-tight">
+                {you.username}
+              </h3>
+              <div className="flex items-center justify-center gap-2 pt-1">
+                <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded"
+                      style={{ background: youTier.bg, color: youTier.col, border: `1px solid ${youTier.border}` }}>
+                  {youTier.name}
+                </span>
+                <span className="font-mono text-sm font-black" style={{ color: youTier.col }}>
+                  {you.rating} ELO
+                </span>
+              </div>
+            </div>
+
+            {/* Battle Ready Status */}
+            <div className="w-full pt-2 border-t border-white/10 flex items-center justify-center gap-2 font-mono text-xs font-bold"
+                 style={{ color: youTier.col }}>
+              <span className="w-2 h-2 rounded-full animate-ping" style={{ background: youTier.col }} />
+              <span>READY TO CODE</span>
+            </div>
+          </div>
+        </div>
+
+        {/* CENTER 3D "VS" & COUNTDOWN CLASH */}
+        <div className="flex flex-col items-center justify-center my-2 md:my-0 relative z-30 animate-vs-impact">
+          
+          {/* 3D VS Text with perspective transform & glow */}
+          <div className="relative group">
+            <span className="font-display font-black text-6xl sm:text-8xl tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-orange-500 to-rose-600 drop-shadow-[0_10px_25px_rgba(249,115,22,0.6)]"
+                  style={{
+                    textShadow: `0 0 30px rgba(249,115,22,0.8), 3px 3px 0 #000, 6px 6px 0 rgba(0,0,0,0.5)`,
+                    transform: 'rotateX(10deg)',
+                  }}>
+              VS
+            </span>
+          </div>
+
+          {/* Countdown & Status */}
+          <div className="mt-4 flex flex-col items-center space-y-1.5">
+            <div className="w-12 h-12 rounded-2xl bg-[#090b13] border border-[#f97316]/50 flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.3)]">
+              <span className="font-mono font-black text-2xl text-[#f97316] animate-bounce">
+                {countdown > 0 ? countdown : '⚡'}
+              </span>
+            </div>
+            <p className="font-mono text-[11px] font-bold text-[#8b949e] uppercase tracking-widest">
+              {countdown > 0 ? 'ENTERING ARENA...' : 'BATTLE STARTING!'}
+            </p>
+          </div>
+        </div>
+
+        {/* RIGHT PLAYER CARD (OPPONENT) */}
+        <div className="w-full md:w-[380px] animate-clash-right">
+          <div className="relative p-6 sm:p-8 rounded-3xl overflow-hidden backdrop-blur-xl flex flex-col items-center text-center space-y-4 shadow-2xl transition-transform hover:scale-[1.02]"
+               style={{
+                 background: 'linear-gradient(145deg, rgba(14,16,23,0.95) 0%, rgba(9,11,17,0.9) 100%)',
+                 border: `2px solid ${oppTier.col}`,
+                 boxShadow: `0 0 35px ${oppTier.col}35, inset 0 0 20px ${oppTier.col}10`,
+               }}>
+            
+            {/* Top Rank Badge Accent Strip */}
+            <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: `linear-gradient(90deg, transparent, ${oppTier.col})` }} />
+
+            <div className="absolute top-3 right-4 px-2.5 py-0.5 rounded font-mono text-[9px] font-black uppercase tracking-wider"
+                 style={{ background: oppTier.bg, color: oppTier.col, border: `1px solid ${oppTier.border}` }}>
+              OPPONENT
+            </div>
+
+            {/* 3D Avatar Halo Ring */}
+            <div className="relative mt-2">
+              <div className="absolute -inset-3 rounded-full blur-md opacity-60 animate-pulse"
+                   style={{ background: oppTier.col }} />
+              <div className="relative p-1 rounded-full" style={{ background: `linear-gradient(135deg, ${oppTier.col}, #ffffff33)` }}>
+                <UserAvatar username={opponent.username} seed={opponent.avatar_seed} style={opponent.avatar_style} elo={opponent.rating} size={90} />
+              </div>
+            </div>
+
+            {/* Player Info */}
+            <div className="space-y-1 w-full">
+              <h3 className="font-display font-black text-2xl sm:text-3xl text-white truncate px-2 tracking-tight">
+                {opponent.username}
+              </h3>
+              <div className="flex items-center justify-center gap-2 pt-1">
+                <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded"
+                      style={{ background: oppTier.bg, color: oppTier.col, border: `1px solid ${oppTier.border}` }}>
+                  {oppTier.name}
+                </span>
+                <span className="font-mono text-sm font-black" style={{ color: oppTier.col }}>
+                  {opponent.rating} ELO
+                </span>
+              </div>
+            </div>
+
+            {/* Battle Ready Status */}
+            <div className="w-full pt-2 border-t border-white/10 flex items-center justify-center gap-2 font-mono text-xs font-bold"
+                 style={{ color: oppTier.col }}>
+              <span className="w-2 h-2 rounded-full animate-ping" style={{ background: oppTier.col }} />
+              <span>OPPONENT CONNECTED</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* ── BOTTOM FOOTER ───────────────────────────────────── */}
+      <div className="relative z-20 pb-2 font-mono text-xs text-[#4b5563] text-center">
+        <span>Initializing symmetrical code workspace & sandbox...</span>
+      </div>
+
     </div>
   )
 }
@@ -459,6 +762,7 @@ export default function Lobby() {
   const [topic,   setTopic]   = useState(null)
   const [diff,    setDiff]    = useState('medium')
   const [queuing, setQueuing] = useState(false)
+  const [matchFoundData, setMatchFoundData] = useState(null)
 
   // Private custom match modal state
   const [customModalOpen, setCustomModalOpen] = useState(false)
@@ -477,15 +781,16 @@ export default function Lobby() {
     }
   }, [initialRoomCode])
 
-  // Listen for match_found — navigate to match room
+  // Listen for match_found — show 3D faceoff clash overlay
   useEffect(() => {
-    function onMatchFound({ roomId, topic: t, difficulty: d, players, problemId }) {
-      console.log('[Lobby] match_found →', roomId)
-      navigate(`/match/${roomId}`, { state: { topic: t, difficulty: d, players, problemId } })
+    function onMatchFound(data) {
+      console.log('[Lobby] match_found →', data?.roomId)
+      setQueuing(false)
+      setMatchFoundData(data)
     }
     on('match_found', onMatchFound)
     return () => off('match_found', onMatchFound)
-  }, [on, off, navigate])
+  }, [on, off])
 
   if (loading) return (
     <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
@@ -508,6 +813,13 @@ export default function Lobby() {
     ? { topic: dailyProblem.topic, problem: dailyProblem.title, difficulty: dailyProblem.difficulty, desc: (dailyProblem.description || '').slice(0, 90) + '...' }
     : { topic: 'arrays', problem: 'Two Sum', difficulty: 'easy', desc: 'Find indices of two numbers that add to target.' }
 
+  // Auto re-join queue on socket reconnect if user was searching
+  useEffect(() => {
+    if (connected && queuing && topic && diff) {
+      emit('join_queue', { topic, difficulty: diff })
+    }
+  }, [connected, queuing, topic, diff, emit])
+
   function startQueue() {
     if (!topic) return
     setQueuing(true)
@@ -526,7 +838,18 @@ export default function Lobby() {
 
   return (
     <>
-      {queuing && <SearchingOverlay topic={topic} difficulty={diff} rating={elo} onCancel={cancelQueue}/>}
+      {matchFoundData ? (
+        <MatchFoundOverlay
+          matchData={matchFoundData}
+          onComplete={() => {
+            const data = matchFoundData
+            setMatchFoundData(null)
+            navigate(`/match/${data.roomId}`, { state: { topic: data.topic, difficulty: data.difficulty, players: data.players, problemId: data.problemId } })
+          }}
+        />
+      ) : queuing ? (
+        <SearchingOverlay topic={topic} difficulty={diff} rating={elo} onCancel={cancelQueue}/>
+      ) : null}
 
       {/* Private Custom Friend Match Modal */}
       <PrivateMatchModal
@@ -562,8 +885,8 @@ export default function Lobby() {
                 </span>
               </div>
               <div className="text-right hidden sm:block">
-                <p className="font-mono text-[10px]" style={{ color:'#4b5563' }}>your rating</p>
-                <p className="font-display font-black text-xl" style={{ color:'#f97316' }}>{elo}</p>
+                <p className="font-mono text-[10px]" style={{ color:'#4b5563' }}>your rating ({getTier(elo).name})</p>
+                <p className="font-display font-black text-xl" style={{ color: getTier(elo).col }}>{elo}</p>
               </div>
               <div className="text-right hidden sm:block">
                 <div className="flex items-center gap-1.5 justify-end">

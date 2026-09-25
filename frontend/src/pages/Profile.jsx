@@ -17,12 +17,12 @@ import { UserAvatar } from '../utils/avatar'
    - Real-Time Crosshair & Match Detail Tooltip
 ════════════════════════════════════════════════ */
 const RANK_TIERS = [
-  { name: 'Novice',      min: 0,    max: 1199, bg: 'rgba(100,116,139,0.07)', border: '#334155', text: '#94a3b8' },
-  { name: 'Challenger',  min: 1200, max: 1399, bg: 'rgba(16,185,129,0.08)',  border: '#065f46', text: '#10b981' },
-  { name: 'Specialist',  min: 1400, max: 1599, bg: 'rgba(6,182,212,0.08)',   border: '#155e75', text: '#06b6d4' },
-  { name: 'Elite',       min: 1600, max: 1899, bg: 'rgba(129,140,248,0.10)', border: '#3730a3', text: '#818cf8' },
-  { name: 'Master',      min: 1900, max: 2199, bg: 'rgba(192,132,252,0.12)', border: '#6b21a8', text: '#c084fc' },
-  { name: 'Grandmaster', min: 2200, max: 3500, bg: 'rgba(249,115,22,0.14)',  border: '#9a3412', text: '#f97316' },
+  { name: 'Novice', min: 0, max: 1199, bg: 'rgba(100,116,139,0.07)', border: '#334155', text: '#94a3b8' },
+  { name: 'Challenger', min: 1200, max: 1399, bg: 'rgba(16,185,129,0.08)', border: '#065f46', text: '#10b981' },
+  { name: 'Specialist', min: 1400, max: 1599, bg: 'rgba(6,182,212,0.08)', border: '#155e75', text: '#06b6d4' },
+  { name: 'Elite', min: 1600, max: 1899, bg: 'rgba(129,140,248,0.10)', border: '#3730a3', text: '#818cf8' },
+  { name: 'Master', min: 1900, max: 2199, bg: 'rgba(192,132,252,0.12)', border: '#6b21a8', text: '#c084fc' },
+  { name: 'Grandmaster', min: 2200, max: 3500, bg: 'rgba(249,115,22,0.14)', border: '#9a3412', text: '#f97316' },
 ]
 
 export function getRankTier(rating = 1200) {
@@ -281,9 +281,8 @@ function EloChart({ data = [], username = 'Coder' }) {
                   strokeWidth={2}
                 />
                 <g
-                  transform={`translate(${
-                    hovered.x > inner.w - 170 ? hovered.x - 175 : hovered.x + 12
-                  }, ${Math.max(10, Math.min(inner.h - 90, hovered.y - 45))})`}
+                  transform={`translate(${hovered.x > inner.w - 170 ? hovered.x - 175 : hovered.x + 12
+                    }, ${Math.max(10, Math.min(inner.h - 90, hovered.y - 45))})`}
                 >
                   <rect
                     x={0}
@@ -354,7 +353,7 @@ function StreakCalendar({ history, matches = [] }) {
       if (dt) {
         try {
           activeDates.add(new Date(dt).toISOString().slice(0, 10))
-        } catch {}
+        } catch { }
       }
     })
   }
@@ -395,13 +394,15 @@ function MatchRow({ m }) {
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 transition-colors"
-         style={{ borderBottom: '1px solid #0d0f17' }}
-         onMouseOver={e => e.currentTarget.style.background = '#0d0f17'}
-         onMouseOut={e  => e.currentTarget.style.background = 'transparent'}>
+      style={{ borderBottom: '1px solid #0d0f17' }}
+      onMouseOver={e => e.currentTarget.style.background = '#0d0f17'}
+      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
 
       <span className="font-mono text-[10px] font-bold px-2 py-0.5 shrink-0"
-            style={{ borderRadius: 3, background: win ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.12)',
-                     color: win ? '#10b981' : '#f43f5e', border: `1px solid ${win ? 'rgba(16,185,129,0.25)' : 'rgba(244,63,94,0.25)'}`, width: 40, textAlign: 'center' }}>
+        style={{
+          borderRadius: 3, background: win ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.12)',
+          color: win ? '#10b981' : '#f43f5e', border: `1px solid ${win ? 'rgba(16,185,129,0.25)' : 'rgba(244,63,94,0.25)'}`, width: 40, textAlign: 'center'
+        }}>
         {m.result}
       </span>
 
@@ -411,7 +412,7 @@ function MatchRow({ m }) {
       </div>
 
       <span className="font-mono text-[12px] font-bold shrink-0 w-12 text-right"
-            style={{ color: win ? '#10b981' : '#f43f5e' }}>
+        style={{ color: win ? '#10b981' : '#f43f5e' }}>
         {deltaStr}
       </span>
 
@@ -444,9 +445,9 @@ function StatCard({ label, value, sub, color = '#dde1ea' }) {
 ════════════════════════════════════════════════ */
 function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, username, onSave }) {
   const [selectedStyle, setSelectedStyle] = useState(currentStyle || 'adventurer')
-  const [selectedSeed, setSelectedSeed]   = useState(currentSeed || username || 'coder')
-  const [customInput, setCustomInput]     = useState('')
-  const [saving, setSaving]               = useState(false)
+  const [selectedSeed, setSelectedSeed] = useState(currentSeed || username || 'coder')
+  const [customInput, setCustomInput] = useState('')
+  const [saving, setSaving] = useState(false)
 
   const styles = [
     { id: 'adventurer', label: 'Adventurer (Male)', icon: '👦' },
@@ -521,11 +522,10 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
             <button
               key={st.id}
               onClick={() => { setSelectedStyle(st.id); setSelectedSeed(PRESETS[st.id]?.[0] || 'seed1') }}
-              className={`px-3 py-1.5 rounded-lg font-mono text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                selectedStyle === st.id
+              className={`px-3 py-1.5 rounded-lg font-mono text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${selectedStyle === st.id
                   ? 'bg-orange-500/20 text-[#f97316] border border-orange-500/50 shadow-sm'
                   : 'bg-[#0d0f17] text-[#9ca3af] border border-[#1e2130] hover:border-[#374151]'
-              }`}
+                }`}
             >
               {st.icon} {st.label}
             </button>
@@ -550,11 +550,10 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
                 <button
                   key={preset}
                   onClick={() => setSelectedSeed(preset)}
-                  className={`p-1.5 rounded-xl border transition-all flex items-center justify-center cursor-pointer ${
-                    active
+                  className={`p-1.5 rounded-xl border transition-all flex items-center justify-center cursor-pointer ${active
                       ? 'bg-orange-500/20 border-orange-500 scale-105 shadow-lg shadow-orange-500/20'
                       : 'bg-[#0d0f17] border-[#1e2130] hover:border-[#374151]'
-                  }`}
+                    }`}
                 >
                   <UserAvatar username={username} seed={preset} style={selectedStyle} size={36} />
                 </button>
@@ -613,14 +612,14 @@ export default function Profile() {
   const navigate = useNavigate()
 
   const [profileUser, setProfileUser] = useState(null)
-  const [matches, setMatches]         = useState([])
-  const [eloHistory, setEloHistory]   = useState([])
+  const [matches, setMatches] = useState([])
+  const [eloHistory, setEloHistory] = useState([])
   const [dataLoading, setDataLoading] = useState(true)
-  const [notFound, setNotFound]       = useState(false)
+  const [notFound, setNotFound] = useState(false)
   const [editingUsername, setEditingUsername] = useState(false)
-  const [newHandle, setNewHandle]             = useState('')
-  const [handleErr, setHandleErr]             = useState('')
-  const [savingHandle, setSavingHandle]       = useState(false)
+  const [newHandle, setNewHandle] = useState('')
+  const [handleErr, setHandleErr] = useState('')
+  const [savingHandle, setSavingHandle] = useState(false)
   const [showAvatarModal, setShowAvatarModal] = useState(false)
 
   const isOwnProfileRoute = !routeUsername
@@ -718,11 +717,11 @@ export default function Profile() {
       <p className="font-mono text-sm animate-pulse" style={{ color: '#4b5563' }}>loading profile...</p>
     </div>
   )
-  const elo    = activeUser?.elo_rating ?? 1200
-  const wins   = activeUser?.wins   ?? 0
+  const elo = activeUser?.elo_rating ?? 1200
+  const wins = activeUser?.wins ?? 0
   const losses = activeUser?.losses ?? 0
-  const total  = wins + losses
-  const wr     = total > 0 ? Math.round((wins / total) * 100) : 0
+  const total = wins + losses
+  const wr = total > 0 ? Math.round((wins / total) * 100) : 0
 
   // Dynamic Streak Calculation from real match & Elo activity history
   const activeDates = new Set()
@@ -732,12 +731,12 @@ export default function Profile() {
   matches.forEach(m => {
     const dt = m.ended_at || m.started_at || m.date
     if (dt) {
-      try { activeDates.add(new Date(dt).toISOString().slice(0, 10)) } catch {}
+      try { activeDates.add(new Date(dt).toISOString().slice(0, 10)) } catch { }
     }
   })
   eloHistory.forEach(e => {
     if (e.date) {
-      try { activeDates.add(new Date(e.date).toISOString().slice(0, 10)) } catch {}
+      try { activeDates.add(new Date(e.date).toISOString().slice(0, 10)) } catch { }
     }
   })
 
@@ -785,33 +784,33 @@ export default function Profile() {
     if (m.topic) acc[m.topic] = (acc[m.topic] || 0) + 1
     return acc
   }, {})
-  const favTopic = Object.entries(topicFreq).sort((a,b) => b[1] - a[1])[0]?.[0] ?? '—'
+  const favTopic = Object.entries(topicFreq).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—'
 
   // Construct chart points from real Elo history or single baseline.
   // Always force the last point to be the ACTUAL current elo so chart & hero match.
   const rawChartData = eloHistory.length > 0
     ? eloHistory.map(e => ({
-        date: e.date,
-        rating: e.rating,
-        delta: e.delta,
-        topic: e.topic,
-        difficulty: e.difficulty,
-        opponent: e.opponent,
-      }))
+      date: e.date,
+      rating: e.rating,
+      delta: e.delta,
+      topic: e.topic,
+      difficulty: e.difficulty,
+      opponent: e.opponent,
+    }))
     : [
-        { date: activeUser?.created_at ? new Date(activeUser.created_at).toISOString().slice(0,10) : 'Start', rating: 1200, delta: 0, topic: 'Initial' },
-      ]
+      { date: activeUser?.created_at ? new Date(activeUser.created_at).toISOString().slice(0, 10) : 'Start', rating: 1200, delta: 0, topic: 'Initial' },
+    ]
 
   // Patch last point to match actual current elo (fixes drift from fallback computation)
   const chartData = rawChartData.length > 0
     ? [
-        ...rawChartData.slice(0, -1),
-        { ...rawChartData[rawChartData.length - 1], rating: elo },
-      ]
-    : [{ date: new Date().toISOString().slice(0,10), rating: elo, delta: 0, topic: 'Current' }]
+      ...rawChartData.slice(0, -1),
+      { ...rawChartData[rawChartData.length - 1], rating: elo },
+    ]
+    : [{ date: new Date().toISOString().slice(0, 10), rating: elo, delta: 0, topic: 'Current' }]
 
-  const peakElo   = eloHistory.length > 0 ? Math.max(...eloHistory.map(e => e.rating), elo) : elo
-  const startElo  = eloHistory[0]?.rating ?? 1200
+  const peakElo = eloHistory.length > 0 ? Math.max(...eloHistory.map(e => e.rating), elo) : elo
+  const startElo = eloHistory[0]?.rating ?? 1200
   const netChange = elo - startElo
 
   async function handleSaveUsername(e) {
@@ -985,7 +984,7 @@ export default function Profile() {
 
             {/* Streak pill */}
             <div className="flex items-center gap-3 px-5 py-3"
-                 style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: 4 }}>
+              style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: 4 }}>
               <span className="text-2xl">{streak >= 7 ? '🔥' : streak >= 3 ? '⚡' : '✦'}</span>
               <div>
                 <p className="font-display font-black text-2xl leading-none" style={{ color: '#f97316' }}>{streak}</p>
@@ -1001,18 +1000,18 @@ export default function Profile() {
 
         {/* Stat grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <StatCard label="rating"    value={elo}                    sub={`peak ${peakElo}`}   color={getRankTier(elo).text} subColor="#64748b" />
-          <StatCard label="wins"      value={wins}                   sub={`${wr}% win rate`}    color="#22d3ee" subColor="rgba(34,211,238,0.7)" />
-          <StatCard label="losses"    value={losses}                 sub={`${total} total`}     color="#f43f5e" subColor="rgba(244,63,94,0.7)" />
-          <StatCard label="streak"    value={`${streak}d`}           sub="active days"          color="#f97316" subColor="rgba(249,115,22,0.7)" />
-          <StatCard label="matches"   value={total}                  sub="battles"              color="#a78bfa" subColor="rgba(167,139,250,0.7)" />
-          <StatCard label="fav topic" value={favTopic.split('-')[0]} sub={favTopic}             color="#fbbf24" subColor="rgba(251,191,36,0.7)" />
+          <StatCard label="rating" value={elo} sub={`peak ${peakElo}`} color={getRankTier(elo).text} subColor="#64748b" />
+          <StatCard label="wins" value={wins} sub={`${wr}% win rate`} color="#22d3ee" subColor="rgba(34,211,238,0.7)" />
+          <StatCard label="losses" value={losses} sub={`${total} total`} color="#f43f5e" subColor="rgba(244,63,94,0.7)" />
+          <StatCard label="streak" value={`${streak}d`} sub="active days" color="#f97316" subColor="rgba(249,115,22,0.7)" />
+          <StatCard label="matches" value={total} sub="battles" color="#a78bfa" subColor="rgba(167,139,250,0.7)" />
+          <StatCard label="fav topic" value={favTopic.split('-')[0]} sub={favTopic} color="#fbbf24" subColor="rgba(251,191,36,0.7)" />
         </div>
 
         {/* Elo chart */}
         <div style={{ background: '#090b13', border: '1px solid #1e2130', borderRadius: 4, overflow: 'hidden' }}>
           <div className="flex items-center justify-between px-5 py-3"
-               style={{ borderBottom: '1px solid #1e2130', background: '#07080c' }}>
+            style={{ borderBottom: '1px solid #1e2130', background: '#07080c' }}>
             <div>
               <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: '#4b5563', letterSpacing: '0.12em' }}>
                 // rating history
@@ -1041,7 +1040,7 @@ export default function Profile() {
           {/* Match history */}
           <div style={{ background: '#090b13', border: '1px solid #1e2130', borderRadius: 4, overflow: 'hidden' }}>
             <div className="px-4 py-3 flex items-center justify-between"
-                 style={{ borderBottom: '1px solid #1e2130', background: '#07080c' }}>
+              style={{ borderBottom: '1px solid #1e2130', background: '#07080c' }}>
               <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: '#4b5563', letterSpacing: '0.12em' }}>
                 // match history
               </p>
@@ -1066,10 +1065,12 @@ export default function Profile() {
             ) : (
               <>
                 <div className="flex items-center gap-3 px-4 py-2" style={{ borderBottom: '1px solid #1e2130' }}>
-                  {['result','opponent / topic','Δelo','date'].map(h => (
-                    <span key={h} className="font-mono text-[9px] uppercase" style={{ color: '#374151',
-                      flex: h==='opponent / topic' ? 1 : 0, width: h==='result' ? 40 : h==='Δelo' ? 48 : 70,
-                      textAlign: h==='date' || h==='Δelo' ? 'right' : undefined }}>
+                  {['result', 'opponent / topic', 'Δelo', 'date'].map(h => (
+                    <span key={h} className="font-mono text-[9px] uppercase" style={{
+                      color: '#374151',
+                      flex: h === 'opponent / topic' ? 1 : 0, width: h === 'result' ? 40 : h === 'Δelo' ? 48 : 70,
+                      textAlign: h === 'date' || h === 'Δelo' ? 'right' : undefined
+                    }}>
                       {h}
                     </span>
                   ))}
@@ -1104,7 +1105,7 @@ export default function Profile() {
                   { col: '#0d0f17', lbl: 'missed' },
                 ].map(l => (
                   <div key={l.lbl} className="flex items-center gap-1.5">
-                    <div style={{ width: 10, height: 10, borderRadius: 2, background: l.col, border: '1px solid rgba(249,115,22,0.2)', flexShrink: 0 }}/>
+                    <div style={{ width: 10, height: 10, borderRadius: 2, background: l.col, border: '1px solid rgba(249,115,22,0.2)', flexShrink: 0 }} />
                     <span className="font-mono text-[9px]" style={{ color: '#374151' }}>{l.lbl}</span>
                   </div>
                 ))}
@@ -1120,7 +1121,7 @@ export default function Profile() {
                 ) : (
                   <div className="space-y-2">
                     {Object.entries(topicFreq)
-                      .sort((a,b) => b[1] - a[1])
+                      .sort((a, b) => b[1] - a[1])
                       .slice(0, 5)
                       .map(([topic, count]) => (
                         <div key={topic}>
@@ -1129,7 +1130,7 @@ export default function Profile() {
                             <span className="font-mono text-[10px]" style={{ color: '#4b5563' }}>{count}</span>
                           </div>
                           <div style={{ height: 3, background: '#0d0f17', borderRadius: 2 }}>
-                            <div style={{ height: 3, width: `${(count / matches.length) * 100}%`, background: '#f97316', borderRadius: 2, transition: 'width 0.5s ease' }}/>
+                            <div style={{ height: 3, width: `${(count / matches.length) * 100}%`, background: '#f97316', borderRadius: 2, transition: 'width 0.5s ease' }} />
                           </div>
                         </div>
                       ))}
