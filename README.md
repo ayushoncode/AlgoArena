@@ -184,6 +184,28 @@ cd frontend && npm run dev
 
 Open **`http://localhost:5173`** to enter the arena! ⚔️
 
+### Playing from two laptops on the same Wi-Fi
+
+Run the backend and frontend on one laptop (the host). Find its local IPv4 address with:
+
+```powershell
+ipconfig
+```
+
+Use the host laptop's **IPv4 Address** (for example, `10.20.24.254`) in `frontend/.env`:
+
+```env
+VITE_API_URL=http://10.20.24.254:4000
+```
+
+Restart Vite after changing `.env`, then on both laptops open:
+
+```text
+http://10.20.24.254:5173
+```
+
+Create or log into separate accounts and use a custom room code to challenge each other. Both laptops must be on the same Wi-Fi, and Windows Firewall must allow Node.js on private networks. The backend, PostgreSQL, Redis, and worker stay on the host laptop; the second laptop only needs a browser.
+
 ---
 
 ## 🗺️ Roadmap
