@@ -84,12 +84,11 @@ export function getUserEmoji(username = '') {
 }
 
 export const RANK_TIERS = [
-  { name: 'Novice',      min: 0,    max: 1199, col: '#94a3b8', bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.3)' },
-  { name: 'Challenger',  min: 1200, max: 1399, col: '#10b981', bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.3)'  },
-  { name: 'Specialist',  min: 1400, max: 1599, col: '#06b6d4', bg: 'rgba(6,182,212,0.12)',   border: 'rgba(6,182,212,0.3)'   },
-  { name: 'Elite',       min: 1600, max: 1899, col: '#818cf8', bg: 'rgba(129,140,248,0.14)', border: 'rgba(129,140,248,0.35)' },
-  { name: 'Master',      min: 1900, max: 2199, col: '#c084fc', bg: 'rgba(192,132,252,0.15)', border: 'rgba(192,132,252,0.35)' },
-  { name: 'Grandmaster', min: 2200, max: 9999, col: '#f97316', bg: 'rgba(249,115,22,0.16)',  border: 'rgba(249,115,22,0.35)' },
+  { name: 'Recruit', min: 0, max: 1199, col: '#94a3b8', bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.3)', glow: 'rgba(100,116,139,0.2)' },
+  { name: 'Operative', min: 1200, max: 1399, col: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', glow: 'rgba(16,185,129,0.25)' },
+  { name: 'Vanguard', min: 1400, max: 1599, col: '#38BDF8', bg: 'rgba(56,189,248,0.12)', border: 'rgba(56,189,248,0.3)', glow: 'rgba(56,189,248,0.25)' },
+  { name: 'Champion', min: 1600, max: 1799, col: '#818cf8', bg: 'rgba(129,140,248,0.14)', border: 'rgba(129,140,248,0.35)', glow: 'rgba(129,140,248,0.3)' },
+  { name: 'Legend', min: 1800, max: 9999, col: '#F5B942', bg: 'rgba(245,185,66,0.14)', border: 'rgba(245,185,66,0.35)', glow: 'rgba(245,185,66,0.35)' },
 ]
 
 export function getTier(elo) {
@@ -111,18 +110,18 @@ export function UserAvatar({ username = '', seed = null, style = null, elo = nul
   const borderColor = tier
     ? tier.col
     : isMe
-    ? '#f97316'
-    : isPink
-    ? '#f43f5e'
-    : '#22d3ee'
+      ? '#38BDF8'
+      : isPink
+        ? '#f43f5e'
+        : '#38BDF8'
 
   const bg = tier
     ? tier.bg
     : isMe
-    ? 'rgba(249,115,22,0.1)'
-    : isPink
-    ? 'rgba(244,63,94,0.1)'
-    : 'rgba(34,211,238,0.1)'
+      ? 'rgba(56,189,248,0.1)'
+      : isPink
+        ? 'rgba(244,63,94,0.1)'
+        : 'rgba(56,189,248,0.1)'
 
   return (
     <div
@@ -162,3 +161,6 @@ export function UserAvatar({ username = '', seed = null, style = null, elo = nul
 }
 
 export default UserAvatar
+
+/** Alias for getTier — used by shared UI components */
+export const getArenaTier = getTier

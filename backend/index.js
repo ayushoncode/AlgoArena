@@ -123,6 +123,15 @@ startVerdictSubscriber((payload) => handleVerdict(payload, io))
 // ── Start server ──────────────────────────────────────────────────────────────
 const PORT = parseInt(process.env.PORT, 10) || 4000
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n[Server Error] Port ${PORT} is already in use. Kill the running process or choose a different port.\n  Run: lsof -ti :${PORT} | xargs kill -9\n`)
+    process.exit(1)
+  } else {
+    throw err
+  }
+})
+
 server.listen(PORT, () => {
   console.log(`
   ┌──────────────────────────────────────────┐

@@ -7,6 +7,21 @@ import api from '../utils/api'
 import { UserAvatar, getUserEmoji } from '../utils/avatar'
 import LeetCodeProblemView from '../components/LeetCodeProblemView'
 import { buildStarterTemplate, TEMPLATES } from '../utils/problemSignatures'
+import { Flag, Play, ChevronUp, Clock, AlertTriangle, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { RankBadge, DiffChip, VerdictChip, getArenaTier } from '../components/ui'
+
+/* Original Arena Emblem */
+function ArenaEmblem({ size = 22 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="AlgoArena logo">
+      <path d="M20 2L36 11V29L20 38L4 29V11L20 2Z" stroke="#E11D48" strokeWidth="1.5" fill="none" />
+      <path d="M20 8L30 14V26L20 32L10 26V14L20 8Z" stroke="#38BDF8" strokeWidth="0.8" fill="rgba(56,189,248,0.06)" />
+      <path d="M15 17L12 20L15 23" stroke="#E11D48" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M25 17L28 20L25 23" stroke="#38BDF8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="18" y1="25" x2="22" y2="15" stroke="#F5B942" strokeWidth="1" strokeLinecap="round" />
+    </svg>
+  )
+}
 
 /* ════════════════════════════════════════════════
    MATCH TIMER
@@ -23,8 +38,8 @@ function useMatchTimer(startedAt) {
   }, [startedAt])
   const remaining = Math.max(0, MATCH_DURATION - elapsed)
   const pct = ((MATCH_DURATION - remaining) / MATCH_DURATION) * 100
-  const mm  = String(Math.floor(remaining / 60)).padStart(2, '0')
-  const ss  = String(remaining % 60).padStart(2, '0')
+  const mm = String(Math.floor(remaining / 60)).padStart(2, '0')
+  const ss = String(remaining % 60).padStart(2, '0')
   const urgent = remaining < 300 // last 5 minutes
   return { display: `${mm}:${ss}`, pct, urgent, remaining }
 }
@@ -37,25 +52,26 @@ function defineTheme(monaco) {
     base: 'vs-dark',
     inherit: true,
     rules: [
-      { token: 'comment',   foreground: '4b5563', fontStyle: 'italic' },
-      { token: 'keyword',   foreground: '22d3ee' },
+      { token: 'comment',   foreground: '4A5878', fontStyle: 'italic' },
+      { token: 'keyword',   foreground: '38BDF8' },
       { token: 'string',    foreground: 'a3e635' },
-      { token: 'number',    foreground: 'f97316' },
-      { token: 'function',  foreground: 'f97316' },
+      { token: 'number',    foreground: 'E11D48' },
+      { token: 'function',  foreground: 'F5B942' },
       { token: 'type',      foreground: 'c084fc' },
-      { token: 'variable',  foreground: 'dde1ea' },
-      { token: 'delimiter', foreground: '6b7280' },
+      { token: 'variable',  foreground: 'E2E8F4' },
+      { token: 'delimiter', foreground: '1B2540' },
     ],
     colors: {
-      'editor.background':           '#090b13',
-      'editor.foreground':           '#dde1ea',
-      'editorLineNumber.foreground': '#374151',
-      'editorLineNumber.activeForeground': '#f97316',
-      'editor.selectionBackground':  '#f9731630',
-      'editor.lineHighlightBackground': '#0d0f17',
-      'editorCursor.foreground':     '#f97316',
-      'editorGutter.background':     '#090b13',
-      'scrollbarSlider.background':  '#1e213080',
+      'editor.background':                  '#0B1120',
+      'editor.foreground':                  '#E2E8F4',
+      'editorLineNumber.foreground':        '#4A5878',
+      'editorLineNumber.activeForeground':  '#E11D48',
+      'editor.selectionBackground':         '#E11D4830',
+      'editor.lineHighlightBackground':     '#121A2E',
+      'editorCursor.foreground':            '#E11D48',
+      'editorGutter.background':            '#0B1120',
+      'scrollbarSlider.background':         '#1B254080',
+      'scrollbarSlider.hoverBackground':    '#243356AA',
     },
   })
 }
@@ -65,10 +81,10 @@ function defineTheme(monaco) {
 ════════════════════════════════════════════════ */
 
 const LANGS = [
-  { id: 'javascript', label: 'JS'  },
-  { id: 'python',     label: 'PY'  },
-  { id: 'java',       label: 'JV'  },
-  { id: 'cpp',        label: 'C++' },
+  { id: 'javascript', label: 'JS' },
+  { id: 'python', label: 'PY' },
+  { id: 'java', label: 'JV' },
+  { id: 'cpp', label: 'C++' },
 ]
 
 /* ════════════════════════════════════════════════
@@ -78,22 +94,22 @@ function VerdictBadge({ verdict, progress }) {
   if (!verdict) return null
 
   const cfg = {
-    ACCEPTED:             { col: '#10b981', bg: 'rgba(16,185,129,0.15)',  border: 'rgba(16,185,129,0.3)', label: 'ACCEPTED' },
-    WRONG_ANSWER:         { col: '#f43f5e', bg: 'rgba(244,63,94,0.15)',   border: 'rgba(244,63,94,0.3)',  label: 'WRONG ANSWER' },
-    RUNTIME_ERROR:        { col: '#f43f5e', bg: 'rgba(244,63,94,0.15)',   border: 'rgba(244,63,94,0.3)',  label: 'RUNTIME ERROR' },
-    COMPILATION_ERROR:    { col: '#eab308', bg: 'rgba(234,179,8,0.15)',   border: 'rgba(234,179,8,0.3)',  label: 'COMPILATION ERROR' },
-    TIME_LIMIT_EXCEEDED:  { col: '#f59e0b', bg: 'rgba(245,158,11,0.15)',  border: 'rgba(245,158,11,0.3)', label: 'TIME LIMIT' },
-    PENDING:              { col: '#6b7280', bg: 'rgba(107,114,128,0.12)', border: 'rgba(107,114,128,0.3)', label: 'JUDGING...' },
+    ACCEPTED: { col: '#10b981', bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.3)', label: 'ACCEPTED' },
+    WRONG_ANSWER: { col: '#f43f5e', bg: 'rgba(244,63,94,0.15)', border: 'rgba(244,63,94,0.3)', label: 'WRONG ANSWER' },
+    RUNTIME_ERROR: { col: '#f43f5e', bg: 'rgba(244,63,94,0.15)', border: 'rgba(244,63,94,0.3)', label: 'RUNTIME ERROR' },
+    COMPILATION_ERROR: { col: '#eab308', bg: 'rgba(234,179,8,0.15)', border: 'rgba(234,179,8,0.3)', label: 'COMPILATION ERROR' },
+    TIME_LIMIT_EXCEEDED: { col: '#f59e0b', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.3)', label: 'TIME LIMIT' },
+    PENDING: { col: '#6b7280', bg: 'rgba(107,114,128,0.12)', border: 'rgba(107,114,128,0.3)', label: 'JUDGING...' },
   }
   const v = cfg[verdict] ?? cfg.PENDING
 
-  const displayLabel = verdict === 'PENDING' && progress 
-    ? `JUDGING (${progress.testIndex}/${progress.totalTests})` 
+  const displayLabel = verdict === 'PENDING' && progress
+    ? `JUDGING (${progress.testIndex}/${progress.totalTests})`
     : v.label
 
   return (
     <span className="font-mono text-[11px] font-bold px-3 py-1.5 verdict-in"
-          style={{ background: v.bg, color: v.col, border: `1px solid ${v.border}`, borderRadius: 3 }}>
+      style={{ background: v.bg, color: v.col, border: `1px solid ${v.border}`, borderRadius: 3 }}>
       {displayLabel}
     </span>
   )
@@ -122,41 +138,45 @@ function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, on
   const isLiveJudging = submitting && tab === 'submit'
 
   const verdictCfg = {
-    ACCEPTED:            { col: '#10b981', label: 'Accepted ✓' },
-    WRONG_ANSWER:        { col: '#f43f5e', label: 'Wrong Answer ✗' },
+    ACCEPTED: { col: '#10b981', label: 'Accepted ✓' },
+    WRONG_ANSWER: { col: '#f43f5e', label: 'Wrong Answer ✗' },
     TIME_LIMIT_EXCEEDED: { col: '#f59e0b', label: 'Time Limit Exceeded' },
-    RUNTIME_ERROR:       { col: '#f43f5e', label: 'Runtime Error' },
-    COMPILATION_ERROR:   { col: '#eab308', label: 'Compilation Error' },
-    PENDING:             { col: '#6b7280', label: 'Judging…' },
+    RUNTIME_ERROR: { col: '#f43f5e', label: 'Runtime Error' },
+    COMPILATION_ERROR: { col: '#eab308', label: 'Compilation Error' },
+    PENDING: { col: '#6b7280', label: 'Judging…' },
   }
 
   const details = tab === 'run' ? runResult : submitResult
   const vc = verdictCfg[details?.verdict] ?? verdictCfg.PENDING
   const passed = details?.passedTests ?? 0
-  const total  = details?.totalTests ?? 0
+  const total = details?.totalTests ?? 0
 
   const currentTest = submitProgress?.testIndex || 1
   const totalTestsCount = submitProgress?.totalTests || total || 0
   const progressPercent = totalTestsCount > 0 ? Math.min(100, Math.round((currentTest / totalTestsCount) * 100)) : 15
 
   return (
-    <div className="shrink-0 border-t" style={{ background: '#0a0c14', borderColor: '#1e2130', maxHeight: 250, display:'flex', flexDirection:'column' }}>
+    <div className="shrink-0 border-t" style={{ background: '#0a0c14', borderColor: '#1e2130', maxHeight: 250, display: 'flex', flexDirection: 'column' }}>
       {/* Header bar */}
       <div className="flex items-center justify-between px-3 py-1.5 shrink-0" style={{ background: '#07080c', borderBottom: '1px solid #1e2130' }}>
         <div className="flex items-center gap-1">
           {runResult && (
             <button onClick={() => setTab('run')}
               className="font-mono text-[10px] px-2.5 py-1 transition-all"
-              style={{ borderRadius:3, background: tab==='run' ? '#1e2130' : 'transparent',
-                       color: tab==='run' ? '#dde1ea' : '#4b5563', border:`1px solid ${tab==='run'?'#374151':'transparent'}` }}>
+              style={{
+                borderRadius: 3, background: tab === 'run' ? '#1e2130' : 'transparent',
+                color: tab === 'run' ? '#dde1ea' : '#4b5563', border: `1px solid ${tab === 'run' ? '#374151' : 'transparent'}`
+              }}>
               ▶ Run
             </button>
           )}
           {(submitResult || submitting) && (
             <button onClick={() => setTab('submit')}
               className="font-mono text-[10px] px-2.5 py-1 transition-all flex items-center gap-1.5"
-              style={{ borderRadius:3, background: tab==='submit' ? '#1e2130' : 'transparent',
-                       color: tab==='submit' ? '#dde1ea' : '#4b5563', border:`1px solid ${tab==='submit'?'#374151':'transparent'}` }}>
+              style={{
+                borderRadius: 3, background: tab === 'submit' ? '#1e2130' : 'transparent',
+                color: tab === 'submit' ? '#dde1ea' : '#4b5563', border: `1px solid ${tab === 'submit' ? '#374151' : 'transparent'}`
+              }}>
               {isLiveJudging && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />}
               ⬆ Submit {isLiveJudging ? `(${currentTest}/${totalTestsCount || '...'})` : ''}
             </button>
@@ -209,34 +229,34 @@ function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, on
         </div>
       ) : (
         /* Test case list */
-        <div className="flex-1 overflow-y-auto p-2.5 space-y-2" style={{ scrollbarWidth:'thin' }}>
+        <div className="flex-1 overflow-y-auto p-2.5 space-y-2" style={{ scrollbarWidth: 'thin' }}>
           {details?.testResults?.map((tc, idx) => {
             const isHiddenFailed = tc.isHidden && !tc.passed
             const borderCol = tc.passed ? 'rgba(16,185,129,0.25)' : tc.error ? 'rgba(244,63,94,0.35)' : 'rgba(245,158,11,0.3)'
             return (
-              <div key={idx} className="rounded overflow-hidden" style={{ border:`1px solid ${borderCol}`, background:'#0d0f17' }}>
+              <div key={idx} className="rounded overflow-hidden" style={{ border: `1px solid ${borderCol}`, background: '#0d0f17' }}>
                 {/* Row header */}
                 <div className="flex items-center justify-between px-3 py-1.5" style={{ background: tc.passed ? 'rgba(16,185,129,0.06)' : 'rgba(244,63,94,0.06)' }}>
                   <span className="font-mono text-[10px] font-bold" style={{ color: tc.passed ? '#10b981' : '#f43f5e' }}>
                     {tc.passed ? '✓' : '✗'} Test {tc.testIndex}{tc.isHidden ? ' (Hidden)' : ''}
                   </span>
-                  {tc.runtimeMs > 0 && <span className="font-mono text-[9px]" style={{ color:'#4b5563' }}>{tc.runtimeMs}ms</span>}
+                  {tc.runtimeMs > 0 && <span className="font-mono text-[9px]" style={{ color: '#4b5563' }}>{tc.runtimeMs}ms</span>}
                 </div>
 
                 {/* Test content */}
                 {!isHiddenFailed && !tc.isHidden && (
                   <div className="px-3 py-2 space-y-1.5">
                     <div className="font-mono text-[10px]">
-                      <span style={{ color:'#4b5563' }}>Input  </span>
-                      <code style={{ color:'#22d3ee' }}>{typeof tc.input === 'object' ? JSON.stringify(tc.input) : String(tc.input ?? '')}</code>
+                      <span style={{ color: '#4b5563' }}>Input  </span>
+                      <code style={{ color: '#22d3ee' }}>{typeof tc.input === 'object' ? JSON.stringify(tc.input) : String(tc.input ?? '')}</code>
                     </div>
                     <div className="font-mono text-[10px]">
-                      <span style={{ color:'#4b5563' }}>Expected </span>
-                      <code style={{ color:'#10b981' }}>{typeof tc.expected === 'object' ? JSON.stringify(tc.expected) : String(tc.expected ?? '')}</code>
+                      <span style={{ color: '#4b5563' }}>Expected </span>
+                      <code style={{ color: '#10b981' }}>{typeof tc.expected === 'object' ? JSON.stringify(tc.expected) : String(tc.expected ?? '')}</code>
                     </div>
                     {!tc.passed && (
                       <div className="font-mono text-[10px]">
-                        <span style={{ color:'#4b5563' }}>Got  </span>
+                        <span style={{ color: '#4b5563' }}>Got  </span>
                         <code style={{ color: tc.error ? '#f43f5e' : '#f59e0b' }}>
                           {tc.error ? tc.error.slice(0, 120) : (typeof tc.actual === 'object' ? JSON.stringify(tc.actual) : String(tc.actual ?? 'null'))}
                         </code>
@@ -245,7 +265,7 @@ function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, on
                   </div>
                 )}
                 {isHiddenFailed && (
-                  <div className="px-3 py-2 font-mono text-[10px]" style={{ color:'#6b7280' }}>
+                  <div className="px-3 py-2 font-mono text-[10px]" style={{ color: '#6b7280' }}>
                     {tc.error ? `Error: ${tc.error.slice(0, 100)}` : 'Output does not match expected'}
                   </div>
                 )}
@@ -262,19 +282,22 @@ function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, on
 ════════════════════════════════════════════════ */
 function PlayerHeader({ player, isMe, verdict, progress }) {
   if (!player) return null
+  const playerColor = isMe ? 'var(--c-red)' : 'var(--c-blue)'
   return (
-    <div className="flex items-center justify-between px-4 py-2.5"
-         style={{ background: '#07080c', borderBottom: '1px solid #1e2130' }}>
+    <div className="flex items-center justify-between px-4 py-2"
+      style={{ background: 'var(--c-panel2)', borderBottom: '1px solid var(--c-border)' }}>
       <div className="flex items-center gap-2.5">
-        {/* Emoji Avatar */}
-        <UserAvatar username={player?.username} seed={player?.avatar_seed} style={player?.avatar_style} size={24} isMe={isMe} />
-        <span className="font-mono text-[12px] font-bold" style={{ color: isMe ? '#f97316' : '#22d3ee' }}>
+        <UserAvatar username={player?.username} seed={player?.avatar_seed} style={player?.avatar_style} size={22} isMe={isMe} />
+        <span className="font-mono text-[11px] font-bold" style={{ color: playerColor }}>
           {player?.username ?? '—'}
         </span>
-        <span className="font-mono text-[10px]" style={{ color: '#4b5563' }}>{player?.rating ?? 1200}</span>
-        {isMe && <span className="font-mono text-[9px] px-1.5 py-0.5" style={{ background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.2)', borderRadius: 2 }}>you</span>}
+        <span className="font-mono text-[10px]" style={{ color: 'var(--c-text-mute)' }}>{player?.rating ?? 1200}</span>
+        {isMe && (
+          <span className="font-mono text-[9px] px-1.5 py-0.5"
+            style={{ background: 'rgba(225,29,72,0.1)', color: 'var(--c-red)', border: '1px solid rgba(225,29,72,0.2)' }}>You</span>
+        )}
       </div>
-      <VerdictBadge verdict={verdict} progress={progress} />
+      <VerdictChip verdict={verdict} size="xs" label={verdict === 'PENDING' && progress ? `Judging ${progress.testIndex}/${progress.totalTests}` : undefined} />
     </div>
   )
 }
@@ -285,8 +308,8 @@ function PlayerHeader({ player, isMe, verdict, progress }) {
    Parent passes: topic, difficulty, forcedWidth (px), onProblemLoaded, onToggleCollapse
 ════════════════════════════════════════════════ */
 function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, onToggleCollapse, onProblemLoaded }) {
-  const [problem,   setProblem] = useState(null)
-  const [loading,   setLoading] = useState(true)
+  const [problem, setProblem] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('description')
 
   useEffect(() => {
@@ -325,15 +348,15 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
             setProblem(fallback)
             if (onProblemLoaded) onProblemLoaded(fallback)
           }
-        }).catch(() => {})
+        }).catch(() => { })
       })
       .finally(() => setLoading(false))
   }, [problemId, topic, difficulty])
 
   const DIFF = {
-    easy:   { col:'#00b8a3', bg:'rgba(0,184,163,0.12)',  border:'rgba(0,184,163,0.25)',  label:'Easy'   },
-    medium: { col:'#ffc01e', bg:'rgba(255,192,30,0.12)', border:'rgba(255,192,30,0.25)',  label:'Medium' },
-    hard:   { col:'#ff375f', bg:'rgba(255,55,95,0.12)',   border:'rgba(255,55,95,0.25)',   label:'Hard'   },
+    easy:   { col: '#10b981', bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.25)',  label: 'Easy'   },
+    medium: { col: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)', label: 'Medium' },
+    hard:   { col: '#E11D48', bg: 'rgba(225,29,72,0.12)',   border: 'rgba(225,29,72,0.25)',   label: 'Hard'   },
   }
   const diff = DIFF[difficulty] || DIFF.medium
 
@@ -344,24 +367,26 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
         width: collapsed ? 40 : (forcedWidth || 340),
         minWidth: collapsed ? 40 : 260,
         height: '100%',
-        borderRight: '1px solid #151929',
-        background: '#0b0d14',
+        borderRight: '1px solid var(--c-border)',
+        background: 'var(--c-panel)',
         transition: 'width 0.2s cubic-bezier(.4,0,.2,1)',
       }}
     >
       {/* Collapse / expand toggle strip */}
       <div
         onClick={onToggleCollapse}
-        className="flex items-center justify-center shrink-0 cursor-pointer hover:bg-[#111827] transition-colors"
-        style={{ height: 32, borderBottom:'1px solid #151929', gap:6 }}
+        className="flex items-center justify-center shrink-0 cursor-pointer transition-colors"
+        style={{ height: 32, borderBottom: '1px solid var(--c-border)', gap: 6, background: 'var(--c-panel2)' }}
+        onMouseOver={e => e.currentTarget.style.background = 'var(--c-border)'}
+        onMouseOut={e => e.currentTarget.style.background = 'var(--c-panel2)'}
         title={collapsed ? 'Expand problem' : 'Collapse'}
       >
         {!collapsed && (
-          <span className="font-mono text-[9px] uppercase tracking-widest text-[#4b5563]">Problem Details</span>
+          <span className="section-label">Problem</span>
         )}
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
-          style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition:'transform 0.2s', color:'#4b5563' }}>
-          <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.2s', color: 'var(--c-text-mute)' }}>
+          <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
 
@@ -369,14 +394,15 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
         <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
           {/* Tab bar — Description */}
           {problem && (
-            <div className="flex shrink-0 px-2" style={{ borderBottom:'1px solid #151929' }}>
-              {[['description','Description']].map(([id, label]) => (
+            <div className="flex shrink-0 px-2" style={{ borderBottom: '1px solid var(--c-border)' }}>
+              {[['description', 'Description']].map(([id, label]) => (
                 <button key={id} onClick={() => setActiveTab(id)}
-                  className="px-3 font-sans text-[11.5px] py-2.5 transition-colors font-semibold"
+                  className="px-3 font-mono text-[11px] py-2.5 transition-colors font-semibold uppercase tracking-wider"
                   style={{
-                    color: activeTab===id ? '#f97316' : '#64748b',
-                    borderBottom: activeTab===id ? '2px solid #f97316' : '2px solid transparent',
+                    color: activeTab === id ? 'var(--c-red)' : 'var(--c-text-mute)',
+                    borderBottom: `2px solid ${activeTab === id ? 'var(--c-red)' : 'transparent'}`,
                     background: 'transparent',
+                    cursor: 'pointer',
                   }}>
                   {label}
                 </button>
@@ -385,15 +411,15 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
           )}
 
           {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto px-4 py-3.5" style={{ scrollbarWidth:'thin', scrollbarColor:'#1e2130 transparent' }}>
+          <div className="flex-1 overflow-y-auto px-4 py-3.5" style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--c-border) transparent' }}>
             {loading ? (
               <div className="space-y-4 pt-2">
-                <div style={{ height: 22, width: '70%', background: '#151929', borderRadius: 4 }}/>
-                <div style={{ height: 16, width: '30%', background: '#151929', borderRadius: 12 }}/>
+                <div style={{ height: 22, width: '70%', background: 'var(--c-border)', borderRadius: 4 }} className="animate-pulse" />
+                <div style={{ height: 16, width: '30%', background: 'var(--c-border)', borderRadius: 12 }} className="animate-pulse" />
                 <div className="space-y-2 pt-2">
-                  <div style={{ height: 12, width: '100%', background: '#151929', borderRadius: 4 }}/>
-                  <div style={{ height: 12, width: '90%', background: '#151929', borderRadius: 4 }}/>
-                  <div style={{ height: 12, width: '95%', background: '#151929', borderRadius: 4 }}/>
+                  <div style={{ height: 12, width: '100%', background: 'var(--c-border)', borderRadius: 4 }} className="animate-pulse" />
+                  <div style={{ height: 12, width: '90%',  background: 'var(--c-border)', borderRadius: 4 }} className="animate-pulse" />
+                  <div style={{ height: 12, width: '95%',  background: 'var(--c-border)', borderRadius: 4 }} className="animate-pulse" />
                 </div>
               </div>
             ) : problem && activeTab === 'description' ? (
@@ -408,7 +434,7 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
       {/* Collapsed: show vertical label */}
       {collapsed && (
         <div className="flex-1 flex flex-col items-center justify-center gap-2 py-4">
-          <span style={{ writingMode:'vertical-rl', transform:'rotate(180deg)', color:'#374151', fontSize:9, fontFamily:'monospace', letterSpacing:'0.1em', textTransform:'uppercase' }}>
+          <span style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', color: '#374151', fontSize: 9, fontFamily: 'monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             Problem
           </span>
         </div>
@@ -423,14 +449,14 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
 function useDragResize(initial, min, max) {
   const [width, setWidth] = useState(initial)
   const dragging = useRef(false)
-  const startX   = useRef(0)
-  const startW   = useRef(0)
+  const startX = useRef(0)
+  const startW = useRef(0)
 
   const onMouseDown = (e) => {
     dragging.current = true
-    startX.current   = e.clientX
-    startW.current   = width
-    document.body.style.cursor    = 'col-resize'
+    startX.current = e.clientX
+    startW.current = width
+    document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
 
     const onMove = (ev) => {
@@ -440,13 +466,13 @@ function useDragResize(initial, min, max) {
     }
     const onUp = () => {
       dragging.current = false
-      document.body.style.cursor    = ''
+      document.body.style.cursor = ''
       document.body.style.userSelect = ''
       window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup',   onUp)
+      window.removeEventListener('mouseup', onUp)
     }
     window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup',   onUp)
+    window.addEventListener('mouseup', onUp)
   }
 
   return { width, setWidth, onMouseDown }
@@ -463,16 +489,16 @@ function DragHandle({ onMouseDown, onDoubleClick }) {
       className="shrink-0 flex items-center justify-center group"
       style={{
         width: 5,
-        background: '#0d0f17',
-        borderLeft:  '1px solid #1e2130',
-        borderRight: '1px solid #1e2130',
+        background: 'var(--c-panel2)',
+        borderLeft: '1px solid var(--c-border)',
+        borderRight: '1px solid var(--c-border)',
         cursor: 'col-resize',
         zIndex: 10,
       }}
-      title="drag to resize · double-click to reset"
+      title="Drag to resize · double-click to reset"
     >
       <div className="w-px h-8 opacity-0 group-hover:opacity-100 transition-opacity"
-           style={{ background:'#f97316' }}/>
+        style={{ background: 'var(--c-red)' }} />
     </div>
   )
 }
@@ -481,16 +507,16 @@ function DragHandle({ onMouseDown, onDoubleClick }) {
    MATCH PAGE
 ════════════════════════════════════════════════ */
 export default function Match() {
-  const { roomId }  = useParams()
-  const { state }   = useLocation()
-  const { user }    = useAuth()
+  const { roomId } = useParams()
+  const { state } = useLocation()
+  const { user } = useAuth()
   const { emit, on, off } = useSocket()
-  const navigate    = useNavigate()
+  const navigate = useNavigate()
 
   // Panel widths — draggable
   const probPanel = useDragResize(320, 220, 560)
   const [probCollapsed, setProbCollapsed] = useState(false)
-  const oppPanel  = useDragResize(180, 120, 360)
+  const oppPanel = useDragResize(180, 120, 360)
 
   // Match state from navigation, sessionStorage or socket
   const [matchState, setMatchState] = useState(() => {
@@ -499,7 +525,7 @@ export default function Match() {
     try {
       const saved = sessionStorage.getItem(`aa_match_${roomId}`)
       if (saved) return JSON.parse(saved)
-    } catch {}
+    } catch { }
     return null
   })
 
@@ -508,7 +534,7 @@ export default function Match() {
     if (matchState && roomId) {
       try {
         sessionStorage.setItem(`aa_match_${roomId}`, JSON.stringify(matchState))
-      } catch {}
+      } catch { }
     }
   }, [matchState, roomId])
 
@@ -527,27 +553,27 @@ export default function Match() {
 
   // Editor state
   const [activeProblem, setActiveProblem] = useState(null)
-  const [userHasTyped,  setUserHasTyped]  = useState(false)
-  const [lang,          setLang]          = useState('javascript')
-  const [code,          setCode]          = useState(TEMPLATES.javascript)
-  const [submitting,    setSubmitting]    = useState(false)
-  const [running,       setRunning]       = useState(false)
+  const [userHasTyped, setUserHasTyped] = useState(false)
+  const [lang, setLang] = useState('javascript')
+  const [code, setCode] = useState(TEMPLATES.javascript)
+  const [submitting, setSubmitting] = useState(false)
+  const [running, setRunning] = useState(false)
 
   // Verdicts & Test details & Disconnect & Opponent Progress state
-  const [myVerdict,          setMyVerdict]          = useState(null)
-  const [oppVerdict,         setOppVerdict]         = useState(null)
-  const [runResult,          setRunResult]          = useState(null)
-  const [submitResult,       setSubmitResult]       = useState(null)
-  const [submitProgress,     setSubmitProgress]     = useState(null)
+  const [myVerdict, setMyVerdict] = useState(null)
+  const [oppVerdict, setOppVerdict] = useState(null)
+  const [runResult, setRunResult] = useState(null)
+  const [submitResult, setSubmitResult] = useState(null)
+  const [submitProgress, setSubmitProgress] = useState(null)
   const [oppDisconnectState, setOppDisconnectState] = useState(null)
-  const [oppProgress,        setOppProgress]        = useState(null)
-  const [showResignModal,    setShowResignModal]    = useState(false)
+  const [oppProgress, setOppProgress] = useState(null)
+  const [showResignModal, setShowResignModal] = useState(false)
 
-  const editorRef        = useRef(null)
+  const editorRef = useRef(null)
   const typingTimeoutRef = useRef(null)
 
   // Determine which player is me and who's the opponent
-  const me  = matchState?.players?.find(p => p.username === user?.username)
+  const me = matchState?.players?.find(p => p.username === user?.username)
   const opp = matchState?.players?.find(p => p.username !== user?.username)
 
   // ── Socket event listeners ─────────────────────────────────
@@ -630,32 +656,32 @@ export default function Match() {
       emit('rejoin_match', { roomId })
     }
 
-    on('connect',               onSocketConnect)
-    on('match_found',           onMatchFound)
-    on('match_problem_set',     onMatchProblemSet)
-    on('match_state_restored',  onMatchStateRestored)
-    on('submission_started',    onSubmissionStarted)
-    on('submission_result',     onSubmissionResult)
-    on('submission_progress',   onSubmissionProgress)
-    on('match_end',             onMatchEnd)
-    on('player_disconnected',   onPlayerDisconnected)
-    on('player_reconnected',    onPlayerReconnected)
-    on('opponent_code_change',  onOpponentCodeChange)
+    on('connect', onSocketConnect)
+    on('match_found', onMatchFound)
+    on('match_problem_set', onMatchProblemSet)
+    on('match_state_restored', onMatchStateRestored)
+    on('submission_started', onSubmissionStarted)
+    on('submission_result', onSubmissionResult)
+    on('submission_progress', onSubmissionProgress)
+    on('match_end', onMatchEnd)
+    on('player_disconnected', onPlayerDisconnected)
+    on('player_reconnected', onPlayerReconnected)
+    on('opponent_code_change', onOpponentCodeChange)
 
     // Rejoin match on page mount to clear server disconnect timers & restore match state
     emit('rejoin_match', { roomId })
 
     return () => {
-      off('connect',              onSocketConnect)
-      off('match_found',          onMatchFound)
-      off('match_problem_set',    onMatchProblemSet)
+      off('connect', onSocketConnect)
+      off('match_found', onMatchFound)
+      off('match_problem_set', onMatchProblemSet)
       off('match_state_restored', onMatchStateRestored)
-      off('submission_started',   onSubmissionStarted)
-      off('submission_result',    onSubmissionResult)
-      off('submission_progress',  onSubmissionProgress)
-      off('match_end',            onMatchEnd)
-      off('player_disconnected',  onPlayerDisconnected)
-      off('player_reconnected',   onPlayerReconnected)
+      off('submission_started', onSubmissionStarted)
+      off('submission_result', onSubmissionResult)
+      off('submission_progress', onSubmissionProgress)
+      off('match_end', onMatchEnd)
+      off('player_disconnected', onPlayerDisconnected)
+      off('player_reconnected', onPlayerReconnected)
       off('opponent_code_change', onOpponentCodeChange)
     }
   }, [on, off, emit, navigate, user, roomId])
@@ -704,10 +730,10 @@ export default function Match() {
 
   async function handleRun() {
     if (running || !activeProblem?.id) return
-    
+
     // Get the most up-to-date code directly from Monaco, fallback to React state if not mounted
     const currentCode = editorRef.current ? editorRef.current.getValue() : code;
-    
+
     setRunning(true)
     setRunResult(null)
     try {
@@ -722,8 +748,10 @@ export default function Match() {
         passedTests: 0,
         totalTests: 0,
         runtimeMs: 0,
-        testResults: [{ testIndex:1, passed:false, input:'—', expected:'—', actual:null,
-          error: err?.response?.data?.message || err.message, isHidden:false, runtimeMs:0 }],
+        testResults: [{
+          testIndex: 1, passed: false, input: '—', expected: '—', actual: null,
+          error: err?.response?.data?.message || err.message, isHidden: false, runtimeMs: 0
+        }],
       })
     } finally {
       setRunning(false)
@@ -732,7 +760,7 @@ export default function Match() {
 
   async function handleSubmit() {
     if (submitting || myVerdict === 'ACCEPTED') return
-    
+
     const currentCode = editorRef.current ? editorRef.current.getValue() : code;
 
     setSubmitting(true)
@@ -752,40 +780,43 @@ export default function Match() {
     : { title: 'Loading match…', topic: '—' }
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 3.5rem)', background: '#07080c' }}>
+    <div className="flex flex-col" style={{ height: '100vh', background: 'var(--c-void)' }}>
 
       {/* ── MATCH HEADER ──────────────────────────────────── */}
-      <div className="flex items-center justify-between px-5 py-2.5 shrink-0"
-           style={{ borderBottom: '1px solid #1e2130', background: '#07080c' }}>
+      <div className="flex items-center justify-between px-5 py-2 shrink-0"
+        style={{ borderBottom: '1px solid var(--c-border)', background: 'var(--c-panel)' }}>
 
-        {/* Problem info */}
+        {/* Problem info & Logo */}
         <div className="flex items-center gap-3">
-          <div className="font-mono text-[10px] uppercase tracking-widest" style={{ color: '#4b5563', letterSpacing: '0.13em' }}>
+          <div className="flex items-center gap-2 pr-2.5" style={{ borderRight: '1px solid var(--c-border)' }}>
+            <ArenaEmblem size={20} />
+            <span className="font-display font-bold text-xs tracking-widest uppercase text-slate-200">
+              AlgoArena
+            </span>
+          </div>
+          <div className="font-mono text-[10px] uppercase tracking-widest" style={{ color: 'var(--c-text-mute)', letterSpacing: '0.13em' }}>
             {problem.topic}
           </div>
-          <span style={{ color: '#1e2130' }}>·</span>
-          <div className="font-mono text-[11px] font-bold" style={{ color: '#dde1ea' }}>
-            {matchState?.difficulty ?? '—'}
-          </div>
-          <span style={{ color: '#1e2130' }}>·</span>
-          <div className="font-mono text-[10px]" style={{ color: '#374151' }}>
-            {roomId}
+          <span style={{ color: 'var(--c-border2)' }}>·</span>
+          <DiffChip difficulty={matchState?.difficulty} />
+          <span style={{ color: 'var(--c-border)' }}>·</span>
+          <div className="font-mono text-[10px]" style={{ color: 'var(--c-text-mute)' }}>
+            {roomId?.slice(0, 14)}
           </div>
         </div>
 
         {/* Timer */}
         <div className="flex items-center gap-2">
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-               strokeWidth={2} style={{ color: urgent ? '#f43f5e' : '#4b5563' }}>
-            <circle cx="12" cy="12" r="10"/><path strokeLinecap="round" d="M12 6v6l4 2"/>
-          </svg>
-          <span className="font-mono text-lg font-bold tabular-nums"
-                style={{ color: urgent ? '#f43f5e' : '#dde1ea', minWidth: 56 }}>
+          <Clock size={14} style={{ color: urgent ? 'var(--c-red)' : 'var(--c-text-mute)' }} />
+          <span
+            className={`font-mono text-lg font-bold tabular-nums${urgent ? ' animate-pulse' : ''}`}
+            style={{ color: urgent ? 'var(--c-red)' : 'var(--c-text)', minWidth: 56 }}
+          >
             {timerDisplay}
           </span>
           {urgent && (
-            <span className="font-mono text-[10px] animate-pulse" style={{ color: '#f43f5e' }}>
-              ← time running out
+            <span className="font-mono text-[10px] animate-pulse" style={{ color: 'var(--c-red)' }}>
+              Low Time!
             </span>
           )}
         </div>
@@ -793,13 +824,11 @@ export default function Match() {
         {/* Players summary & Exit button */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px] flex items-center gap-1" style={{ color: '#f97316' }}>
-              <span>{getUserEmoji(me?.username ?? user?.username)}</span>
+            <span className="font-mono text-[11px] font-bold" style={{ color: 'var(--c-red)' }}>
               {me?.username ?? user?.username}
             </span>
-            <span className="font-mono text-[10px] font-bold" style={{ color: '#4b5563' }}>vs</span>
-            <span className="font-mono text-[11px] flex items-center gap-1" style={{ color: '#22d3ee' }}>
-              <span>{getUserEmoji(opp?.username)}</span>
+            <span className="font-mono text-[9px] font-bold" style={{ color: 'var(--c-text-mute)' }}>vs</span>
+            <span className="font-mono text-[11px] font-bold" style={{ color: 'var(--c-blue)' }}>
               {opp?.username ?? '…'}
             </span>
           </div>
@@ -807,32 +836,31 @@ export default function Match() {
           <button
             onClick={() => setShowResignModal(true)}
             className="font-mono text-[10px] font-bold px-2.5 py-1 transition-all active:scale-[0.97] flex items-center gap-1"
-            style={{ background: 'rgba(244,63,94,0.1)', color: '#f43f5e', border: '1px solid rgba(244,63,94,0.3)', borderRadius: 3 }}
+            style={{ background: 'rgba(225,29,72,0.1)', color: 'var(--c-red)', border: '1px solid rgba(225,29,72,0.3)', cursor: 'pointer' }}
             title="Resign & Exit Match"
           >
-            <span>🚩</span> exit_match()
+            <Flag size={11} /> Resign
           </button>
         </div>
       </div>
 
       {/* Resign Confirmation Modal */}
       {showResignModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(5,6,10,0.85)', backdropFilter: 'blur(6px)' }}>
-          <div className="w-full max-w-sm p-6 space-y-4 rounded" style={{ background: '#090b13', border: '1px solid #1e2130' }}>
-            <div className="flex items-center gap-2 font-display font-bold text-sm" style={{ color: '#f43f5e' }}>
-              <span className="text-xl">⚠️</span> Confirm Resignation
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(5,7,15,0.88)', backdropFilter: 'blur(8px)' }}>
+          <div className="w-full max-w-sm p-6 space-y-4"
+            style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)', clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))' }}>
+            <div className="flex items-center gap-2 font-display font-bold text-sm" style={{ color: 'var(--c-red)' }}>
+              <AlertTriangle size={16} /> Confirm Resignation
             </div>
-            <p className="font-mono text-xs leading-relaxed" style={{ color: '#9ca3af' }}>
-              Are you sure you want to exit? Your opponent will win the match and your Elo rating will be affected.
+            <p className="font-mono text-xs leading-relaxed" style={{ color: 'var(--c-text-dim)' }}>
+              Your rival wins and your Elo will be affected. Are you sure?
             </p>
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setShowResignModal(false)}
-                className="flex-1 py-2 font-mono text-xs rounded border transition-colors"
-                style={{ background: '#0d0f17', borderColor: '#1e2130', color: '#9ca3af' }}
-              >
-                Cancel
-              </button>
+                className="flex-1 py-2 font-mono text-xs transition-all"
+                style={{ background: 'var(--c-panel2)', border: '1px solid var(--c-border)', color: 'var(--c-text-dim)', cursor: 'pointer' }}
+              >Cancel</button>
               <button
                 onClick={() => {
                   setShowResignModal(false)
@@ -853,18 +881,16 @@ export default function Match() {
                     })
                   }, 200)
                 }}
-                className="flex-1 py-2 font-mono text-xs font-bold rounded transition-all active:scale-[0.98]"
-                style={{ background: '#f43f5e', color: '#ffffff' }}
-              >
-                Resign & Exit 🚩
-              </button>
+                className="flex-1 py-2 font-mono text-xs font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-1"
+                style={{ background: 'var(--c-red)', color: '#fff', cursor: 'pointer' }}
+              ><Flag size={11} /> Resign & Exit</button>
             </div>
           </div>
         </div>
       )}
 
       {/* ── RESIZABLE 3-PANEL: problem | editor | opponent ── */}
-      <div className="flex flex-1 min-h-0" style={{ overflow:'hidden' }}>
+      <div className="flex flex-1 min-h-0" style={{ overflow: 'hidden' }}>
 
         {/* PROBLEM PANEL — resizable */}
         <div style={{
@@ -900,48 +926,56 @@ export default function Match() {
 
           {/* Lang selector + submit */}
           <div className="flex items-center justify-between px-3 py-1.5 shrink-0"
-               style={{ borderBottom: '1px solid #1e2130', background: '#0a0c15' }}>
+            style={{ borderBottom: '1px solid var(--c-border)', background: 'var(--c-panel2)' }}>
             <div className="flex gap-1">
               {LANGS.map(l => (
                 <button key={l.id} onClick={() => handleLangChange(l.id)}
-                        className="font-mono text-[10px] px-2 py-1 transition-all"
-                        style={{ background: lang===l.id?'rgba(249,115,22,0.12)':'transparent',
-                                 color: lang===l.id?'#f97316':'#4b5563',
-                                 border: `1px solid ${lang===l.id?'rgba(249,115,22,0.3)':'transparent'}`,
-                                 borderRadius: 3 }}>
+                  className="font-mono text-[10px] px-2 py-1 transition-all"
+                  style={{
+                    background: lang === l.id ? 'rgba(225,29,72,0.12)' : 'transparent',
+                    color: lang === l.id ? 'var(--c-red)' : 'var(--c-text-mute)',
+                    border: `1px solid ${lang === l.id ? 'rgba(225,29,72,0.3)' : 'transparent'}`,
+                    cursor: 'pointer',
+                  }}>
                   {l.label}
                 </button>
               ))}
             </div>
             <div className="flex items-center gap-2">
-              {/* Run button — sample test cases only */}
+              {/* Run button */}
               <button
                 id="run-btn"
                 onClick={handleRun}
                 disabled={running || submitting}
-                className="font-mono text-[11px] px-3.5 py-1.5 transition-all active:scale-[0.97]"
+                className="font-mono text-[11px] px-3.5 py-1.5 transition-all active:scale-[0.97] flex items-center gap-1.5"
                 style={{
-                  background: running ? '#1e2130' : 'rgba(34,211,238,0.1)',
-                  color:      running ? '#4b5563' : '#22d3ee',
-                  border:     `1px solid ${running ? '#1e2130' : 'rgba(34,211,238,0.3)'}`,
-                  borderRadius: 3, cursor: running ? 'not-allowed' : 'pointer',
+                  background: running ? 'var(--c-panel)' : 'rgba(56,189,248,0.1)',
+                  color: running ? 'var(--c-text-mute)' : 'var(--c-blue)',
+                  border: `1px solid ${running ? 'var(--c-border)' : 'rgba(56,189,248,0.3)'}`,
+                  cursor: running ? 'not-allowed' : 'pointer',
                 }}>
-                {running ? 'running…' : '▶ run'}
+                <Play size={10} />{running ? 'Running…' : 'Run'}
               </button>
 
-              {/* Submit button — all test cases */}
+              {/* Submit button */}
               <button
                 id="submit-btn"
                 onClick={handleSubmit}
                 disabled={submitting || myVerdict === 'ACCEPTED'}
-                className="font-mono text-[11px] font-bold px-4 py-1.5 transition-all active:scale-[0.97]"
+                className="font-mono text-[11px] font-bold px-4 py-1.5 transition-all active:scale-[0.97] flex items-center gap-1.5"
                 style={{
-                  background: myVerdict==='ACCEPTED' ? 'rgba(16,185,129,0.15)' : submitting ? '#1e2130' : '#f97316',
-                  color:      myVerdict==='ACCEPTED' ? '#10b981'               : submitting ? '#4b5563' : '#07080c',
-                  border:     `1px solid ${myVerdict==='ACCEPTED'?'rgba(16,185,129,0.3)':submitting?'#1e2130':'#f97316'}`,
-                  borderRadius: 3, cursor: (submitting||myVerdict==='ACCEPTED') ? 'not-allowed' : 'pointer',
+                  background: myVerdict === 'ACCEPTED' ? 'rgba(16,185,129,0.15)' : submitting ? 'var(--c-panel)' : 'var(--c-red)',
+                  color: myVerdict === 'ACCEPTED' ? 'var(--c-green)' : submitting ? 'var(--c-text-mute)' : '#fff',
+                  border: `1px solid ${myVerdict === 'ACCEPTED' ? 'rgba(16,185,129,0.3)' : submitting ? 'var(--c-border)' : 'var(--c-red)'}`,
+                  cursor: (submitting || myVerdict === 'ACCEPTED') ? 'not-allowed' : 'pointer',
+                  clipPath: myVerdict !== 'ACCEPTED' && !submitting ? 'polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%)' : 'none',
                 }}>
-                {myVerdict==='ACCEPTED' ? '✓ accepted' : submitting ? (submitProgress ? `judging (${submitProgress.testIndex}/${submitProgress.totalTests})` : 'judging…') : 'submit →'}
+                {myVerdict === 'ACCEPTED'
+                  ? <><CheckCircle size={10} />Accepted</>  
+                  : submitting
+                    ? <><Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} />{submitProgress ? `${submitProgress.testIndex}/${submitProgress.totalTests}` : 'Judging…'}</>
+                    : <>Submit</>
+                }
               </button>
             </div>
           </div>
@@ -968,19 +1002,19 @@ export default function Match() {
               beforeMount={defineTheme}
               onMount={e => { editorRef.current = e }}
               options={{
-                fontSize:             13,
-                fontFamily:           "'JetBrains Mono', monospace",
-                fontLigatures:        true,
-                lineNumbers:          'on',
-                minimap:              { enabled: false },
+                fontSize: 13,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontLigatures: true,
+                lineNumbers: 'on',
+                minimap: { enabled: false },
                 scrollBeyondLastLine: false,
-                renderLineHighlight:  'line',
-                padding:              { top: 16 },
-                tabSize:              2,
-                wordWrap:             'on',
-                smoothScrolling:      true,
-                cursorBlinking:       'phase',
-                renderWhitespace:     'none',
+                renderLineHighlight: 'line',
+                padding: { top: 16 },
+                tabSize: 2,
+                wordWrap: 'on',
+                smoothScrolling: true,
+                cursorBlinking: 'phase',
+                renderWhitespace: 'none',
               }}
             />
           </div>
@@ -1000,7 +1034,7 @@ export default function Match() {
           onMouseDown={(e) => {
             // Dragging opponent panel from the LEFT: delta is inverted
             const dragging = { active: true, startX: e.clientX, startW: oppPanel.width }
-            document.body.style.cursor     = 'col-resize'
+            document.body.style.cursor = 'col-resize'
             document.body.style.userSelect = 'none'
             const onMove = (ev) => {
               if (!dragging.active) return
@@ -1009,78 +1043,78 @@ export default function Match() {
             }
             const onUp = () => {
               dragging.active = false
-              document.body.style.cursor     = ''
+              document.body.style.cursor = ''
               document.body.style.userSelect = ''
               window.removeEventListener('mousemove', onMove)
-              window.removeEventListener('mouseup',   onUp)
+              window.removeEventListener('mouseup', onUp)
             }
             window.addEventListener('mousemove', onMove)
-            window.addEventListener('mouseup',   onUp)
+            window.addEventListener('mouseup', onUp)
           }}
           onDoubleClick={() => oppPanel.setWidth(180)}
         />
 
-        {/* OPPONENT PANEL — small by default, resizable */}
+        {/* OPPONENT PANEL */}
         <div className="flex flex-col shrink-0"
-             style={{ width: oppPanel.width, minWidth: oppPanel.width, background:'#090b13', overflow:'hidden' }}>
+          style={{ width: oppPanel.width, minWidth: oppPanel.width, background: 'var(--c-panel)', overflow: 'hidden', borderLeft: '1px solid var(--c-border)' }}>
           <PlayerHeader player={opp} isMe={false} verdict={oppVerdict} progress={oppProgress} />
 
           <div className="flex-1 flex flex-col items-center justify-center gap-3 px-3">
             {oppDisconnectState ? (
-              <div className="p-3 text-center space-y-2 rounded w-full" style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)' }}>
-                <div className="text-2xl animate-bounce">⚠️</div>
-                <p className="font-mono text-xs font-bold" style={{ color: '#f43f5e' }}>{oppDisconnectState.username} Disconnected</p>
-                <p className="font-mono text-[9px]" style={{ color: '#9ca3af' }}>Reconnection grace period:</p>
-                <p className="font-mono text-2xl font-black tabular-nums" style={{ color: '#f43f5e' }}>{oppDisconnectState.countdown}s</p>
-                <p className="font-mono text-[9px]" style={{ color: '#4b5563' }}>Forfeit victory awarded if timer reaches 0s</p>
+              <div className="p-3 text-center space-y-2 w-full" style={{ background: 'rgba(225,29,72,0.1)', border: '1px solid rgba(225,29,72,0.3)' }}>
+                <AlertTriangle size={22} style={{ color: 'var(--c-red)', margin: '0 auto' }} className="animate-bounce" />
+                <p className="font-mono text-xs font-bold" style={{ color: 'var(--c-red)' }}>{oppDisconnectState.username} Disconnected</p>
+                <p className="font-mono text-[9px]" style={{ color: 'var(--c-text-dim)' }}>Grace period:</p>
+                <p className="font-mono text-2xl font-black tabular-nums" style={{ color: 'var(--c-red)' }}>{oppDisconnectState.countdown}s</p>
+                <p className="font-mono text-[9px]" style={{ color: 'var(--c-text-mute)' }}>Forfeit victory if timer hits 0</p>
               </div>
             ) : oppVerdict === 'ACCEPTED' ? (
               <div className="text-center space-y-2">
-                <div className="text-2xl">⚡</div>
-                <p className="font-mono font-bold text-[11px]" style={{ color:'#22d3ee' }}>
+                <CheckCircle size={24} style={{ color: 'var(--c-blue)', margin: '0 auto' }} />
+                <p className="font-mono font-bold text-[11px]" style={{ color: 'var(--c-blue)' }}>
                   {opp?.username} solved it!
                 </p>
-                <p className="font-mono text-[9px]" style={{ color:'#4b5563' }}>redirecting…</p>
+                <p className="font-mono text-[9px]" style={{ color: 'var(--c-text-mute)' }}>Redirecting…</p>
               </div>
             ) : oppVerdict === 'PENDING' ? (
               <div className="text-center space-y-2">
                 <div className="flex gap-1.5 justify-center">
-                  {[0,1,2].map(i => <div key={i} className="dot-pulse" style={{ animationDelay:`${i*0.2}s`, background:'#22d3ee', width:5, height:5 }}/>)}
+                  {[0, 1, 2].map(i => <div key={i} className="dot-pulse" style={{ animationDelay: `${i * 0.2}s`, background: 'var(--c-blue)', width: 5, height: 5 }} />)}
                 </div>
-                <p className="font-mono text-[10px]" style={{ color:'#4b5563' }}>judging…</p>
+                <p className="font-mono text-[10px]" style={{ color: 'var(--c-text-mute)' }}>Judging…</p>
               </div>
             ) : (
               <div className="text-center space-y-3 w-full">
-                <div className="font-mono text-[9px] uppercase tracking-widest"
-                     style={{ color:'#1e2130', letterSpacing:'0.12em' }}>// opponent workspace</div>
+                <p className="section-label">Rival Workspace</p>
 
                 <div className="flex items-center gap-1.5 justify-center">
                   <span className={`w-2 h-2 rounded-full ${oppProgress?.isTyping ? 'animate-ping' : ''}`}
-                        style={{ background: oppProgress?.isTyping ? '#22d3ee' : '#374151', boxShadow: oppProgress?.isTyping ? '0 0 6px #22d3ee' : 'none' }}/>
-                  <span className="font-mono text-[11px] font-bold" style={{ color: oppProgress?.isTyping ? '#22d3ee' : '#4b5563' }}>
-                    {oppProgress?.isTyping ? `${opp?.username ?? 'opponent'} is typing…` : `${opp?.username ?? 'opponent'} is coding`}
+                    style={{ background: oppProgress?.isTyping ? 'var(--c-blue)' : 'var(--c-text-mute)', boxShadow: oppProgress?.isTyping ? '0 0 6px var(--c-blue)' : 'none' }} />
+                  <span className="font-mono text-[11px] font-bold"
+                    style={{ color: oppProgress?.isTyping ? 'var(--c-blue)' : 'var(--c-text-mute)' }}>
+                    {oppProgress?.isTyping ? `${opp?.username ?? 'Rival'} typing…` : `${opp?.username ?? 'Rival'} coding`}
                   </span>
                 </div>
 
                 {oppProgress && (
-                  <div className="p-3 rounded space-y-2 font-mono text-[10px]" style={{ background: '#0d0f17', border: '1px solid #1e2130' }}>
-                    <div className="flex justify-between" style={{ color: '#9ca3af' }}>
-                      <span>Lines written:</span>
-                      <span className="font-bold" style={{ color: '#22d3ee' }}>{oppProgress.lineCount || 1} lines</span>
+                  <div className="p-3 space-y-2 font-mono text-[10px]" style={{ background: 'var(--c-panel2)', border: '1px solid var(--c-border)' }}>
+                    <div className="flex justify-between" style={{ color: 'var(--c-text-dim)' }}>
+                      <span>Lines:</span>
+                      <span className="font-bold" style={{ color: 'var(--c-blue)' }}>{oppProgress.lineCount || 1}</span>
                     </div>
-                    <div className="flex justify-between" style={{ color: '#9ca3af' }}>
-                      <span>Character count:</span>
-                      <span className="font-bold" style={{ color: '#22d3ee' }}>{oppProgress.charCount || 0} chars</span>
+                    <div className="flex justify-between" style={{ color: 'var(--c-text-dim)' }}>
+                      <span>Chars:</span>
+                      <span className="font-bold" style={{ color: 'var(--c-blue)' }}>{oppProgress.charCount || 0}</span>
                     </div>
-                    <div className="w-full h-1 mt-1 rounded overflow-hidden" style={{ background: '#1e2130' }}>
-                      <div style={{ height: '100%', width: `${Math.min(100, (oppProgress.lineCount || 1) * 3)}%`, background: '#22d3ee', transition: 'width 0.3s ease' }}/>
+                    <div className="w-full h-1.5 mt-1 overflow-hidden" style={{ background: 'var(--c-border)' }}>
+                      <div style={{ height: '100%', width: `${Math.min(100, (oppProgress.lineCount || 1) * 3)}%`, background: 'var(--c-blue)', transition: 'width 0.3s ease' }} />
                     </div>
                   </div>
                 )}
 
                 {!oppProgress && (
-                  <p className="font-mono text-[9px] text-center" style={{ color:'#374151' }}>
-                    opponent's code hidden until submit
+                  <p className="font-mono text-[9px] text-center" style={{ color: 'var(--c-text-mute)' }}>
+                    Rival's code hidden until submit
                   </p>
                 )}
               </div>
@@ -1090,13 +1124,14 @@ export default function Match() {
       </div>
 
       {/* ── TIMER PROGRESS BAR (bottom) ───────────────────── */}
-      <div style={{ height: 2, background: '#1e2130', flexShrink: 0 }}>
+      <div style={{ height: 2, background: 'var(--c-border)', flexShrink: 0 }}>
         <div style={{
           height: '100%',
-          background: urgent ? '#f43f5e' : '#f97316',
+          background: urgent ? 'var(--c-red)' : 'var(--c-blue)',
           width: `${100 - (remaining / MATCH_DURATION) * 100}%`,
           transition: 'width 1s linear, background 0.5s ease',
-        }}/>
+          boxShadow: urgent ? '0 0 8px var(--c-red)' : '0 0 6px var(--c-blue)',
+        }} />
       </div>
     </div>
   )

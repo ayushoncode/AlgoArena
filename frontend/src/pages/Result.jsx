@@ -1,58 +1,42 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { UserAvatar, getUserEmoji } from '../utils/avatar'
+import { UserAvatar } from '../utils/avatar'
+import { motion } from 'framer-motion'
+import {
+  Trophy, Swords, RotateCcw, User, TrendingUp, TrendingDown, Minus,
+  ChevronRight, Star, Zap, Shield,
+} from 'lucide-react'
+import {
+  HudPanel, HudButton, GhostButton, RankBadge, StatBadge, PageWrapper,
+  AnimatedCounter, getArenaTier, DiffChip,
+} from '../components/ui'
 
 /* ════════════════════════════════════════════════
    CONFETTI — pure CSS particles on WIN
 ════════════════════════════════════════════════ */
 function Confetti() {
-  const pieces = Array.from({ length: 24 }, (_, i) => i)
-  const colors = ['#f97316', '#22d3ee', '#10b981', '#f59e0b', '#c084fc', '#f43f5e']
+  const colors = ['var(--c-red)', 'var(--c-blue)', 'var(--c-green)', 'var(--c-gold)', '#c084fc', '#E11D48']
   return (
-    <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
-      {pieces.map(i => (
+    <div className="pointer-events-none fixed inset-0 overflow-hidden z-0" aria-hidden="true">
+      {Array.from({ length: 28 }, (_, i) => (
         <div
           key={i}
           className="absolute"
           style={{
-            left: `${4 + (i * 3.9)}%`,
+            left: `${3 + i * 3.4}%`,
             top: '-10px',
-            width: `${4 + Math.random() * 6}px`,
-            height: `${8 + Math.random() * 8}px`,
+            width: `${4 + (i % 4)}px`,
+            height: `${8 + (i % 5) * 2}px`,
             background: colors[i % colors.length],
-            borderRadius: Math.random() > 0.5 ? '50%' : 2,
+            borderRadius: i % 3 === 0 ? '50%' : 2,
             animation: `confetti-fall ${1.5 + (i % 7) * 0.3}s ease-in ${(i % 5) * 0.15}s forwards`,
-            transform: `rotate(${Math.random() * 360}deg)`,
+            transform: `rotate(${(i * 37) % 360}deg)`,
             opacity: 0,
           }}
         />
       ))}
     </div>
-  )
-}
-
-/* ════════════════════════════════════════════════
-   ELO CHANGE COUNTER
-════════════════════════════════════════════════ */
-function EloCounter({ delta, from }) {
-  const [displayed, setDisplayed] = useState(from)
-  useEffect(() => {
-    const target = from + delta
-    const step = delta > 0 ? 1 : -1
-    let cur = from
-    const t = setInterval(() => {
-      cur += step
-      setDisplayed(cur)
-      if (cur === target) clearInterval(t)
-    }, Math.abs(1200 / delta))  // ~1.2s total
-    return () => clearInterval(t)
-  }, [delta, from])
-
-  return (
-    <span className="font-display font-black text-5xl tabular-nums" style={{ color: delta > 0 ? '#10b981' : '#f43f5e' }}>
-      {displayed}
-    </span>
   )
 }
 
@@ -64,185 +48,220 @@ export default function Result() {
   const navigate = useNavigate()
   const { user, refreshUser } = useAuth()
 
-  // Refresh user data from server so Navbar and Context have live DB ratings immediately
-  useEffect(() => {
-    refreshUser()
-  }, [refreshUser])
+  useEffect(() => { refreshUser() }, [refreshUser])
 
   const winner = state?.winner
   const loser = state?.loser
 
-  // Determine if current user is the winner
   const isIWinner = winner
-    ? (winner.userId ? String(winner.userId) === String(user?.id) : (winner.username && user?.username && winner.username.toLowerCase() === user.username.toLowerCase()))
+    ? (winner.userId ? String(winner.userId) === String(user?.id)
+      : (winner.username && user?.username && winner.username.toLowerCase() === user.username.toLowerCase()))
     : false
 
-  const isWin = state?.result === 'WIN' || isIWinner
+  const isWin  = state?.result === 'WIN' || isIWinner
   const isDraw = state?.result === 'DRAW' || (!state?.result && !winner && !loser)
   const isLoss = !isWin && !isDraw
 
-  // Who am I?
-  const myData = isWin ? winner : (loser ?? { username: user?.username, rating: user?.elo_rating, delta: -18 })
-  const oppData = isWin ? (loser ?? { username: 'Opponent', rating: 1200 }) : (winner ?? { username: 'Opponent', rating: 1200 })
+  const myData  = isWin ? winner : (loser  ?? { username: user?.username, rating: user?.elo_rating, delta: -18 })
+  const oppData = isWin ? (loser  ?? { username: 'Opponent', rating: 1200 }) : (winner ?? { username: 'Opponent', rating: 1200 })
 
   const isCustomMatch = state?.isCustom || state?.roomId?.includes('custom')
   const myDelta = isCustomMatch ? 0 : (myData?.delta ?? (isWin ? 18 : isDraw ? 0 : -18))
 
-  // Exact before and after rating
   const fromRating = myData?.oldRating ?? myData?.rating ?? user?.elo_rating ?? 1200
-  const toRating = myData?.newRating ?? (fromRating + myDelta)
+  const toRating   = myData?.newRating ?? (fromRating + myDelta)
 
-  const topic = state?.topic ?? state?.matchState?.topic ?? '—'
+  const topic      = state?.topic ?? state?.matchState?.topic ?? '—'
   const difficulty = state?.difficulty ?? state?.matchState?.difficulty ?? '—'
+
+  const myTier  = getArenaTier(fromRating)
+  const newTier = getArenaTier(toRating)
+
+  // Colors per outcome
+  const outcomeColor = isWin ? 'var(--c-green)' : isDraw ? 'var(--c-blue)' : 'var(--c-red)'
+  const outcomeBg    = isWin ? 'rgba(16,185,129,0.06)' : isDraw ? 'rgba(56,189,248,0.06)' : 'rgba(225,29,72,0.06)'
+  const outcomeBorder= isWin ? 'rgba(16,185,129,0.35)' : isDraw ? 'rgba(56,189,248,0.3)' : 'rgba(225,29,72,0.3)'
+
+  const OutcomeIcon = isWin ? Trophy : isDraw ? Swords : Shield
 
   return (
     <>
       {/* Confetti only on win */}
       {isWin && <Confetti />}
-
-      {/* Inject confetti keyframes once */}
       <style>{`
         @keyframes confetti-fall {
           0%   { transform: translateY(0)    rotate(0deg);   opacity: 1; }
           100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
+        @keyframes gold-burst {
+          0%   { opacity: 0; transform: scale(0.6) rotate(-10deg); }
+          60%  { opacity: 1; transform: scale(1.08) rotate(2deg); }
+          100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
       `}</style>
 
-      <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-5 relative z-10">
-        <div className="w-full max-w-lg space-y-6">
+      <PageWrapper heroGlow={isWin}>
+        <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-5 py-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-lg space-y-5"
+          >
 
-          {/* ── Big result card ────────────────────────────── */}
-          <div style={{
-            background: isWin ? 'rgba(16,185,129,0.05)' : isDraw ? 'rgba(107,114,128,0.05)' : 'rgba(244,63,94,0.05)',
-            border: `1px solid ${isWin ? 'rgba(16,185,129,0.35)' : isDraw ? '#1e2130' : 'rgba(244,63,94,0.3)'}`,
-            borderRadius: 6,
-            overflow: 'hidden',
-          }}>
-            {/* Header */}
-            <div className="px-8 py-8 text-center"
-              style={{ borderBottom: '1px solid #1e2130' }}>
-              <p className="font-mono text-[11px] uppercase tracking-widest mb-3"
-                style={{ color: state?.isForfeit ? '#f97316' : isCustomMatch ? '#22d3ee' : '#4b5563', letterSpacing: '0.14em' }}>
-                {state?.isForfeit
-                  ? `// ${state.forfeitUser === user?.username ? 'match forfeited (disconnected)' : 'forfeit victory (opponent disconnected)'}`
-                  : isCustomMatch
-                    ? '// casual friend match (unranked)'
-                    : '// ranked match complete'}
-              </p>
-
-              {/* Result label */}
-              <div className="flex items-center justify-center gap-3 mb-2">
-                <span className="text-5xl leading-none">
-                  {isWin ? '🏆' : isDraw ? '🤝' : '💀'}
-                </span>
-                <span className="font-display font-black"
-                  style={{
-                    fontSize: 64,
-                    lineHeight: 1,
-                    color: isWin ? '#10b981' : isDraw ? '#9ca3af' : '#f43f5e',
-                    letterSpacing: '-0.03em',
-                  }}>
-                  {isWin ? 'WIN' : isDraw ? 'DRAW' : 'LOSS'}
-                </span>
-              </div>
-
-              {/* Players Faceoff Avatars */}
-              <div className="flex items-center justify-center gap-4 my-3 pt-2">
-                <div className="flex items-center gap-2">
-                  <UserAvatar username={user?.username} seed={user?.avatar_seed} style={user?.avatar_style} size={36} isMe={true} />
-                  <span className="font-mono text-xs font-bold" style={{ color: '#f97316' }}>{user?.username}</span>
-                </div>
-                <span className="font-mono text-xs font-bold text-[#4b5563]">VS</span>
-                <div className="flex items-center gap-2">
-                  <UserAvatar username={oppData?.username} seed={oppData?.avatar_seed} style={oppData?.avatar_style} size={36} isMe={false} />
-                  <span className="font-mono text-xs font-bold" style={{ color: '#22d3ee' }}>{oppData?.username ?? 'Opponent'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Elo delta */}
-            <div className="px-8 py-6 text-center" style={{ borderBottom: '1px solid #1e2130' }}>
-              <p className="font-mono text-[10px] uppercase tracking-widest mb-3"
-                style={{ color: '#4b5563', letterSpacing: '0.13em' }}>
-                // rating change
-              </p>
-              {isCustomMatch ? (
-                <div className="flex items-center justify-center gap-2">
-                  <span className="font-mono text-sm px-3 py-1 font-bold"
-                    style={{ background: 'rgba(34,211,238,0.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.25)', borderRadius: 3 }}>
-                    Unranked Casual Match · Rating Unchanged ({fromRating})
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-baseline justify-center gap-3">
-                  <span className="font-mono text-lg" style={{ color: '#374151' }}>{fromRating}</span>
-                  <span className="font-mono text-2xl" style={{ color: '#374151' }}>→</span>
-                  <EloCounter delta={myDelta} from={fromRating} />
-                  <span className="font-mono text-xl font-bold"
-                    style={{ color: myDelta >= 0 ? '#10b981' : '#f43f5e' }}>
-                    ({myDelta > 0 ? `+${myDelta}` : myDelta})
-                  </span>
-                </div>
+            {/* ── Big result card ──────────────────────────── */}
+            <HudPanel
+              glow={isWin}
+              glowColor={`${outcomeColor}30`}
+              accentTopLeft={outcomeColor}
+              accentBotRight={outcomeColor}
+              style={{ overflow: 'hidden', background: outcomeBg, border: `1px solid ${outcomeBorder}` }}
+            >
+              {/* Gold top bar (win) */}
+              {isWin && (
+                <div className="h-1.5" style={{ background: `linear-gradient(90deg, transparent, var(--c-gold), transparent)` }} />
               )}
-            </div>
 
-            {/* Match summary */}
-            <div className="px-8 py-5 grid grid-cols-2 gap-4">
-              {[
-                { lbl: 'topic', val: topic },
-                { lbl: 'difficulty', val: difficulty },
-                { lbl: 'my verdict', val: isWin ? 'ACCEPTED' : isLoss ? 'ACCEPTED (opp)' : 'TIME UP' },
-                { lbl: 'room', val: state?.roomId?.slice(0, 16) ?? '—' },
-              ].map(r => (
-                <div key={r.lbl}>
-                  <p className="font-mono text-[9px] uppercase tracking-widest mb-0.5"
-                    style={{ color: '#374151', letterSpacing: '0.12em' }}>{r.lbl}</p>
-                  <p className="font-mono text-[12px] font-bold" style={{ color: '#dde1ea' }}>{r.val}</p>
+              {/* Header */}
+              <div className="px-8 py-8 text-center" style={{ borderBottom: '1px solid var(--c-border)' }}>
+                <p className="section-label mb-3"
+                  style={{ color: state?.isForfeit ? 'var(--c-gold)' : isCustomMatch ? 'var(--c-blue)' : 'var(--c-text-mute)' }}>
+                  {state?.isForfeit
+                    ? (state.forfeitUser === user?.username ? '// Match Forfeited' : '// Forfeit Victory')
+                    : isCustomMatch
+                      ? '// Casual Duel (Unranked)'
+                      : '// Ranked Match Complete'}
+                </p>
+
+                {/* Outcome */}
+                <motion.div
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.15, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex items-center justify-center gap-3 mb-4"
+                >
+                  <OutcomeIcon size={48} style={{ color: outcomeColor }} strokeWidth={1.5} />
+                  <span className="font-display font-black tracking-tight"
+                    style={{ fontSize: 72, lineHeight: 1, color: outcomeColor, letterSpacing: '-0.03em' }}
+                  >
+                    {isWin ? 'WIN' : isDraw ? 'DRAW' : 'LOSS'}
+                  </span>
+                </motion.div>
+
+                {/* VS avatars */}
+                <div className="flex items-center justify-center gap-4 my-3">
+                  <div className="flex items-center gap-2">
+                    <UserAvatar username={user?.username} seed={user?.avatar_seed} style={user?.avatar_style} size={36} isMe={true} />
+                    <span className="font-mono text-xs font-bold" style={{ color: 'var(--c-red)' }}>{user?.username}</span>
+                  </div>
+                  <span className="font-display font-black text-sm" style={{ color: 'var(--c-text-mute)' }}>VS</span>
+                  <div className="flex items-center gap-2">
+                    <UserAvatar username={oppData?.username} seed={oppData?.avatar_seed} style={oppData?.avatar_style} size={36} isMe={false} />
+                    <span className="font-mono text-xs font-bold" style={{ color: 'var(--c-blue)' }}>{oppData?.username ?? 'Opponent'}</span>
+                  </div>
                 </div>
-              ))}
+              </div>
+
+              {/* Elo delta */}
+              <div className="px-8 py-6 text-center" style={{ borderBottom: '1px solid var(--c-border)' }}>
+                <p className="section-label mb-3">Rating Change</p>
+                {isCustomMatch ? (
+                  <StatBadge label="Unranked Match" value={`${fromRating} Elo Unchanged`} color="var(--c-blue)" />
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.4 }}
+                    className="flex items-baseline justify-center gap-3"
+                  >
+                    <span className="font-mono text-lg" style={{ color: 'var(--c-text-mute)' }}>{fromRating}</span>
+                    <span className="font-mono text-2xl" style={{ color: 'var(--c-border2)' }}>→</span>
+                    <AnimatedCounter
+                      value={toRating}
+                      className="font-display font-black text-5xl tabular-nums"
+                      style={{ color: myDelta >= 0 ? 'var(--c-green)' : 'var(--c-red)' }}
+                    />
+                    <span className="font-mono text-xl font-bold" style={{ color: myDelta >= 0 ? 'var(--c-green)' : 'var(--c-red)' }}>
+                      ({myDelta > 0 ? '+' : ''}{myDelta})
+                    </span>
+                  </motion.div>
+                )}
+
+                {/* Rank progression */}
+                {!isCustomMatch && myTier.name !== newTier.name && (
+                  <div className="flex items-center justify-center gap-2 mt-3">
+                    <RankBadge elo={fromRating} size="sm" />
+                    <ChevronRight size={14} style={{ color: 'var(--c-text-mute)' }} />
+                    <RankBadge elo={toRating} size="sm" />
+                    <span className="font-mono text-[10px] font-bold" style={{ color: isWin ? 'var(--c-green)' : 'var(--c-red)' }}>
+                      {isWin ? 'Rank Up!' : 'Rank Down'}
+                    </span>
+                  </div>
+                )}
+                {!isCustomMatch && myTier.name === newTier.name && (
+                  <div className="mt-2">
+                    <RankBadge elo={toRating} size="sm" />
+                  </div>
+                )}
+              </div>
+
+              {/* Match summary */}
+              <div className="px-8 py-5 grid grid-cols-2 gap-4">
+                {[
+                  { lbl: 'Topic',      val: topic },
+                  { lbl: 'Difficulty', val: <DiffChip difficulty={difficulty} /> },
+                  { lbl: 'Verdict',    val: isWin ? 'Accepted' : isLoss ? 'Rival Solved First' : 'Time Up' },
+                  { lbl: 'Room',       val: state?.roomId?.slice(0, 14) ?? '—' },
+                ].map(r => (
+                  <div key={r.lbl}>
+                    <p className="section-label mb-0.5">{r.lbl}</p>
+                    <p className="font-mono text-[12px] font-bold" style={{ color: 'var(--c-text)' }}>{r.val}</p>
+                  </div>
+                ))}
+              </div>
+            </HudPanel>
+
+            {/* Share line */}
+            {isWin && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="font-mono text-[11px] text-center"
+                style={{ color: 'var(--c-text-mute)' }}
+              >
+                <span style={{ color: 'var(--c-red)' }}>{user?.username}</span> defeated{' '}
+                <span style={{ color: 'var(--c-text)' }}>{oppData?.username}</span> on {topic} — AlgoArena
+              </motion.p>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex gap-3">
+              <HudButton id="play-again-btn" onClick={() => navigate('/lobby')} className="flex-1 py-3">
+                <Swords size={14} /> Play Again
+              </HudButton>
+              <GhostButton id="view-profile-btn" onClick={() => navigate('/profile')} className="flex-1 py-3">
+                <User size={14} /> Profile
+              </GhostButton>
             </div>
-          </div>
 
-          {/* ── Share line ─────────────────────────────────── */}
-          {isWin && (
-            <p className="font-mono text-[11px] text-center" style={{ color: '#374151' }}>
-              🔥 <span style={{ color: '#f97316' }}>{getUserEmoji(user?.username)} {user?.username}</span> just beat{' '}
-              <span style={{ color: '#dde1ea' }}>{getUserEmoji(oppData?.username)} {oppData?.username}</span> on {topic} — AlgoArena
-            </p>
-          )}
-
-          {/* ── Action buttons ─────────────────────────────── */}
-          <div className="flex gap-3">
-            <button
-              id="play-again-btn"
-              onClick={() => navigate('/lobby')}
-              className="flex-1 py-3 font-mono font-bold text-sm transition-all active:scale-[0.98]"
-              style={{ background: '#f97316', color: '#07080c', border: 'none', borderRadius: 4 }}
+            {/* Motivational */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="font-mono text-[10px] text-center"
+              style={{ color: 'var(--c-text-mute)' }}
             >
-              play_again() →
-            </button>
-            <button
-              id="view-profile-btn"
-              onClick={() => navigate('/profile')}
-              className="flex-1 py-3 font-mono text-sm transition-all active:scale-[0.98]"
-              style={{ background: 'transparent', color: '#9ca3af', border: '1px solid #1e2130', borderRadius: 4 }}
-              onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'}
-              onMouseOut={e => e.currentTarget.style.borderColor = '#1e2130'}
-            >
-              view_profile()
-            </button>
-          </div>
-
-          {/* ── Motivational copy ──────────────────────────── */}
-          <p className="font-mono text-[10px] text-center" style={{ color: '#374151' }}>
-            {isWin
-              ? `rating ${fromRating} → ${toRating} · keep the streak going`
-              : isDraw
-                ? 'no rating change · comeback starts now'
-                : `rating ${fromRating} → ${toRating} · study the topic and rematch`}
-          </p>
+              {isWin
+                ? `Elo ${fromRating} → ${toRating} · Keep the streak going`
+                : isDraw
+                  ? 'No rating change · Comeback starts now'
+                  : `Elo ${fromRating} → ${toRating} · Study the topic and rematch`}
+            </motion.p>
+          </motion.div>
         </div>
-      </div>
+      </PageWrapper>
     </>
   )
 }

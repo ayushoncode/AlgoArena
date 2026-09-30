@@ -1,143 +1,188 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
-import api from '../utils/api'
-import { UserAvatar, getTier, RANK_TIERS } from '../utils/avatar'
+import React, { useState, useEffect, useRef } from "react"
+import { useNavigate } from "react-router-dom"
+import { motion, AnimatePresence } from "framer-motion"
+import {
+  Search, X, Trophy, Medal, Award,
+  Shield, RefreshCw, Users, Globe, Calendar,
+  ChevronRight, TrendingUp,
+} from "lucide-react"
+import { useAuth } from "../hooks/useAuth"
+import api from "../utils/api"
+import { UserAvatar, getTier } from "../utils/avatar"
+import {
+  HudPanel, RankBadge, PageWrapper, Skeleton, EmptyState, AnimatedCounter,
+} from "../components/ui/index.jsx"
 
-/* ════════════════════════════════════════════════
-   PODIUM CARD (TOP 3 PLAYERS)
-════════════════════════════════════════════════ */
-function PodiumCard({ player, rank, onSelect }) {
+/* --- Podium medal config ------------------------------------------- */
+const MEDAL = {
+  1: { Icon: Trophy, col: "#F5B942", glow: "rgba(245,185,66,0.45)",  label: "1ST" },
+  2: { Icon: Medal,  col: "#94a3b8", glow: "rgba(148,163,184,0.35)", label: "2ND" },
+  3: { Icon: Award,  col: "#cd7c4b", glow: "rgba(205,124,75,0.35)",  label: "3RD" },
+}
+
+/* --- Podium Card ------------------------------------------------------ */
+function PodiumCard({ player, rank, onSelect, delay = 0 }) {
   if (!player) return null
-  const isFirst = rank === 1
-  const tier = getTier(player.elo_rating)
+  const tier  = getTier(player.elo_rating)
   const total = (player.wins ?? 0) + (player.losses ?? 0)
-  const wr = total > 0 ? Math.round(((player.wins ?? 0) / total) * 100) : 0
+  const wr    = total > 0 ? Math.round(((player.wins ?? 0) / total) * 100) : 0
+  const m     = MEDAL[rank]
+  const MIcon = m.Icon
+  const isFirst = rank === 1
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }}
       onClick={onSelect}
-      className={`relative p-6 sm:p-7 rounded-2xl transition-all duration-200 cursor-pointer flex flex-col items-center text-center space-y-4 hover:scale-[1.02] ${
-        isFirst
-          ? 'bg-[#0e111a] border-2 z-10 shadow-2xl scale-[1.04] sm:scale-[1.06]'
-          : 'bg-[#090b12] border shadow-xl'
-      }`}
-      style={{
-        borderColor: isFirst ? '#f59e0b' : `${tier.col}40`,
-        boxShadow: isFirst ? `0 0 30px ${tier.col}25` : `0 0 15px ${tier.col}10`,
-      }}
+      style={{ cursor: "pointer" }}
     >
-      {/* Top Rank Badge */}
-      {isFirst ? (
+      <HudPanel
+        className="p-5 sm:p-6 flex flex-col items-center text-center gap-3 transition-transform duration-200 hover:scale-[1.025]"
+        style={{
+          borderColor: m.col + "55",
+          boxShadow: isFirst ? `0 0 40px ${m.glow}` : `0 0 18px ${m.glow}`,
+          background: isFirst ? "rgba(15,20,36,0.95)" : "var(--c-panel)",
+        }}
+      >
         <div
-          className="absolute -top-3.5 inset-x-0 mx-auto w-max px-3.5 py-1 rounded-full font-mono text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg"
-          style={{ background: '#f59e0b', color: '#07080c' }}
+          className="flex items-center gap-1.5 px-3 py-1 font-mono text-[10px] font-black uppercase tracking-widest"
+          style={{ background: m.col + "18", border: `1px solid ${m.col}50`, color: m.col }}
         >
-          <span>👑</span>
-          <span>{tier.name}</span>
+          <MIcon size={11} strokeWidth={2.5} />
+          {m.label}
         </div>
-      ) : (
-        <div className="absolute top-4 left-4 font-mono text-2xl">
-          {rank === 2 ? '🥈' : '🥉'}
-        </div>
-      )}
 
-      {/* Avatar */}
-      <div className="pt-2">
-        <UserAvatar
-          username={player.username}
-          seed={player.avatar_seed}
-          style={player.avatar_style}
-          elo={player.elo_rating}
-          size={isFirst ? 68 : 54}
-        />
-      </div>
-
-      {/* Username */}
-      <div className="space-y-1">
-        <p className="font-display font-black text-lg sm:text-xl text-white truncate max-w-[170px]">
-          {player.username}
-        </p>
-        <span
-          className="font-mono text-[9.5px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold inline-block"
-          style={{ background: tier.bg, color: tier.col, border: `1px solid ${tier.col}40` }}
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ padding: 3, background: m.col + "15", border: `2px solid ${m.col}`, boxShadow: `0 0 20px ${m.col}50` }}
         >
-          {tier.name}
-        </span>
-      </div>
+          <UserAvatar username={player.username} seed={player.avatar_seed} style={player.avatar_style} elo={player.elo_rating} size={isFirst ? 72 : 58} />
+        </div>
 
-      {/* Elo Rating */}
-      <div>
-        <p className="font-display font-black text-3xl sm:text-4xl tabular-nums" style={{ color: tier.col }}>
-          {player.elo_rating}
-        </p>
-        <p className="font-mono text-[9px] uppercase tracking-widest text-[#6e7681] mt-0.5">
-          ELO RATING
-        </p>
-      </div>
+        <div className="space-y-1.5 w-full">
+          <p className="font-display font-black text-lg sm:text-xl truncate max-w-[180px] mx-auto" style={{ color: "var(--c-text)", letterSpacing: "0.04em" }}>
+            {player.username}
+          </p>
+          <RankBadge elo={player.elo_rating} size="xs" />
+        </div>
 
-      {/* Stat Pills */}
-      <div className="flex items-center justify-center gap-2 pt-1 font-mono text-[11px] font-bold flex-wrap">
-        <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-          W: {player.wins ?? 0}
-        </span>
-        <span className="px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20">
-          L: {player.losses ?? 0}
-        </span>
-        <span className="px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
-          {wr}% WR
-        </span>
-      </div>
-    </div>
+        <div>
+          <p className="font-display font-black text-3xl sm:text-4xl tabular-nums" style={{ color: tier.col }}>
+            <AnimatedCounter value={player.elo_rating} duration={700} />
+          </p>
+          <p className="font-mono text-[9px] uppercase tracking-widest mt-0.5" style={{ color: "var(--c-text-mute)" }}>ELO RATING</p>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap justify-center font-mono text-[10px] font-bold w-full pt-1">
+          <span style={{ padding: "3px 8px", background: "rgba(16,185,129,0.12)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)" }}>{player.wins ?? 0}W</span>
+          <span style={{ padding: "3px 8px", background: "rgba(225,29,72,0.12)",   color: "#E11D48", border: "1px solid rgba(225,29,72,0.3)"   }}>{player.losses ?? 0}L</span>
+          <span style={{ padding: "3px 8px", background: "rgba(245,185,66,0.1)",   color: "#F5B942", border: "1px solid rgba(245,185,66,0.3)"   }}>{wr}% WR</span>
+        </div>
+      </HudPanel>
+    </motion.div>
   )
 }
 
-/* ════════════════════════════════════════════════
-   SKELETON ROW
-════════════════════════════════════════════════ */
+/* --- Skeleton row --------------------------------------------------- */
 function SkeletonRow() {
   return (
-    <tr className="border-b border-[#1e2130]/50 animate-pulse">
-      <td className="py-4 px-6"><div className="w-6 h-4 bg-[#1e2130] rounded" /></td>
-      <td className="py-4 px-6">
+    <tr className="border-b animate-pulse" style={{ borderColor: "var(--c-border)" }}>
+      <td className="py-4 px-4 sm:px-6"><Skeleton width={28} height={13} /></td>
+      <td className="py-4 px-4 sm:px-6">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#1e2130] rounded-md" />
-          <div className="w-24 h-4 bg-[#1e2130] rounded" />
+          <Skeleton width={34} height={34} style={{ borderRadius: 6 }} />
+          <Skeleton width={90} height={13} />
         </div>
       </td>
-      <td className="py-4 px-6"><div className="w-12 h-4 bg-[#1e2130] rounded" /></td>
-      <td className="py-4 px-6"><div className="w-16 h-4 bg-[#1e2130] rounded" /></td>
-      <td className="py-4 px-6"><div className="w-20 h-4 bg-[#1e2130] rounded" /></td>
-      <td className="py-4 px-6 text-right"><div className="w-16 h-4 bg-[#1e2130] rounded ml-auto" /></td>
+      <td className="py-4 px-4 sm:px-6"><Skeleton width={52} height={13} /></td>
+      <td className="py-4 px-4 sm:px-6 hidden sm:table-cell"><Skeleton width={38} height={13} /></td>
+      <td className="py-4 px-4 sm:px-6 hidden md:table-cell"><Skeleton width={64} height={13} /></td>
+      <td className="py-4 px-4 sm:px-6 text-right"><Skeleton width={72} height={20} style={{ marginLeft: "auto" }} /></td>
     </tr>
   )
 }
 
-/* ════════════════════════════════════════════════
+/* --- Table row ----------------------------------------------------- */
+function PlayerRow({ player, actualRank, isMe, onClick, delay = 0 }) {
+  const tier  = getTier(player.elo_rating)
+  const total = (player.wins ?? 0) + (player.losses ?? 0)
+  const wr    = total > 0 ? Math.round(((player.wins ?? 0) / total) * 100) : 0
+
+  return (
+    <motion.tr
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, delay: Math.min(delay * 0.04, 0.5) }}
+      onClick={onClick}
+      className="transition-colors cursor-pointer group"
+      style={{ borderBottom: "1px solid var(--c-border)", background: isMe ? tier.col + "08" : "transparent" }}
+      onMouseEnter={e => e.currentTarget.style.background = isMe ? tier.col + "12" : "rgba(255,255,255,0.025)"}
+      onMouseLeave={e => e.currentTarget.style.background = isMe ? tier.col + "08" : "transparent"}
+    >
+      <td className="py-4 px-4 sm:px-6 font-mono text-sm font-bold" style={{ color: "var(--c-text-mute)" }}>
+        <span className="group-hover:hidden">#{actualRank}</span>
+        <ChevronRight size={14} className="hidden group-hover:block" style={{ color: "var(--c-red)" }} />
+      </td>
+      <td className="py-4 px-4 sm:px-6">
+        <div className="flex items-center gap-3">
+          <UserAvatar username={player.username} seed={player.avatar_seed} style={player.avatar_style} elo={player.elo_rating} size={34} />
+          <div className="flex items-center gap-2">
+            <span className="font-sans font-bold text-sm" style={{ color: "var(--c-text)" }}>{player.username}</span>
+            {isMe && (
+              <span className="font-mono text-[8px] px-1.5 py-0.5 font-black uppercase tracking-widest" style={{ background: "var(--c-red)", color: "#fff" }}>YOU</span>
+            )}
+          </div>
+        </div>
+      </td>
+      <td className="py-4 px-4 sm:px-6 font-display font-black text-base tabular-nums" style={{ color: tier.col }}>{player.elo_rating}</td>
+      <td className="py-4 px-4 sm:px-6 font-mono text-xs font-bold hidden sm:table-cell" style={{ color: "#F5B942" }}>{wr}%</td>
+      <td className="py-4 px-4 sm:px-6 font-mono text-xs hidden md:table-cell">
+        <span style={{ color: "#10b981", fontWeight: 700 }}>{player.wins ?? 0}W</span>
+        <span style={{ color: "var(--c-text-mute)" }}> · </span>
+        <span style={{ color: "#E11D48", fontWeight: 700 }}>{player.losses ?? 0}L</span>
+      </td>
+      <td className="py-4 px-4 sm:px-6 text-right">
+        <RankBadge elo={player.elo_rating} size="xs" />
+      </td>
+    </motion.tr>
+  )
+}
+
+/* --- Tab config ----------------------------------------------------- */
+const TABS = [
+  { id: "global",  label: "Global",  Icon: Globe      },
+  { id: "weekly",  label: "Weekly",  Icon: TrendingUp },
+  { id: "monthly", label: "Monthly", Icon: Calendar   },
+  { id: "friends", label: "Friends", Icon: Users      },
+]
+
+/* =================================================================
    LEADERBOARD PAGE
-════════════════════════════════════════════════ */
+================================================================= */
 export default function Leaderboard() {
-  const { user, isAuthenticated } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
 
-  const [players, setPlayers] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [players,     setPlayers]     = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [error,       setError]       = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
-  const [search, setSearch] = useState('')
-  const [timeframe, setTimeframe] = useState('global') // 'global' | 'weekly' | 'monthly' | 'friends'
+  const [search,      setSearch]      = useState("")
+  const [timeframe,   setTimeframe]   = useState("global")
   const searchRef = useRef(null)
 
   async function fetchLeaderboard() {
     try {
       setLoading(true)
-      const { data } = await api.get('/api/users/leaderboard')
+      const { data } = await api.get("/api/users/leaderboard")
       setPlayers(data)
       setLastUpdated(new Date())
       setError(null)
     } catch (err) {
-      setError('Failed to load leaderboard. Is the backend running?')
-      console.error('[Leaderboard]', err)
+      setError("Failed to load leaderboard. Is the backend running?")
+      console.error("[Leaderboard]", err)
     } finally {
       setLoading(false)
     }
@@ -149,247 +194,203 @@ export default function Leaderboard() {
     return () => clearInterval(t)
   }, [])
 
-  const myRank = players.find(p => p.username === user?.username)
-
-  // Filter logic
-  const q = search.trim().toLowerCase()
-  const filtered = q
-    ? players.filter(p => p.username?.toLowerCase().includes(q))
-    : players
-
-  // Top 3 Podium
-  const top1 = players[0]
-  const top2 = players[1]
-  const top3 = players[2]
+  const q           = search.trim().toLowerCase()
+  const filtered    = q ? players.filter(p => p.username?.toLowerCase().includes(q)) : players
+  const top1        = players[0]
+  const top2        = players[1]
+  const top3        = players[2]
   const restPlayers = filtered.length > 0 ? (q ? filtered : players.slice(3)) : []
+  const myRankIdx   = players.findIndex(p => p.username === user?.username)
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] bg-[#050608] text-[#dde1ea] pb-20">
+    <PageWrapper heroGlow style={{ paddingBottom: "5rem" }}>
 
-      {/* ── HERO HEADER ─────────────────────────────────────── */}
-      <div className="pt-12 pb-10 px-5 sm:px-8 text-center relative overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-amber-500/10 via-transparent to-transparent pointer-events-none" />
+      {/* HERO */}
+      <div className="pt-14 pb-10 px-5 sm:px-8 text-center relative overflow-hidden">
+        <div className="absolute top-0 inset-x-0 h-px pointer-events-none"
+          style={{ background: "linear-gradient(90deg, transparent, var(--c-red), var(--c-blue), transparent)" }} />
 
-        <div className="max-w-4xl mx-auto space-y-3 relative z-10">
-          <p className="font-mono text-xs uppercase tracking-widest text-[#f97316] font-bold">
-            // Global Arena Ranks
-          </p>
-          <h1 className="font-display font-black text-4xl sm:text-6xl text-white tracking-tight">
-            Global Rankings
+        <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+          className="max-w-4xl mx-auto space-y-3 relative z-10">
+          <p className="section-label">// Global Arena Ranks</p>
+          <h1 className="font-display font-black text-4xl sm:text-6xl tracking-tight" style={{ color: "var(--c-text)", letterSpacing: "0.02em" }}>
+            GLOBAL <span style={{ color: "var(--c-red)" }}>RANKINGS</span>
           </h1>
-          <p className="font-sans text-sm sm:text-base text-[#8b949e] max-w-xl mx-auto">
-            Top coders ranked by ELO rating. Click on a player to view their full duel stats & history.
+          <p className="font-sans text-sm sm:text-base max-w-xl mx-auto" style={{ color: "var(--c-text-mute)" }}>
+            Top coders ranked by ELO rating. Click on a player to view their full duel stats &amp; history.
           </p>
-        </div>
+          {user && !loading && myRankIdx >= 0 && (
+            <div className="flex justify-center pt-1">
+              <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-widest px-3 py-1.5"
+                style={{ background: "rgba(225,29,72,0.1)", border: "1px solid rgba(225,29,72,0.35)", color: "var(--c-red)" }}>
+                <Shield size={10} strokeWidth={2.5} />
+                YOUR RANK · #{myRankIdx + 1}
+              </span>
+            </div>
+          )}
+        </motion.div>
       </div>
 
-      {/* ── TOP 3 PODIUM SHOWCASE ────────────────────────────── */}
+      {/* PODIUM */}
       {!loading && !error && players.length >= 1 && (
         <div className="max-w-5xl mx-auto px-5 sm:px-8 mb-14">
-          <div className="grid md:grid-cols-3 gap-6 items-center">
-            {/* Rank 2 (Left) */}
-            <div className="order-2 md:order-1">
-              <PodiumCard
-                player={top2}
-                rank={2}
-                onSelect={() => top2 && navigate(`/profile/${encodeURIComponent(top2.username)}`)}
-              />
+          <div className="flex items-center gap-3 mb-5">
+            <Trophy size={14} style={{ color: "#F5B942" }} />
+            <span className="section-label" style={{ color: "#F5B942", marginBottom: 0 }}>HALL OF FAME</span>
+            <div className="flex-1 h-px" style={{ background: "var(--c-border)" }} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-end">
+            <div className="sm:mb-0 mt-4 sm:mt-6">
+              <PodiumCard player={top2} rank={2} delay={0.1} onSelect={() => top2 && navigate(`/profile/${encodeURIComponent(top2.username)}`)} />
             </div>
-
-            {/* Rank 1 (Center - Main Spotlight) */}
-            <div className="order-1 md:order-2">
-              <PodiumCard
-                player={top1}
-                rank={1}
-                onSelect={() => top1 && navigate(`/profile/${encodeURIComponent(top1.username)}`)}
-              />
+            <div className="order-first sm:order-none">
+              <PodiumCard player={top1} rank={1} delay={0}   onSelect={() => top1 && navigate(`/profile/${encodeURIComponent(top1.username)}`)} />
             </div>
-
-            {/* Rank 3 (Right) */}
-            <div className="order-3 md:order-3">
-              <PodiumCard
-                player={top3}
-                rank={3}
-                onSelect={() => top3 && navigate(`/profile/${encodeURIComponent(top3.username)}`)}
-              />
+            <div className="mt-4 sm:mt-10">
+              <PodiumCard player={top3} rank={3} delay={0.2} onSelect={() => top3 && navigate(`/profile/${encodeURIComponent(top3.username)}`)} />
             </div>
           </div>
         </div>
       )}
 
-      {/* ── FILTER & SEARCH BAR ROW ─────────────────────────── */}
-      <div className="max-w-5xl mx-auto px-5 sm:px-8 mb-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#090b13] border border-[#1e2130] p-2 rounded-2xl shadow-lg">
-
-          {/* Filter Tabs */}
-          <div className="flex items-center gap-1 bg-[#050608] p-1 rounded-xl border border-[#1e2130] w-full sm:w-auto overflow-x-auto">
-            {[
-              { id: 'global', label: 'Global' },
-              { id: 'weekly', label: 'Weekly' },
-              { id: 'monthly', label: 'Monthly' },
-              { id: 'friends', label: 'Friends' },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setTimeframe(tab.id)}
-                className={`px-4 py-2 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  timeframe === tab.id
-                    ? 'bg-[#1e2130] text-white shadow-sm border border-white/10'
-                    : 'text-[#6e7681] hover:text-[#8b949e]'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+      {/* FILTER + SEARCH */}
+      <div className="max-w-5xl mx-auto px-5 sm:px-8 mb-5">
+        <HudPanel className="p-2 flex flex-col sm:flex-row items-center gap-3">
+          <div className="flex items-center gap-0.5 p-1 w-full sm:w-auto overflow-x-auto shrink-0"
+            style={{ background: "var(--c-void)", border: "1px solid var(--c-border)" }}>
+            {TABS.map(tab => {
+              const active = timeframe === tab.id
+              return (
+                <button key={tab.id} onClick={() => setTimeframe(tab.id)}
+                  className="flex items-center gap-1.5 px-3 py-2 font-mono text-xs font-bold transition-all duration-150 whitespace-nowrap cursor-pointer"
+                  style={{
+                    background: active ? "rgba(225,29,72,0.15)" : "transparent",
+                    color:      active ? "var(--c-red)" : "var(--c-text-dim)",
+                    border:     active ? "1px solid rgba(225,29,72,0.35)" : "1px solid transparent",
+                    letterSpacing: "0.07em", textTransform: "uppercase",
+                  }}>
+                  <tab.Icon size={10} strokeWidth={2.5} />
+                  {tab.label}
+                </button>
+              )
+            })}
           </div>
 
-          {/* Search Input */}
-          <div className="relative w-full sm:w-72">
-            <div className="flex items-center gap-2 px-3 py-2 bg-[#050608] border border-[#1e2130] rounded-xl focus-within:border-white/40 transition-colors">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-[#6e7681]">
-                <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
+          <div className="relative flex-1 w-full" style={{ maxWidth: 320 }}>
+            <div className="flex items-center gap-2 px-3 py-2 transition-colors duration-150"
+              style={{ background: "var(--c-void)", border: "1px solid var(--c-border)" }}>
+              <Search size={13} style={{ color: "var(--c-text-mute)", flexShrink: 0 }} />
               <input
                 ref={searchRef}
+                id="leaderboard-search"
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search player..."
-                className="w-full bg-transparent outline-none font-mono text-xs text-white placeholder:text-[#6e7681]"
+                className="w-full bg-transparent outline-none font-mono text-xs"
+                style={{ color: "var(--c-text)" }}
               />
-              {search && (
-                <button
-                  onClick={() => setSearch('')}
-                  className="text-xs text-[#6e7681] hover:text-white"
-                >
-                  ✕
-                </button>
-              )}
+              <AnimatePresence>
+                {search && (
+                  <motion.button initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }}
+                    onClick={() => setSearch("")}
+                    style={{ color: "var(--c-text-mute)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                    onMouseEnter={e => e.currentTarget.style.color = "var(--c-red)"}
+                    onMouseLeave={e => e.currentTarget.style.color = "var(--c-text-mute)"}>
+                    <X size={12} />
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </div>
           </div>
-        </div>
+
+          <button onClick={fetchLeaderboard} title="Refresh"
+            className="shrink-0 p-2 transition-colors duration-150 cursor-pointer"
+            style={{ background: "transparent", border: "1px solid var(--c-border)", color: "var(--c-text-mute)" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--c-blue)"; e.currentTarget.style.borderColor = "var(--c-blue)" }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--c-text-mute)"; e.currentTarget.style.borderColor = "var(--c-border)" }}>
+            <RefreshCw size={13} strokeWidth={2.5} />
+          </button>
+        </HudPanel>
       </div>
 
-      {/* ── RANKINGS TABLE ──────────────────────────────────── */}
+      {/* RANKINGS TABLE */}
       <div className="max-w-5xl mx-auto px-5 sm:px-8">
-        <div className="bg-[#090b13] border border-[#1e2130] rounded-2xl overflow-hidden shadow-2xl">
+        <HudPanel style={{ overflow: "hidden" }}>
+          <div className="flex items-center gap-3 px-4 sm:px-6 py-3"
+            style={{ borderBottom: "1px solid var(--c-border)", background: "rgba(5,7,15,0.5)" }}>
+            <Users size={12} style={{ color: "var(--c-text-mute)" }} />
+            <span className="section-label" style={{ marginBottom: 0 }}>RANK TABLE</span>
+            <div className="flex-1" />
+            {!loading && (
+              <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color: "var(--c-text-mute)" }}>
+                {players.length} players
+              </span>
+            )}
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#1e2130] text-[10px] font-mono uppercase tracking-wider text-[#6e7681] bg-[#07080c]">
-                  <th className="py-3.5 px-6">RANK</th>
-                  <th className="py-3.5 px-6">PLAYER</th>
-                  <th className="py-3.5 px-6">ELO RATING</th>
-                  <th className="py-3.5 px-6">WIN RATE</th>
-                  <th className="py-3.5 px-6">WINS / LOSSES</th>
-                  <th className="py-3.5 px-6 text-right">RANK TIER</th>
+                <tr className="font-mono text-[9.5px] uppercase tracking-wider"
+                  style={{ borderBottom: "1px solid var(--c-border)", color: "var(--c-text-mute)", background: "rgba(5,7,15,0.3)" }}>
+                  <th className="py-3 px-4 sm:px-6 font-semibold">RANK</th>
+                  <th className="py-3 px-4 sm:px-6 font-semibold">PLAYER</th>
+                  <th className="py-3 px-4 sm:px-6 font-semibold">ELO</th>
+                  <th className="py-3 px-4 sm:px-6 font-semibold hidden sm:table-cell">WIN RATE</th>
+                  <th className="py-3 px-4 sm:px-6 font-semibold hidden md:table-cell">RECORD</th>
+                  <th className="py-3 px-4 sm:px-6 font-semibold text-right">TIER</th>
                 </tr>
               </thead>
-
-              <tbody className="divide-y divide-[#1e2130]/60">
+              <tbody>
                 {error ? (
                   <tr>
-                    <td colSpan={6} className="py-10 text-center font-mono text-sm text-rose-400">
+                    <td colSpan={6} className="py-10 text-center font-mono text-sm" style={{ color: "var(--c-red)" }}>
                       {error}
-                      <button onClick={fetchLeaderboard} className="block mx-auto mt-2 text-xs text-white underline">
-                        Retry
-                      </button>
+                      <button onClick={fetchLeaderboard} className="block mx-auto mt-2 text-xs underline cursor-pointer"
+                        style={{ color: "var(--c-text-mute)", background: "none", border: "none" }}>Retry</button>
                     </td>
                   </tr>
                 ) : loading ? (
                   Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
                 ) : restPlayers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center font-mono text-sm text-[#6e7681]">
-                      {search ? `No player found matching "${search}"` : 'No additional players registered yet.'}
+                    <td colSpan={6}>
+                      <EmptyState icon={Users}
+                        title={search ? `No player matching "${search}"` : "No additional players registered yet."}
+                        subtitle={search ? "Try a different search term." : "Be the first to climb the ranks."} />
                     </td>
                   </tr>
                 ) : (
                   restPlayers.map((p, idx) => {
-                    const actualRank = q ? p.rank : idx + 4
-                    const tier = getTier(p.elo_rating)
-                    const total = (p.wins ?? 0) + (p.losses ?? 0)
-                    const wr = total > 0 ? Math.round(((p.wins ?? 0) / total) * 100) : 0
+                    const actualRank = q ? (players.findIndex(pl => pl.username === p.username) + 1) : idx + 4
                     const isMe = p.username === user?.username
-
                     return (
-                      <tr
+                      <PlayerRow
                         key={p.id || p.username}
+                        player={p}
+                        actualRank={actualRank}
+                        isMe={isMe}
+                        delay={idx}
                         onClick={() => navigate(`/profile/${encodeURIComponent(p.username)}`)}
-                        className={`transition-colors cursor-pointer hover:bg-white/[0.03] ${
-                          isMe ? 'bg-white/[0.02]' : ''
-                        }`}
-                      >
-                        {/* Rank */}
-                        <td className="py-4 px-6 font-mono text-sm font-bold text-[#6e7681]">
-                          #{actualRank}
-                        </td>
-
-                        {/* Player */}
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-3">
-                            <UserAvatar
-                              username={p.username}
-                              seed={p.avatar_seed}
-                              style={p.avatar_style}
-                              elo={p.elo_rating}
-                              size={34}
-                            />
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-sans font-bold text-sm text-white">
-                                  {p.username}
-                                </span>
-                                {isMe && (
-                                  <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-white font-bold">
-                                    YOU
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Elo */}
-                        <td className="py-4 px-6 font-display font-black text-base tabular-nums" style={{ color: tier.col }}>
-                          {p.elo_rating}
-                        </td>
-
-                        {/* Win Rate */}
-                        <td className="py-4 px-6 font-mono text-xs font-bold text-amber-400">
-                          {wr}%
-                        </td>
-
-                        {/* Wins / Losses */}
-                        <td className="py-4 px-6 font-mono text-xs text-[#8b949e]">
-                          <span className="text-emerald-400 font-bold">{p.wins ?? 0}W</span> · <span className="text-rose-400 font-bold">{p.losses ?? 0}L</span>
-                        </td>
-
-                        {/* Rank Tier */}
-                        <td className="py-4 px-6 text-right">
-                          <span
-                            className="font-mono text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider font-bold inline-block"
-                            style={{ background: tier.bg, color: tier.col, border: `1px solid ${tier.col}40` }}
-                          >
-                            {tier.name}
-                          </span>
-                        </td>
-                      </tr>
+                      />
                     )
                   })
                 )}
               </tbody>
             </table>
           </div>
-        </div>
+        </HudPanel>
 
-        {/* Footer info */}
-        <div className="flex items-center justify-between mt-4 font-mono text-xs text-[#6e7681]">
-          <span>Top {players.length} players ranked · Refreshes every 30s</span>
+        <div className="flex items-center justify-between mt-3 font-mono text-[10px]" style={{ color: "var(--c-text-mute)" }}>
+          <span className="flex items-center gap-1.5">
+            <RefreshCw size={9} />
+            Top {players.length} players · Auto-refreshes every 30s
+          </span>
           {lastUpdated && <span>Updated {lastUpdated.toLocaleTimeString()}</span>}
         </div>
       </div>
-    </div>
+
+    </PageWrapper>
   )
 }

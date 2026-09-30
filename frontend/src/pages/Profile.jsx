@@ -1,57 +1,79 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useStreak } from '../hooks/useStreak'
 import api from '../utils/api'
 import { UserAvatar } from '../utils/avatar'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Trophy, Swords, Shield, Target, Flame, Zap, Camera, Pencil,
+  Lock, TrendingUp, TrendingDown, Calendar, Clock, CheckCircle,
+  XCircle, Minus, ChevronRight, User, UserCheck, Bot, Gamepad2,
+  Palette, Dices, Sparkles, Check, X, Award, AlertCircle
+} from 'lucide-react'
+import {
+  HudPanel, HudButton, GhostButton, RankBadge, StatBadge, SectionHeader,
+  PageWrapper, Skeleton, EmptyState, Tooltip, getArenaTier, ARENA_TIERS,
+  AnimatedCounter, DiffChip, VerdictChip
+} from '../components/ui'
 
 /* ════════════════════════════════════════════════
-   SVG ELO CHART
+   TIER PROGRESS COMPUTATION
+   Computes progress towards the next rank tier
 ════════════════════════════════════════════════ */
-/* ════════════════════════════════════════════════
-   ALGOARENA ELO PROGRESSION CHART
-   Features:
-   - Harmonious AlgoArena Tier Bands (Novice, Challenger, Specialist, Elite, Master, Grandmaster)
-   - Flame Orange Rating Curve with Gradient Area & Glow
-   - Peak Rating Indicator
-   - Real-Time Crosshair & Match Detail Tooltip
-════════════════════════════════════════════════ */
-const RANK_TIERS = [
-  { name: 'Novice', min: 0, max: 1199, bg: 'rgba(100,116,139,0.07)', border: '#334155', text: '#94a3b8' },
-  { name: 'Challenger', min: 1200, max: 1399, bg: 'rgba(16,185,129,0.08)', border: '#065f46', text: '#10b981' },
-  { name: 'Specialist', min: 1400, max: 1599, bg: 'rgba(6,182,212,0.08)', border: '#155e75', text: '#06b6d4' },
-  { name: 'Elite', min: 1600, max: 1899, bg: 'rgba(129,140,248,0.10)', border: '#3730a3', text: '#818cf8' },
-  { name: 'Master', min: 1900, max: 2199, bg: 'rgba(192,132,252,0.12)', border: '#6b21a8', text: '#c084fc' },
-  { name: 'Grandmaster', min: 2200, max: 3500, bg: 'rgba(249,115,22,0.14)', border: '#9a3412', text: '#f97316' },
-]
-
-export function getRankTier(rating = 1200) {
-  for (const tier of RANK_TIERS) {
-    if (rating >= tier.min && rating <= tier.max) return tier
+function getTierProgress(rating = 1200) {
+  const r = Number(rating) || 1200
+  const tiers = [
+    { name: 'Recruit', min: 0, max: 1199, nextMin: 1200, nextName: 'Operative' },
+    { name: 'Operative', min: 1200, max: 1399, nextMin: 1400, nextName: 'Vanguard' },
+    { name: 'Vanguard', min: 1400, max: 1599, nextMin: 1600, nextName: 'Champion' },
+    { name: 'Champion', min: 1600, max: 1799, nextMin: 1800, nextName: 'Legend' },
+    { name: 'Legend', min: 1800, max: 9999, nextMin: null, nextName: null },
+  ]
+  const current = tiers.find(t => r >= t.min && r <= t.max) || tiers[0]
+  if (!current.nextMin) {
+    return { pct: 100, needed: 0, nextName: 'MAX TIER', currentName: current.name }
   }
-  return RANK_TIERS[0]
+  const range = current.nextMin - current.min
+  const elapsed = r - current.min
+  const pct = Math.min(100, Math.max(0, Math.round((elapsed / range) * 100)))
+  const needed = current.nextMin - r
+  return { pct, needed, nextName: current.nextName, currentName: current.name }
 }
 
-const W = 760, H = 250, PAD = { top: 25, right: 35, bottom: 35, left: 48 }
+/* ════════════════════════════════════════════════
+   SVG ELO CHART WITH TIER ZONES & HUD TOOLTIP
+════════════════════════════════════════════════ */
+const CHART_W = 760, CHART_H = 260
+const CHART_PAD = { top: 30, right: 90, bottom: 35, left: 45 }
 
 function EloChart({ data = [], username = 'Coder' }) {
   const [hovered, setHovered] = useState(null)
 
   if (!data || data.length === 0) return null
 
-  const inner = { w: W - PAD.left - PAD.right, h: H - PAD.top - PAD.bottom }
-  const ratings = data.map(d => Number(d.rating) || 1200)
+  const innerW = CHART_W - CHART_PAD.left - CHART_PAD.right
+  const innerH = CHART_H - CHART_PAD.top - CHART_PAD.bottom
 
+  const ratings = data.map(d => Number(d.rating) || 1200)
   const minRaw = Math.min(...ratings)
   const maxRaw = Math.max(...ratings)
-  const spread = maxRaw - minRaw
-  const pad = Math.max(30, Math.round(spread * 0.35))
-  const minR = Math.max(0, Math.floor((minRaw - pad) / 20) * 20)
-  const maxR = Math.ceil((maxRaw + pad) / 20) * 20
+
+  // Step size: 50 or 100 for clean round numbers with uniform gaps
+  const rawSpread = maxRaw - minRaw
+  const stepR = rawSpread > 350 ? 100 : 50
+  const minR = Math.max(0, Math.floor((minRaw - 25) / stepR) * stepR)
+  const maxR = Math.max(minR + stepR * 3, Math.ceil((maxRaw + 25) / stepR) * stepR)
   const rangeR = maxR - minR || 1
 
-  const xScale = i => data.length === 1 ? inner.w / 2 : (i / (data.length - 1)) * inner.w
-  const yScale = r => inner.h - ((r - minR) / rangeR) * inner.h
+  // Generate clean Y-axis ticks at uniform stepR intervals
+  const yTicks = []
+  for (let r = minR; r <= maxR; r += stepR) {
+    yTicks.push(r)
+  }
+
+  const xScale = i => data.length === 1 ? innerW / 2 : (i / (data.length - 1)) * innerW
+  const yScale = r => innerH - ((r - minR) / rangeR) * innerH
 
   const pts = data.map((d, i) => [xScale(i), yScale(Number(d.rating) || 1200)])
 
@@ -66,7 +88,7 @@ function EloChart({ data = [], username = 'Coder' }) {
   })
 
   function buildPath(points) {
-    if (points.length === 1) return `M 0 ${points[0][1]} L ${inner.w} ${points[0][1]}`
+    if (points.length === 1) return `M 0 ${points[0][1]} L ${innerW} ${points[0][1]}`
     let d = `M ${points[0][0]} ${points[0][1]}`
     for (let i = 1; i < points.length; i++) {
       const [x0, y0] = points[i - 1]
@@ -78,25 +100,16 @@ function EloChart({ data = [], username = 'Coder' }) {
   }
 
   const linePath = buildPath(pts)
-  const areaPath = linePath + ` L ${pts[pts.length - 1][0]} ${inner.h} L ${pts[0][0]} ${inner.h} Z`
+  const areaPath = linePath + ` L ${pts[pts.length - 1][0]} ${innerH} L ${pts[0][0]} ${innerH} Z`
 
-  // Dynamic Y-axis gridlines
-  const yStep = Math.max(20, Math.round(rangeR / 4 / 10) * 10)
-  const boundaryRatings = []
-  for (let r = Math.ceil((minR + 5) / yStep) * yStep; r < maxR; r += yStep) {
-    boundaryRatings.push(r)
-  }
-
-  // X-axis labels: use "Match N" when all dates are same day, else use "Aug 26"-style
-  const step = Math.max(1, Math.floor(data.length / 5))
-  const allDatesStr = data.map(d => d.date ? new Date(d.date).toDateString() : '')
-  const uniqueDates = new Set(allDatesStr)
-  const useDateLabels = uniqueDates.size > 1
+  // Limit X-axis label ticks (max 5 desktop)
+  const maxTicks = 5
+  const step = Math.max(1, Math.floor(data.length / maxTicks))
   const xLabels = data
     .map((d, i) => {
       let label
-      if (useDateLabels) {
-        const dt = d.date ? new Date(d.date) : new Date()
+      if (d.date && d.date !== 'Start') {
+        const dt = new Date(d.date)
         label = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
       } else {
         label = `#${i + 1}`
@@ -105,89 +118,88 @@ function EloChart({ data = [], username = 'Coder' }) {
     })
     .filter((_, i) => i % step === 0 || i === data.length - 1)
 
-  const activePoint = hovered || data[data.length - 1]
-  const activeTier = getRankTier(activePoint?.rating || 1200)
-
   return (
-    <div className="space-y-3">
-      {/* Top Header Information */}
-      <div className="flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: activeTier.text }} />
-          <span className="font-bold text-[#dde1ea]">{username}</span>
-          <span className="text-[#4b5563]">·</span>
-          <span style={{ color: activeTier.text }} className="font-bold">
-            {activeTier.name} ({activePoint?.rating ?? 1200} Elo)
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 text-[11px] text-[#6b7280]">
-          <span>{data.length} matches recorded</span>
-        </div>
-      </div>
-
-      {/* SVG Chart Frame */}
-      <div className="relative rounded-lg border border-[#1e2130] bg-[#07090e] overflow-hidden">
+    <div className="relative w-full overflow-x-auto scrollbar-none">
+      <div className="min-w-[640px]">
         <svg
-          viewBox={`0 0 ${W} ${H}`}
-          style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+          viewBox={`0 0 ${CHART_W} ${CHART_H}`}
+          className="w-full h-auto overflow-visible select-none"
           onMouseLeave={() => setHovered(null)}
         >
           <defs>
-            <clipPath id="algoClip">
-              <rect x="0" y="0" width={inner.w} height={inner.h} />
+            <clipPath id="arenaClip">
+              <rect x="0" y="0" width={innerW} height={innerH} />
             </clipPath>
-            <linearGradient id="algoAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={activeTier.text} stopOpacity="0.25" />
-              <stop offset="100%" stopColor={activeTier.text} stopOpacity="0" />
+            <linearGradient id="arenaAreaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--c-blue)" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="var(--c-blue)" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="arenaLineGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="var(--c-blue)" />
+              <stop offset="100%" stopColor="var(--c-gold)" />
             </linearGradient>
           </defs>
 
-          <g transform={`translate(${PAD.left},${PAD.top})`}>
-            {/* 1. Horizontal Tier Colored Bands */}
-            {RANK_TIERS.map((tier) => {
-              const yTop = Math.max(0, Math.min(inner.h, yScale(Math.min(maxR, tier.max + 1))))
-              const yBottom = Math.max(0, Math.min(inner.h, yScale(Math.max(minR, tier.min))))
+          <g transform={`translate(${CHART_PAD.left},${CHART_PAD.top})`}>
+
+            {/* 1. Horizontal Tier Zones */}
+            {ARENA_TIERS.map((tier) => {
+              const yTop = Math.max(0, Math.min(innerH, yScale(Math.min(maxR, tier.max + 1))))
+              const yBottom = Math.max(0, Math.min(innerH, yScale(Math.max(minR, tier.min))))
               const height = yBottom - yTop
               if (height <= 0) return null
 
               return (
-                <rect
-                  key={tier.name}
-                  x={0}
-                  y={yTop}
-                  width={inner.w}
-                  height={height}
-                  fill={tier.bg}
-                  style={{ transition: 'all 0.3s ease' }}
-                />
+                <g key={tier.name}>
+                  <rect
+                    x={0}
+                    y={yTop}
+                    width={innerW}
+                    height={height}
+                    fill={tier.bg}
+                    opacity={0.6}
+                  />
+                  {/* Right Edge Tier Label */}
+                  <text
+                    x={innerW + 8}
+                    y={yTop + height / 2 + 3.5}
+                    fontSize={9}
+                    fill={tier.col}
+                    fontWeight="700"
+                    fontFamily="var(--font-mono)"
+                    className="uppercase tracking-wider"
+                  >
+                    {tier.name}
+                  </text>
+                </g>
               )
             })}
 
-            {/* 2. Grid lines & Y-axis labels */}
-            {boundaryRatings.map((r) => {
+            {/* 2. Horizontal Grid Reference Lines at uniform round intervals */}
+            {yTicks.map((r) => {
               const y = yScale(r)
-              const t = getRankTier(r)
+              const isThreshold = [1200, 1400, 1600, 1800].includes(r)
+              const tier = getArenaTier(r)
               return (
                 <g key={r}>
                   <line
                     x1={0}
                     y1={y}
-                    x2={inner.w}
+                    x2={innerW}
                     y2={y}
-                    stroke={t.border}
-                    strokeWidth={1}
-                    strokeDasharray="4 4"
-                    strokeOpacity={0.4}
+                    stroke={isThreshold ? tier.col : 'var(--c-border)'}
+                    strokeWidth={isThreshold ? 1.5 : 1}
+                    strokeDasharray={isThreshold ? '3 3' : '4 4'}
+                    strokeOpacity={isThreshold ? 0.75 : 0.35}
                   />
                   <text
                     x={-8}
                     y={y + 3.5}
                     textAnchor="end"
-                    fontSize={10}
-                    fill={t.text}
-                    fontFamily="JetBrains Mono, monospace"
-                    opacity={0.85}
+                    fontSize={isThreshold ? 10 : 9}
+                    fill={isThreshold ? tier.col : 'var(--c-text-mute)'}
+                    fontWeight={isThreshold ? 'bold' : 'normal'}
+                    fontFamily="var(--font-mono)"
                   >
                     {r}
                   </text>
@@ -195,63 +207,94 @@ function EloChart({ data = [], username = 'Coder' }) {
               )
             })}
 
-            {/* 3. X-axis date / match markers */}
+            {/* 3. X-Axis Ticks & Labels */}
             {xLabels.map((lbl) => (
               <g key={lbl.i}>
                 <line
                   x1={lbl.x}
                   y1={0}
                   x2={lbl.x}
-                  y2={inner.h}
-                  stroke="#1e293b"
+                  y2={innerH}
+                  stroke="var(--c-border)"
                   strokeWidth={1}
                   strokeDasharray="2 4"
                   strokeOpacity={0.3}
                 />
                 <text
                   x={lbl.x}
-                  y={inner.h + 18}
+                  y={innerH + 18}
                   textAnchor="middle"
-                  fontSize={10}
-                  fill="#475569"
-                  fontFamily="JetBrains Mono, monospace"
+                  fontSize={9}
+                  fill="var(--c-text-mute)"
+                  fontFamily="var(--font-mono)"
                 >
                   {lbl.label}
                 </text>
               </g>
             ))}
 
-            {/* 4. Smooth Area Glow & Rating Curve */}
-            <path d={areaPath} fill="url(#algoAreaGrad)" clipPath="url(#algoClip)" />
-            <path
-              d={linePath}
-              fill="none"
-              stroke={activeTier.text}
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              clipPath="url(#algoClip)"
-            />
+            {/* 4. Area Gradient & Tier-Colored Curve Segments */}
+            <path d={areaPath} fill="url(#arenaAreaGrad)" clipPath="url(#arenaClip)" />
+            
+            {/* Draw individual curve segments dynamically colored by point rank tier */}
+            {pts.length === 1 ? (
+              <line x1={0} y1={pts[0][1]} x2={innerW} y2={pts[0][1]} stroke={getArenaTier(data[0]?.rating || 1200).col} strokeWidth={2.5} clipPath="url(#arenaClip)" />
+            ) : (
+              pts.slice(1).map(([x, y], idx) => {
+                const i = idx + 1
+                const [prevX, prevY] = pts[i - 1]
+                const pointRating = Number(data[i]?.rating) || 1200
+                const tier = getArenaTier(pointRating)
+                const cx = (prevX + x) / 2
+                const d = `M ${prevX} ${prevY} C ${cx} ${prevY}, ${cx} ${y}, ${x} ${y}`
+                return (
+                  <path
+                    key={`seg-${i}`}
+                    d={d}
+                    fill="none"
+                    stroke={tier.col}
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    clipPath="url(#arenaClip)"
+                  />
+                )
+              })
+            )}
 
-            {/* 5. Match Nodes — colored by each node's rank tier */}
+            {/* 5. Data Points & Peak Marker */}
             {pts.map(([x, y], i) => {
               const isPeak = i === peakIdx && ratings.length > 1
-              const pointTier = getRankTier(data[i]?.rating || 1200)
+              const isLast = i === pts.length - 1
+              const pointRating = Number(data[i]?.rating) || 1200
+              const tier = getArenaTier(pointRating)
+
               return (
                 <g key={i}>
+                  {/* Circle Marker — colored strictly by rank tier */}
                   <circle
                     cx={x}
                     cy={y}
-                    r={isPeak ? 5 : 3.5}
-                    fill={isPeak ? '#22d3ee' : pointTier.text}
-                    stroke="#07090e"
+                    r={isPeak ? 5.5 : isLast ? 4.5 : 3.5}
+                    fill={isPeak ? 'var(--c-gold)' : tier.col}
+                    stroke="var(--c-panel)"
                     strokeWidth={1.5}
                   />
+
+                  {/* Peak Marker Badge */}
+                  {isPeak && (
+                    <g transform={`translate(${x},${y - 14})`}>
+                      <circle cx={0} cy={0} r={7} fill="var(--c-gold)" />
+                      <path d="M-3 2 L0 -3 L3 2 L2 0 L0 1 L-2 0 Z" fill="var(--c-void)" />
+                    </g>
+                  )}
+
+                  {/* Interactive Target Area */}
                   <rect
-                    x={x - 12}
+                    x={x - 14}
                     y={0}
-                    width={24}
-                    height={inner.h}
+                    width={28}
+                    height={innerH}
                     fill="transparent"
                     onMouseEnter={() => setHovered({ x, y, index: i, ...data[i] })}
                     style={{ cursor: 'pointer' }}
@@ -267,67 +310,74 @@ function EloChart({ data = [], username = 'Coder' }) {
                   x1={hovered.x}
                   y1={0}
                   x2={hovered.x}
-                  y2={inner.h}
-                  stroke={getRankTier(hovered.rating).border}
+                  y2={innerH}
+                  stroke="var(--c-gold)"
                   strokeWidth={1}
                   strokeDasharray="3 3"
                 />
                 <circle
                   cx={hovered.x}
                   cy={hovered.y}
-                  r={5.5}
-                  fill={getRankTier(hovered.rating).text}
+                  r={6}
+                  fill="var(--c-gold)"
                   stroke="#ffffff"
                   strokeWidth={2}
                 />
-                <g
-                  transform={`translate(${hovered.x > inner.w - 170 ? hovered.x - 175 : hovered.x + 12
-                    }, ${Math.max(10, Math.min(inner.h - 90, hovered.y - 45))})`}
+                <foreignObject
+                  x={hovered.x > innerW - 180 ? hovered.x - 185 : hovered.x + 12}
+                  y={Math.max(0, Math.min(innerH - 85, hovered.y - 40))}
+                  width={175}
+                  height={85}
+                  className="pointer-events-none"
                 >
-                  <rect
-                    x={0}
-                    y={0}
-                    width={165}
-                    height={72}
-                    rx={6}
-                    fill="#0d111c"
-                    stroke="#1e293b"
-                    strokeWidth={1}
-                    filter="drop-shadow(0 6px 16px rgba(0,0,0,0.6))"
-                  />
-                  <text x={10} y={18} fontSize={11} fill={getRankTier(hovered.rating).text} fontFamily="JetBrains Mono, monospace" fontWeight="bold">
-                    = {hovered.rating} ({getRankTier(hovered.rating).name})
-                  </text>
-                  <text x={10} y={34} fontSize={9} fill="#dde1ea" fontFamily="JetBrains Mono, monospace">
-                    {hovered.delta ? `Delta: ${hovered.delta > 0 ? `+${hovered.delta}` : hovered.delta}` : `Match #${hovered.index + 1}`}
-                  </text>
-                  <text x={10} y={48} fontSize={9} fill="#9ca3af" fontFamily="JetBrains Mono, monospace">
-                    {hovered.opponent ? `vs @${hovered.opponent}` : `${hovered.topic || '1v1 Duel'}`}
-                  </text>
-                  <text x={10} y={62} fontSize={8.5} fill="#64748b" fontFamily="JetBrains Mono, monospace">
-                    {hovered.date ? new Date(hovered.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent'}
-                  </text>
-                </g>
+                  <div
+                    className="p-2.5 rounded border shadow-xl backdrop-blur-md font-mono text-xs space-y-1"
+                    style={{ background: 'var(--c-panel)', borderColor: 'var(--c-border2)' }}
+                  >
+                    <div className="flex items-center justify-between font-bold" style={{ color: 'var(--c-gold)' }}>
+                      <span>{hovered.rating} ELO</span>
+                      {hovered.delta != null && (
+                        <span style={{ color: hovered.delta >= 0 ? 'var(--c-green)' : 'var(--c-red)' }}>
+                          {hovered.delta >= 0 ? `+${hovered.delta}` : hovered.delta}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] truncate" style={{ color: 'var(--c-text)' }}>
+                      {hovered.opponent ? `vs @${hovered.opponent}` : `Match #${hovered.index + 1}`}
+                    </p>
+                    <div className="flex items-center justify-between text-[9px]" style={{ color: 'var(--c-text-mute)' }}>
+                      <span>{hovered.topic || '1v1 Duel'}</span>
+                      <span>
+                        {hovered.date && hovered.date !== 'Start'
+                          ? new Date(hovered.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                          : 'Recent'}
+                      </span>
+                    </div>
+                  </div>
+                </foreignObject>
               </>
             )}
+
           </g>
         </svg>
       </div>
 
-      {/* Tier Legend Bar */}
-      <div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-[#1e2130]/60 text-[10px] font-mono">
-        <div className="flex items-center gap-3 flex-wrap">
-          {RANK_TIERS.map(t => (
-            <div key={t.name} className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full" style={{ background: t.text }} />
-              <span style={{ color: t.text }}>{t.name}</span>
-              <span className="text-[#4b5563]">({t.min}+)</span>
+      {/* Explicit Rank Tier Ranges Legend Bar */}
+      <div className="flex items-center justify-between flex-wrap gap-3 pt-3 mt-3 border-t border-[#1C2842] font-mono text-[10px]">
+        <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+          {ARENA_TIERS.map((tier) => (
+            <div key={tier.name} className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: tier.col }} />
+              <span className="font-bold text-white uppercase">{tier.name}:</span>
+              <span className="text-slate-300 font-semibold">
+                {tier.min}–{tier.max >= 9999 ? '1800+' : tier.max} ELO
+              </span>
             </div>
           ))}
         </div>
-        <div className="text-[#64748b] flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-[#22d3ee]" />
-          <span>Peak Rating</span>
+        <div className="text-slate-400 flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-[#F5B942]" />
+          <span>Peak & Current Nodes</span>
         </div>
       </div>
     </div>
@@ -335,51 +385,96 @@ function EloChart({ data = [], username = 'Coder' }) {
 }
 
 /* ════════════════════════════════════════════════
-   STREAK MINI-CALENDAR (30 days)
+   HEATMAP CALENDAR (30 DAYS)
 ════════════════════════════════════════════════ */
 function StreakCalendar({ history, matches = [] }) {
   const today = new Date().toISOString().slice(0, 10)
+  const [hoveredCell, setHoveredCell] = useState(null)
 
-  // Build a set of active dates from history Set, history Array, or match timestamps
-  const activeDates = new Set()
-  if (history instanceof Set) {
-    history.forEach(d => activeDates.add(d))
-  } else if (Array.isArray(history)) {
-    history.forEach(d => activeDates.add(typeof d === 'string' ? d.slice(0, 10) : new Date(d).toISOString().slice(0, 10)))
-  }
-  if (Array.isArray(matches)) {
-    matches.forEach(m => {
-      const dt = m.ended_at || m.started_at || m.date
-      if (dt) {
-        try {
-          activeDates.add(new Date(dt).toISOString().slice(0, 10))
-        } catch { }
+  // Map of date -> match count
+  const dateCounts = useMemo(() => {
+    const map = new Map()
+    if (history instanceof Set) {
+      history.forEach(d => map.set(d, 1))
+    } else if (Array.isArray(history)) {
+      history.forEach(d => {
+        const k = typeof d === 'string' ? d.slice(0, 10) : new Date(d).toISOString().slice(0, 10)
+        map.set(k, (map.get(k) || 0) + 1)
+      })
+    }
+    if (Array.isArray(matches)) {
+      matches.forEach(m => {
+        const dt = m.ended_at || m.started_at || m.date
+        if (dt) {
+          try {
+            const k = new Date(dt).toISOString().slice(0, 10)
+            map.set(k, (map.get(k) || 0) + 1)
+          } catch { }
+        }
+      })
+    }
+    return map
+  }, [history, matches])
+
+  const days = useMemo(() => {
+    return Array.from({ length: 30 }, (_, i) => {
+      const d = new Date()
+      d.setDate(d.getDate() - (29 - i))
+      const dateStr = d.toISOString().slice(0, 10)
+      const count = dateCounts.get(dateStr) || 0
+      return {
+        date: dateStr,
+        count,
+        isToday: dateStr === today,
+        formatted: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
       }
     })
-  }
-
-  const days = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() - (29 - i))
-    const date = d.toISOString().slice(0, 10)
-    return { date, active: activeDates.has(date), isToday: date === today }
-  })
+  }, [dateCounts, today])
 
   return (
-    <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(10, 1fr)' }}>
-      {days.map(({ date, active, isToday }) => (
+    <div className="relative">
+      <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(10, 1fr)' }}>
+        {days.map(({ date, count, isToday, formatted }) => {
+          let bg = 'var(--c-panel)'
+          let border = 'var(--c-border)'
+          if (count === 1) {
+            bg = 'rgba(56, 189, 248, 0.25)'
+            border = 'rgba(56, 189, 248, 0.5)'
+          } else if (count >= 2) {
+            bg = 'rgba(245, 185, 66, 0.35)'
+            border = 'rgba(245, 185, 66, 0.6)'
+          }
+
+          return (
+            <div
+              key={date}
+              className="aspect-square relative cursor-pointer transition-all duration-150 hover:scale-110"
+              style={{
+                borderRadius: 4,
+                background: bg,
+                border: `1px solid ${isToday ? 'var(--c-red)' : border}`,
+                boxShadow: isToday ? '0 0 10px var(--c-red-glow)' : 'none',
+              }}
+              onMouseEnter={() => setHoveredCell({ date: formatted, count })}
+              onMouseLeave={() => setHoveredCell(null)}
+            />
+          )
+        })}
+      </div>
+
+      {/* Heatmap Tooltip */}
+      {hoveredCell && (
         <div
-          key={date}
-          title={date}
-          className="aspect-square"
-          style={{
-            borderRadius: 3,
-            background: active ? (isToday ? '#f97316' : 'rgba(249,115,22,0.5)') : '#0d0f17',
-            border: `1px solid ${isToday ? '#f97316' : active ? 'rgba(249,115,22,0.3)' : '#1e2130'}`,
-            boxShadow: isToday ? '0 0 6px rgba(249,115,22,0.35)' : 'none',
-          }}
-        />
-      ))}
+          className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded bg-[#0B1120] border border-[#1C2842] text-[10px] font-mono whitespace-nowrap shadow-lg pointer-events-none z-20 flex items-center gap-1.5"
+          style={{ color: 'var(--c-text)' }}
+        >
+          <Calendar size={11} className="text-[#38BDF8]" />
+          <span>{hoveredCell.date}:</span>
+          <span className="font-bold text-[#F5B942]">
+            {hoveredCell.count === 0 ? 'No battles' : `${hoveredCell.count} duel${hoveredCell.count > 1 ? 's' : ''}`}
+          </span>
+        </div>
+      )}
     </div>
   )
 }
@@ -388,54 +483,69 @@ function StreakCalendar({ history, matches = [] }) {
    MATCH HISTORY ROW
 ════════════════════════════════════════════════ */
 function MatchRow({ m }) {
-  const win = m.result === 'WIN'
+  const result = (m.result || '').toUpperCase()
+  const isWin = result === 'WIN' || result === 'VICTORY'
+  const isLoss = result === 'LOSS' || result === 'DEFEAT'
+  const isDraw = !isWin && !isLoss
+
   const deltaStr = m.elo_delta ? (m.elo_delta > 0 ? `+${m.elo_delta}` : `${m.elo_delta}`) : '0'
   const dateStr = m.ended_at ? new Date(m.ended_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'
 
+  const topicDisplay = m.topic
+    ? m.topic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    : 'Custom Duel'
+
+  const diffLower = (m.difficulty || 'medium').toLowerCase()
+
   return (
-    <div className="flex items-center gap-3 px-4 py-3 transition-colors"
-      style={{ borderBottom: '1px solid #0d0f17' }}
-      onMouseOver={e => e.currentTarget.style.background = '#0d0f17'}
-      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-
-      <span className="font-mono text-[10px] font-bold px-2 py-0.5 shrink-0"
-        style={{
-          borderRadius: 3, background: win ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.12)',
-          color: win ? '#10b981' : '#f43f5e', border: `1px solid ${win ? 'rgba(16,185,129,0.25)' : 'rgba(244,63,94,0.25)'}`, width: 40, textAlign: 'center'
-        }}>
-        {m.result}
-      </span>
-
-      <div className="flex-1 min-w-0">
-        <p className="font-mono text-[12px]" style={{ color: '#dde1ea' }}>vs {m.opponent || 'Opponent'}</p>
-        <p className="font-mono text-[10px]" style={{ color: '#4b5563' }}>{m.topic} · {m.difficulty}</p>
+    <div
+      className="flex items-center gap-3 px-4 py-3 border-b border-[#1C2842]/60 transition-colors hover:bg-[#121A2E]/50 relative"
+      style={{
+        borderLeft: `3px solid ${isWin ? 'var(--c-green)' : isLoss ? 'var(--c-red)' : 'var(--c-gold)'}`,
+      }}
+    >
+      {/* Result Chip */}
+      <div className="w-24 shrink-0">
+        <span
+          className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
+          style={{
+            background: isWin ? 'rgba(16,185,129,0.12)' : isLoss ? 'rgba(225,29,72,0.12)' : 'rgba(245,185,66,0.12)',
+            color: isWin ? 'var(--c-green)' : isLoss ? 'var(--c-red)' : 'var(--c-gold)',
+            border: `1px solid ${isWin ? 'rgba(16,185,129,0.3)' : isLoss ? 'rgba(225,29,72,0.3)' : 'rgba(245,185,66,0.3)'}`,
+          }}
+        >
+          {isWin ? <CheckCircle size={11} /> : isLoss ? <XCircle size={11} /> : <Minus size={11} />}
+          <span>{isWin ? 'VICTORY' : isLoss ? 'DEFEAT' : 'DRAW'}</span>
+        </span>
       </div>
 
-      <span className="font-mono text-[12px] font-bold shrink-0 w-12 text-right"
-        style={{ color: win ? '#10b981' : '#f43f5e' }}>
-        {deltaStr}
-      </span>
+      {/* Opponent Info */}
+      <div className="flex-1 min-w-0 flex items-center gap-2">
+        <UserAvatar username={m.opponent || 'Opponent'} size={24} />
+        <span className="font-mono text-xs font-bold text-white truncate max-w-[120px]">
+          @{m.opponent || 'Warrior'}
+        </span>
+      </div>
 
-      <span className="font-mono text-[10px] shrink-0 hidden sm:block" style={{ color: '#374151', width: 70, textAlign: 'right' }}>
+      {/* Topic & Difficulty Chips */}
+      <div className="hidden md:flex items-center gap-1.5 flex-1 min-w-0">
+        <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-[#0B1120] border border-[#1C2842] text-slate-300 truncate">
+          {topicDisplay}
+        </span>
+        <DiffChip diff={diffLower} />
+      </div>
+
+      {/* Elo Change */}
+      <div className="w-16 shrink-0 text-right font-mono text-xs font-bold">
+        <span style={{ color: m.elo_delta > 0 ? 'var(--c-green)' : m.elo_delta < 0 ? 'var(--c-red)' : 'var(--c-text-mute)' }}>
+          {deltaStr}
+        </span>
+      </div>
+
+      {/* Date */}
+      <div className="w-16 shrink-0 text-right font-mono text-[10px] text-slate-400">
         {dateStr}
-      </span>
-    </div>
-  )
-}
-
-/* ════════════════════════════════════════════════
-   STAT CARD
-════════════════════════════════════════════════ */
-function StatCard({ label, value, sub, color = '#dde1ea' }) {
-  return (
-    <div className="px-4 py-4" style={{ background: '#090b13', border: '1px solid #1e2130', borderRadius: 4 }}>
-      <p className="font-mono text-[10px] uppercase tracking-widest mb-1.5" style={{ color: '#4b5563', letterSpacing: '0.12em' }}>
-        {label}
-      </p>
-      <p className="font-display font-black text-3xl leading-none" style={{ color }}>
-        {value}
-      </p>
-      {sub && <p className="font-mono text-[10px] mt-1" style={{ color: '#374151' }}>{sub}</p>}
+      </div>
     </div>
   )
 }
@@ -450,11 +560,11 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
   const [saving, setSaving] = useState(false)
 
   const styles = [
-    { id: 'adventurer', label: 'Adventurer (Male)', icon: '👦' },
-    { id: 'lorelei', label: 'Lorelei (Female)', icon: '👧' },
-    { id: 'bottts', label: 'Cyber Bot', icon: '🤖' },
-    { id: 'pixel-art', label: 'Pixel Gamer', icon: '👾' },
-    { id: 'notionists', label: 'Tech Sketch', icon: '🎨' },
+    { id: 'adventurer', label: 'Adventurer', icon: User },
+    { id: 'lorelei', label: 'Lorelei', icon: UserCheck },
+    { id: 'bottts', label: 'Cyber Bot', icon: Bot },
+    { id: 'pixel-art', label: 'Pixel Gamer', icon: Gamepad2 },
+    { id: 'notionists', label: 'Tech Sketch', icon: Palette },
   ]
 
   const PRESETS = {
@@ -494,53 +604,65 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="w-full max-w-lg rounded-2xl border border-[#1e2130] bg-[#090b13] p-6 space-y-6 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#1e2130] pb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(5, 7, 15, 0.88)', backdropFilter: 'blur(8px)' }}>
+      <HudPanel className="w-full max-w-lg p-6 space-y-5 shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[#1C2842] pb-3">
           <div className="flex items-center gap-2">
-            <span className="text-xl">🎨</span>
-            <h2 className="font-display font-bold text-lg text-[#dde1ea]">Choose Your Arena Avatar</h2>
+            <Camera size={18} className="text-[#38BDF8]" />
+            <h3 className="font-display font-bold text-lg text-white uppercase tracking-wide">
+              Customize Avatar
+            </h3>
           </div>
-          <button onClick={onClose} className="font-mono text-xs text-[#6b7280] hover:text-[#f97316] p-1">
-            ✕
+          <button onClick={onClose} aria-label="Close" className="text-slate-400 hover:text-red-400 p-1">
+            <X size={16} />
           </button>
         </div>
 
-        {/* Live Preview */}
-        <div className="flex items-center justify-center gap-6 p-4 rounded-xl bg-[#07080c] border border-[#1e2130]">
-          <UserAvatar username={username} seed={selectedSeed} style={selectedStyle} size={76} isMe={true} />
-          <div className="space-y-1">
-            <p className="font-mono text-sm font-bold text-[#dde1ea]">@{username}</p>
-            <p className="font-mono text-xs text-[#f97316]">Style: {selectedStyle}</p>
-            <p className="font-mono text-[10px] text-[#6b7280] truncate max-w-[200px]">Seed: {selectedSeed}</p>
+        {/* Preview Frame */}
+        <div className="flex items-center justify-center gap-6 p-4 rounded bg-[#05070F] border border-[#1C2842]">
+          <div className="p-1 rounded-xl border-2 border-[#38BDF8] shadow-lg shadow-[#38BDF8]/20">
+            <UserAvatar username={username} seed={selectedSeed} style={selectedStyle} size={72} isMe={true} />
+          </div>
+          <div className="space-y-1 font-mono text-xs">
+            <p className="font-bold text-white">@{username}</p>
+            <p className="text-[#38BDF8]">Style: {selectedStyle}</p>
+            <p className="text-[10px] text-slate-400 truncate max-w-[180px]">Seed: {selectedSeed}</p>
           </div>
         </div>
 
-        {/* Category Switcher */}
+        {/* Style Selection Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {styles.map(st => (
-            <button
-              key={st.id}
-              onClick={() => { setSelectedStyle(st.id); setSelectedSeed(PRESETS[st.id]?.[0] || 'seed1') }}
-              className={`px-3 py-1.5 rounded-lg font-mono text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${selectedStyle === st.id
-                  ? 'bg-orange-500/20 text-[#f97316] border border-orange-500/50 shadow-sm'
-                  : 'bg-[#0d0f17] text-[#9ca3af] border border-[#1e2130] hover:border-[#374151]'
+          {styles.map(st => {
+            const Icon = st.icon
+            const active = selectedStyle === st.id
+            return (
+              <button
+                key={st.id}
+                onClick={() => { setSelectedStyle(st.id); setSelectedSeed(PRESETS[st.id]?.[0] || 'seed1') }}
+                className={`px-3 py-1.5 rounded font-mono text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                  active
+                    ? 'bg-[#38BDF8]/20 text-[#38BDF8] border border-[#38BDF8]/50'
+                    : 'bg-[#0B1120] text-slate-400 border border-[#1C2842] hover:border-slate-600'
                 }`}
-            >
-              {st.icon} {st.label}
-            </button>
-          ))}
+              >
+                <Icon size={12} />
+                <span>{st.label}</span>
+              </button>
+            )
+          })}
         </div>
 
-        {/* Preset Avatars Grid */}
+        {/* Presets Grid */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="font-mono text-[11px] text-[#6b7280] uppercase tracking-wider">// Curated Presets</p>
+          <div className="flex items-center justify-between font-mono text-[10px]">
+            <span className="text-slate-400 uppercase tracking-wider">Curated Presets</span>
             <button
               onClick={handleRandom}
-              className="font-mono text-[11px] text-[#22d3ee] hover:underline flex items-center gap-1 cursor-pointer"
+              className="text-[#38BDF8] hover:underline flex items-center gap-1 cursor-pointer font-bold"
             >
-              🎲 Randomize
+              <Dices size={12} />
+              <span>Randomize</span>
             </button>
           </div>
           <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
@@ -550,60 +672,49 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
                 <button
                   key={preset}
                   onClick={() => setSelectedSeed(preset)}
-                  className={`p-1.5 rounded-xl border transition-all flex items-center justify-center cursor-pointer ${active
-                      ? 'bg-orange-500/20 border-orange-500 scale-105 shadow-lg shadow-orange-500/20'
-                      : 'bg-[#0d0f17] border-[#1e2130] hover:border-[#374151]'
-                    }`}
+                  className={`p-1 rounded border transition-all flex items-center justify-center cursor-pointer ${
+                    active
+                      ? 'bg-[#38BDF8]/20 border-[#38BDF8] scale-105 shadow-md shadow-[#38BDF8]/20'
+                      : 'bg-[#0B1120] border-[#1C2842] hover:border-slate-500'
+                  }`}
                 >
-                  <UserAvatar username={username} seed={preset} style={selectedStyle} size={36} />
+                  <UserAvatar username={username} seed={preset} style={selectedStyle} size={34} />
                 </button>
               )
             })}
           </div>
         </div>
 
-        {/* Custom Seed Input */}
+        {/* Custom Input */}
         <form onSubmit={handleApplyCustom} className="flex items-center gap-2">
           <input
             type="text"
-            placeholder="Type custom name / seed..."
+            placeholder="Type custom seed name..."
             value={customInput}
             onChange={e => setCustomInput(e.target.value)}
-            className="flex-1 bg-[#07080c] border border-[#1e2130] rounded-lg px-3 py-2 text-xs font-mono text-[#dde1ea] focus:border-[#f97316] outline-none"
+            className="flex-1 bg-[#05070F] border border-[#1C2842] rounded px-3 py-2 text-xs font-mono text-white outline-none focus:border-[#38BDF8]"
           />
-          <button
-            type="submit"
-            className="px-3 py-2 rounded-lg bg-[#1e2130] text-xs font-mono font-bold text-[#dde1ea] hover:bg-[#2d3748] cursor-pointer"
-          >
+          <GhostButton type="submit" style={{ padding: '6px 12px', fontSize: 11 }}>
             Apply
-          </button>
+          </GhostButton>
         </form>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#1e2130]">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg font-mono text-xs text-[#9ca3af] hover:text-white bg-[#0d0f17] border border-[#1e2130] cursor-pointer"
-          >
+        {/* Footer Actions */}
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#1C2842]">
+          <GhostButton type="button" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            type="button"
-            disabled={saving}
-            onClick={handleSave}
-            className="btn-primary py-2 px-5 text-xs glow-orange"
-          >
-            {saving ? 'Saving...' : 'Save Avatar ⚡'}
-          </button>
+          </GhostButton>
+          <HudButton type="button" disabled={saving} onClick={handleSave}>
+            {saving ? 'Saving...' : 'Save Avatar'}
+          </HudButton>
         </div>
-      </div>
+      </HudPanel>
     </div>
   )
 }
 
 /* ════════════════════════════════════════════════
-   PROFILE PAGE
+   PROFILE PAGE COMPONENT
 ════════════════════════════════════════════════ */
 export default function Profile() {
   const { username: routeUsername } = useParams()
@@ -625,19 +736,18 @@ export default function Profile() {
   const isOwnProfileRoute = !routeUsername
   const isMe = isOwnProfileRoute || (user?.username && routeUsername?.toLowerCase() === user.username.toLowerCase())
 
-  // Redirect only if visiting the private '/profile' route without being logged in
+  // Redirect if visiting private /profile when unauthenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated && isOwnProfileRoute) {
       navigate('/?auth=login')
     }
   }, [authLoading, isAuthenticated, isOwnProfileRoute, navigate])
 
-  // Fetch all profile data whenever route or auth changes
+  // Load profile data
   useEffect(() => {
     let unmounted = false
 
     async function loadData() {
-      // If visiting /profile, wait for auth to finish loading
       if (isOwnProfileRoute) {
         if (authLoading) return
         if (!isAuthenticated) {
@@ -689,41 +799,58 @@ export default function Profile() {
     return () => { unmounted = true }
   }, [routeUsername, isOwnProfileRoute, isAuthenticated, authLoading])
 
-  if ((authLoading && isOwnProfileRoute) || dataLoading) return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
-      <p className="font-mono text-sm animate-pulse" style={{ color: '#4b5563' }}>loading profile...</p>
-    </div>
-  )
+  if ((authLoading && isOwnProfileRoute) || dataLoading) {
+    return (
+      <PageWrapper heroGlow>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
+          <Skeleton height={180} />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} height={80} />)}
+          </div>
+          <Skeleton height={280} />
+        </div>
+      </PageWrapper>
+    )
+  }
 
-  if (notFound) return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center p-8 text-center">
-      <p className="font-mono text-4xl mb-3">🔍</p>
-      <h2 className="font-display font-black text-2xl mb-2 text-[#dde1ea]">Player Not Found</h2>
-      <p className="font-mono text-sm text-[#4b5563] mb-6">No warrior exists with handle "@{routeUsername}"</p>
-      <div className="flex gap-4">
-        <button onClick={() => navigate('/lobby')} className="btn-primary py-2 px-5 text-xs">
-          ← Back to Lobby
-        </button>
-        <button onClick={() => navigate('/leaderboard')} className="btn-secondary py-2 px-5 text-xs">
-          View Leaderboard
-        </button>
-      </div>
-    </div>
-  )
+  if (notFound) {
+    return (
+      <PageWrapper heroGlow>
+        <div className="max-w-md mx-auto py-20 px-4 text-center">
+          <EmptyState
+            icon={Shield}
+            title="Warrior Not Found"
+            subtitle={`No arena competitor exists with handle "@${routeUsername}".`}
+            action={
+              <div className="flex gap-3 justify-center mt-4">
+                <HudButton onClick={() => navigate('/lobby')}>
+                  Go To Lobby
+                </HudButton>
+                <GhostButton onClick={() => navigate('/leaderboard')}>
+                  View Leaderboard
+                </GhostButton>
+              </div>
+            }
+          />
+        </div>
+      </PageWrapper>
+    )
+  }
 
   const activeUser = profileUser || (isMe ? user : null)
-  if (!activeUser) return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
-      <p className="font-mono text-sm animate-pulse" style={{ color: '#4b5563' }}>loading profile...</p>
-    </div>
-  )
+  if (!activeUser) return null
+
   const elo = activeUser?.elo_rating ?? 1200
   const wins = activeUser?.wins ?? 0
   const losses = activeUser?.losses ?? 0
   const total = wins + losses
   const wr = total > 0 ? Math.round((wins / total) * 100) : 0
 
-  // Dynamic Streak Calculation from real match & Elo activity history
+  // Tier progress calculation
+  const tierProgress = getTierProgress(elo)
+  const currentTier = getArenaTier(elo)
+
+  // Dynamic Streak Calculation
   const activeDates = new Set()
   if (isMe && myHistory instanceof Set) {
     myHistory.forEach(d => activeDates.add(d))
@@ -779,15 +906,19 @@ export default function Profile() {
   const computedStreak = getCalculatedStreak()
   const streak = isMe ? Math.max(myStreak || 0, computedStreak) : computedStreak
 
-  // Topic distribution from actual match history
+  // Topic distribution
   const topicFreq = matches.reduce((acc, m) => {
     if (m.topic) acc[m.topic] = (acc[m.topic] || 0) + 1
     return acc
   }, {})
-  const favTopic = Object.entries(topicFreq).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—'
 
-  // Construct chart points from real Elo history or single baseline.
-  // Always force the last point to be the ACTUAL current elo so chart & hero match.
+  const favTopicRaw = Object.entries(topicFreq).sort((a, b) => b[1] - a[1])[0]?.[0]
+  const favTopicTitle = favTopicRaw
+    ? favTopicRaw.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    : 'None'
+  const favTopicCount = favTopicRaw ? topicFreq[favTopicRaw] : 0
+
+  // Chart Data preparation
   const rawChartData = eloHistory.length > 0
     ? eloHistory.map(e => ({
       date: e.date,
@@ -797,11 +928,8 @@ export default function Profile() {
       difficulty: e.difficulty,
       opponent: e.opponent,
     }))
-    : [
-      { date: activeUser?.created_at ? new Date(activeUser.created_at).toISOString().slice(0, 10) : 'Start', rating: 1200, delta: 0, topic: 'Initial' },
-    ]
+    : [{ date: activeUser?.created_at ? new Date(activeUser.created_at).toISOString().slice(0, 10) : 'Start', rating: 1200, delta: 0, topic: 'Initial' }]
 
-  // Patch last point to match actual current elo (fixes drift from fallback computation)
   const chartData = rawChartData.length > 0
     ? [
       ...rawChartData.slice(0, -1),
@@ -816,7 +944,7 @@ export default function Profile() {
   async function handleSaveUsername(e) {
     e.preventDefault()
     if (!newHandle || !/^[a-zA-Z0-9_]{3,30}$/.test(newHandle.trim())) {
-      setHandleErr('Username must be 3–30 characters (letters, numbers, underscore)')
+      setHandleErr('Handle must be 3–30 characters (letters, numbers, underscore)')
       return
     }
     setSavingHandle(true)
@@ -831,7 +959,7 @@ export default function Profile() {
       }
       setEditingUsername(false)
     } catch (err) {
-      setHandleErr(err.response?.data?.message || err.message || 'Failed to update username')
+      setHandleErr(err.response?.data?.message || err.message || 'Failed to update handle')
     } finally {
       setSavingHandle(false)
     }
@@ -847,302 +975,409 @@ export default function Profile() {
     return data
   }
 
+  const joinDateStr = new Date(activeUser?.created_at ?? Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+
   return (
-    <div className="min-h-[calc(100vh-3.5rem)]">
+    <PageWrapper heroGlow>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-      {/* ── PROFILE HERO ──────────────────────────────────── */}
-      <div style={{ borderBottom: '1px solid #1e2130', background: '#07080c' }}>
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8">
+        {/* ── 1. DOSSIER BANNER ──────────────────────────────── */}
+        <HudPanel glow glowColor={currentTier.glow} style={{ padding: '1.75rem 2rem' }}>
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
 
-          {/* Navigation backlink if viewing friend */}
-          {!isMe && (
-            <div className="mb-4">
-              <button
-                onClick={() => navigate(-1)}
-                className="font-mono text-xs text-[#6b7280] hover:text-[#f97316] transition-colors flex items-center gap-1.5"
-              >
-                ← Back
-              </button>
-            </div>
-          )}
+            {/* Left: Avatar + User details */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 flex-1 min-w-0">
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6">
-
-            {/* Avatar with Customizer Button */}
-            <div className="relative group shrink-0">
-              <UserAvatar
-                username={activeUser?.username}
-                seed={activeUser?.avatar_seed}
-                style={activeUser?.avatar_style}
-                size={88}
-                isMe={isMe}
-              />
-              {isMe && (
-                <button
-                  onClick={() => setShowAvatarModal(true)}
-                  className="absolute -bottom-2 -right-2 px-2.5 py-1 rounded-full bg-[#0d0f17] border border-[#f97316] text-[10px] font-mono font-bold text-[#f97316] hover:bg-[#f97316] hover:text-[#07080c] transition-all shadow-lg flex items-center gap-1 cursor-pointer"
-                  title="Customize your avatar"
+              {/* Rank Avatar frame */}
+              <div className="relative group shrink-0">
+                <div
+                  className="p-1 rounded-xl transition-all duration-300"
+                  style={{ border: `2px solid ${currentTier.col}`, boxShadow: `0 0 20px ${currentTier.glow}`, background: 'var(--c-panel)' }}
                 >
-                  <span>🎨</span> Change
-                </button>
-              )}
-            </div>
+                  <UserAvatar
+                    username={activeUser?.username}
+                    seed={activeUser?.avatar_seed}
+                    style={activeUser?.avatar_style}
+                    elo={elo}
+                    size={84}
+                    isMe={isMe}
+                  />
+                </div>
 
-            {/* Info */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 flex-wrap mb-1">
-                {/* Show inline edit form only when own username not yet permanently set */}
-                {isMe && !activeUser?.is_username_set && editingUsername ? (
-                  <form onSubmit={handleSaveUsername} className="flex items-center gap-2">
-                    <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-mono text-xs text-[#f97316]">@</span>
+                {isMe && (
+                  <button
+                    onClick={() => setShowAvatarModal(true)}
+                    className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-[#0B1120] border border-[#38BDF8] text-[#38BDF8] hover:bg-[#38BDF8] hover:text-[#05070F] transition-all shadow-lg cursor-pointer"
+                    title="Change Avatar"
+                    aria-label="Change Avatar"
+                  >
+                    <Camera size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* Core Info */}
+              <div className="space-y-2 flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-wrap">
+                  {isMe && !activeUser?.is_username_set && editingUsername ? (
+                    <form onSubmit={handleSaveUsername} className="flex items-center gap-2">
                       <input
                         type="text"
                         autoFocus
                         maxLength={30}
                         value={newHandle}
                         onChange={e => setNewHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
-                        className="bg-[#0d0f17] border border-[#f97316] rounded px-6 py-1 font-mono text-sm text-[#dde1ea] outline-none"
+                        className="bg-[#05070F] border border-[#38BDF8] rounded px-3 py-1 font-mono text-sm text-white outline-none"
                       />
+                      <HudButton type="submit" disabled={savingHandle} style={{ padding: '4px 10px', fontSize: 11 }}>
+                        {savingHandle ? '...' : 'Lock'}
+                      </HudButton>
+                      <GhostButton type="button" onClick={() => setEditingUsername(false)} style={{ padding: '4px 10px', fontSize: 11 }}>
+                        Cancel
+                      </GhostButton>
+                    </form>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <h1 className="font-display font-bold text-3xl sm:text-4xl uppercase tracking-wide text-white">
+                        {activeUser?.username}
+                      </h1>
+                      {isMe && (
+                        !activeUser?.is_username_set ? (
+                          <button
+                            onClick={() => { setNewHandle(activeUser?.username || ''); setEditingUsername(true); setHandleErr('') }}
+                            className="p-1 rounded text-slate-400 hover:text-[#38BDF8] transition-colors"
+                            title="Set permanent handle"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 font-mono text-[10px] px-2 py-0.5 rounded bg-[#121A2E] border border-[#1C2842] text-slate-400">
+                            <Lock size={10} /> Locked
+                          </span>
+                        )
+                      )}
                     </div>
-                    <button
-                      type="submit"
-                      disabled={savingHandle}
-                      className="px-3 py-1 bg-[#f97316] text-[#07080c] text-xs font-mono font-bold rounded hover:bg-[#ea6c0a]"
-                    >
-                      {savingHandle ? '...' : 'Lock Handle'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setEditingUsername(false); setHandleErr('') }}
-                      className="px-3 py-1 bg-[#1e2130] text-[#9ca3af] text-xs font-mono rounded hover:text-white"
-                    >
-                      Cancel
-                    </button>
-                  </form>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <h1 className="font-display font-black text-2xl" style={{ color: '#dde1ea' }}>
-                      {activeUser?.username}
-                    </h1>
-                    {isMe ? (
-                      !activeUser?.is_username_set ? (
-                        <button
-                          onClick={() => { setNewHandle(activeUser?.username || ''); setEditingUsername(true); setHandleErr('') }}
-                          className="text-xs font-mono text-[#f97316] border border-[#f97316]/40 px-2 py-0.5 rounded hover:bg-[#f97316]/10 transition-colors"
-                          title="Set your permanent handle"
-                        >
-                          ✏️ Set Handle
-                        </button>
-                      ) : (
-                        <span
-                          className="text-[10px] font-mono text-[#4b5563] flex items-center gap-1"
-                          title="Username is permanently locked"
-                        >
-                          🔒 locked
-                        </span>
-                      )
-                    ) : (
-                      <span className="font-mono text-[10px] px-2 py-0.5" style={{ background: 'rgba(34,211,238,0.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.25)', borderRadius: 3 }}>
-                        rank #{activeUser?.rank ?? '—'}
-                      </span>
-                    )}
+                  )}
+
+                  <RankBadge elo={elo} size="md" />
+                </div>
+
+                {handleErr && <p className="font-mono text-xs text-red-400">{handleErr}</p>}
+
+                {/* Sub-meta tags */}
+                <div className="flex items-center gap-3 font-mono text-xs text-slate-400 flex-wrap">
+                  <span className="flex items-center gap-1">
+                    <Calendar size={12} className="text-[#38BDF8]" />
+                    Joined {joinDateStr}
+                  </span>
+                  {!isMe && (
+                    <span className="flex items-center gap-1 text-[#38BDF8]">
+                      Rank #{activeUser?.rank ?? '—'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Rank Progress Bar */}
+                <div className="space-y-1 pt-1 max-w-md">
+                  <div className="flex items-center justify-between font-mono text-[10px]">
+                    <span className="text-slate-400 uppercase tracking-wider">{currentTier.name}</span>
+                    <span className="font-bold text-[#F5B942]">
+                      {tierProgress.nextName === 'MAX TIER' ? 'MAX TIER REACHED' : `${tierProgress.needed} ELO TO ${tierProgress.nextName}`}
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full bg-[#121A2E] rounded-full overflow-hidden border border-[#1C2842]">
+                    <div
+                      className="h-full transition-all duration-500 rounded-full"
+                      style={{
+                        width: `${tierProgress.pct}%`,
+                        background: 'linear-gradient(90deg, var(--c-blue), var(--c-gold))',
+                      }}
+                    />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Right: Big Elo Display & Single Streak Card */}
+            <div className="flex items-center gap-6 shrink-0 w-full lg:w-auto justify-between lg:justify-end border-t lg:border-t-0 border-[#1C2842] pt-4 lg:pt-0">
+
+              {/* Big ELO Box */}
+              <div className="space-y-1">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Rating Dossier</p>
+                <div className="flex items-baseline gap-2">
+                  <AnimatedCounter
+                    value={elo}
+                    className="font-display font-black text-4xl sm:text-5xl tracking-tight"
+                    style={{ color: currentTier.col }}
+                  />
+                  <span className="font-mono text-xs text-slate-400">ELO</span>
+                </div>
+                {netChange !== 0 && (
+                  <div className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded"
+                    style={{
+                      background: netChange > 0 ? 'rgba(16,185,129,0.12)' : 'rgba(225,29,72,0.12)',
+                      color: netChange > 0 ? 'var(--c-green)' : 'var(--c-red)',
+                      border: `1px solid ${netChange > 0 ? 'rgba(16,185,129,0.3)' : 'rgba(225,29,72,0.3)'}`
+                    }}>
+                    {netChange > 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                    <span>{netChange > 0 ? `+${netChange}` : netChange} TOTAL</span>
                   </div>
                 )}
+              </div>
 
-                {/* Rank badge — uses the same getRankTier as the chart */}
-                {(() => {
-                  const t = getRankTier(elo)
-                  return (
-                    <span
-                      className="font-mono text-[11px] px-2 py-0.5 font-bold uppercase"
-                      style={{
-                        background: `${t.bg}`,
-                        color: t.text,
-                        border: `1px solid ${t.border}`,
-                        borderRadius: 3,
-                      }}
-                    >
-                      {t.name}
-                    </span>
-                  )
-                })()}
-                <span className="font-mono text-[11px]" style={{ color: '#374151' }}>
-                  joined {new Date(activeUser?.created_at ?? Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                </span>
+              {/* Single Streak Card */}
+              <div
+                className="p-3.5 rounded flex items-center gap-3 shrink-0 border"
+                style={{
+                  background: 'rgba(245, 185, 66, 0.06)',
+                  borderColor: 'rgba(245, 185, 66, 0.25)',
+                  boxShadow: '0 0 16px rgba(245, 185, 66, 0.1)'
+                }}
+              >
+                <Flame size={28} className="text-[#F5B942]" />
+                <div>
+                  <p className="font-display font-black text-2xl leading-none text-[#F5B942]">{streak}</p>
+                  <p className="font-mono text-[9px] uppercase tracking-widest text-slate-400 mt-0.5">Day Streak</p>
+                </div>
               </div>
-              {handleErr && <p className="font-mono text-xs text-[#f43f5e] mb-1">{handleErr}</p>}
-              {/* Big Elo number — colored with rank tier */}
-              <div className="flex items-baseline gap-2">
-                <span className="font-display font-black text-5xl" style={{ color: getRankTier(elo).text }}>{elo}</span>
-                <span className="font-mono text-sm" style={{ color: '#4b5563' }}>elo</span>
-                <span className="font-mono text-sm font-bold" style={{ color: netChange >= 0 ? '#10b981' : '#f43f5e' }}>
-                  {netChange >= 0 ? `+${netChange}` : netChange} total
-                </span>
-              </div>
+
             </div>
 
-            {/* Streak pill */}
-            <div className="flex items-center gap-3 px-5 py-3"
-              style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: 4 }}>
-              <span className="text-2xl">{streak >= 7 ? '🔥' : streak >= 3 ? '⚡' : '✦'}</span>
-              <div>
-                <p className="font-display font-black text-2xl leading-none" style={{ color: '#f97316' }}>{streak}</p>
-                <p className="font-mono text-[10px]" style={{ color: '#4b5563' }}>day streak</p>
-              </div>
-            </div>
           </div>
-        </div>
-      </div>
+        </HudPanel>
 
-      {/* ── CONTENT ───────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 space-y-8">
+        {/* ── 2. STAT STRIP (6 Stats) ────────────────────────── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
 
-        {/* Stat grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <StatCard label="rating" value={elo} sub={`peak ${peakElo}`} color={getRankTier(elo).text} subColor="#64748b" />
-          <StatCard label="wins" value={wins} sub={`${wr}% win rate`} color="#22d3ee" subColor="rgba(34,211,238,0.7)" />
-          <StatCard label="losses" value={losses} sub={`${total} total`} color="#f43f5e" subColor="rgba(244,63,94,0.7)" />
-          <StatCard label="streak" value={`${streak}d`} sub="active days" color="#f97316" subColor="rgba(249,115,22,0.7)" />
-          <StatCard label="matches" value={total} sub="battles" color="#a78bfa" subColor="rgba(167,139,250,0.7)" />
-          <StatCard label="fav topic" value={favTopic.split('-')[0]} sub={favTopic} color="#fbbf24" subColor="rgba(251,191,36,0.7)" />
-        </div>
+          {/* 1. Rating */}
+          <HudPanel className="p-4 space-y-1.5 transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="font-mono text-[10px] uppercase tracking-wider">Rating</span>
+              <Trophy size={14} style={{ color: currentTier.col }} />
+            </div>
+            <p className="font-display font-black text-2xl sm:text-3xl" style={{ color: currentTier.col }}>{elo}</p>
+            <p className="font-mono text-[10px] text-slate-400">Peak {peakElo}</p>
+          </HudPanel>
 
-        {/* Elo chart */}
-        <div style={{ background: '#090b13', border: '1px solid #1e2130', borderRadius: 4, overflow: 'hidden' }}>
-          <div className="flex items-center justify-between px-5 py-3"
-            style={{ borderBottom: '1px solid #1e2130', background: '#07080c' }}>
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: '#4b5563', letterSpacing: '0.12em' }}>
-                // rating history
+          {/* 2. Wins */}
+          <HudPanel className="p-4 space-y-1.5 transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="font-mono text-[10px] uppercase tracking-wider">Wins</span>
+              <Swords size={14} className="text-[#10b981]" />
+            </div>
+            <p className="font-display font-black text-2xl sm:text-3xl text-[#10b981]">{wins}</p>
+            <p className="font-mono text-[10px] text-slate-400">{wr}% Win Rate</p>
+          </HudPanel>
+
+          {/* 3. Losses */}
+          <HudPanel className="p-4 space-y-1.5 transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="font-mono text-[10px] uppercase tracking-wider">Losses</span>
+              <Shield size={14} className="text-[#E11D48]" />
+            </div>
+            <p className="font-display font-black text-2xl sm:text-3xl text-[#E11D48]">{losses}</p>
+            <p className="font-mono text-[10px] text-slate-400">{total} Battles</p>
+          </HudPanel>
+
+          {/* 4. Win Rate */}
+          <HudPanel className="p-4 space-y-1.5 transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="font-mono text-[10px] uppercase tracking-wider">Win Rate</span>
+              <Target size={14} className="text-[#38BDF8]" />
+            </div>
+            <p className="font-display font-black text-2xl sm:text-3xl text-[#38BDF8]">{wr}%</p>
+            <p className="font-mono text-[10px] text-slate-400">{wins}W - {losses}L</p>
+          </HudPanel>
+
+          {/* 5. Streak */}
+          <HudPanel className="p-4 space-y-1.5 transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="font-mono text-[10px] uppercase tracking-wider">Streak</span>
+              <Flame size={14} className="text-[#F5B942]" />
+            </div>
+            <p className="font-display font-black text-2xl sm:text-3xl text-[#F5B942]">{streak}d</p>
+            <p className="font-mono text-[10px] text-slate-400">Active Streak</p>
+          </HudPanel>
+
+          {/* 6. Favorite Topic */}
+          <HudPanel className="p-4 space-y-1.5 transition-transform hover:-translate-y-0.5 min-w-0">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="font-mono text-[10px] uppercase tracking-wider truncate">Fav Topic</span>
+              <Zap size={14} className="text-[#38BDF8] shrink-0" />
+            </div>
+            <Tooltip content={favTopicTitle}>
+              <p className="font-display font-black text-lg sm:text-xl text-[#38BDF8] truncate uppercase">
+                {favTopicTitle}
               </p>
-              <p className="font-mono text-[11px] mt-0.5" style={{ color: '#374151' }}>real elo progression</p>
+            </Tooltip>
+            <p className="font-mono text-[10px] text-slate-400">{favTopicCount} Battles</p>
+          </HudPanel>
+
+        </div>
+
+        {/* ── 3. RATING HISTORY (CHART) ──────────────────────── */}
+        <HudPanel className="overflow-hidden">
+          <div className="px-5 py-3 border-b border-[#1C2842] bg-[#0B1120] flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[#38BDF8]">
+                // RATING HISTORY
+              </p>
+              <h2 className="font-display font-bold text-lg text-white uppercase tracking-wide">
+                ELOWAVE PROGRESSION
+              </h2>
             </div>
-            <div className="flex items-center gap-4 text-right">
-              <div>
-                <p className="font-mono text-[10px]" style={{ color: '#4b5563' }}>peak</p>
-                <p className="font-mono text-sm font-bold" style={{ color: getRankTier(peakElo).text }}>{peakElo}</p>
-              </div>
-              <div>
-                <p className="font-mono text-[10px]" style={{ color: '#4b5563' }}>current</p>
-                <p className="font-mono text-sm font-bold" style={{ color: getRankTier(elo).text }}>{elo}</p>
-              </div>
+            <div className="flex items-center gap-3">
+              <StatBadge label="PEAK" value={peakElo} color="var(--c-gold)" />
+              <StatBadge label="CURRENT" value={elo} color="var(--c-blue)" />
             </div>
           </div>
-          <div className="px-5 py-5">
+          <div className="p-5">
             <EloChart data={chartData} username={activeUser?.username} />
           </div>
-        </div>
+        </HudPanel>
 
-        {/* Bottom grid — streak calendar + match history */}
-        <div className="grid lg:grid-cols-[1fr_380px] gap-6">
+        {/* ── 4 & 5. BOTTOM GRID: MATCH HISTORY + ACTIVITY & TOPICS ── */}
+        <div className="grid lg:grid-cols-[1fr_360px] gap-6">
 
-          {/* Match history */}
-          <div style={{ background: '#090b13', border: '1px solid #1e2130', borderRadius: 4, overflow: 'hidden' }}>
-            <div className="px-4 py-3 flex items-center justify-between"
-              style={{ borderBottom: '1px solid #1e2130', background: '#07080c' }}>
-              <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: '#4b5563', letterSpacing: '0.12em' }}>
-                // match history
-              </p>
-              <span className="font-mono text-[10px]" style={{ color: '#374151' }}>{matches.length} matches</span>
+          {/* Left Column: Match History */}
+          <HudPanel className="overflow-hidden flex flex-col">
+            <div className="px-5 py-3 border-b border-[#1C2842] bg-[#0B1120] flex items-center justify-between">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-[#38BDF8]">
+                  // MATCH HISTORY
+                </p>
+                <h3 className="font-display font-bold text-base text-white uppercase tracking-wide">
+                  RECENT DUELS
+                </h3>
+              </div>
+              <span className="font-mono text-[10px] text-slate-400">
+                {matches.length} Battles
+              </span>
             </div>
 
-            {dataLoading ? (
-              <div className="p-8 text-center">
-                <p className="font-mono text-xs" style={{ color: '#4b5563' }}>loading match history...</p>
-              </div>
-            ) : matches.length === 0 ? (
-              <div className="p-12 text-center space-y-3">
-                <p className="font-mono text-sm" style={{ color: '#6b7280' }}>No match history yet.</p>
-                <button
-                  onClick={() => navigate('/lobby')}
-                  className="font-mono text-xs px-4 py-2 font-bold transition-all"
-                  style={{ background: '#f97316', color: '#07080c', borderRadius: 4 }}
-                >
-                  find_match() →
-                </button>
+            {matches.length === 0 ? (
+              <div className="p-10 text-center">
+                <EmptyState
+                  icon={Swords}
+                  title="No battles yet"
+                  subtitle="Enter the arena to earn your first Elo rating."
+                  action={
+                    <HudButton onClick={() => navigate('/lobby')} className="mt-3">
+                      Enter Arena
+                    </HudButton>
+                  }
+                />
               </div>
             ) : (
-              <>
-                <div className="flex items-center gap-3 px-4 py-2" style={{ borderBottom: '1px solid #1e2130' }}>
-                  {['result', 'opponent / topic', 'Δelo', 'date'].map(h => (
-                    <span key={h} className="font-mono text-[9px] uppercase" style={{
-                      color: '#374151',
-                      flex: h === 'opponent / topic' ? 1 : 0, width: h === 'result' ? 40 : h === 'Δelo' ? 48 : 70,
-                      textAlign: h === 'date' || h === 'Δelo' ? 'right' : undefined
-                    }}>
-                      {h}
-                    </span>
+              <div className="flex-1 flex flex-col min-h-0">
+                {/* Header Row */}
+                <div className="flex items-center gap-3 px-4 py-2 border-b border-[#1C2842] bg-[#05070F] font-mono text-[9px] uppercase tracking-wider text-slate-400">
+                  <span className="w-24 shrink-0">Result</span>
+                  <span className="flex-1 min-w-0">Opponent</span>
+                  <span className="hidden md:block flex-1 min-w-0">Topic & Diff</span>
+                  <span className="w-16 text-right shrink-0">Elo Change</span>
+                  <span className="w-16 text-right shrink-0">Date</span>
+                </div>
+                {/* List Container */}
+                <div className="max-h-[420px] overflow-y-auto">
+                  {matches.map((m) => (
+                    <MatchRow key={m.id || m._id || Math.random()} m={m} />
                   ))}
                 </div>
-                <div style={{ maxHeight: 380, overflowY: 'auto' }}>
-                  {matches.map(m => <MatchRow key={m.id} m={m} />)}
-                </div>
-              </>
+              </div>
             )}
-          </div>
+          </HudPanel>
 
-          {/* Activity / Streak calendar */}
-          <div style={{ background: '#090b13', border: '1px solid #1e2130', borderRadius: 4, overflow: 'hidden' }}>
-            <div className="px-4 py-3" style={{ borderBottom: '1px solid #1e2130', background: '#07080c' }}>
-              <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: '#4b5563', letterSpacing: '0.12em' }}>
-                // activity — last 30 days
-              </p>
-            </div>
-            <div className="px-4 py-5 space-y-5">
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl">{streak >= 7 ? '🔥' : streak >= 3 ? '⚡' : '✦'}</span>
-                <span className="font-display font-black text-5xl" style={{ color: '#f97316' }}>{streak}</span>
-                <span className="font-mono text-sm" style={{ color: '#4b5563' }}>day streak</span>
+          {/* Right Column: Activity Heatmap + Topic Breakdown */}
+          <div className="space-y-6">
+
+            {/* Activity Heatmap */}
+            <HudPanel className="p-5 space-y-4">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-[#38BDF8]">
+                  // COMBAT ACTIVITY
+                </p>
+                <h3 className="font-display font-bold text-base text-white uppercase tracking-wide">
+                  30-DAY COMBAT HEATMAP
+                </h3>
               </div>
 
               <StreakCalendar history={activeDates} matches={matches} />
 
-              <div className="flex items-center gap-4 pt-2" style={{ borderTop: '1px solid #1e2130' }}>
-                {[
-                  { col: '#f97316', lbl: 'today' },
-                  { col: 'rgba(249,115,22,0.5)', lbl: 'active' },
-                  { col: '#0d0f17', lbl: 'missed' },
-                ].map(l => (
-                  <div key={l.lbl} className="flex items-center gap-1.5">
-                    <div style={{ width: 10, height: 10, borderRadius: 2, background: l.col, border: '1px solid rgba(249,115,22,0.2)', flexShrink: 0 }} />
-                    <span className="font-mono text-[9px]" style={{ color: '#374151' }}>{l.lbl}</span>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between pt-2 border-t border-[#1C2842] font-mono text-[10px] text-slate-400">
+                <span>Active Days: <strong className="text-white">{activeDates.size}</strong></span>
+                <span>Streak: <strong className="text-[#F5B942]">{streak}d</strong></span>
+              </div>
+            </HudPanel>
+
+            {/* Topic Breakdown */}
+            <HudPanel className="p-5 space-y-4">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-[#38BDF8]">
+                  // TOPIC BREAKDOWN
+                </p>
+                <h3 className="font-display font-bold text-base text-white uppercase tracking-wide">
+                  MASTERY BY CATEGORY
+                </h3>
               </div>
 
-              {/* Topic breakdown from real matches */}
-              <div style={{ borderTop: '1px solid #1e2130', paddingTop: '1rem' }}>
-                <p className="font-mono text-[10px] uppercase tracking-widest mb-3" style={{ color: '#4b5563', letterSpacing: '0.12em' }}>
-                  // topic breakdown
+              {Object.keys(topicFreq).length === 0 ? (
+                <p className="font-mono text-xs text-slate-400 py-4 text-center">
+                  No match data recorded yet.
                 </p>
-                {Object.keys(topicFreq).length === 0 ? (
-                  <p className="font-mono text-[10px]" style={{ color: '#374151' }}>no matches played yet</p>
-                ) : (
-                  <div className="space-y-2">
-                    {Object.entries(topicFreq)
-                      .sort((a, b) => b[1] - a[1])
-                      .slice(0, 5)
-                      .map(([topic, count]) => (
-                        <div key={topic}>
-                          <div className="flex justify-between mb-1">
-                            <span className="font-mono text-[10px]" style={{ color: '#9ca3af' }}>{topic}</span>
-                            <span className="font-mono text-[10px]" style={{ color: '#4b5563' }}>{count}</span>
+              ) : (
+                <div className="space-y-3">
+                  {Object.entries(topicFreq)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5)
+                    .map(([topKey, count], idx) => {
+                      const title = topKey.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                      const isTop = idx === 0
+                      const pct = Math.round((count / matches.length) * 100)
+
+                      return (
+                        <div key={topKey} className="space-y-1">
+                          <div className="flex items-center justify-between font-mono text-xs">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`font-bold ${isTop ? 'text-[#F5B942]' : 'text-slate-200'}`}>
+                                {title}
+                              </span>
+                              {isTop && (
+                                <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-[#F5B942]/10 border border-[#F5B942]/30 text-[#F5B942]">
+                                  MOST PLAYED
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-slate-400 text-[10px]">{count} battles</span>
                           </div>
-                          <div style={{ height: 3, background: '#0d0f17', borderRadius: 2 }}>
-                            <div style={{ height: 3, width: `${(count / matches.length) * 100}%`, background: '#f97316', borderRadius: 2, transition: 'width 0.5s ease' }} />
+                          <div className="h-1.5 w-full bg-[#05070F] rounded overflow-hidden border border-[#1C2842]">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${pct}%` }}
+                              transition={{ duration: 0.6, delay: idx * 0.1 }}
+                              className="h-full rounded"
+                              style={{
+                                background: isTop
+                                  ? 'linear-gradient(90deg, #F5B942, #f97316)'
+                                  : 'linear-gradient(90deg, var(--c-red), var(--c-blue))',
+                              }}
+                            />
                           </div>
                         </div>
-                      ))}
-                  </div>
-                )}
-              </div>
-            </div>
+                      )
+                    })}
+                </div>
+              )}
+            </HudPanel>
+
           </div>
+
         </div>
+
       </div>
 
-      {/* Avatar Selector Modal */}
+      {/* Avatar Modal */}
       {isMe && (
         <AvatarSelectorModal
           isOpen={showAvatarModal}
@@ -1153,6 +1388,6 @@ export default function Profile() {
           onSave={handleSaveAvatar}
         />
       )}
-    </div>
+    </PageWrapper>
   )
 }

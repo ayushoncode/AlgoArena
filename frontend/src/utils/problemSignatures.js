@@ -571,6 +571,21 @@ const CANONICAL_SIGNATURES = {
     ret: TYPE_INT,
     isTree: true,
   },
+  'lowest common ancestor of bst': {
+    params: [{ name: 'root', ...TYPE_TREE }, { name: 'p', ...TYPE_TREE }, { name: 'q', ...TYPE_TREE }],
+    ret: TYPE_TREE,
+    isTree: true,
+  },
+  'lowest common ancestor of a binary search tree': {
+    params: [{ name: 'root', ...TYPE_TREE }, { name: 'p', ...TYPE_TREE }, { name: 'q', ...TYPE_TREE }],
+    ret: TYPE_TREE,
+    isTree: true,
+  },
+  'lowest common ancestor of a binary tree': {
+    params: [{ name: 'root', ...TYPE_TREE }, { name: 'p', ...TYPE_TREE }, { name: 'q', ...TYPE_TREE }],
+    ret: TYPE_TREE,
+    isTree: true,
+  },
   'surrounded regions': {
     params: [{ name: 'board', ...TYPE_CHAR_MATRIX }],
     ret: TYPE_VOID,
@@ -845,8 +860,15 @@ function inferParamInfo(token, index, total, title = '', topic = '') {
   const lowerTitle = (title || '').toLowerCase()
   const lowerTopic = (topic || '').toLowerCase()
 
-  const isTree = lowerTopic.includes('tree') || lowerTitle.includes('tree') || lowerTitle.includes('bst')
+  const isTree = lowerTopic.includes('tree') || lowerTitle.includes('tree') || lowerTitle.includes('bst') || lowerTitle.includes('ancestor')
   const isList = lowerTopic.includes('linked') || lowerTitle.includes('linked')
+
+  // Lowest Common Ancestor / LCA special case
+  if (lowerTitle.includes('ancestor') || lowerTitle.includes('lca')) {
+    if (index === 0) return { name: 'root', ...TYPE_TREE }
+    if (index === 1) return { name: 'p', ...TYPE_TREE }
+    if (index === 2) return { name: 'q', ...TYPE_TREE }
+  }
 
   // Matrix
   if (t.startsWith('[[')) {

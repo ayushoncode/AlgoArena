@@ -1,12 +1,12 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './hooks/useAuth'
 import Navbar from './components/Navbar'
-import Home        from './pages/Home'
-import Lobby       from './pages/Lobby'
-import Match       from './pages/Match'
-import Result      from './pages/Result'
-import Profile     from './pages/Profile'
+import Home from './pages/Home'
+import Lobby from './pages/Lobby'
+import Match from './pages/Match'
+import Result from './pages/Result'
+import Profile from './pages/Profile'
 import Leaderboard from './pages/Leaderboard'
 
 /**
@@ -19,23 +19,34 @@ function RootRoute() {
   return isAuthenticated ? <Navigate to="/lobby" replace /> : <Home />
 }
 
+function AppLayout() {
+  const { pathname } = useLocation()
+  const isMatchPage = pathname.startsWith('/match')
+
+  return (
+    <>
+      {!isMatchPage && <Navbar />}
+      {/* Remove pt-14 padding and use h-screen on match pages to maximize IDE height */}
+      <main className={isMatchPage ? "h-screen w-screen overflow-hidden" : "pt-14 min-h-screen"}>
+        <Routes>
+          <Route path="/" element={<RootRoute />} />
+          <Route path="/lobby" element={<Lobby />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/match/:roomId" element={<Match />} />
+          <Route path="/result" element={<Result />} />
+        </Routes>
+      </main>
+    </>
+  )
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Navbar />
-        {/* pt-14 offsets the fixed navbar height */}
-        <main className="pt-14 min-h-screen">
-          <Routes>
-            <Route path="/"              element={<RootRoute    />} />
-            <Route path="/lobby"         element={<Lobby        />} />
-            <Route path="/profile"           element={<Profile      />} />
-            <Route path="/profile/:username" element={<Profile      />} />
-            <Route path="/leaderboard"   element={<Leaderboard  />} />
-            <Route path="/match/:roomId" element={<Match        />} />
-            <Route path="/result"        element={<Result       />} />
-          </Routes>
-        </main>
+        <AppLayout />
       </BrowserRouter>
     </AuthProvider>
   )
