@@ -1,2 +1,5 @@
 ALTER TABLE users ADD COLUMN IF NOT EXISTS institute VARCHAR(255);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS institute_locked BOOLEAN DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS firebase_uid VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_username_set BOOLEAN DEFAULT true;
+CREATE INDEX IF NOT EXISTS idx_users_firebase_uid ON users (firebase_uid);

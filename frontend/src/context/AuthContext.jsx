@@ -64,6 +64,27 @@ export function AuthProvider({ children }) {
     initSession()
   }, [])
 
+  // ── Sync Auth State across multiple tabs in the same browser ──
+  useEffect(() => {
+    function handleStorageChange(e) {
+      if (e.key === 'aa_user' || e.key === 'aa_token') {
+        const token = localStorage.getItem('aa_token')
+        const stored = localStorage.getItem('aa_user')
+        if (token && stored) {
+          try {
+            setUser({ ...JSON.parse(stored), token })
+          } catch {
+            setUser(null)
+          }
+        } else {
+          setUser(null)
+        }
+      }
+    }
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
+
   /** Called after successful /login or /register response */
   const login = useCallback(({ token, user: userData }) => {
     const full = { ...userData, token }
