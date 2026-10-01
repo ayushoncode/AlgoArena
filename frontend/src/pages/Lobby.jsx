@@ -828,17 +828,20 @@ export default function Lobby() {
     api.get('/api/problems/daily').then(({ data }) => setDailyProblem(data)).catch(() => { })
   }, [])
 
-  if (loading) return (
-    <PageWrapper>
-      <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 rounded-full animate-ping" style={{ background: 'var(--c-red)', opacity: 0.6 }} />
-          <p className="font-mono text-sm" style={{ color: 'var(--c-text-mute)' }}>Loading Command Center…</p>
+  if (loading || !isAuthenticated) {
+    return (
+      <PageWrapper heroGlow>
+        <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 rounded-full animate-ping" style={{ background: 'var(--c-red)', opacity: 0.6 }} />
+            <p className="font-mono text-sm tracking-wider uppercase" style={{ color: 'var(--c-text-mute)' }}>
+              {loading ? 'Initializing Command Center…' : 'Redirecting to Login…'}
+            </p>
+          </div>
         </div>
-      </div>
-    </PageWrapper>
-  )
-  if (!isAuthenticated) return null
+      </PageWrapper>
+    )
+  }
 
   const elo = user?.elo_rating ?? 1200
   const userTier = getArenaTier(elo)
