@@ -26,15 +26,21 @@ router.get('/stats', async (_req, res) => {
 })
 
 // GET /api/users/leaderboard — top 20 by Elo (public)
-router.get('/leaderboard', async (_req, res) => {
+router.get('/leaderboard', async (req, res) => {
   try {
-    const { rows } = await db.query(
-      `SELECT id, username, elo_rating, wins, losses, avatar_seed, avatar_style,
-              RANK() OVER (ORDER BY elo_rating DESC) AS rank
-       FROM users
-       ORDER BY elo_rating DESC
-       LIMIT 20`
-    )
+    const instituteFilter = req.query.institute ? String(req.query.institute).trim() : null;
+    let query = `
+      SELECT id, username, elo_rating, wins, losses, avatar_seed, avatar_style, institute,
+             RANK() OVER (ORDER BY elo_rating DESC) AS rank
+      FROM users
+    `;
+    const params = [];
+    if (instituteFilter) {
+      query += ` WHERE institute ILIKE $1`;
+      params.push(`%${instituteFilter}%`);
+    }
+    query += ` ORDER BY elo_rating DESC LIMIT 20`;
+    const { rows } = await db.query(query, params);
     return res.json(rows)
   } catch (err) {
     console.error('[GET /users/leaderboard]', err)
@@ -46,7 +52,7 @@ router.get('/leaderboard', async (_req, res) => {
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const { rows } = await db.query(
-      `SELECT id, username, email, elo_rating, wins, losses, is_username_set, avatar_seed, avatar_style, created_at
+      `SELECT id, username, email, elo_rating, wins, losses, is_username_set, avatar_seed, avatar_style, institute, institute_locked, created_at
        FROM users WHERE id = $1`,
       [req.user.id]
     )
@@ -164,6 +170,27 @@ router.get('/me/elo-history', authMiddleware, async (req, res) => {
   }
 })
 
+// GET /api/users/check-username?username=xyz — live username availability check
+router.get('/check-username', authMiddleware, async (req, res) => {
+  try {
+    const username = String(req.query.username || '').trim().toLowerCase()
+    if (!username || !/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
+      return res.json({ available: false, message: 'Username must be 3–30 chars (letters, numbers, underscore)' })
+    }
+    const { rows } = await db.query(
+      `SELECT id FROM users WHERE LOWER(username) = $1 AND id != $2`,
+      [username, req.user.id]
+    )
+    if (rows.length > 0) {
+      return res.json({ available: false, message: 'This username is already taken' })
+    }
+    return res.json({ available: true, message: 'Username is available!' })
+  } catch (err) {
+    console.error('[GET /users/check-username]', err)
+    return res.status(500).json({ available: false, message: 'Error checking username' })
+  }
+})
+
 // PATCH /api/users/me/username — one-time initial handle setup (cannot be changed once set)
 router.patch('/me/username', authMiddleware, async (req, res) => {
   try {
@@ -223,6 +250,42 @@ router.patch('/me/username', authMiddleware, async (req, res) => {
   }
 })
 
+// PATCH /api/users/me/institute — one-time initial institute setup
+router.patch('/me/institute', authMiddleware, async (req, res) => {
+  try {
+    const { institute } = req.body
+    if (!institute) {
+      return res.status(400).json({ message: 'Institute is required' })
+    }
+
+    const cleanInstitute = String(institute).trim()
+
+    // Check if user already locked their institute
+    const { rows: userCheck } = await db.query(
+      `SELECT institute_locked FROM users WHERE id = $1`,
+      [req.user.id]
+    )
+    if (userCheck[0]?.institute_locked) {
+      return res.status(403).json({ message: 'Your institute is permanently fixed and cannot be changed.' })
+    }
+
+    const { rows: updated } = await db.query(
+      `UPDATE users SET institute = $1, institute_locked = TRUE WHERE id = $2
+       RETURNING id, username, email, elo_rating, wins, losses, is_username_set, avatar_seed, avatar_style, institute, institute_locked, created_at`,
+      [cleanInstitute, req.user.id]
+    )
+
+    if (!updated.length) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    return res.status(200).json({ message: 'Institute permanently set', user: updated[0] })
+  } catch (err) {
+    console.error('[PATCH /users/me/institute]', err)
+    return res.status(500).json({ message: 'Failed to set institute' })
+  }
+})
+
 // PATCH /api/users/me/avatar — update avatar seed and style
 router.patch('/me/avatar', authMiddleware, async (req, res) => {
   try {
@@ -256,11 +319,11 @@ router.get('/search', async (req, res) => {
     if (!q || q.length < 1) return res.json([])
     const { rows } = await db.query(
       `WITH ranked_users AS (
-         SELECT id, username, elo_rating, wins, losses, avatar_seed, avatar_style,
+         SELECT id, username, elo_rating, wins, losses, avatar_seed, avatar_style, institute,
                 RANK() OVER (ORDER BY elo_rating DESC, id ASC) AS rank
          FROM users
        )
-       SELECT username, elo_rating, wins, losses, avatar_seed, avatar_style, rank
+       SELECT username, elo_rating, wins, losses, avatar_seed, avatar_style, institute, rank
        FROM ranked_users
        WHERE LOWER(username) LIKE $1
        ORDER BY elo_rating DESC
@@ -281,7 +344,7 @@ router.get('/:username/profile', async (req, res) => {
     const { rows } = await db.query(
       `WITH ranked_users AS (
          SELECT u.id, u.username, u.elo_rating, u.wins, u.losses, u.created_at, u.is_username_set,
-                u.avatar_seed, u.avatar_style,
+                u.avatar_seed, u.avatar_style, u.institute,
                 RANK() OVER (ORDER BY u.elo_rating DESC, u.id ASC) AS rank
          FROM users u
        )

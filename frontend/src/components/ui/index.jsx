@@ -19,7 +19,8 @@ export const ARENA_TIERS = [
   { name: 'Operative', min: 1200, max: 1399, col: '#10b981', bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.3)',  glow: 'rgba(16,185,129,0.25)',  icon: Zap     },
   { name: 'Vanguard',  min: 1400, max: 1599, col: '#38BDF8', bg: 'rgba(56,189,248,0.12)',  border: 'rgba(56,189,248,0.3)',  glow: 'rgba(56,189,248,0.25)',  icon: Star    },
   { name: 'Champion',  min: 1600, max: 1799, col: '#818cf8', bg: 'rgba(129,140,248,0.14)', border: 'rgba(129,140,248,0.35)',glow: 'rgba(129,140,248,0.3)',  icon: Crown   },
-  { name: 'Legend',    min: 1800, max: 9999, col: '#F5B942', bg: 'rgba(245,185,66,0.14)',  border: 'rgba(245,185,66,0.35)', glow: 'rgba(245,185,66,0.35)',  icon: Trophy  },
+  { name: 'Legend',    min: 1800, max: 2199, col: '#c084fc', bg: 'rgba(192,132,252,0.14)', border: 'rgba(192,132,252,0.35)',glow: 'rgba(192,132,252,0.3)',  icon: Trophy  },
+  { name: 'Bihari',    min: 2200, max: 9999, col: '#F5B942', bg: 'rgba(245,185,66,0.14)',  border: 'rgba(245,185,66,0.35)', glow: 'rgba(245,185,66,0.35)',  icon: Crown   },
 ]
 
 export function getArenaTier(elo) {

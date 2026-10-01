@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS users (
   elo_rating  INTEGER     NOT NULL DEFAULT 1200,
   wins        INTEGER     NOT NULL DEFAULT 0,
   losses      INTEGER     NOT NULL DEFAULT 0,
+  institute   VARCHAR(255),
+  institute_locked BOOLEAN NOT NULL DEFAULT false,
   created_at  TIMESTAMP   NOT NULL DEFAULT NOW()
 );
 

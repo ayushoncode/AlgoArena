@@ -396,48 +396,66 @@ function registerMatch(io) {
       })
 
       // ── Real Code Judge Evaluation ───────────────────────
-      const judgeResult = await evaluateSubmission(targetProblemId, code, language, {
-        onProgress: (tr) => {
-          io.to(roomId).emit('submission_progress', {
-            userId,
-            username,
-            testIndex: tr.testIndex,
-            passed: tr.passed,
-            totalTests: tr.totalTests,
-          })
+      const { isQueueActive, submissionQueue } = require('../queues/submission')
+      let verdict, judgeResult
+
+      if (isQueueActive()) {
+        let submissionId = null
+        if (match.dbMatchId && targetProblemId) {
+          try {
+            const { rows } = await db.query(
+              `INSERT INTO submissions (match_id, user_id, problem_id, code, language, status)
+               VALUES ($1, $2, $3, $4, $5, 'queued') RETURNING id`,
+              [match.dbMatchId, userId, targetProblemId, code, language]
+            )
+            submissionId = rows[0].id
+          } catch (dbErr) {
+            console.error('[DB] Failed to insert queued submission:', dbErr.message)
+          }
         }
-      })
-      const verdict = judgeResult.verdict
-      if (!match.submissions) match.submissions = new Map()
-      match.submissions.set(userId, verdict)
+        await submissionQueue.add('submission', {
+          submissionId, matchId: match.dbMatchId, roomId, userId, username, problemId: targetProblemId, code, language
+        })
+        console.log(`[Match] queued submission user=${username} room=${roomId}`)
 
-      // Resolve evaluation promise
-      evalResolver({ verdict, judgeResult })
+        // Wait for worker to evaluate and publish verdict to Redis pub/sub
+        const res = await evalPromise
+        verdict = res.verdict
+        judgeResult = res.judgeResult
+      } else {
+        judgeResult = await evaluateSubmission(targetProblemId, code, language, {
+          onProgress: (tr) => {
+            io.to(roomId).emit('submission_progress', {
+              userId, username, testIndex: tr.testIndex, passed: tr.passed, totalTests: tr.totalTests,
+            })
+          }
+        })
+        verdict = judgeResult.verdict
+        evalResolver({ verdict, judgeResult })
 
-      console.log(`[Match] verdict user=${username} verdict=${verdict} (${judgeResult.passedTests}/${judgeResult.totalTests} tests) room=${roomId}`)
-
-      // ── Save submission to DB ─────────────────────────────
-      if (match.dbMatchId && targetProblemId) {
-        try {
-          await db.query(
-            `INSERT INTO submissions (match_id, user_id, problem_id, code, language, status, verdict, runtime_ms)
-             VALUES ($1, $2, $3, $4, $5, 'done', $6, $7)`,
-            [match.dbMatchId, userId, targetProblemId, code, language, verdict, judgeResult.runtimeMs]
-          )
-        } catch (dbErr) {
-          console.error('[DB] Failed to insert submission:', dbErr.message)
+        // Save submission to DB inline
+        if (match.dbMatchId && targetProblemId) {
+          try {
+            await db.query(
+              `INSERT INTO submissions (match_id, user_id, problem_id, code, language, status, verdict, runtime_ms)
+               VALUES ($1, $2, $3, $4, $5, 'done', $6, $7)`,
+              [match.dbMatchId, userId, targetProblemId, code, language, verdict, judgeResult.runtimeMs]
+            )
+          } catch (dbErr) {
+            console.error('[DB] Failed to insert inline submission:', dbErr.message)
+          }
         }
       }
 
+      if (!match.submissions) match.submissions = new Map()
+      match.submissions.set(userId, verdict)
+
+      console.log(`[Match] verdict user=${username} verdict=${verdict} (${judgeResult.passedTests}/${judgeResult.totalTests} tests) room=${roomId}`)
+
       // Broadcast verdict & test case details to room
       io.to(roomId).emit('submission_result', {
-        userId,
-        username,
-        verdict,
-        totalTests: judgeResult.totalTests,
-        passedTests: judgeResult.passedTests,
-        testResults: judgeResult.testResults,
-        runtimeMs: judgeResult.runtimeMs,
+        userId, username, verdict, totalTests: judgeResult.totalTests, passedTests: judgeResult.passedTests,
+        testResults: judgeResult.testResults, runtimeMs: judgeResult.runtimeMs,
       })
 
       // ── If ACCEPTED → Win Resolution with Concurrency Protection ──
@@ -642,72 +660,15 @@ async function handleVerdict(payload, io) {
     return
   }
 
-  // Broadcast to the match room
-  io.to(roomId).emit('submission_result', {
-    userId,
-    username,
-    verdict,
-    totalTests,
-    passedTests,
-    testResults,
-    runtimeMs,
-  })
-
-  if (verdict === 'ACCEPTED') {
-    const match = activeMatches.get(roomId)
-    if (!match || match.isResolved) return
-    match.isResolved = true
-
-    const opponent = match?.players?.find(p => p.userId !== userId)
-
-    if (match?.disconnectTimers) {
-      for (const timer of match.disconnectTimers.values()) clearTimeout(timer)
-    }
-
-    const isCustom = match?.isCustom || String(roomId).includes('custom')
-    const difficulty = match?.difficulty || 'medium'
-    const solveTimeSec = Math.round((Date.now() - (match?.startedAt || Date.now())) / 1000)
-
-    const winnerInfo = { userId, username }
-    const loserInfo  = opponent ? { userId: opponent.userId, username: opponent.username, rating: opponent.rating } : null
-
-    const resolved = await resolveMatch({
-      dbMatchId: match?.dbMatchId,
-      winner: winnerInfo,
-      loser: loserInfo,
-      isCustom,
-      difficulty,
-      solveTimeSec,
+  // Find the match and resolve the evaluating promise so submit_code can resume
+  const match = activeMatches.get(roomId)
+  if (match && match.evaluating && match.evaluating.has(userId)) {
+    match.evaluating.get(userId).resolve({
+      verdict,
+      judgeResult: { totalTests, passedTests, testResults, runtimeMs }
     })
-
-    const endPayload = {
-      roomId,
-      topic: match?.topic,
-      difficulty,
-      isCustom,
-      winner: {
-        userId: winnerInfo.userId,
-        username: winnerInfo.username,
-        oldRating: resolved.winnerOldRating,
-        rating: resolved.winnerOldRating,
-        newRating: resolved.winnerNewRating,
-        delta: resolved.winnerDelta,
-      },
-      loser: loserInfo ? {
-        userId: loserInfo.userId,
-        username: loserInfo.username,
-        oldRating: resolved.loserOldRating,
-        rating: resolved.loserOldRating,
-        newRating: resolved.loserNewRating,
-        delta: resolved.loserDelta,
-      } : null,
-    }
-
-    match.matchEndPayload = endPayload
-    io.to(roomId).emit('match_end', endPayload)
-    setTimeout(() => {
-      if (activeMatches.get(roomId) === match) activeMatches.delete(roomId)
-    }, 60_000)
+  } else {
+    console.warn(`[Match] handleVerdict received for unknown/resolved evaluation room=${roomId} user=${username}`)
   }
 }
 

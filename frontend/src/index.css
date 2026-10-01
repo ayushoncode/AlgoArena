@@ -683,13 +683,13 @@
   box-shadow: 0 0 0 2px var(--c-red-glow);
 }
 
-/* ── Hero Hex Grid Background ─────────────────────────── */
+/* ── Hero Background — Red (Left) vs Blue (Right) Dual Energy ── */
 .hex-grid-bg {
-  background-image:
-    radial-gradient(ellipse 70% 60% at 20% 50%, rgba(225, 29, 72, 0.12), transparent 60%),
-    radial-gradient(ellipse 70% 60% at 80% 50%, rgba(56, 189, 248, 0.1), transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='70'%3E%3Cpath d='M30 5 L55 20 L55 50 L30 65 L5 50 L5 20 Z' fill='none' stroke='rgba(28,40,66,0.6)' stroke-width='0.5'/%3E%3C/svg%3E");
-  background-size: 100% 100%, 100% 100%, 60px 70px;
+  background:
+    radial-gradient(ellipse 75% 65% at 5% 45%, rgba(225, 29, 72, 0.22) 0%, transparent 70%),
+    radial-gradient(ellipse 75% 65% at 95% 45%, rgba(56, 189, 248, 0.22) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(225, 29, 72, 0.1) 0%, transparent 70%),
+    #05070F;
 }
 
 /* ── Scanlines overlay ─────────────────────────────────── */
@@ -706,12 +706,12 @@
   z-index: 1;
 }
 
-/* Vignette */
+/* vignette — soft edge fade only */
 .vignette::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(5, 7, 15, 0.65) 100%);
+  background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(5, 7, 15, 0.7) 100%);
   pointer-events: none;
   z-index: 2;
 }

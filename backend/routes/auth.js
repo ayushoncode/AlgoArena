@@ -173,7 +173,7 @@ router.post('/verify-otp', async (req, res) => {
 
     // Check if user exists
     const { rows: existing } = await db.query(
-      `SELECT id, username, email, elo_rating, wins, losses FROM users WHERE email = $1`,
+      `SELECT id, username, email, elo_rating, wins, losses, is_username_set, institute, institute_locked FROM users WHERE email = $1`,
       [cleanEmail]
     )
 
@@ -195,7 +195,7 @@ router.post('/verify-otp', async (req, res) => {
       const { rows: created } = await db.query(
         `INSERT INTO users (username, email, password, elo_rating, is_username_set)
          VALUES ($1, $2, $3, 1200, FALSE)
-         RETURNING id, username, email, elo_rating, wins, losses, is_username_set, created_at`,
+         RETURNING id, username, email, elo_rating, wins, losses, is_username_set, institute, institute_locked, created_at`,
         [chosenUsername, cleanEmail, dummyHash]
       )
       user = created[0]
@@ -243,7 +243,7 @@ router.post('/firebase', async (req, res) => {
 
     // Look up by firebase_uid or email
     const { rows: existing } = await db.query(
-      `SELECT id, username, email, elo_rating, wins, losses, firebase_uid, is_username_set
+      `SELECT id, username, email, elo_rating, wins, losses, firebase_uid, is_username_set, institute, institute_locked
        FROM users WHERE firebase_uid = $1 OR email = $2`,
       [firebaseUid, cleanEmail]
     )
@@ -264,7 +264,7 @@ router.post('/firebase', async (req, res) => {
       const { rows: created } = await db.query(
         `INSERT INTO users (username, email, password, firebase_uid, elo_rating, is_username_set)
          VALUES ($1, $2, $3, $4, 1200, FALSE)
-         RETURNING id, username, email, elo_rating, wins, losses, is_username_set, created_at`,
+         RETURNING id, username, email, elo_rating, wins, losses, is_username_set, institute, institute_locked, created_at`,
         [chosenUsername, cleanEmail, dummyHash, firebaseUid]
       )
       user = created[0]
@@ -319,7 +319,7 @@ router.post('/register', async (req, res) => {
     const { rows } = await db.query(
       `INSERT INTO users (username, email, password, is_username_set)
        VALUES ($1, $2, $3, TRUE)
-       RETURNING id, username, email, elo_rating, wins, losses, is_username_set, created_at`,
+       RETURNING id, username, email, elo_rating, wins, losses, is_username_set, institute, institute_locked, created_at`,
       [pending.username, cleanEmail, pending.passwordHash]
     )
     const user = rows[0]
@@ -346,7 +346,7 @@ router.post('/login', async (req, res) => {
     }
 
     const { rows } = await db.query(
-      `SELECT id, username, email, password, elo_rating, wins, losses, is_username_set
+      `SELECT id, username, email, password, elo_rating, wins, losses, is_username_set, institute, institute_locked
        FROM users WHERE email = $1`,
       [email.toLowerCase()]
     )
@@ -448,7 +448,7 @@ router.post('/reset-password', async (req, res) => {
     const hash = await bcrypt.hash(newPassword, 12)
     const { rows } = await db.query(
       `UPDATE users SET password = $1 WHERE email = $2
-       RETURNING id, username, email, elo_rating, wins, losses`,
+       RETURNING id, username, email, elo_rating, wins, losses, is_username_set, institute, institute_locked`,
       [hash, cleanEmail]
     )
 

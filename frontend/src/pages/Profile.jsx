@@ -28,7 +28,8 @@ function getTierProgress(rating = 1200) {
     { name: 'Operative', min: 1200, max: 1399, nextMin: 1400, nextName: 'Vanguard' },
     { name: 'Vanguard', min: 1400, max: 1599, nextMin: 1600, nextName: 'Champion' },
     { name: 'Champion', min: 1600, max: 1799, nextMin: 1800, nextName: 'Legend' },
-    { name: 'Legend', min: 1800, max: 9999, nextMin: null, nextName: null },
+    { name: 'Legend', min: 1800, max: 2199, nextMin: 2200, nextName: 'Bihari' },
+    { name: 'Bihari', min: 2200, max: 9999, nextMin: null, nextName: null },
   ]
   const current = tiers.find(t => r >= t.min && r <= t.max) || tiers[0]
   if (!current.nextMin) {
@@ -719,7 +720,7 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
 export default function Profile() {
   const { username: routeUsername } = useParams()
   const { user, isAuthenticated, loading: authLoading, refreshUser } = useAuth()
-  const { streak: myStreak, history: myHistory } = useStreak()
+  const { streak: myStreak, history: myHistory } = useStreak(user?.id)
   const navigate = useNavigate()
 
   const [profileUser, setProfileUser] = useState(null)
@@ -1061,7 +1062,12 @@ export default function Profile() {
 
                   <RankBadge elo={elo} size="md" />
                 </div>
-
+                {activeUser?.institute && (
+                  <p className="font-mono text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+                    <Shield size={12} className="text-[#38BDF8]" />
+                    {activeUser.institute}
+                  </p>
+                )}
                 {handleErr && <p className="font-mono text-xs text-red-400">{handleErr}</p>}
 
                 {/* Sub-meta tags */}

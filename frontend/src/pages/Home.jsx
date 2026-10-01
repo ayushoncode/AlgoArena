@@ -22,6 +22,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
 import { UserAvatar } from '../utils/avatar'
+import { ArenaEmblem, ArenaLogo } from '../components/ArenaLogo'
 
 const HeroScene3D = lazy(() => import('../components/HeroScene3D'))
 import { motion, AnimatePresence, useInView, useAnimation } from 'framer-motion'
@@ -64,45 +65,10 @@ function SectionReveal({ children, className = '', delay = 0 }) {
   )
 }
 
-/* ═══════════════════════════════════════════════════
-   EMBLEM SVG — Original hex shield logo
-═══════════════════════════════════════════════════ */
-function ArenaEmblem({ size = 32, glow = false }) {
-  return (
-    <svg
-      width={size} height={size}
-      viewBox="0 0 40 40"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={glow ? { filter: 'drop-shadow(0 0 8px rgba(225,29,72,0.7))' } : {}}
-      aria-label="AlgoArena emblem"
-    >
-      {/* Outer hex */}
-      <path
-        d="M20 2L36 11V29L20 38L4 29V11L20 2Z"
-        stroke="#E11D48" strokeWidth="1.5" fill="none"
-      />
-      {/* Inner hex */}
-      <path
-        d="M20 8L30 14V26L20 32L10 26V14L20 8Z"
-        stroke="#38BDF8" strokeWidth="0.8" fill="rgba(56,189,248,0.06)"
-      />
-      {/* Code bracket symbol */}
-      <path
-        d="M15 17L12 20L15 23"
-        stroke="#E11D48" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-      />
-      <path
-        d="M25 17L28 20L25 23"
-        stroke="#38BDF8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-      />
-      <line x1="18" y1="25" x2="22" y2="15" stroke="#F5B942" strokeWidth="1" strokeLinecap="round" />
-    </svg>
-  )
-}
+
 
 /* ═══════════════════════════════════════════════════
-   PARTICLE CANVAS — floating sparks
+   STARFIELD CANVAS — clean deep-space drifting stars
 ═══════════════════════════════════════════════════ */
 function ParticleCanvas() {
   const canvasRef = useRef(null)
@@ -118,36 +84,70 @@ function ParticleCanvas() {
     canvas.width = W
     canvas.height = H
 
-    const MAX = 15 // cap particles
-    const particles = Array.from({ length: MAX }, () => ({
+    // Static deep-space stars (white, very small, barely moving)
+    const STAR_COUNT = 120
+    const stars = Array.from({ length: STAR_COUNT }, () => ({
       x: Math.random() * W,
       y: Math.random() * H,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: -Math.random() * 0.4 - 0.1,
-      size: Math.random() * 1.2 + 0.4,
-      opacity: Math.random() * 0.3 + 0.1,
-      color: Math.random() > 0.5 ? '#E11D48' : '#38BDF8',
-      life: Math.random(),
+      r: Math.random() * 0.9 + 0.15,
+      alpha: Math.random() * 0.5 + 0.1,
+      twinkleSpeed: Math.random() * 0.008 + 0.002,
+      twinkleOffset: Math.random() * Math.PI * 2,
+      vx: (Math.random() - 0.5) * 0.04,
+      vy: (Math.random() - 0.5) * 0.04,
     }))
+
+    // A handful of colored accent orbs (red / cyan glow)
+    const ORB_COUNT = 6
+    const orbs = Array.from({ length: ORB_COUNT }, (_, i) => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.5 + 0.8,
+      alpha: Math.random() * 0.35 + 0.1,
+      color: i % 2 === 0 ? '#E11D48' : '#00C2FF',
+      twinkleSpeed: Math.random() * 0.006 + 0.002,
+      twinkleOffset: Math.random() * Math.PI * 2,
+      vx: (Math.random() - 0.5) * 0.06,
+      vy: (Math.random() - 0.5) * 0.06,
+    }))
+
+    let t = 0
 
     function draw() {
       if (hidden.current) { frameRef.current = requestAnimationFrame(draw); return }
       ctx.clearRect(0, 0, W, H)
-      for (const p of particles) {
-        p.x += p.vx; p.y += p.vy; p.life -= 0.003
-        if (p.y < 0 || p.life <= 0) {
-          p.x = Math.random() * W; p.y = H + 5
-          p.vx = (Math.random() - 0.5) * 0.3
-          p.vy = -Math.random() * 0.4 - 0.1
-          p.life = Math.random() * 0.8 + 0.2
-          p.opacity = Math.random() * 0.3 + 0.1
-        }
-        ctx.globalAlpha = p.opacity * Math.min(p.life * 3, 1)
-        ctx.fillStyle = p.color
+      t += 1
+
+      // Draw stars
+      for (const s of stars) {
+        s.x += s.vx; s.y += s.vy
+        if (s.x < 0) s.x = W
+        if (s.x > W) s.x = 0
+        if (s.y < 0) s.y = H
+        if (s.y > H) s.y = 0
+        const flicker = s.alpha * (0.75 + 0.25 * Math.sin(t * s.twinkleSpeed + s.twinkleOffset))
+        ctx.globalAlpha = flicker
+        ctx.fillStyle = '#FFFFFF'
         ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
         ctx.fill()
       }
+
+      // Draw accent orbs
+      for (const o of orbs) {
+        o.x += o.vx; o.y += o.vy
+        if (o.x < 0) o.x = W
+        if (o.x > W) o.x = 0
+        if (o.y < 0) o.y = H
+        if (o.y > H) o.y = 0
+        const flicker = o.alpha * (0.7 + 0.3 * Math.sin(t * o.twinkleSpeed + o.twinkleOffset))
+        ctx.globalAlpha = flicker
+        ctx.fillStyle = o.color
+        ctx.beginPath()
+        ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
       ctx.globalAlpha = 1
       frameRef.current = requestAnimationFrame(draw)
     }
@@ -157,11 +157,9 @@ function ParticleCanvas() {
       canvas.width = W; canvas.height = H
     }
     const onVis = () => { hidden.current = document.hidden }
-
     window.addEventListener('resize', onResize)
     document.addEventListener('visibilitychange', onVis)
     draw()
-
     return () => {
       cancelAnimationFrame(frameRef.current)
       window.removeEventListener('resize', onResize)
@@ -173,7 +171,6 @@ function ParticleCanvas() {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full pointer-events-none"
-      style={{ opacity: 0.25 }}
       aria-hidden="true"
     />
   )
@@ -582,11 +579,8 @@ function OtpLoginForm({ onSwitchPassword }) {
     if (otp.length < 6) { setErr('Please enter the 6-digit OTP code'); return }
     setBusy(true); setErr('')
     try {
-      const res = await loginWithOtp({ email: email.trim().toLowerCase(), otp: otp.trim() })
-      if (res?.isNewUser || !res?.user?.is_username_set) {
-        setSuggestedHandle(res?.user?.username || email.split('@')[0])
-        setShowUsernameModal(true)
-      } else { navigate('/lobby') }
+      await loginWithOtp({ email: email.trim().toLowerCase(), otp: otp.trim() })
+      navigate('/lobby')
     } catch (e) { setErr(e.response?.data?.message || e.message || 'Verification failed') }
     finally { setBusy(false) }
   }
@@ -912,9 +906,8 @@ function GoogleAuthButton() {
       const idToken = await result.user.getIdToken()
       const rawSuggest = (result.user.displayName || result.user.email?.split('@')[0] || 'coder')
         .replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase().slice(0, 20)
-      const authRes = await loginWithFirebase({ idToken, username: rawSuggest })
-      if (authRes?.isNewUser) { setSuggestedHandle(rawSuggest); setShowUsernameModal(true) }
-      else navigate('/lobby')
+      await loginWithFirebase({ idToken, username: rawSuggest })
+      navigate('/lobby')
     } catch (e) {
       if (e.code === 'auth/api-key-not-valid' || e.code === 'auth/invalid-api-key' || e.code === 'auth/configuration-not-found') {
         setErr('Firebase Google Auth: configure VITE_FIREBASE_API_KEY, or use Fast OTP below!')
@@ -923,19 +916,8 @@ function GoogleAuthButton() {
     finally { setBusy(false) }
   }
 
-  async function handleConfirmUsername(chosenHandle) {
-    setBusy(true); setUsernameErr('')
-    try {
-      const { data } = await api.patch('/api/users/me/username', { username: chosenHandle })
-      if (data.token) { localStorage.setItem('aa_token', data.token); localStorage.setItem('aa_user', JSON.stringify(data.user)); await refreshUser(data.user) }
-      setShowUsernameModal(false); navigate('/lobby')
-    } catch (err) { setUsernameErr(err.response?.data?.message || err.message || 'Failed to update handle') }
-    finally { setBusy(false) }
-  }
-
   return (
     <div className="space-y-3 mb-5">
-      {showUsernameModal && <ChooseUsernameModal defaultUsername={suggestedHandle} onConfirm={handleConfirmUsername} busy={busy} err={usernameErr} />}
       <AuthErr msg={err} />
       <button type="button" onClick={handleGoogleSignIn} disabled={busy}
         className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 transition-all"
@@ -972,27 +954,47 @@ function HeroSection({ onJoinClick }) {
       className="relative min-h-screen flex flex-col items-center justify-center text-center px-5 sm:px-8 overflow-hidden hex-grid-bg scanlines vignette"
       aria-label="Hero"
     >
-      {/* 3D Cinematic Scene */}
+      {/* Clean 3D scene — floating rings + particle field */}
       <Suspense fallback={null}>
         <HeroScene3D isHovered={isBtnHovered} />
       </Suspense>
 
-      {/* Fallback Particle field */}
+      {/* Starfield canvas (fallback layer beneath 3D) */}
       <ParticleCanvas />
 
-      {/* Red left glow */}
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[40vw] h-[60vh] pointer-events-none" aria-hidden="true"
-        style={{ background: 'radial-gradient(ellipse at left center, rgba(225,29,72,0.18) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-      {/* Blue right glow */}
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[40vw] h-[60vh] pointer-events-none" aria-hidden="true"
-        style={{ background: 'radial-gradient(ellipse at right center, rgba(56,189,248,0.14) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-
-      {/* VS emblem center */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
-        <div style={{ opacity: 0.04, transform: 'scale(4)' }}>
-          <ArenaEmblem size={80} />
-        </div>
-      </div>
+      {/* Left red atmospheric glow */}
+      <div
+        aria-hidden="true"
+        className="absolute pointer-events-none"
+        style={{
+          left: '-10%', top: '20%',
+          width: '55vw', height: '70vh',
+          background: 'radial-gradient(ellipse at center, rgba(225,29,72,0.12) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+        }}
+      />
+      {/* Right cyan atmospheric glow */}
+      <div
+        aria-hidden="true"
+        className="absolute pointer-events-none"
+        style={{
+          right: '-10%', top: '20%',
+          width: '55vw', height: '70vh',
+          background: 'radial-gradient(ellipse at center, rgba(0,194,255,0.09) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+        }}
+      />
+      {/* Center bottom subtle bloom */}
+      <div
+        aria-hidden="true"
+        className="absolute pointer-events-none"
+        style={{
+          bottom: '-5%', left: '50%', transform: 'translateX(-50%)',
+          width: '60vw', height: '40vh',
+          background: 'radial-gradient(ellipse at center top, rgba(56,189,248,0.06) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+        }}
+      />
 
       {/* Content */}
       <div className="relative z-10 max-w-5xl mx-auto space-y-8">
@@ -1182,7 +1184,7 @@ socket.on('match_found', ({ roomId, problem, opponent }) => {
   {
     num: '04', id: 'elo', title: 'Elo Settlement',
     icon: <Activity size={18} />,
-    desc: `Win duels to steal opponent Elo and climb rank tiers from Recruit to Mythic. K-factor K=${SITE_CONFIG.eloKFactor} with streak rewards.`,
+    desc: `Win duels to steal opponent Elo and climb rank tiers from Recruit to Bihari. K-factor K=${SITE_CONFIG.eloKFactor} with streak rewards.`,
     highlight: `K-Factor ${SITE_CONFIG.eloKFactor} · Streak bonuses · Tier progression`,
     code: `const expected = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400))
 const delta = Math.round(${SITE_CONFIG.eloKFactor} * (scoreA - expected))
@@ -1297,7 +1299,7 @@ const TIERS = [
   { name: 'Vanguard', range: '1400–1599', color: '#38BDF8', glow: 'rgba(56,189,248,0.25)', desc: 'Front-line fighter. Efficient coder.' },
   { name: 'Champion', range: '1600–1899', color: '#818cf8', glow: 'rgba(129,140,248,0.25)', desc: 'Elite combatant. Precision under pressure.' },
   { name: 'Legend', range: '1900–2199', color: '#c084fc', glow: 'rgba(192,132,252,0.25)', desc: 'Arena legend. Few reach this summit.' },
-  { name: 'Mythic', range: '2200+', color: '#F5B942', glow: 'rgba(245,185,66,0.35)', desc: 'Mythical status. The top 0.1%.', gold: true },
+  { name: 'Bihari', range: '2200+', color: '#F5B942', glow: 'rgba(245,185,66,0.35)', desc: 'Bihari status. The top 0.1%.', gold: true },
 ]
 
 function RankLadderSection() {
@@ -1313,7 +1315,7 @@ function RankLadderSection() {
             CLIMB THE RANKS
           </h2>
           <p style={{ color: 'var(--c-text-dim)', maxWidth: 520 }}>
-            Every win steals Elo. Consecutive wins trigger streak bonuses with enhanced K-factor. Climb from Recruit to Mythic.
+            Every win steals Elo. Consecutive wins trigger streak bonuses with enhanced K-factor. Climb from Recruit to Bihari.
           </p>
         </SectionReveal>
 
@@ -1885,31 +1887,101 @@ function CtaBannerSection({ onJoinClick }) {
    SECTION 11: FOOTER
 ═══════════════════════════════════════════════════ */
 function FooterSection() {
+  const { isAuthenticated } = useAuth()
   return (
-    <footer className="py-10 px-5 sm:px-8" style={{ background: 'var(--c-panel)', borderTop: '1px solid var(--c-border)' }}>
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-3">
-          <ArenaEmblem size={28} />
-          <div>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--c-text)', letterSpacing: '0.06em' }}>ALGOARENA</span>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--c-text-mute)', letterSpacing: '0.15em', marginTop: 1 }}>WHERE RIVALRIES ARE SETTLED IN CODE</p>
+    <footer
+      style={{
+        background: 'linear-gradient(to bottom, var(--c-panel), rgba(3,4,10,0.98))',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Subtle top gradient line */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: '10%',
+          right: '10%',
+          height: 1,
+          background: 'linear-gradient(to right, transparent, #E11D48 40%, #00C2FF 60%, transparent)',
+          opacity: 0.5,
+        }}
+      />
+
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-12">
+        {/* Main row */}
+        <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-10">
+
+          {/* Brand block */}
+          <div className="flex flex-col items-center md:items-start gap-3">
+            <ArenaLogo size="md" showTagline />
+            <p style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              color: '#475569',
+              letterSpacing: '0.04em',
+              lineHeight: 1.7,
+              maxWidth: 260,
+              textAlign: 'left',
+            }}>
+              Real-time 1v1 coding duels.<br />
+              Same problem. Same second.<br />
+              First <span style={{ color: '#22c55e', fontWeight: 700 }}>ACCEPTED</span> takes the Elo.
+            </p>
+          </div>
+
+          {/* Nav links */}
+          <div className="flex flex-col items-center md:items-start gap-2">
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#334155', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 4 }}>
+              Navigate
+            </span>
+            {[
+              { label: 'Home', to: '/' },
+              { label: 'Lobby', to: '/lobby' },
+              { label: 'Leaderboard', to: '/leaderboard' },
+              ...(!isAuthenticated ? [{ label: 'Who We Are', to: '/who-we-are' }] : []),
+            ].map(({ label, to }) => (
+              <Link
+                key={to}
+                to={to}
+                style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#64748B', textDecoration: 'none', transition: 'color 0.15s' }}
+                onMouseOver={e => e.currentTarget.style.color = '#E2E8F0'}
+                onMouseOut={e => e.currentTarget.style.color = '#64748B'}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Status block */}
+          <div className="flex flex-col items-center md:items-end gap-2 text-center md:text-right">
+            <div className="flex items-center gap-2 px-3 py-1.5" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 3 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#22c55e', letterSpacing: '0.15em' }}>SYSTEM ONLINE</span>
+            </div>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#334155' }}>Season 1 · Active</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
-          <Link to="/lobby" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-text-mute)' }}
-            onMouseOver={e => e.currentTarget.style.color = 'var(--c-text)'}
-            onMouseOut={e => e.currentTarget.style.color = 'var(--c-text-mute)'}
-          >Lobby</Link>
-          <Link to="/leaderboard" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-text-mute)' }}
-            onMouseOver={e => e.currentTarget.style.color = 'var(--c-text)'}
-            onMouseOut={e => e.currentTarget.style.color = 'var(--c-text-mute)'}
-          >Leaderboard</Link>
+        {/* Bottom row */}
+        <div
+          style={{
+            marginTop: 40,
+            paddingTop: 20,
+            borderTop: '1px solid rgba(255,255,255,0.04)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#1E293B', letterSpacing: '0.1em' }}>
+            © 2026 AlgoArena · Built for competitive programmers
+          </span>
         </div>
-
-        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--c-text-mute)' }}>
-          Built for competitive programmers
-        </p>
       </div>
     </footer>
   )

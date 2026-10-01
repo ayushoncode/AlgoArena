@@ -3,20 +3,9 @@ import { useAuth } from '../hooks/useAuth'
 import { useState, useRef, useEffect } from 'react'
 import { UserAvatar, getTier } from '../utils/avatar'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, ChevronDown, LogOut, User, Home, Trophy } from 'lucide-react'
+import { Menu, X, ChevronDown, LogOut, User, Home, Trophy, Users, FileText } from 'lucide-react'
 
-/* Original Arena Emblem — same as in Home.jsx */
-function ArenaEmblem({ size = 28 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="AlgoArena logo">
-      <path d="M20 2L36 11V29L20 38L4 29V11L20 2Z" stroke="#E11D48" strokeWidth="1.5" fill="none" />
-      <path d="M20 8L30 14V26L20 32L10 26V14L20 8Z" stroke="#38BDF8" strokeWidth="0.8" fill="rgba(56,189,248,0.06)" />
-      <path d="M15 17L12 20L15 23" stroke="#E11D48" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M25 17L28 20L25 23" stroke="#38BDF8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1="18" y1="25" x2="22" y2="15" stroke="#F5B942" strokeWidth="1" strokeLinecap="round" />
-    </svg>
-  )
-}
+import { ArenaLogo } from './ArenaLogo'
 
 export default function Navbar() {
   const navigate = useNavigate()
@@ -60,6 +49,8 @@ export default function Navbar() {
   const NAV_LINKS = [
     { label: 'Lobby', href: '/lobby', icon: <Home size={13} /> },
     { label: 'Leaderboard', href: '/leaderboard', icon: <Trophy size={13} /> },
+    ...(isAuthenticated ? [{ label: 'Intel Reports', href: '/experiences', icon: <FileText size={13} /> }] : []),
+    ...(!isAuthenticated ? [{ label: 'Who We Are', href: '/who-we-are', icon: <Users size={13} /> }] : []),
   ]
 
   return (
@@ -79,22 +70,10 @@ export default function Navbar() {
           {/* Logo + wordmark */}
           <Link
             to="/"
-            className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
+            className="flex items-center transition-opacity hover:opacity-90"
             style={{ textDecoration: 'none' }}
           >
-            <ArenaEmblem size={26} />
-            <span
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 18,
-                fontWeight: 700,
-                color: '#E2E8F4',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-              }}
-            >
-              AlgoArena
-            </span>
+            <ArenaLogo size={26} />
           </Link>
 
           {/* Desktop center nav */}

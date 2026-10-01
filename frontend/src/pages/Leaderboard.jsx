@@ -12,6 +12,7 @@ import { UserAvatar, getTier } from "../utils/avatar"
 import {
   HudPanel, RankBadge, PageWrapper, Skeleton, EmptyState, AnimatedCounter,
 } from "../components/ui/index.jsx"
+import { institutes } from "../utils/institutes"
 
 /* --- Podium medal config ------------------------------------------- */
 const MEDAL = {
@@ -65,6 +66,11 @@ function PodiumCard({ player, rank, onSelect, delay = 0 }) {
           <p className="font-display font-black text-lg sm:text-xl truncate max-w-[180px] mx-auto" style={{ color: "var(--c-text)", letterSpacing: "0.04em" }}>
             {player.username}
           </p>
+          {player.institute && (
+            <p className="font-mono text-[9px] text-slate-400 truncate max-w-[160px] mx-auto mt-0.5" title={player.institute}>
+              {player.institute}
+            </p>
+          )}
           <RankBadge elo={player.elo_rating} size="xs" />
         </div>
 
@@ -128,10 +134,17 @@ function PlayerRow({ player, actualRank, isMe, onClick, delay = 0 }) {
       <td className="py-4 px-4 sm:px-6">
         <div className="flex items-center gap-3">
           <UserAvatar username={player.username} seed={player.avatar_seed} style={player.avatar_style} elo={player.elo_rating} size={34} />
-          <div className="flex items-center gap-2">
-            <span className="font-sans font-bold text-sm" style={{ color: "var(--c-text)" }}>{player.username}</span>
-            {isMe && (
-              <span className="font-mono text-[8px] px-1.5 py-0.5 font-black uppercase tracking-widest" style={{ background: "var(--c-red)", color: "#fff" }}>YOU</span>
+          <div className="flex flex-col justify-center">
+            <div className="flex items-center gap-2">
+              <span className="font-sans font-bold text-sm" style={{ color: "var(--c-text)" }}>{player.username}</span>
+              {isMe && (
+                <span className="font-mono text-[8px] px-1.5 py-0.5 font-black uppercase tracking-widest" style={{ background: "var(--c-red)", color: "#fff" }}>YOU</span>
+              )}
+            </div>
+            {player.institute && (
+              <span className="font-mono text-[10px] text-slate-400 mt-0.5 max-w-[160px] sm:max-w-[200px] truncate" title={player.institute}>
+                {player.institute}
+              </span>
             )}
           </div>
         </div>
@@ -150,14 +163,6 @@ function PlayerRow({ player, actualRank, isMe, onClick, delay = 0 }) {
   )
 }
 
-/* --- Tab config ----------------------------------------------------- */
-const TABS = [
-  { id: "global",  label: "Global",  Icon: Globe      },
-  { id: "weekly",  label: "Weekly",  Icon: TrendingUp },
-  { id: "monthly", label: "Monthly", Icon: Calendar   },
-  { id: "friends", label: "Friends", Icon: Users      },
-]
-
 /* =================================================================
    LEADERBOARD PAGE
 ================================================================= */
@@ -170,13 +175,16 @@ export default function Leaderboard() {
   const [error,       setError]       = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
   const [search,      setSearch]      = useState("")
-  const [timeframe,   setTimeframe]   = useState("global")
+  const [instituteSearch, setInstituteSearch] = useState("")
+  const [instituteFilter, setInstituteFilter] = useState("")
+  const [showInstituteSuggestions, setShowInstituteSuggestions] = useState(false)
   const searchRef = useRef(null)
 
-  async function fetchLeaderboard() {
+  async function fetchLeaderboard(inst = instituteFilter) {
     try {
       setLoading(true)
-      const { data } = await api.get("/api/users/leaderboard")
+      const query = inst ? `?institute=${encodeURIComponent(inst)}` : ""
+      const { data } = await api.get(`/api/users/leaderboard${query}`)
       setPlayers(data)
       setLastUpdated(new Date())
       setError(null)
@@ -190,9 +198,13 @@ export default function Leaderboard() {
 
   useEffect(() => {
     fetchLeaderboard()
-    const t = setInterval(fetchLeaderboard, 30_000)
+    const t = setInterval(() => fetchLeaderboard(instituteFilter), 30_000)
     return () => clearInterval(t)
-  }, [])
+  }, [instituteFilter])
+
+  const instituteSuggestions = instituteSearch
+    ? institutes.filter(inst => inst.toLowerCase().includes(instituteSearch.toLowerCase())).slice(0, 5)
+    : []
 
   const q           = search.trim().toLowerCase()
   const filtered    = q ? players.filter(p => p.username?.toLowerCase().includes(q)) : players
@@ -214,7 +226,11 @@ export default function Leaderboard() {
           className="max-w-4xl mx-auto space-y-3 relative z-10">
           <p className="section-label">// Global Arena Ranks</p>
           <h1 className="font-display font-black text-4xl sm:text-6xl tracking-tight" style={{ color: "var(--c-text)", letterSpacing: "0.02em" }}>
-            GLOBAL <span style={{ color: "var(--c-red)" }}>RANKINGS</span>
+            {instituteFilter ? (
+              <span className="text-xl sm:text-3xl line-clamp-1 truncate max-w-full" style={{ color: "var(--c-red)" }}>{instituteFilter.toUpperCase()}</span>
+            ) : (
+              <>GLOBAL <span style={{ color: "var(--c-red)" }}>RANKINGS</span></>
+            )}
           </h1>
           <p className="font-sans text-sm sm:text-base max-w-xl mx-auto" style={{ color: "var(--c-text-mute)" }}>
             Top coders ranked by ELO rating. Click on a player to view their full duel stats &amp; history.
@@ -255,28 +271,74 @@ export default function Leaderboard() {
 
       {/* FILTER + SEARCH */}
       <div className="max-w-5xl mx-auto px-5 sm:px-8 mb-5">
-        <HudPanel className="p-2 flex flex-col sm:flex-row items-center gap-3">
-          <div className="flex items-center gap-0.5 p-1 w-full sm:w-auto overflow-x-auto shrink-0"
+        <HudPanel className="p-2 flex flex-col sm:flex-row items-center gap-3" style={{ clipPath: 'none', borderRadius: '4px' }}>
+          <div className="flex items-center gap-2 p-1 w-full sm:w-auto overflow-visible shrink-0 relative"
             style={{ background: "var(--c-void)", border: "1px solid var(--c-border)" }}>
-            {TABS.map(tab => {
-              const active = timeframe === tab.id
-              return (
-                <button key={tab.id} onClick={() => setTimeframe(tab.id)}
-                  className="flex items-center gap-1.5 px-3 py-2 font-mono text-xs font-bold transition-all duration-150 whitespace-nowrap cursor-pointer"
-                  style={{
-                    background: active ? "rgba(225,29,72,0.15)" : "transparent",
-                    color:      active ? "var(--c-red)" : "var(--c-text-dim)",
-                    border:     active ? "1px solid rgba(225,29,72,0.35)" : "1px solid transparent",
-                    letterSpacing: "0.07em", textTransform: "uppercase",
-                  }}>
-                  <tab.Icon size={10} strokeWidth={2.5} />
-                  {tab.label}
-                </button>
-              )
-            })}
+            <Search size={13} style={{ color: "var(--c-text-mute)", flexShrink: 0, marginLeft: 8 }} />
+            <input
+              type="text"
+              value={instituteSearch}
+              onChange={e => {
+                setInstituteSearch(e.target.value)
+                if (e.target.value === "") {
+                  setInstituteFilter("")
+                }
+              }}
+              onFocus={() => setShowInstituteSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowInstituteSuggestions(false), 200)}
+              onKeyDown={e => {
+                if (e.key === "Enter") {
+                  setInstituteFilter(instituteSearch)
+                  setShowInstituteSuggestions(false)
+                }
+              }}
+              placeholder="Search by institute..."
+              className="w-full sm:w-64 bg-transparent outline-none font-mono text-xs py-1"
+              style={{ color: "var(--c-text)" }}
+            />
+            {instituteSearch && (
+              <button
+                onClick={() => {
+                  setInstituteSearch("")
+                  setInstituteFilter("")
+                }}
+                className="pr-2"
+                style={{ color: "var(--c-text-mute)" }}
+              >
+                <X size={12} />
+              </button>
+            )}
+            
+            <AnimatePresence>
+              {showInstituteSuggestions && instituteSuggestions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 5 }}
+                  className="absolute top-full left-0 right-0 mt-1 z-50 rounded shadow-xl"
+                  style={{ background: "var(--c-void)", border: "1px solid var(--c-border)" }}
+                >
+                  {instituteSuggestions.map((inst, i) => (
+                    <div
+                      key={i}
+                      className="px-3 py-2 font-mono text-xs cursor-pointer hover:bg-white/10"
+                      style={{ color: "var(--c-text)", borderBottom: i === instituteSuggestions.length - 1 ? "none" : "1px solid var(--c-border)" }}
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        setInstituteSearch(inst)
+                        setInstituteFilter(inst)
+                        setShowInstituteSuggestions(false)
+                      }}
+                    >
+                      {inst}
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          <div className="relative flex-1 w-full" style={{ maxWidth: 320 }}>
+          <div className="relative flex-1 w-full" style={{ maxWidth: 320, marginLeft: 'auto' }}>
             <div className="flex items-center gap-2 px-3 py-2 transition-colors duration-150"
               style={{ background: "var(--c-void)", border: "1px solid var(--c-border)" }}>
               <Search size={13} style={{ color: "var(--c-text-mute)", flexShrink: 0 }} />

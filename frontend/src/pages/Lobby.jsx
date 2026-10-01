@@ -16,6 +16,7 @@ import {
   StatBadge, SectionHeader, Modal, DiffChip, PageWrapper,
   Skeleton, EmptyState, VerdictChip, Tooltip,
 } from '../components/ui'
+import { ArenaLogo } from '../components/ArenaLogo'
 
 /* ════════════════════════════════════════════════
    DATA — topics + difficulties
@@ -158,13 +159,32 @@ function HeaderRosterSearch({ inputRef }) {
   const [suggestions, setSuggestions] = useState([])
   const [showDrop, setShowDrop] = useState(false)
   const wrapRef = useRef(null)
+  const dropRef = useRef(null)
   const debounce = useRef(null)
 
+  // Close on outside click
   useEffect(() => {
     function handler(e) { if (wrapRef.current && !wrapRef.current.contains(e.target)) setShowDrop(false) }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  // Native wheel listener — passive:false so we can preventDefault and trap scroll inside dropdown
+  useEffect(() => {
+    const el = dropRef.current
+    if (!el) return
+    const handler = (e) => {
+      const { scrollTop, scrollHeight, clientHeight } = el
+      const atTop = scrollTop === 0 && e.deltaY < 0
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 1 && e.deltaY > 0
+      if (!atTop && !atBottom) {
+        e.preventDefault()
+      }
+      e.stopPropagation()
+    }
+    el.addEventListener('wheel', handler, { passive: false })
+    return () => el.removeEventListener('wheel', handler)
+  }, [showDrop])
 
   function handleInput(val) {
     setQuery(val)
@@ -218,7 +238,23 @@ function HeaderRosterSearch({ inputRef }) {
       </form>
 
       {showDrop && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, background: 'var(--c-panel)', border: '1px solid var(--c-border)', marginTop: '4px', overflow: 'hidden', boxShadow: '0 12px 32px rgba(0,0,0,0.6)' }} className="rounded">
+        <div
+          ref={dropRef}
+          onWheel={e => e.stopPropagation()}
+          style={{
+          position: 'absolute',
+          top: 'calc(100% + 6px)',
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+          background: 'var(--c-panel)',
+          border: '1px solid var(--c-border)',
+          borderRadius: '8px',
+          boxShadow: '0 16px 40px rgba(0,0,0,0.7)',
+          maxHeight: '260px',
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
+        }}>
           {suggestions.map(s => {
             const st = getArenaTier(s.elo_rating)
             return (
@@ -228,7 +264,9 @@ function HeaderRosterSearch({ inputRef }) {
                 onMouseOver={e => e.currentTarget.style.background = 'var(--c-panel2)'}
                 onMouseOut={e => e.currentTarget.style.background = 'transparent'}
               >
-                <UserAvatar username={s.username} seed={s.avatar_seed} style={s.avatar_style} size={28} />
+                <div style={{ flexShrink: 0 }}>
+                  <UserAvatar username={s.username} seed={s.avatar_seed} style={s.avatar_style} size={28} />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs font-bold truncate" style={{ color: 'var(--c-text)' }}>{s.username}</span>
@@ -362,7 +400,7 @@ function SearchingOverlay({ topic, difficulty, rating, onCancel }) {
 
       {/* Top branding */}
       <div className="flex items-center gap-2 pt-2 relative z-10">
-        <span className="font-display font-black text-xl tracking-widest uppercase" style={{ color: 'var(--c-text)' }}>AlgoArena</span>
+        <ArenaLogo size="md" />
       </div>
 
       {/* Center content */}
@@ -734,7 +772,7 @@ export default function Lobby() {
       const savedDiff = localStorage.getItem('algoarena_last_diff')
       if (savedTopic && TOPICS.some(t => t.id === savedTopic)) setTopic(savedTopic)
       if (savedDiff && DIFFS.some(d => d.id === savedDiff)) setDiff(savedDiff)
-    } catch {}
+    } catch { }
   }, [])
 
   // Topic & Diff selection handlers with localStorage memory
@@ -743,14 +781,14 @@ export default function Lobby() {
     try {
       if (tId) localStorage.setItem('algoarena_last_topic', tId)
       else localStorage.removeItem('algoarena_last_topic')
-    } catch {}
+    } catch { }
   }, [])
 
   const handleSelectDiff = useCallback((dId) => {
     setDiff(dId)
     try {
       localStorage.setItem('algoarena_last_diff', dId)
-    } catch {}
+    } catch { }
   }, [])
 
   // Keyboard Shortcuts (1-8 topics, '/' search, 'Enter' deploy)
@@ -787,7 +825,7 @@ export default function Lobby() {
   }, [on, off])
 
   useEffect(() => {
-    api.get('/api/problems/daily').then(({ data }) => setDailyProblem(data)).catch(() => {})
+    api.get('/api/problems/daily').then(({ data }) => setDailyProblem(data)).catch(() => { })
   }, [])
 
   if (loading) return (
@@ -863,32 +901,32 @@ export default function Lobby() {
 
       <PageWrapper heroGlow>
 
-        {/* ── COMMAND CENTER HEADER ───────────────────────── */}
         <div style={{ borderBottom: '1px solid var(--c-border)', background: 'rgba(11,17,32,0.85)', backdropFilter: 'blur(16px)' }}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
 
-            {/* Left title */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
-              <div>
-                <p className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--c-red)' }}>
-                  Command Center
-                </p>
-                <h1 className="font-display font-black text-2xl sm:text-3xl tracking-tight uppercase" style={{ color: 'var(--c-text)' }}>
-                  Deploy Into Battle
-                </h1>
-              </div>
-
-              {/* Roster Search */}
-              <div className="w-full sm:w-auto mt-1 sm:mt-0">
-                <HeaderRosterSearch inputRef={searchInputRef} />
-              </div>
+            {/* Left — Title */}
+            <div className="flex-shrink-0">
+              <p className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--c-red)' }}>
+                Command Center
+              </p>
+              <h1 className="font-display font-black text-2xl sm:text-3xl tracking-tight uppercase" style={{ color: 'var(--c-text)' }}>
+                Deploy Into Battle
+              </h1>
             </div>
 
-            {/* Right System Info Card */}
-            <div className="flex items-center gap-4 w-full md:w-auto justify-end"
-              style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)', padding: '0.625rem 1rem', clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))' }}>
+            {/* Center — Roster Search */}
+            <div className="flex-1 max-w-xs sm:max-w-sm mx-4 hidden sm:block">
+              <HeaderRosterSearch inputRef={searchInputRef} />
+            </div>
 
-              <div className="text-right font-mono text-[11px]">
+            {/* Right — System Info */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {/* Mobile search icon */}
+              <div className="sm:hidden">
+                <HeaderRosterSearch inputRef={searchInputRef} />
+              </div>
+              <div className="text-right font-mono text-[11px] px-3 py-2"
+                style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)', clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}>
                 <div className="flex items-center justify-end gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--c-green)' }} />
                   <span className="font-bold" style={{ color: 'var(--c-text)' }}>{live.totalProblems}</span>
@@ -898,8 +936,8 @@ export default function Lobby() {
                   {live.players} Coders Online
                 </div>
               </div>
-
             </div>
+
           </div>
         </div>
 

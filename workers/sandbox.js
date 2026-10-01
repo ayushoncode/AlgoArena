@@ -934,8 +934,19 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
 
   let userCodeToWrite = code
   if (lang === 'java') {
-    const javaImports = 'import java.util.*;\nimport java.util.stream.*;\nimport java.lang.reflect.*;\n'
-    userCodeToWrite = code.includes('import java.util') ? (code.includes('import java.lang.reflect') ? code : ('import java.lang.reflect.*;\n' + code)) : (javaImports + code)
+    // Strip any import lines the user already wrote, then prepend a canonical
+    // set at the top of Solution.java — prevents duplicate/nested import errors.
+    const strippedCode = code
+      .split('\n')
+      .filter(line => !line.trimStart().startsWith('import '))
+      .join('\n')
+    const javaImports = [
+      'import java.util.*;',
+      'import java.util.stream.*;',
+      'import java.lang.reflect.*;',
+      '',
+    ].join('\n')
+    userCodeToWrite = javaImports + strippedCode
   }
 
   try {

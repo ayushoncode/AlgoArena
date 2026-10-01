@@ -10,18 +10,7 @@ import { buildStarterTemplate, TEMPLATES } from '../utils/problemSignatures'
 import { Flag, Play, ChevronUp, Clock, AlertTriangle, Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { RankBadge, DiffChip, VerdictChip, getArenaTier } from '../components/ui'
 
-/* Original Arena Emblem */
-function ArenaEmblem({ size = 22 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="AlgoArena logo">
-      <path d="M20 2L36 11V29L20 38L4 29V11L20 2Z" stroke="#E11D48" strokeWidth="1.5" fill="none" />
-      <path d="M20 8L30 14V26L20 32L10 26V14L20 8Z" stroke="#38BDF8" strokeWidth="0.8" fill="rgba(56,189,248,0.06)" />
-      <path d="M15 17L12 20L15 23" stroke="#E11D48" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M25 17L28 20L25 23" stroke="#38BDF8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1="18" y1="25" x2="22" y2="15" stroke="#F5B942" strokeWidth="1" strokeLinecap="round" />
-    </svg>
-  )
-}
+import { ArenaLogo } from '../components/ArenaLogo'
 
 /* ════════════════════════════════════════════════
    MATCH TIMER
@@ -788,11 +777,8 @@ export default function Match() {
 
         {/* Problem info & Logo */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 pr-2.5" style={{ borderRight: '1px solid var(--c-border)' }}>
-            <ArenaEmblem size={20} />
-            <span className="font-display font-bold text-xs tracking-widest uppercase text-slate-200">
-              AlgoArena
-            </span>
+          <div className="flex items-center pr-2.5" style={{ borderRight: '1px solid var(--c-border)' }}>
+            <ArenaLogo size={20} />
           </div>
           <div className="font-mono text-[10px] uppercase tracking-widest" style={{ color: 'var(--c-text-mute)', letterSpacing: '0.13em' }}>
             {problem.topic}
