@@ -32,8 +32,15 @@ const app    = express()
 // In dev, allow localhost and private-network Vite origins for LAN multiplayer.
 const devOrigins = ['http://localhost:5173','http://localhost:5174','http://localhost:5175']
 const privateOrigin = /^http:\/\/(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):\d+$/
+const clientUrlClean = (process.env.CLIENT_URL || '').replace(/\/+$/, '')
 const allowedOrigin = process.env.NODE_ENV === 'production'
-  ? process.env.CLIENT_URL
+  ? (origin, cb) => {
+      if (!origin || origin.replace(/\/+$/, '') === clientUrlClean) {
+        cb(null, true)
+      } else {
+        cb(new Error(`CORS blocked for origin: ${origin}`))
+      }
+    }
   : (origin, cb) => cb(null, !origin || devOrigins.includes(origin) || privateOrigin.test(origin))
 
 const server = http.createServer(app)
