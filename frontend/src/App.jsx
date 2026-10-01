@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './hooks/useAuth'
@@ -17,6 +18,21 @@ import ShareExperienceWizard from './pages/ShareExperienceWizard'
 
 import { Shield, ChevronRight } from 'lucide-react'
 import { PageWrapper, HudPanel } from './components/ui/index.jsx'
+
+/**
+ * ScrollToTop — Scrolls window to top whenever pathname changes.
+ * Skips auto scroll-top if navigating to home with ?auth= query param.
+ */
+function ScrollToTop() {
+  const { pathname, search } = useLocation()
+
+  useEffect(() => {
+    if (pathname === '/' && search.includes('auth=')) return
+    window.scrollTo(0, 0)
+  }, [pathname, search])
+
+  return null
+}
 
 /**
  * RootRoute — shows Home to guests, redirects to /lobby if already logged in.
@@ -76,6 +92,7 @@ function AppLayout() {
 
   return (
     <>
+      <ScrollToTop />
       <UsernameOnboardingModal />
       <InstituteOnboardingModal />
       {!isMatchPage && <Navbar />}
@@ -113,3 +130,4 @@ export default function App() {
     </AuthProvider>
   )
 }
+
