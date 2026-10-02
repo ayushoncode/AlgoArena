@@ -390,7 +390,7 @@ export function DiffChip({ difficulty, className = '' }) {
 export function PageWrapper({ children, className = '', heroGlow = false, style = {} }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}
-      className={`min-h-[calc(100vh-3.5rem)] relative ${className}`}
+      className={`min-h-[calc(100vh-3.5rem)] relative overflow-x-hidden w-full ${className}`}
       style={{ background: 'var(--c-void)', ...style }}
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0"
