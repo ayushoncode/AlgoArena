@@ -16,18 +16,18 @@ import { institutes } from "../utils/institutes"
 
 /* --- Podium medal config ------------------------------------------- */
 const MEDAL = {
-  1: { Icon: Trophy, col: "#F5B942", glow: "rgba(245,185,66,0.45)",  label: "1ST" },
-  2: { Icon: Medal,  col: "#94a3b8", glow: "rgba(148,163,184,0.35)", label: "2ND" },
-  3: { Icon: Award,  col: "#cd7c4b", glow: "rgba(205,124,75,0.35)",  label: "3RD" },
+  1: { Icon: Trophy, col: "#F5B942", glow: "rgba(245,185,66,0.45)", label: "1ST" },
+  2: { Icon: Medal, col: "#94a3b8", glow: "rgba(148,163,184,0.35)", label: "2ND" },
+  3: { Icon: Award, col: "#cd7c4b", glow: "rgba(205,124,75,0.35)", label: "3RD" },
 }
 
 /* --- Podium Card ------------------------------------------------------ */
 function PodiumCard({ player, rank, onSelect, delay = 0 }) {
   if (!player) return null
-  const tier  = getTier(player.elo_rating)
+  const tier = getTier(player.elo_rating)
   const total = (player.wins ?? 0) + (player.losses ?? 0)
-  const wr    = total > 0 ? Math.round(((player.wins ?? 0) / total) * 100) : 0
-  const m     = MEDAL[rank]
+  const wr = total > 0 ? Math.round(((player.wins ?? 0) / total) * 100) : 0
+  const m = MEDAL[rank]
   const MIcon = m.Icon
   const isFirst = rank === 1
 
@@ -83,8 +83,8 @@ function PodiumCard({ player, rank, onSelect, delay = 0 }) {
 
         <div className="flex items-center gap-2 flex-wrap justify-center font-mono text-[10px] font-bold w-full pt-1">
           <span style={{ padding: "3px 8px", background: "rgba(16,185,129,0.12)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)" }}>{player.wins ?? 0}W</span>
-          <span style={{ padding: "3px 8px", background: "rgba(225,29,72,0.12)",   color: "#E11D48", border: "1px solid rgba(225,29,72,0.3)"   }}>{player.losses ?? 0}L</span>
-          <span style={{ padding: "3px 8px", background: "rgba(245,185,66,0.1)",   color: "#F5B942", border: "1px solid rgba(245,185,66,0.3)"   }}>{wr}% WR</span>
+          <span style={{ padding: "3px 8px", background: "rgba(225,29,72,0.12)", color: "#E11D48", border: "1px solid rgba(225,29,72,0.3)" }}>{player.losses ?? 0}L</span>
+          <span style={{ padding: "3px 8px", background: "rgba(245,185,66,0.1)", color: "#F5B942", border: "1px solid rgba(245,185,66,0.3)" }}>{wr}% WR</span>
         </div>
       </HudPanel>
     </motion.div>
@@ -112,9 +112,9 @@ function SkeletonRow() {
 
 /* --- Table row ----------------------------------------------------- */
 function PlayerRow({ player, actualRank, isMe, onClick, delay = 0 }) {
-  const tier  = getTier(player.elo_rating)
+  const tier = getTier(player.elo_rating)
   const total = (player.wins ?? 0) + (player.losses ?? 0)
-  const wr    = total > 0 ? Math.round(((player.wins ?? 0) / total) * 100) : 0
+  const wr = total > 0 ? Math.round(((player.wins ?? 0) / total) * 100) : 0
 
   return (
     <motion.tr
@@ -170,11 +170,11 @@ export default function Leaderboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
-  const [players,     setPlayers]     = useState([])
-  const [loading,     setLoading]     = useState(true)
-  const [error,       setError]       = useState(null)
+  const [players, setPlayers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
-  const [search,      setSearch]      = useState("")
+  const [search, setSearch] = useState("")
   const [instituteSearch, setInstituteSearch] = useState("")
   const [instituteFilter, setInstituteFilter] = useState("")
   const [showInstituteSuggestions, setShowInstituteSuggestions] = useState(false)
@@ -206,13 +206,13 @@ export default function Leaderboard() {
     ? institutes.filter(inst => inst.toLowerCase().includes(instituteSearch.toLowerCase())).slice(0, 5)
     : []
 
-  const q           = search.trim().toLowerCase()
-  const filtered    = q ? players.filter(p => p.username?.toLowerCase().includes(q)) : players
-  const top1        = players[0]
-  const top2        = players[1]
-  const top3        = players[2]
+  const q = search.trim().toLowerCase()
+  const filtered = q ? players.filter(p => p.username?.toLowerCase().includes(q)) : players
+  const top1 = players[0]
+  const top2 = players[1]
+  const top3 = players[2]
   const restPlayers = filtered.length > 0 ? (q ? filtered : players.slice(3)) : []
-  const myRankIdx   = players.findIndex(p => p.username === user?.username)
+  const myRankIdx = players.findIndex(p => p.username === user?.username)
 
   return (
     <PageWrapper heroGlow style={{ paddingBottom: "5rem" }}>
@@ -260,7 +260,7 @@ export default function Leaderboard() {
               <PodiumCard player={top2} rank={2} delay={0.1} onSelect={() => top2 && navigate(`/profile/${encodeURIComponent(top2.username)}`)} />
             </div>
             <div className="order-first sm:order-none">
-              <PodiumCard player={top1} rank={1} delay={0}   onSelect={() => top1 && navigate(`/profile/${encodeURIComponent(top1.username)}`)} />
+              <PodiumCard player={top1} rank={1} delay={0} onSelect={() => top1 && navigate(`/profile/${encodeURIComponent(top1.username)}`)} />
             </div>
             <div className="mt-4 sm:mt-10">
               <PodiumCard player={top3} rank={3} delay={0.2} onSelect={() => top3 && navigate(`/profile/${encodeURIComponent(top3.username)}`)} />
@@ -308,7 +308,7 @@ export default function Leaderboard() {
                 <X size={12} />
               </button>
             )}
-            
+
             <AnimatePresence>
               {showInstituteSuggestions && instituteSuggestions.length > 0 && (
                 <motion.div

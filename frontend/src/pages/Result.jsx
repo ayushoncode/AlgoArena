@@ -123,8 +123,8 @@ export default function Result() {
               )}
 
               {/* Header */}
-              <div className="px-8 py-8 text-center" style={{ borderBottom: '1px solid var(--c-border)' }}>
-                <p className="section-label mb-3"
+              <div className="px-4 md:px-8 py-6 md:py-8 text-center" style={{ borderBottom: '1px solid var(--c-border)' }}>
+                <p className="font-mono text-[9px] md:text-[10px] uppercase font-bold tracking-widest mb-3"
                   style={{ color: state?.isForfeit ? 'var(--c-gold)' : isCustomMatch ? 'var(--c-blue)' : 'var(--c-text-mute)' }}>
                   {state?.isForfeit
                     ? (state.forfeitUser === user?.username ? '// Match Forfeited' : '// Forfeit Victory')
@@ -138,11 +138,11 @@ export default function Result() {
                   initial={{ scale: 0.6, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.15, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-center justify-center gap-3 mb-4"
+                  className="flex items-center justify-center gap-2 md:gap-3 mb-4"
                 >
-                  <OutcomeIcon size={48} style={{ color: outcomeColor }} strokeWidth={1.5} />
-                  <span className="font-display font-black tracking-tight"
-                    style={{ fontSize: 72, lineHeight: 1, color: outcomeColor, letterSpacing: '-0.03em' }}
+                  <OutcomeIcon className="w-10 h-10 md:w-12 md:h-12" style={{ color: outcomeColor }} strokeWidth={1.5} />
+                  <span className="font-display font-black tracking-tight text-[56px] md:text-[72px]"
+                    style={{ lineHeight: 1, color: outcomeColor, letterSpacing: '-0.03em' }}
                   >
                     {isWin ? 'WIN' : isDraw ? 'DRAW' : 'LOSS'}
                   </span>
@@ -163,8 +163,8 @@ export default function Result() {
               </div>
 
               {/* Elo delta */}
-              <div className="px-8 py-6 text-center" style={{ borderBottom: '1px solid var(--c-border)' }}>
-                <p className="section-label mb-3">Rating Change</p>
+              <div className="px-4 md:px-8 py-5 md:py-6 text-center" style={{ borderBottom: '1px solid var(--c-border)' }}>
+                <p className="font-mono text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-[var(--c-text-mute)] mb-3">Rating Change</p>
                 {isCustomMatch ? (
                   <StatBadge label="Unranked Match" value={`${fromRating} Elo Unchanged`} color="var(--c-blue)" />
                 ) : (
@@ -172,10 +172,10 @@ export default function Result() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3, duration: 0.4 }}
-                    className="flex items-baseline justify-center gap-3"
+                    className="flex items-baseline justify-center gap-2 md:gap-3"
                   >
-                    <span className="font-mono text-lg" style={{ color: 'var(--c-text-mute)' }}>{fromRating}</span>
-                    <span className="font-mono text-2xl" style={{ color: 'var(--c-border2)' }}>→</span>
+                    <span className="font-mono text-base md:text-lg" style={{ color: 'var(--c-text-mute)' }}>{fromRating}</span>
+                    <span className="font-mono text-xl md:text-2xl" style={{ color: 'var(--c-border2)' }}>→</span>
                     <AnimatedCounter
                       value={toRating}
                       className="font-display font-black text-5xl tabular-nums"
@@ -206,7 +206,7 @@ export default function Result() {
               </div>
 
               {/* Match summary */}
-              <div className="px-8 py-5 grid grid-cols-2 gap-4">
+              <div className="px-4 md:px-8 py-4 md:py-5 grid grid-cols-2 gap-3 md:gap-4">
                 {[
                   { lbl: 'Topic',      val: topic },
                   { lbl: 'Difficulty', val: <DiffChip difficulty={difficulty} /> },
@@ -214,7 +214,7 @@ export default function Result() {
                   { lbl: 'Room',       val: state?.roomId?.slice(0, 14) ?? '—' },
                 ].map(r => (
                   <div key={r.lbl}>
-                    <p className="section-label mb-0.5">{r.lbl}</p>
+                    <p className="font-mono text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-[var(--c-text-mute)] mb-0.5">{r.lbl}</p>
                     <p className="font-mono text-[12px] font-bold" style={{ color: 'var(--c-text)' }}>{r.val}</p>
                   </div>
                 ))}

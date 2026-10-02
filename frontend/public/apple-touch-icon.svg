@@ -1,0 +1,9 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="180" height="180" rx="38" fill="#05070F"/>
+  <polygon points="90,14 155,50 155,130 90,166 25,130 25,50" fill="rgba(8,12,28,0.95)"/>
+  <path d="M90 14 L25 50 L25 130 L90 166" stroke="#E11D48" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M90 14 L155 50 L155 130 L90 166" stroke="#00C2FF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M90 40 L56 126" stroke="#E11D48" stroke-width="12" stroke-linecap="round"/>
+  <path d="M90 40 L124 126" stroke="#00C2FF" stroke-width="12" stroke-linecap="round"/>
+  <line x1="61" y1="100" x2="119" y2="100" stroke="#F5B942" stroke-width="11" stroke-linecap="round"/>
+</svg>

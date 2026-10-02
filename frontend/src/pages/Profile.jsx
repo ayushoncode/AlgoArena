@@ -236,7 +236,7 @@ function EloChart({ data = [], username = 'Coder' }) {
 
             {/* 4. Area Gradient & Tier-Colored Curve Segments */}
             <path d={areaPath} fill="url(#arenaAreaGrad)" clipPath="url(#arenaClip)" />
-            
+
             {/* Draw individual curve segments dynamically colored by point rank tier */}
             {pts.length === 1 ? (
               <line x1={0} y1={pts[0][1]} x2={innerW} y2={pts[0][1]} stroke={getArenaTier(data[0]?.rating || 1200).col} strokeWidth={2.5} clipPath="url(#arenaClip)" />
@@ -650,11 +650,10 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
               <button
                 key={st.id}
                 onClick={() => { setSelectedStyle(st.id); setSelectedSeed(PRESETS[st.id]?.[0] || 'seed1') }}
-                className={`px-3 py-1.5 rounded font-mono text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
-                  active
+                className={`px-3 py-1.5 rounded font-mono text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${active
                     ? 'bg-[#38BDF8]/20 text-[#38BDF8] border border-[#38BDF8]/50'
                     : 'bg-[#0B1120] text-slate-400 border border-[#1C2842] hover:border-slate-600'
-                }`}
+                  }`}
               >
                 <Icon size={12} />
                 <span>{st.label}</span>
@@ -682,11 +681,10 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
                 <button
                   key={preset}
                   onClick={() => setSelectedSeed(preset)}
-                  className={`p-1 rounded border transition-all flex items-center justify-center cursor-pointer ${
-                    active
+                  className={`p-1 rounded border transition-all flex items-center justify-center cursor-pointer ${active
                       ? 'bg-[#38BDF8]/20 border-[#38BDF8] scale-105 shadow-md shadow-[#38BDF8]/20'
                       : 'bg-[#0B1120] border-[#1C2842] hover:border-slate-500'
-                  }`}
+                    }`}
                 >
                   <UserAvatar username={username} seed={preset} style={selectedStyle} size={34} />
                 </button>

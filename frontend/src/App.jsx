@@ -112,10 +112,9 @@ function AppLayout() {
           <Route path="/experiences/new" element={<RequireAuthGate><ShareExperienceWizard /></RequireAuthGate>} />
           <Route path="/experiences/:id" element={<RequireAuthGate><IntelReportDetail /></RequireAuthGate>} />
           <Route path="/experiences/:id/edit" element={<RequireAuthGate><ShareExperienceWizard /></RequireAuthGate>} />
-          
+
           <Route path="/match/:roomId" element={<Match />} />
           <Route path="/result" element={<Result />} />
-          <Route path="*" element={<Navigate to="/lobby" replace />} />
         </Routes>
       </main>
     </>
