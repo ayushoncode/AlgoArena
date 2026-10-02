@@ -39,7 +39,8 @@ export function useSocket() {
     function onDisconnect()  { setConnected(false) }
     function onForceLogout({ message }) {
       console.warn('[Socket] force_logout received:', message)
-      logout()
+      // Removed logout() to prevent localStorage clearing across tabs
+      socket.disconnect()
     }
 
     socket.on('connect',      onConnect)
