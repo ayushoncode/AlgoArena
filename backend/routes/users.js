@@ -3,13 +3,13 @@
  * Stub: GET /api/users/:id  (full implementation in Week 9)
  */
 
-const express        = require('express')
+const express = require('express')
 const authMiddleware = require('../middleware/auth')
-const db             = require('../db')
-const router         = express.Router()
+const db = require('../db')
+const router = express.Router()
 
 // GET /api/users/stats — live platform statistics
-router.get('/stats', async (req, res) => {
+router.get('/stats', async (_req, res) => {
   try {
     const { rows: userCount } = await db.query(`SELECT COUNT(*)::int as total FROM users`)
     const { rows: matchCount } = await db.query(`SELECT COUNT(*)::int as total FROM matches WHERE status = 'finished'`)

@@ -41,27 +41,26 @@ function defineTheme(monaco) {
     base: 'vs-dark',
     inherit: true,
     rules: [
-      { token: 'comment',   foreground: '4A5878', fontStyle: 'italic' },
-      { token: 'keyword',   foreground: '38BDF8' },
-      { token: 'string',    foreground: 'a3e635' },
-      { token: 'number',    foreground: 'E11D48' },
-      { token: 'function',  foreground: 'F5B942' },
-      { token: 'type',      foreground: 'c084fc' },
-      { token: 'variable',  foreground: 'E2E8F4' },
-      { token: 'operator',  foreground: '89DDFF' },
-      { token: 'delimiter', foreground: '89DDFF' },
+      { token: 'comment', foreground: '4A5878', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '38BDF8' },
+      { token: 'string', foreground: 'a3e635' },
+      { token: 'number', foreground: 'E11D48' },
+      { token: 'function', foreground: 'F5B942' },
+      { token: 'type', foreground: 'c084fc' },
+      { token: 'variable', foreground: 'E2E8F4' },
+      { token: 'delimiter', foreground: '1B2540' },
     ],
     colors: {
-      'editor.background':                  '#0B1120',
-      'editor.foreground':                  '#E2E8F4',
-      'editorLineNumber.foreground':        '#4A5878',
-      'editorLineNumber.activeForeground':  '#E11D48',
-      'editor.selectionBackground':         '#E11D4830',
-      'editor.lineHighlightBackground':     '#121A2E',
-      'editorCursor.foreground':            '#E11D48',
-      'editorGutter.background':            '#0B1120',
-      'scrollbarSlider.background':         '#1B254080',
-      'scrollbarSlider.hoverBackground':    '#243356AA',
+      'editor.background': '#0B1120',
+      'editor.foreground': '#E2E8F4',
+      'editorLineNumber.foreground': '#4A5878',
+      'editorLineNumber.activeForeground': '#E11D48',
+      'editor.selectionBackground': '#E11D4830',
+      'editor.lineHighlightBackground': '#121A2E',
+      'editorCursor.foreground': '#E11D48',
+      'editorGutter.background': '#0B1120',
+      'scrollbarSlider.background': '#1B254080',
+      'scrollbarSlider.hoverBackground': '#243356AA',
     },
   })
 }
@@ -344,9 +343,9 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
   }, [problemId, topic, difficulty])
 
   const DIFF = {
-    easy:   { col: '#10b981', bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.25)',  label: 'Easy'   },
+    easy: { col: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.25)', label: 'Easy' },
     medium: { col: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)', label: 'Medium' },
-    hard:   { col: '#E11D48', bg: 'rgba(225,29,72,0.12)',   border: 'rgba(225,29,72,0.25)',   label: 'Hard'   },
+    hard: { col: '#E11D48', bg: 'rgba(225,29,72,0.12)', border: 'rgba(225,29,72,0.25)', label: 'Hard' },
   }
   const diff = DIFF[difficulty] || DIFF.medium
 
@@ -408,8 +407,8 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
                 <div style={{ height: 16, width: '30%', background: 'var(--c-border)', borderRadius: 12 }} className="animate-pulse" />
                 <div className="space-y-2 pt-2">
                   <div style={{ height: 12, width: '100%', background: 'var(--c-border)', borderRadius: 4 }} className="animate-pulse" />
-                  <div style={{ height: 12, width: '90%',  background: 'var(--c-border)', borderRadius: 4 }} className="animate-pulse" />
-                  <div style={{ height: 12, width: '95%',  background: 'var(--c-border)', borderRadius: 4 }} className="animate-pulse" />
+                  <div style={{ height: 12, width: '90%', background: 'var(--c-border)', borderRadius: 4 }} className="animate-pulse" />
+                  <div style={{ height: 12, width: '95%', background: 'var(--c-border)', borderRadius: 4 }} className="animate-pulse" />
                 </div>
               </div>
             ) : problem && activeTab === 'description' ? (
@@ -558,6 +557,9 @@ export default function Match() {
   const [oppDisconnectState, setOppDisconnectState] = useState(null)
   const [oppProgress, setOppProgress] = useState(null)
   const [showResignModal, setShowResignModal] = useState(false)
+  
+  // Mobile Tab State
+  const [mobileTab, setMobileTab] = useState('editor')
 
   const editorRef = useRef(null)
   const typingTimeoutRef = useRef(null)
@@ -770,34 +772,36 @@ export default function Match() {
     : { title: 'Loading match…', topic: '—' }
 
   return (
-    <div className="flex flex-col" style={{ height: '100vh', background: 'var(--c-void)' }}>
+    <div className="flex flex-col" style={{ height: '100vh', height: '100dvh', background: 'var(--c-void)' }}>
 
       {/* ── MATCH HEADER ──────────────────────────────────── */}
-      <div className="flex items-center justify-between px-5 py-2 shrink-0"
+      <div className="flex items-center justify-between px-3 md:px-5 py-2 shrink-0 overflow-x-auto no-scrollbar"
         style={{ borderBottom: '1px solid var(--c-border)', background: 'var(--c-panel)' }}>
 
         {/* Problem info & Logo */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center pr-2.5" style={{ borderRight: '1px solid var(--c-border)' }}>
+        <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          <div className="flex items-center pr-2 md:pr-2.5" style={{ borderRight: '1px solid var(--c-border)' }}>
             <ArenaLogo size={20} />
           </div>
-          <div className="font-mono text-[10px] uppercase tracking-widest" style={{ color: 'var(--c-text-mute)', letterSpacing: '0.13em' }}>
+          <div className="font-mono text-[9px] md:text-[10px] uppercase tracking-widest whitespace-nowrap" style={{ color: 'var(--c-text-mute)', letterSpacing: '0.13em' }}>
             {problem.topic}
           </div>
-          <span style={{ color: 'var(--c-border2)' }}>·</span>
-          <DiffChip difficulty={matchState?.difficulty} />
-          <span style={{ color: 'var(--c-border)' }}>·</span>
-          <div className="font-mono text-[10px]" style={{ color: 'var(--c-text-mute)' }}>
+          <span className="hidden md:inline" style={{ color: 'var(--c-border2)' }}>·</span>
+          <div className="hidden md:block">
+            <DiffChip difficulty={matchState?.difficulty} />
+          </div>
+          <span className="hidden md:inline" style={{ color: 'var(--c-border)' }}>·</span>
+          <div className="font-mono text-[9px] md:text-[10px] hidden md:block" style={{ color: 'var(--c-text-mute)' }}>
             {roomId?.slice(0, 14)}
           </div>
         </div>
 
         {/* Timer */}
-        <div className="flex items-center gap-2">
-          <Clock size={14} style={{ color: urgent ? 'var(--c-red)' : 'var(--c-text-mute)' }} />
+        <div className="flex items-center gap-1.5 md:gap-2 shrink-0 ml-auto mr-3 md:mx-0">
+          <Clock size={12} className="md:w-3.5 md:h-3.5" style={{ color: urgent ? 'var(--c-red)' : 'var(--c-text-mute)' }} />
           <span
-            className={`font-mono text-lg font-bold tabular-nums${urgent ? ' animate-pulse' : ''}`}
-            style={{ color: urgent ? 'var(--c-red)' : 'var(--c-text)', minWidth: 56 }}
+            className={`font-mono text-sm md:text-lg font-bold tabular-nums${urgent ? ' animate-pulse' : ''}`}
+            style={{ color: urgent ? 'var(--c-red)' : 'var(--c-text)', minWidth: 44 }}
           >
             {timerDisplay}
           </span>
@@ -809,8 +813,8 @@ export default function Match() {
         </div>
 
         {/* Players summary & Exit button */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 md:gap-4 shrink-0">
+          <div className="hidden md:flex items-center gap-2">
             <span className="font-mono text-[11px] font-bold" style={{ color: 'var(--c-red)' }}>
               {me?.username ?? user?.username}
             </span>
@@ -822,11 +826,11 @@ export default function Match() {
 
           <button
             onClick={() => setShowResignModal(true)}
-            className="font-mono text-[10px] font-bold px-2.5 py-1 transition-all active:scale-[0.97] flex items-center gap-1"
+            className="font-mono text-[9px] md:text-[10px] font-bold px-2 md:px-2.5 py-1 transition-all active:scale-[0.97] flex items-center gap-1"
             style={{ background: 'rgba(225,29,72,0.1)', color: 'var(--c-red)', border: '1px solid rgba(225,29,72,0.3)', cursor: 'pointer' }}
             title="Resign & Exit Match"
           >
-            <Flag size={11} /> Resign
+            <Flag size={10} className="md:w-[11px] md:h-[11px]" /> Resign
           </button>
         </div>
       </div>
@@ -876,11 +880,31 @@ export default function Match() {
         </div>
       )}
 
+      {/* ── MOBILE TABS ── */}
+      <div className="flex md:hidden items-center px-2 py-1.5 shrink-0 overflow-x-auto no-scrollbar" style={{ background: 'var(--c-panel2)', borderBottom: '1px solid var(--c-border)', gap: 8 }}>
+        {[
+          { id: 'problem', label: 'Problem' },
+          { id: 'editor', label: 'Code' },
+          { id: 'opponent', label: 'Opponent' }
+        ].map(t => (
+          <button key={t.id} onClick={() => setMobileTab(t.id)}
+            className="font-mono text-[10px] px-3 py-1 font-bold uppercase transition-colors rounded-sm whitespace-nowrap"
+            style={{
+              background: mobileTab === t.id ? 'rgba(225,29,72,0.15)' : 'transparent',
+              color: mobileTab === t.id ? 'var(--c-red)' : 'var(--c-text-mute)',
+              border: `1px solid ${mobileTab === t.id ? 'rgba(225,29,72,0.3)' : 'transparent'}`,
+            }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {/* ── RESIZABLE 3-PANEL: problem | editor | opponent ── */}
-      <div className="flex flex-1 min-h-0" style={{ overflow: 'hidden' }}>
+      <div className="flex flex-1 min-h-0 relative" style={{ overflow: 'hidden' }}>
 
         {/* PROBLEM PANEL — resizable */}
-        <div style={{
+        <div className={`${mobileTab === 'problem' ? 'flex absolute inset-0 z-10 bg-[var(--c-panel)]' : 'hidden'} md:flex flex-col shrink-0 overflow-hidden md:relative md:z-auto max-md:!w-full max-md:!min-w-0`}
+          style={{
           width: probCollapsed ? 40 : probPanel.width,
           minWidth: probCollapsed ? 40 : 220,
           height: '100%',
@@ -902,13 +926,15 @@ export default function Match() {
         </div>
 
         {/* DRAG HANDLE — problem | editor */}
-        <DragHandle
-          onMouseDown={probPanel.onMouseDown}
-          onDoubleClick={() => probPanel.setWidth(240)}
-        />
+        <div className="hidden md:flex">
+          <DragHandle
+            onMouseDown={probPanel.onMouseDown}
+            onDoubleClick={() => probPanel.setWidth(240)}
+          />
+        </div>
 
         {/* EDITOR PANEL — fills remaining space */}
-        <div className="flex flex-col flex-1 min-w-0">
+        <div className={`${mobileTab === 'editor' ? 'flex absolute inset-0 z-10 bg-[var(--c-void)]' : 'hidden'} md:flex flex-col flex-1 min-w-0 md:relative md:z-auto max-md:!w-full`}>
           <PlayerHeader player={me ?? { username: user?.username, rating: user?.elo_rating }} isMe={true} verdict={myVerdict} progress={submitProgress} />
 
           {/* Lang selector + submit */}
@@ -958,7 +984,7 @@ export default function Match() {
                   clipPath: myVerdict !== 'ACCEPTED' && !submitting ? 'polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%)' : 'none',
                 }}>
                 {myVerdict === 'ACCEPTED'
-                  ? <><CheckCircle size={10} />Accepted</>  
+                  ? <><CheckCircle size={10} />Accepted</>
                   : submitting
                     ? <><Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} />{submitProgress ? `${submitProgress.testIndex}/${submitProgress.totalTests}` : 'Judging…'}</>
                     : <>Submit</>
@@ -1017,32 +1043,34 @@ export default function Match() {
         </div>
 
         {/* DRAG HANDLE — editor | opponent */}
-        <DragHandle
-          onMouseDown={(e) => {
-            // Dragging opponent panel from the LEFT: delta is inverted
-            const dragging = { active: true, startX: e.clientX, startW: oppPanel.width }
-            document.body.style.cursor = 'col-resize'
-            document.body.style.userSelect = 'none'
-            const onMove = (ev) => {
-              if (!dragging.active) return
-              const delta = dragging.startX - ev.clientX   // inverted: drag left = wider
-              oppPanel.setWidth(Math.min(360, Math.max(120, dragging.startW + delta)))
-            }
-            const onUp = () => {
-              dragging.active = false
-              document.body.style.cursor = ''
-              document.body.style.userSelect = ''
-              window.removeEventListener('mousemove', onMove)
-              window.removeEventListener('mouseup', onUp)
-            }
-            window.addEventListener('mousemove', onMove)
-            window.addEventListener('mouseup', onUp)
-          }}
-          onDoubleClick={() => oppPanel.setWidth(180)}
-        />
+        <div className="hidden md:flex">
+          <DragHandle
+            onMouseDown={(e) => {
+              // Dragging opponent panel from the LEFT: delta is inverted
+              const dragging = { active: true, startX: e.clientX, startW: oppPanel.width }
+              document.body.style.cursor = 'col-resize'
+              document.body.style.userSelect = 'none'
+              const onMove = (ev) => {
+                if (!dragging.active) return
+                const delta = dragging.startX - ev.clientX   // inverted: drag left = wider
+                oppPanel.setWidth(Math.min(360, Math.max(120, dragging.startW + delta)))
+              }
+              const onUp = () => {
+                dragging.active = false
+                document.body.style.cursor = ''
+                document.body.style.userSelect = ''
+                window.removeEventListener('mousemove', onMove)
+                window.removeEventListener('mouseup', onUp)
+              }
+              window.addEventListener('mousemove', onMove)
+              window.addEventListener('mouseup', onUp)
+            }}
+            onDoubleClick={() => oppPanel.setWidth(180)}
+          />
+        </div>
 
         {/* OPPONENT PANEL */}
-        <div className="flex flex-col shrink-0"
+        <div className={`${mobileTab === 'opponent' ? 'flex absolute inset-0 z-10 bg-[var(--c-panel)]' : 'hidden'} md:flex flex-col shrink-0 md:relative md:z-auto max-md:!w-full max-md:!min-w-0`}
           style={{ width: oppPanel.width, minWidth: oppPanel.width, background: 'var(--c-panel)', overflow: 'hidden', borderLeft: '1px solid var(--c-border)' }}>
           <PlayerHeader player={opp} isMe={false} verdict={oppVerdict} progress={oppProgress} />
 
