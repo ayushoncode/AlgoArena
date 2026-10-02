@@ -500,52 +500,61 @@ function MatchRow({ m }) {
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3 border-b border-[#1C2842]/60 transition-colors hover:bg-[#121A2E]/50 relative"
+      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-3 py-2.5 sm:px-4 sm:py-3 border-b border-[#1C2842]/60 transition-colors hover:bg-[#121A2E]/50 relative"
       style={{
         borderLeft: `3px solid ${isWin ? 'var(--c-green)' : isLoss ? 'var(--c-red)' : 'var(--c-gold)'}`,
       }}
     >
-      {/* Result Chip */}
-      <div className="w-24 shrink-0">
-        <span
-          className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
-          style={{
-            background: isWin ? 'rgba(16,185,129,0.12)' : isLoss ? 'rgba(225,29,72,0.12)' : 'rgba(245,185,66,0.12)',
-            color: isWin ? 'var(--c-green)' : isLoss ? 'var(--c-red)' : 'var(--c-gold)',
-            border: `1px solid ${isWin ? 'rgba(16,185,129,0.3)' : isLoss ? 'rgba(225,29,72,0.3)' : 'rgba(245,185,66,0.3)'}`,
-          }}
-        >
-          {isWin ? <CheckCircle size={11} /> : isLoss ? <XCircle size={11} /> : <Minus size={11} />}
-          <span>{isWin ? 'VICTORY' : isLoss ? 'DEFEAT' : 'DRAW'}</span>
-        </span>
+      <div className="flex items-center justify-between sm:w-auto">
+        {/* Result Chip */}
+        <div className="w-20 sm:w-24 shrink-0">
+          <span
+            className="inline-flex items-center gap-1 font-mono text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded"
+            style={{
+              background: isWin ? 'rgba(16,185,129,0.12)' : isLoss ? 'rgba(225,29,72,0.12)' : 'rgba(245,185,66,0.12)',
+              color: isWin ? 'var(--c-green)' : isLoss ? 'var(--c-red)' : 'var(--c-gold)',
+              border: `1px solid ${isWin ? 'rgba(16,185,129,0.3)' : isLoss ? 'rgba(225,29,72,0.3)' : 'rgba(245,185,66,0.3)'}`,
+            }}
+          >
+            {isWin ? <CheckCircle size={10} /> : isLoss ? <XCircle size={10} /> : <Minus size={10} />}
+            <span>{isWin ? 'VICTORY' : isLoss ? 'DEFEAT' : 'DRAW'}</span>
+          </span>
+        </div>
+
+        {/* Date (Mobile Only) */}
+        <div className="sm:hidden text-right font-mono text-[9px] text-slate-400">
+          {dateStr}
+        </div>
       </div>
 
-      {/* Opponent Info */}
-      <div className="flex-1 min-w-0 flex items-center gap-2">
-        <UserAvatar username={m.opponent || 'Opponent'} size={24} />
-        <span className="font-mono text-xs font-bold text-white truncate max-w-[120px]">
-          @{m.opponent || 'Warrior'}
-        </span>
-      </div>
+      <div className="flex items-center justify-between sm:flex-1 sm:min-w-0">
+        {/* Opponent Info */}
+        <div className="flex-1 min-w-0 flex items-center gap-2">
+          <UserAvatar username={m.opponent || 'Opponent'} size={20} className="sm:w-6 sm:h-6" />
+          <span className="font-mono text-xs font-bold text-white truncate max-w-[100px] sm:max-w-[120px]">
+            @{m.opponent || 'Warrior'}
+          </span>
+        </div>
 
-      {/* Topic & Difficulty Chips */}
-      <div className="hidden md:flex items-center gap-1.5 flex-1 min-w-0">
-        <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-[#0B1120] border border-[#1C2842] text-slate-300 truncate">
-          {topicDisplay}
-        </span>
-        <DiffChip diff={diffLower} />
-      </div>
+        {/* Topic & Difficulty Chips (Desktop) */}
+        <div className="hidden md:flex items-center gap-1.5 flex-1 min-w-0">
+          <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-[#0B1120] border border-[#1C2842] text-slate-300 truncate">
+            {topicDisplay}
+          </span>
+          <DiffChip diff={diffLower} />
+        </div>
 
-      {/* Elo Change */}
-      <div className="w-16 shrink-0 text-right font-mono text-xs font-bold">
-        <span style={{ color: m.elo_delta > 0 ? 'var(--c-green)' : m.elo_delta < 0 ? 'var(--c-red)' : 'var(--c-text-mute)' }}>
-          {deltaStr}
-        </span>
-      </div>
+        {/* Elo Change */}
+        <div className="w-14 sm:w-16 shrink-0 text-right font-mono text-xs font-bold">
+          <span style={{ color: m.elo_delta > 0 ? 'var(--c-green)' : m.elo_delta < 0 ? 'var(--c-red)' : 'var(--c-text-mute)' }}>
+            {deltaStr}
+          </span>
+        </div>
 
-      {/* Date */}
-      <div className="w-16 shrink-0 text-right font-mono text-[10px] text-slate-400">
-        {dateStr}
+        {/* Date (Desktop) */}
+        <div className="hidden sm:block w-16 shrink-0 text-right font-mono text-[10px] text-slate-400">
+          {dateStr}
+        </div>
       </div>
     </div>
   )
@@ -983,7 +992,7 @@ export default function Profile() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
         {/* ── 1. DOSSIER BANNER ──────────────────────────────── */}
-        <HudPanel glow glowColor={currentTier.glow} style={{ padding: '1.75rem 2rem' }}>
+        <HudPanel glow glowColor={currentTier.glow} className="p-4 sm:p-7">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
 
             {/* Left: Avatar + User details */}
@@ -1154,70 +1163,70 @@ export default function Profile() {
         </HudPanel>
 
         {/* ── 2. STAT STRIP (6 Stats) ────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-4">
 
           {/* 1. Rating */}
-          <HudPanel className="p-4 space-y-1.5 transition-transform hover:-translate-y-0.5">
+          <HudPanel className="p-3 sm:p-4 space-y-1 sm:space-y-1.5 transition-transform hover:-translate-y-0.5">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="font-mono text-[10px] uppercase tracking-wider">Rating</span>
+              <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider">Rating</span>
               <Trophy size={14} style={{ color: currentTier.col }} />
             </div>
-            <p className="font-display font-black text-2xl sm:text-3xl" style={{ color: currentTier.col }}>{elo}</p>
-            <p className="font-mono text-[10px] text-slate-400">Peak {peakElo}</p>
+            <p className="font-display font-black text-xl sm:text-3xl" style={{ color: currentTier.col }}>{elo}</p>
+            <p className="font-mono text-[9px] sm:text-[10px] text-slate-400">Peak {peakElo}</p>
           </HudPanel>
 
           {/* 2. Wins */}
-          <HudPanel className="p-4 space-y-1.5 transition-transform hover:-translate-y-0.5">
+          <HudPanel className="p-3 sm:p-4 space-y-1 sm:space-y-1.5 transition-transform hover:-translate-y-0.5">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="font-mono text-[10px] uppercase tracking-wider">Wins</span>
+              <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider">Wins</span>
               <Swords size={14} className="text-[#10b981]" />
             </div>
-            <p className="font-display font-black text-2xl sm:text-3xl text-[#10b981]">{wins}</p>
-            <p className="font-mono text-[10px] text-slate-400">{wr}% Win Rate</p>
+            <p className="font-display font-black text-xl sm:text-3xl text-[#10b981]">{wins}</p>
+            <p className="font-mono text-[9px] sm:text-[10px] text-slate-400">{wr}% Win Rate</p>
           </HudPanel>
 
           {/* 3. Losses */}
-          <HudPanel className="p-4 space-y-1.5 transition-transform hover:-translate-y-0.5">
+          <HudPanel className="p-3 sm:p-4 space-y-1 sm:space-y-1.5 transition-transform hover:-translate-y-0.5">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="font-mono text-[10px] uppercase tracking-wider">Losses</span>
+              <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider">Losses</span>
               <Shield size={14} className="text-[#E11D48]" />
             </div>
-            <p className="font-display font-black text-2xl sm:text-3xl text-[#E11D48]">{losses}</p>
-            <p className="font-mono text-[10px] text-slate-400">{total} Battles</p>
+            <p className="font-display font-black text-xl sm:text-3xl text-[#E11D48]">{losses}</p>
+            <p className="font-mono text-[9px] sm:text-[10px] text-slate-400">{total} Battles</p>
           </HudPanel>
 
           {/* 4. Win Rate */}
-          <HudPanel className="p-4 space-y-1.5 transition-transform hover:-translate-y-0.5">
+          <HudPanel className="p-3 sm:p-4 space-y-1 sm:space-y-1.5 transition-transform hover:-translate-y-0.5">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="font-mono text-[10px] uppercase tracking-wider">Win Rate</span>
+              <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider">Win Rate</span>
               <Target size={14} className="text-[#38BDF8]" />
             </div>
-            <p className="font-display font-black text-2xl sm:text-3xl text-[#38BDF8]">{wr}%</p>
-            <p className="font-mono text-[10px] text-slate-400">{wins}W - {losses}L</p>
+            <p className="font-display font-black text-xl sm:text-3xl text-[#38BDF8]">{wr}%</p>
+            <p className="font-mono text-[9px] sm:text-[10px] text-slate-400">{wins}W - {losses}L</p>
           </HudPanel>
 
           {/* 5. Streak */}
-          <HudPanel className="p-4 space-y-1.5 transition-transform hover:-translate-y-0.5">
+          <HudPanel className="p-3 sm:p-4 space-y-1 sm:space-y-1.5 transition-transform hover:-translate-y-0.5">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="font-mono text-[10px] uppercase tracking-wider">Streak</span>
+              <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider">Streak</span>
               <Flame size={14} className="text-[#F5B942]" />
             </div>
-            <p className="font-display font-black text-2xl sm:text-3xl text-[#F5B942]">{streak}d</p>
-            <p className="font-mono text-[10px] text-slate-400">Active Streak</p>
+            <p className="font-display font-black text-xl sm:text-3xl text-[#F5B942]">{streak}d</p>
+            <p className="font-mono text-[9px] sm:text-[10px] text-slate-400">Active Streak</p>
           </HudPanel>
 
           {/* 6. Favorite Topic */}
-          <HudPanel className="p-4 space-y-1.5 transition-transform hover:-translate-y-0.5 min-w-0">
+          <HudPanel className="p-3 sm:p-4 space-y-1 sm:space-y-1.5 transition-transform hover:-translate-y-0.5 min-w-0">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="font-mono text-[10px] uppercase tracking-wider truncate">Fav Topic</span>
+              <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider truncate">Fav Topic</span>
               <Zap size={14} className="text-[#38BDF8] shrink-0" />
             </div>
             <Tooltip content={favTopicTitle}>
-              <p className="font-display font-black text-lg sm:text-xl text-[#38BDF8] truncate uppercase">
+              <p className="font-display font-black text-base sm:text-xl text-[#38BDF8] truncate uppercase">
                 {favTopicTitle}
               </p>
             </Tooltip>
-            <p className="font-mono text-[10px] text-slate-400">{favTopicCount} Battles</p>
+            <p className="font-mono text-[9px] sm:text-[10px] text-slate-400">{favTopicCount} Battles</p>
           </HudPanel>
 
         </div>
@@ -1278,7 +1287,7 @@ export default function Profile() {
             ) : (
               <div className="flex-1 flex flex-col min-h-0">
                 {/* Header Row */}
-                <div className="flex items-center gap-3 px-4 py-2 border-b border-[#1C2842] bg-[#05070F] font-mono text-[9px] uppercase tracking-wider text-slate-400">
+                <div className="hidden sm:flex items-center gap-3 px-4 py-2 border-b border-[#1C2842] bg-[#05070F] font-mono text-[9px] uppercase tracking-wider text-slate-400">
                   <span className="w-24 shrink-0">Result</span>
                   <span className="flex-1 min-w-0">Opponent</span>
                   <span className="hidden md:block flex-1 min-w-0">Topic & Diff</span>
