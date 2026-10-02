@@ -115,7 +115,7 @@ const DIFFS = [
    LIVE COUNTER HOOK
 ════════════════════════════════════════════════ */
 function useLiveCounter() {
-  const [stats, setStats] = useState({ players: 1, matches: 0, totalProblems: 174 })
+  const [stats, setStats] = useState({ players: 0, matches: 0, totalProblems: 0, loading: true })
   useEffect(() => {
     async function loadStats() {
       try {
@@ -124,9 +124,10 @@ function useLiveCounter() {
           api.get('/api/problems/stats').catch(() => ({ data: {} })),
         ])
         setStats({
-          players: Math.max(1, uRes.data?.totalUsers || 1),
+          players: Math.max(0, uRes.data?.onlineUsers || 0),
           matches: uRes.data?.totalMatches || 0,
-          totalProblems: pRes.data?.totalProblems || 174,
+          totalProblems: pRes.data?.totalProblems || 0,
+          loading: false,
         })
       } catch (err) { console.error('[Lobby stats]', err) }
     }
@@ -935,11 +936,19 @@ export default function Lobby() {
                 style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)', clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}>
                 <div className="flex items-center justify-end gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--c-green)' }} />
-                  <span className="font-bold" style={{ color: 'var(--c-text)' }}>{live.totalProblems}</span>
+                  {live.loading ? (
+                    <Skeleton className="w-8 h-4 rounded-sm" />
+                  ) : (
+                    <span className="font-bold" style={{ color: 'var(--c-text)' }}>{live.totalProblems}</span>
+                  )}
                   <span style={{ color: 'var(--c-text-mute)' }}>Problems</span>
                 </div>
-                <div className="text-[10px]" style={{ color: 'var(--c-text-mute)' }}>
-                  {live.players} Coders Online
+                <div className="text-[10px] flex justify-end mt-0.5" style={{ color: 'var(--c-text-mute)' }}>
+                  {live.loading ? (
+                    <div className="flex items-center gap-1"><Skeleton className="w-4 h-3 rounded-sm" /> Coders Online</div>
+                  ) : (
+                    <>{live.players} Coders Online</>
+                  )}
                 </div>
               </div>
             </div>
