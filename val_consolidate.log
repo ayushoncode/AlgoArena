@@ -1,0 +1,222 @@
+◇ injected env (11) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+
+========================================
+Validating: Consolidate Time Blocks (medium)
+========================================
+
+✅ JSON Schema passed
+✅ DB Slug/Title uniquely available
+✅ Hidden tests count: 23
+✅ Starter code generated for all 4 languages
+
+--- Running Empty Solution Baseline ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [[1,3],[2,6],[8,10],[15,18]]
+--- Source Code Reaching Compiler ---
+def solution(*args):
+    return None
+-------------------------------------
+
+✅ Baseline empty python solution execution took: 222ms
+
+--- Running References (All Languages) ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [[1,3],[2,6],[8,10],[15,18]]
+--- Source Code Reaching Compiler ---
+def solution(intervals):
+    if not intervals: return []
+    intervals.sort(key=lambda x: x[0])
+    res = [intervals[0]]
+    for i in range(1, len(intervals)):
+        if intervals[i][0] <= res[-1][1]:
+            res[-1][1] = max(res[-1][1], intervals[i][1])
+        else:
+            res.append(intervals[i])
+    return res
+-------------------------------------
+
+✅ python     passed all 26 tests (Raw Runtime: 188ms).
+
+[Sandbox Debug] Compiling/Running Code
+Language: javascript
+Test Input (Sample): [[1,3],[2,6],[8,10],[15,18]]
+--- Source Code Reaching Compiler ---
+function solution(intervals) {
+    if (!intervals.length) return [];
+    intervals.sort((a, b) => a[0] - b[0]);
+    const res = [intervals[0]];
+    for (let i = 1; i < intervals.length; i++) {
+        const last = res[res.length - 1];
+        if (intervals[i][0] <= last[1]) last[1] = Math.max(last[1], intervals[i][1]);
+        else res.push(intervals[i]);
+    }
+    return res;
+}
+-------------------------------------
+
+✅ javascript passed all 26 tests (Raw Runtime: 181ms).
+
+[Sandbox Debug] Compiling/Running Code
+Language: java
+Test Input (Sample): [[1,3],[2,6],[8,10],[15,18]]
+--- Source Code Reaching Compiler ---
+import java.util.*;
+import java.util.stream.*;
+import java.lang.reflect.*;
+class Solution {
+    public int[][] solution(int[][] intervals) {
+        if (intervals.length == 0) return new int[0][0];
+        java.util.Arrays.sort(intervals, (a, b) -> Integer.compare(a[0], b[0]));
+        java.util.List<int[]> res = new java.util.ArrayList<>();
+        res.add(intervals[0]);
+        for (int i = 1; i < intervals.length; i++) {
+            int[] last = res.get(res.size() - 1);
+            if (intervals[i][0] <= last[1]) last[1] = Math.max(last[1], intervals[i][1]);
+            else res.add(intervals[i]);
+        }
+        return res.toArray(new int[res.size()][]);
+    }
+}
+-------------------------------------
+
+✅ java       passed all 26 tests (Raw Runtime: 2594ms).
+
+[Sandbox Debug] Compiling/Running Code
+Language: cpp
+Test Input (Sample): [[1,3],[2,6],[8,10],[15,18]]
+--- Source Code Reaching Compiler ---
+#include <vector>
+#include <algorithm>
+using namespace std;
+class Solution {
+public:
+    vector<vector<int>> solution(vector<vector<int>>& intervals) {
+        if (intervals.empty()) return {};
+        sort(intervals.begin(), intervals.end(), [](const vector<int>& a, const vector<int>& b) { return a[0] < b[0]; });
+        vector<vector<int>> res = {intervals[0]};
+        for (size_t i = 1; i < intervals.size(); i++) {
+            if (intervals[i][0] <= res.back()[1]) res.back()[1] = max(res.back()[1], intervals[i][1]);
+            else res.push_back(intervals[i]);
+        }
+        return res;
+    }
+};
+-------------------------------------
+
+✅ cpp        passed all 26 tests (Raw Runtime: 5333ms).
+
+--- Running Brute Force Solution ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [[1,3],[2,6],[8,10],[15,18]]
+--- Source Code Reaching Compiler ---
+def solution(intervals):
+    if not intervals: return []
+    # O(N^2) naive graph components approach
+    n = len(intervals)
+    adj = {i: [] for i in range(n)}
+    for i in range(n):
+        for j in range(i + 1, n):
+            if max(intervals[i][0], intervals[j][0]) <= min(intervals[i][1], intervals[j][1]):
+                adj[i].append(j)
+                adj[j].append(i)
+    visited = set()
+    res = []
+    for i in range(n):
+        if i not in visited:
+            comp_start, comp_end = intervals[i]
+            q = [i]
+            visited.add(i)
+            while q:
+                curr = q.pop(0)
+                comp_start = min(comp_start, intervals[curr][0])
+                comp_end = max(comp_end, intervals[curr][1])
+                for nxt in adj[curr]:
+                    if nxt not in visited:
+                        visited.add(nxt)
+                        q.append(nxt)
+            res.append([comp_start, comp_end])
+    res.sort(key=lambda x: x[0])
+    return res
+-------------------------------------
+
+✅ Brute force solution got TLE as expected.
+
+--- Validating Starter Codes Fail Cleanly ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: javascript
+Test Input (Sample): [[1,3],[2,6],[8,10],[15,18]]
+--- Source Code Reaching Compiler ---
+/**
+ * @param {number[][]} time_blocks
+ * @return {number[][]}
+ */
+function solution(time_blocks) {
+  // write your solution here
+  
+}
+-------------------------------------
+
+✅ javascript starter code failed cleanly (WRONG_ANSWER) (Empty Runtime: 266ms)
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [[1,3],[2,6],[8,10],[15,18]]
+--- Source Code Reaching Compiler ---
+class Solution:
+    def solution(self, time_blocks: List[List[int]]) -> List[List[int]]:
+        # write your solution here
+        pass
+-------------------------------------
+
+✅ python     starter code failed cleanly (WRONG_ANSWER) (Empty Runtime: 194ms)
+
+[Sandbox Debug] Compiling/Running Code
+Language: java
+Test Input (Sample): [[1,3],[2,6],[8,10],[15,18]]
+--- Source Code Reaching Compiler ---
+import java.util.*;
+import java.util.stream.*;
+import java.lang.reflect.*;
+
+class Solution {
+    public int[][] solution(int[][] time_blocks) {
+        // write your solution here
+        return new int[][]{};
+    }
+}
+-------------------------------------
+
+✅ java       starter code failed cleanly (WRONG_ANSWER) (Empty Runtime: 2127ms)
+
+[Sandbox Debug] Compiling/Running Code
+Language: cpp
+Test Input (Sample): [[1,3],[2,6],[8,10],[15,18]]
+--- Source Code Reaching Compiler ---
+#include <iostream>
+#include <vector>
+#include <string>
+#include <queue>
+#include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
+using namespace std;
+
+class Solution {
+public:
+    vector<vector<int>> solution(vector<vector<int>>& time_blocks) {
+        // write your solution here
+        return {};
+    }
+};
+-------------------------------------
+
+✅ cpp        starter code failed cleanly (WRONG_ANSWER) (Empty Runtime: 5045ms)
+
+🎉 All rigid validations completed successfully for Consolidate Time Blocks!

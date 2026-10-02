@@ -1,0 +1,40 @@
+{
+  "id": "6c747e6e-3b43-4bc2-863d-93075136fcbc",
+  "title": "Two Sum",
+  "description": "Given an array of integers `nums` and a target integer `target`, return the **indices** of the two numbers that add up to `target`.\n\nYou may assume each input has exactly one solution, and you may not use the same element twice.\n\n**Example:**\n```\nnums = [2,7,11,15], target = 9\nOutput: [0,1]\n```\n\n**Constraints:**\n- 2 ≤ nums.length ≤ 10⁴\n- -10⁹ ≤ nums[i] ≤ 10⁹",
+  "topic": "arrays",
+  "difficulty": "easy",
+  "min_rating": 0,
+  "max_rating": 9999,
+  "sample_input": "[2,7,11,15]\\n9",
+  "sample_output": "[0,1]",
+  "created_at": "2026-08-12T12:03:45.587Z",
+  "test_cases": [
+    {
+      "id": "3163a5aa-ecf1-4d22-9422-fce8b6f3f9a0",
+      "problem_id": "6c747e6e-3b43-4bc2-863d-93075136fcbc",
+      "input": "[3,3], 6",
+      "output": "[0,1]",
+      "is_hidden": true
+    },
+    {
+      "id": "3fac43cb-f957-4c49-946b-b58dbbf54b33",
+      "problem_id": "6c747e6e-3b43-4bc2-863d-93075136fcbc",
+      "input": "[3,2,4], 6",
+      "output": "[1,2]",
+      "is_hidden": false
+    },
+    {
+      "id": "98defcf6-12da-4cb3-b0b8-5218a99c8f67",
+      "problem_id": "6c747e6e-3b43-4bc2-863d-93075136fcbc",
+      "input": "[2,7,11,15], 9",
+      "output": "[0,1]",
+      "is_hidden": false
+    }
+  ],
+  "statement": "Given an array of integers `nums` and a target integer `target`, return the **indices** of the two numbers that add up to `target`.\n\nYou may assume each input has exactly one solution, and you may not use the same element twice.\n\n**Example:**\n```\nnums = [2,7,11,15], target = 9\nOutput: [0,1]\n```\n\n**Constraints:**\n- 2 ≤ nums.length ≤ 10⁴\n- -10⁹ ≤ nums[i] ≤ 10⁹",
+  "testSuite": [],
+  "constraints": [],
+  "hints": [],
+  "bruteForceSolution": null
+}

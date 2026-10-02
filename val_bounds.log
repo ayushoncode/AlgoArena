@@ -1,0 +1,202 @@
+◇ injected env (11) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+
+========================================
+Validating: Target Value Bounds (easy)
+========================================
+
+✅ JSON Schema passed
+✅ DB Slug/Title uniquely available
+✅ Hidden tests count: 18
+✅ Starter code generated for all 4 languages
+
+--- Running Empty Solution Baseline ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [5, 7, 7, 8, 8, 10], 8
+--- Source Code Reaching Compiler ---
+def solution(*args):
+    return None
+-------------------------------------
+
+✅ Baseline empty python solution execution took: 170ms
+
+--- Running References (All Languages) ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [5, 7, 7, 8, 8, 10], 8
+--- Source Code Reaching Compiler ---
+def solution(nums, target):
+    def find(is_first):
+        ans, l, r = -1, 0, len(nums)-1
+        while l <= r:
+            mid = (l + r) // 2
+            if nums[mid] == target:
+                ans = mid
+                if is_first: r = mid - 1
+                else: l = mid + 1
+            elif nums[mid] < target: l = mid + 1
+            else: r = mid - 1
+        return ans
+    return [find(True), find(False)]
+-------------------------------------
+
+✅ python     passed all 21 tests (Raw Runtime: 209ms).
+
+[Sandbox Debug] Compiling/Running Code
+Language: javascript
+Test Input (Sample): [5, 7, 7, 8, 8, 10], 8
+--- Source Code Reaching Compiler ---
+function solution(nums, target) {
+    const find = (isFirst) => {
+        let ans = -1, l = 0, r = nums.length - 1;
+        while (l <= r) {
+            let mid = (l + r) >> 1;
+            if (nums[mid] === target) {
+                ans = mid;
+                if (isFirst) r = mid - 1;
+                else l = mid + 1;
+            } else if (nums[mid] < target) l = mid + 1;
+            else r = mid - 1;
+        }
+        return ans;
+    };
+    return [find(true), find(false)];
+}
+-------------------------------------
+
+✅ javascript passed all 21 tests (Raw Runtime: 183ms).
+
+[Sandbox Debug] Compiling/Running Code
+Language: java
+Test Input (Sample): [5, 7, 7, 8, 8, 10], 8
+--- Source Code Reaching Compiler ---
+import java.util.*;
+import java.util.stream.*;
+import java.lang.reflect.*;
+class Solution {
+    private int find(int[] nums, int target, boolean isFirst) {
+        int ans = -1, l = 0, r = nums.length - 1;
+        while (l <= r) {
+            int mid = l + (r - l) / 2;
+            if (nums[mid] == target) {
+                ans = mid;
+                if (isFirst) r = mid - 1;
+                else l = mid + 1;
+            } else if (nums[mid] < target) l = mid + 1;
+            else r = mid - 1;
+        }
+        return ans;
+    }
+    public int[] solution(int[] nums, int target) {
+        return new int[]{find(nums, target, true), find(nums, target, false)};
+    }
+}
+-------------------------------------
+
+✅ java       passed all 21 tests (Raw Runtime: 2178ms).
+
+[Sandbox Debug] Compiling/Running Code
+Language: cpp
+Test Input (Sample): [5, 7, 7, 8, 8, 10], 8
+--- Source Code Reaching Compiler ---
+#include <vector>
+using namespace std;
+class Solution {
+    int find(vector<int>& nums, int target, bool isFirst) {
+        int ans = -1, l = 0, r = nums.size() - 1;
+        while (l <= r) {
+            int mid = l + (r - l) / 2;
+            if (nums[mid] == target) {
+                ans = mid;
+                if (isFirst) r = mid - 1;
+                else l = mid + 1;
+            } else if (nums[mid] < target) l = mid + 1;
+            else r = mid - 1;
+        }
+        return ans;
+    }
+public:
+    vector<int> solution(vector<int>& nums, int target) {
+        return {find(nums, target, true), find(nums, target, false)};
+    }
+};
+-------------------------------------
+
+✅ cpp        passed all 21 tests (Raw Runtime: 4796ms).
+
+--- Validating Starter Codes Fail Cleanly ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: javascript
+Test Input (Sample): [5, 7, 7, 8, 8, 10], 8
+--- Source Code Reaching Compiler ---
+/**
+ * @param {number[]} nums
+ * @param {number} target
+ * @return {number[]}
+ */
+function solution(nums, target) {
+  // write your solution here
+  
+}
+-------------------------------------
+
+✅ javascript starter code failed cleanly (WRONG_ANSWER) (Empty Runtime: 176ms)
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [5, 7, 7, 8, 8, 10], 8
+--- Source Code Reaching Compiler ---
+class Solution:
+    def solution(self, nums: List[int], target: int) -> List[int]:
+        # write your solution here
+        pass
+-------------------------------------
+
+✅ python     starter code failed cleanly (WRONG_ANSWER) (Empty Runtime: 157ms)
+
+[Sandbox Debug] Compiling/Running Code
+Language: java
+Test Input (Sample): [5, 7, 7, 8, 8, 10], 8
+--- Source Code Reaching Compiler ---
+import java.util.*;
+import java.util.stream.*;
+import java.lang.reflect.*;
+
+class Solution {
+    public int[] solution(int[] nums, int target) {
+        // write your solution here
+        return new int[]{};
+    }
+}
+-------------------------------------
+
+✅ java       starter code failed cleanly (WRONG_ANSWER) (Empty Runtime: 2161ms)
+
+[Sandbox Debug] Compiling/Running Code
+Language: cpp
+Test Input (Sample): [5, 7, 7, 8, 8, 10], 8
+--- Source Code Reaching Compiler ---
+#include <iostream>
+#include <vector>
+#include <string>
+#include <queue>
+#include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
+using namespace std;
+
+class Solution {
+public:
+    vector<int> solution(vector<int>& nums, int target) {
+        // write your solution here
+        return {};
+    }
+};
+-------------------------------------
+
+✅ cpp        starter code failed cleanly (WRONG_ANSWER) (Empty Runtime: 4570ms)
+
+🎉 All rigid validations completed successfully for Target Value Bounds!

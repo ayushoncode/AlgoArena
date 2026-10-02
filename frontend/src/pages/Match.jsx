@@ -48,7 +48,8 @@ function defineTheme(monaco) {
       { token: 'function',  foreground: 'F5B942' },
       { token: 'type',      foreground: 'c084fc' },
       { token: 'variable',  foreground: 'E2E8F4' },
-      { token: 'delimiter', foreground: '1B2540' },
+      { token: 'operator',  foreground: '89DDFF' },
+      { token: 'delimiter', foreground: '89DDFF' },
     ],
     colors: {
       'editor.background':                  '#0B1120',

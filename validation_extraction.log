@@ -1,0 +1,216 @@
+◇ injected env (11) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+
+========================================
+Validating: Optimal Data Extraction (hard)
+========================================
+
+✅ JSON Schema passed
+✅ DB Slug/Title uniquely available
+✅ Hidden tests count: 24
+✅ Starter code generated for all 4 languages
+
+--- Running Empty Solution Baseline ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [3, 1, 5, 8]
+--- Source Code Reaching Compiler ---
+def solution(*args):
+    return None
+-------------------------------------
+
+✅ Baseline empty python solution execution took: 606ms
+
+--- Running References (All Languages) ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [3, 1, 5, 8]
+--- Source Code Reaching Compiler ---
+def solution(packets):
+    nums = [1] + packets + [1]
+    n = len(nums)
+    dp = [[0] * n for _ in range(n)]
+    for length in range(2, n):
+        for left in range(0, n - length):
+            right = left + length
+            for i in range(left + 1, right):
+                dp[left][right] = max(dp[left][right], nums[left] * nums[right] + nums[i] + dp[left][i] + dp[i][right])
+    return dp[0][n - 1]
+-------------------------------------
+
+✅ python     passed all 28 tests (Raw Runtime: 1624ms, Adjusted: 1624ms).
+
+[Sandbox Debug] Compiling/Running Code
+Language: javascript
+Test Input (Sample): [3, 1, 5, 8]
+--- Source Code Reaching Compiler ---
+function solution(packets) {
+    const nums = [1, ...packets, 1];
+    const n = nums.length;
+    const dp = Array.from({length: n}, () => new Array(n).fill(0));
+    for (let length = 2; length < n; length++) {
+        for (let left = 0; left < n - length; left++) {
+            let right = left + length;
+            for (let i = left + 1; i < right; i++) {
+                dp[left][right] = Math.max(dp[left][right], nums[left] * nums[right] + nums[i] + dp[left][i] + dp[i][right]);
+            }
+        }
+    }
+    return dp[0][n - 1];
+}
+-------------------------------------
+
+✅ javascript passed all 28 tests (Raw Runtime: 582ms, Adjusted: 582ms).
+
+[Sandbox Debug] Compiling/Running Code
+Language: java
+Test Input (Sample): [3, 1, 5, 8]
+--- Source Code Reaching Compiler ---
+import java.util.*;
+import java.util.stream.*;
+import java.lang.reflect.*;
+class Solution {
+    public long solution(int[] packets) {
+        int n = packets.length + 2;
+        int[] nums = new int[n];
+        nums[0] = nums[n - 1] = 1;
+        for (int i = 0; i < packets.length; i++) nums[i + 1] = packets[i];
+        long[][] dp = new long[n][n];
+        for (int length = 2; length < n; length++) {
+            for (int left = 0; left < n - length; left++) {
+                int right = left + length;
+                for (int i = left + 1; i < right; i++) {
+                    dp[left][right] = Math.max(dp[left][right], (long)nums[left] * nums[right] + nums[i] + dp[left][i] + dp[i][right]);
+                }
+            }
+        }
+        return dp[0][n - 1];
+    }
+}
+-------------------------------------
+
+✅ java       passed all 28 tests (Raw Runtime: 2465ms, Adjusted: 10ms).
+
+[Sandbox Debug] Compiling/Running Code
+Language: cpp
+Test Input (Sample): [3, 1, 5, 8]
+--- Source Code Reaching Compiler ---
+#include <vector>
+#include <algorithm>
+using namespace std;
+class Solution {
+public:
+    long long solution(vector<int>& packets) {
+        int n = packets.size() + 2;
+        vector<int> nums(n, 1);
+        for (int i = 0; i < packets.size(); i++) nums[i + 1] = packets[i];
+        vector<vector<long long>> dp(n, vector<long long>(n, 0));
+        for (int length = 2; length < n; length++) {
+            for (int left = 0; left < n - length; left++) {
+                int right = left + length;
+                for (int i = left + 1; i < right; i++) {
+                    dp[left][right] = max(dp[left][right], (long long)nums[left] * nums[right] + nums[i] + dp[left][i] + dp[i][right]);
+                }
+            }
+        }
+        return dp[0][n - 1];
+    }
+};
+-------------------------------------
+
+✅ cpp        passed all 28 tests (Raw Runtime: 4810ms, Adjusted: 10ms).
+
+--- Running Brute Force Solution ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [3, 1, 5, 8]
+--- Source Code Reaching Compiler ---
+def solution(packets):
+    def dfs(nums):
+        if not nums: return 0
+        ans = 0
+        for i in range(len(nums)):
+            l = nums[i-1] if i > 0 else 1
+            r = nums[i+1] if i < len(nums)-1 else 1
+            ans = max(ans, l * r + nums[i] + dfs(nums[:i] + nums[i+1:]))
+        return ans
+    return dfs(packets)
+-------------------------------------
+
+✅ Brute force solution got TLE as expected.
+
+--- Validating Starter Codes Fail Cleanly ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: javascript
+Test Input (Sample): [3, 1, 5, 8]
+--- Source Code Reaching Compiler ---
+/**
+ * @param {number[]} packets
+ * @return {number}
+ */
+function solution(packets) {
+  // write your solution here
+  
+}
+-------------------------------------
+
+✅ javascript starter code failed cleanly (WRONG_ANSWER)
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [3, 1, 5, 8]
+--- Source Code Reaching Compiler ---
+class Solution:
+    def solution(self, packets: List[int]) -> int:
+        # write your solution here
+        pass
+-------------------------------------
+
+✅ python     starter code failed cleanly (WRONG_ANSWER)
+
+[Sandbox Debug] Compiling/Running Code
+Language: java
+Test Input (Sample): [3, 1, 5, 8]
+--- Source Code Reaching Compiler ---
+import java.util.*;
+import java.util.stream.*;
+import java.lang.reflect.*;
+
+class Solution {
+    public long solution(int[] packets) {
+        // write your solution here
+        return 0L;
+    }
+}
+-------------------------------------
+
+✅ java       starter code failed cleanly (WRONG_ANSWER)
+
+[Sandbox Debug] Compiling/Running Code
+Language: cpp
+Test Input (Sample): [3, 1, 5, 8]
+--- Source Code Reaching Compiler ---
+#include <iostream>
+#include <vector>
+#include <string>
+#include <queue>
+#include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
+using namespace std;
+
+class Solution {
+public:
+    long long solution(vector<int>& packets) {
+        // write your solution here
+        return 0;
+    }
+};
+-------------------------------------
+
+✅ cpp        starter code failed cleanly (WRONG_ANSWER)
+
+🎉 All rigid validations completed successfully for Optimal Data Extraction!

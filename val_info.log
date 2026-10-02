@@ -1,0 +1,241 @@
+◇ injected env (11) from .env // tip: ⌘ suppress logs { quiet: true }
+
+========================================
+Validating: Information Propagation Time (medium)
+========================================
+
+✅ JSON Schema passed
+✅ DB Slug/Title uniquely available
+✅ Hidden tests count: 24
+✅ Starter code generated for all 4 languages
+
+--- Running Empty Solution Baseline ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [[1, 2, 1]], 2, 1
+--- Source Code Reaching Compiler ---
+def solution(*args):
+    return None
+-------------------------------------
+
+✅ Baseline empty python solution execution took: 188ms
+
+--- Running References (All Languages) ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [[1, 2, 1]], 2, 1
+--- Source Code Reaching Compiler ---
+import heapq
+def solution(edges, n, startNode):
+    adj = {i: [] for i in range(1, n + 1)}
+    for u, v, w in edges:
+        adj[u].append((v, w))
+    dist = {i: float('inf') for i in range(1, n + 1)}
+    dist[startNode] = 0
+    pq = [(0, startNode)]
+    while pq:
+        d, u = heapq.heappop(pq)
+        if d > dist[u]: continue
+        for v, w in adj[u]:
+            if dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+                heapq.heappush(pq, (dist[v], v))
+    ans = max(dist.values())
+    return ans if ans != float('inf') else -1
+-------------------------------------
+
+✅ python     passed all 27 tests (Raw Runtime: 184ms).
+
+[Sandbox Debug] Compiling/Running Code
+Language: javascript
+Test Input (Sample): [[1, 2, 1]], 2, 1
+--- Source Code Reaching Compiler ---
+function solution(edges, n, startNode) {
+    const adj = Array.from({length: n + 1}, () => []);
+    for (const [u, v, w] of edges) {
+        adj[u].push([v, w]);
+    }
+    const dist = new Array(n + 1).fill(Infinity);
+    dist[startNode] = 0;
+    // Simple O(N^2) Dijkstra for N <= 100
+    const visited = new Array(n + 1).fill(false);
+    for (let i = 0; i < n; i++) {
+        let u = -1;
+        for (let j = 1; j <= n; j++) {
+            if (!visited[j] && (u === -1 || dist[j] < dist[u])) u = j;
+        }
+        if (dist[u] === Infinity) break;
+        visited[u] = true;
+        for (const [v, w] of adj[u]) {
+            if (dist[u] + w < dist[v]) dist[v] = dist[u] + w;
+        }
+    }
+    let ans = 0;
+    for (let i = 1; i <= n; i++) ans = Math.max(ans, dist[i]);
+    return ans === Infinity ? -1 : ans;
+}
+-------------------------------------
+
+✅ javascript passed all 27 tests (Raw Runtime: 273ms).
+
+[Sandbox Debug] Compiling/Running Code
+Language: java
+Test Input (Sample): [[1, 2, 1]], 2, 1
+--- Source Code Reaching Compiler ---
+import java.util.*;
+import java.util.stream.*;
+import java.lang.reflect.*;
+class Solution {
+    public int solution(int[][] edges, int n, int startNode) {
+        List<int[]>[] adj = new ArrayList[n + 1];
+        for(int i=1; i<=n; i++) adj[i] = new ArrayList<>();
+        for(int[] e : edges) adj[e[0]].add(new int[]{e[1], e[2]});
+        int[] dist = new int[n + 1];
+        Arrays.fill(dist, Integer.MAX_VALUE);
+        dist[startNode] = 0;
+        PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+        pq.offer(new int[]{0, startNode});
+        while(!pq.isEmpty()) {
+            int[] curr = pq.poll();
+            int d = curr[0], u = curr[1];
+            if(d > dist[u]) continue;
+            for(int[] next : adj[u]) {
+                int v = next[0], w = next[1];
+                if(dist[u] + w < dist[v]) {
+                    dist[v] = dist[u] + w;
+                    pq.offer(new int[]{dist[v], v});
+                }
+            }
+        }
+        int ans = 0;
+        for(int i=1; i<=n; i++) {
+            if(dist[i] == Integer.MAX_VALUE) return -1;
+            ans = Math.max(ans, dist[i]);
+        }
+        return ans;
+    }
+}
+-------------------------------------
+
+✅ java       passed all 27 tests (Raw Runtime: 2359ms).
+
+[Sandbox Debug] Compiling/Running Code
+Language: cpp
+Test Input (Sample): [[1, 2, 1]], 2, 1
+--- Source Code Reaching Compiler ---
+#include <vector>
+#include <queue>
+#include <algorithm>
+using namespace std;
+class Solution {
+public:
+    int solution(vector<vector<int>>& edges, int n, int startNode) {
+        vector<vector<pair<int, int>>> adj(n + 1);
+        for (auto& e : edges) {
+            adj[e[0]].push_back({e[1], e[2]});
+        }
+        vector<int> dist(n + 1, 1e9);
+        dist[startNode] = 0;
+        priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+        pq.push({0, startNode});
+        while (!pq.empty()) {
+            auto [d, u] = pq.top();
+            pq.pop();
+            if (d > dist[u]) continue;
+            for (auto& next : adj[u]) {
+                int v = next.first, w = next.second;
+                if (dist[u] + w < dist[v]) {
+                    dist[v] = dist[u] + w;
+                    pq.push({dist[v], v});
+                }
+            }
+        }
+        int ans = 0;
+        for (int i = 1; i <= n; i++) {
+            if (dist[i] == 1e9) return -1;
+            ans = max(ans, dist[i]);
+        }
+        return ans;
+    }
+};
+-------------------------------------
+
+✅ cpp        passed all 27 tests (Raw Runtime: 5667ms).
+
+--- Validating Starter Codes Fail Cleanly ---
+
+[Sandbox Debug] Compiling/Running Code
+Language: javascript
+Test Input (Sample): [[1, 2, 1]], 2, 1
+--- Source Code Reaching Compiler ---
+/**
+ * @param {number[][]} edges
+ * @param {number} n
+ * @param {number} startNode
+ * @return {number}
+ */
+function solution(edges, n, startNode) {
+  // write your solution here
+  
+}
+-------------------------------------
+
+✅ javascript starter code failed cleanly (WRONG_ANSWER) (Empty Runtime: 194ms)
+
+[Sandbox Debug] Compiling/Running Code
+Language: python
+Test Input (Sample): [[1, 2, 1]], 2, 1
+--- Source Code Reaching Compiler ---
+class Solution:
+    def solution(self, edges: List[List[int]], n: int, startNode: int) -> int:
+        # write your solution here
+        pass
+-------------------------------------
+
+✅ python     starter code failed cleanly (WRONG_ANSWER) (Empty Runtime: 195ms)
+
+[Sandbox Debug] Compiling/Running Code
+Language: java
+Test Input (Sample): [[1, 2, 1]], 2, 1
+--- Source Code Reaching Compiler ---
+import java.util.*;
+import java.util.stream.*;
+import java.lang.reflect.*;
+
+class Solution {
+    public int solution(int[][] edges, int n, int startNode) {
+        // write your solution here
+        return 0;
+    }
+}
+-------------------------------------
+
+✅ java       starter code failed cleanly (WRONG_ANSWER) (Empty Runtime: 2667ms)
+
+[Sandbox Debug] Compiling/Running Code
+Language: cpp
+Test Input (Sample): [[1, 2, 1]], 2, 1
+--- Source Code Reaching Compiler ---
+#include <iostream>
+#include <vector>
+#include <string>
+#include <queue>
+#include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
+using namespace std;
+
+class Solution {
+public:
+    int solution(vector<vector<int>>& edges, int n, int startNode) {
+        // write your solution here
+        return 0;
+    }
+};
+-------------------------------------
+
+✅ cpp        starter code failed cleanly (WRONG_ANSWER) (Empty Runtime: 4920ms)
+
+🎉 All rigid validations completed successfully for Information Propagation Time!
