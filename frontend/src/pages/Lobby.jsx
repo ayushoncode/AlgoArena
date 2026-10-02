@@ -828,6 +828,11 @@ export default function Lobby() {
     api.get('/api/problems/daily').then(({ data }) => setDailyProblem(data)).catch(() => { })
   }, [])
 
+  // Auto re-join on reconnect
+  useEffect(() => {
+    if (connected && queuing && topic && diff) emit('join_queue', { topic, difficulty: diff })
+  }, [connected, queuing, topic, diff, emit])
+
   if (loading && !user) {
     return (
       <PageWrapper heroGlow>
@@ -862,10 +867,6 @@ export default function Lobby() {
     desc: 'Find indices of two numbers in an array that add up to a target integer.'
   }
 
-  // Auto re-join on reconnect
-  useEffect(() => {
-    if (connected && queuing && topic && diff) emit('join_queue', { topic, difficulty: diff })
-  }, [connected, queuing, topic, diff, emit])
 
   function startQueue() {
     if (!topic) return
