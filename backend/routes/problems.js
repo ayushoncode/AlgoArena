@@ -263,7 +263,7 @@ router.post('/:id/run', authMiddleware, async (req, res) => {
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const { rows: [problem] } = await db.query(
-      `SELECT * FROM problems WHERE id = $1`, [req.params.id]
+      `SELECT id, title, topic, difficulty, description, min_rating, max_rating, sample_input, sample_output, created_at, slug FROM problems WHERE id = $1`, [req.params.id]
     )
     if (!problem) return res.status(404).json({ message: 'problem not found' })
 
@@ -274,6 +274,20 @@ router.get('/:id', authMiddleware, async (req, res) => {
     return res.json({ ...problem, sample_tests: tests })
   } catch (err) {
     console.error('[GET /problems/:id]', err)
+    return res.status(500).json({ message: 'internal server error' })
+  }
+})
+
+// GET /api/problems/:id/hints — get hints for a problem
+router.get('/:id/hints', authMiddleware, async (req, res) => {
+  try {
+    const { rows: [problem] } = await db.query(
+      `SELECT hints FROM problems WHERE id = $1`, [req.params.id]
+    )
+    if (!problem) return res.status(404).json({ message: 'problem not found' })
+    return res.json(problem.hints || [])
+  } catch (err) {
+    console.error('[GET /problems/:id/hints]', err)
     return res.status(500).json({ message: 'internal server error' })
   }
 })

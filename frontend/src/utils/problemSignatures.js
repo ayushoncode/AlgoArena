@@ -32,7 +32,27 @@ const TYPE_LIST = { js: 'ListNode', py: 'Optional[ListNode]', java: 'ListNode', 
 const TYPE_VOID = { js: 'void', py: 'None', java: 'void', cpp: 'void', retJava: '', retCpp: '' }
 
 // ── Canonical Registry of All Top LeetCode Problems ─────────────────
-const CANONICAL_SIGNATURES = {
+export const CANONICAL_SIGNATURES = {
+  'identify unique signal': {
+    params: [{ name: 's', ...TYPE_STRING }],
+    ret: TYPE_INT,
+  },
+  'target value bounds': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'consolidate time blocks': {
+    params: [{ name: 'intervals', ...TYPE_INT_MATRIX }],
+    ret: TYPE_INT_MATRIX_ARR_RET,
+  },
+  'information propagation time': {
+    params: [{ name: 'edges', ...TYPE_INT_MATRIX }, { name: 'n', ...TYPE_INT }, { name: 'startNode', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'optimal data extraction': {
+    params: [{ name: 'packets', ...TYPE_INT_ARR }],
+    ret: TYPE_LONG,
+  },
   'two sum': {
     params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
     ret: TYPE_INT_ARR_RET,
@@ -775,6 +795,30 @@ const CANONICAL_SIGNATURES = {
   'binary search': {
     params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
     ret: TYPE_INT,
+  },
+  'custom frequency sort': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'consolidate time blocks': {
+    params: [{ name: 'time_blocks', ...TYPE_INT_MATRIX }],
+    ret: TYPE_INT_MATRIX_ARR_RET,
+  },
+  'continuous sequence target': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_BOOL,
+  },
+  'network delay tracker': {
+    params: [{ name: 'times', ...TYPE_INT_MATRIX }, { name: 'n', ...TYPE_INT }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'valid execution order': {
+    params: [{ name: 'numTasks', ...TYPE_INT }, { name: 'prerequisites', ...TYPE_INT_MATRIX }],
+    ret: TYPE_BOOL,
+  },
+  'find redundant connection': {
+    params: [{ name: 'edges', ...TYPE_INT_MATRIX }],
+    ret: TYPE_INT_ARR_RET,
   },
 }
 
