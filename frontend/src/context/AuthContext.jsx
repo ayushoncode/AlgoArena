@@ -35,8 +35,14 @@ export function AuthProvider({ children }) {
         const stored  = localStorage.getItem('aa_user')
         if (token && stored) {
           const parsed = JSON.parse(stored)
+          
+          // Fix: JWT payload is Base64URL encoded, so we need to convert it to standard Base64 first
           const [, payload] = token.split('.')
-          const { exp } = JSON.parse(atob(payload))
+          let base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+          const pad = base64.length % 4
+          if (pad) base64 += '='.repeat(4 - pad)
+          
+          const { exp } = JSON.parse(atob(base64))
           if (Date.now() / 1000 < exp) {
             setUser({ ...parsed, token })
             try {
@@ -53,7 +59,8 @@ export function AuthProvider({ children }) {
             localStorage.removeItem('aa_user')
           }
         }
-      } catch {
+      } catch (err) {
+        console.error('[Session Restore Error]', err)
         localStorage.removeItem('aa_token')
         localStorage.removeItem('aa_user')
       } finally {
@@ -89,8 +96,10 @@ export function AuthProvider({ children }) {
   const login = useCallback(({ token, user: userData }) => {
     const full = { ...userData, token }
     setUser(full)
-    localStorage.setItem('aa_token', token)
+    // Set user first so that when token triggers a storage event in other tabs,
+    // the user object is already available to parse.
     localStorage.setItem('aa_user', JSON.stringify(userData))
+    localStorage.setItem('aa_token', token)
   }, [])
 
   /** Send OTP to email */
