@@ -188,12 +188,13 @@ function HeaderRosterSearch({ inputRef }) {
   }, [showDrop])
 
   function handleInput(val) {
-    setQuery(val)
+    const sanitized = val.replace(/[^a-zA-Z0-9_]/g, '')
+    setQuery(sanitized)
     clearTimeout(debounce.current)
-    if (val.trim().length < 1) { setSuggestions([]); setShowDrop(false); return }
+    if (sanitized.trim().length < 1) { setSuggestions([]); setShowDrop(false); return }
     debounce.current = setTimeout(async () => {
       try {
-        const { data } = await api.get(`/api/users/search?q=${encodeURIComponent(val.trim())}`)
+        const { data } = await api.get(`/api/users/search?q=${encodeURIComponent(sanitized.trim())}`)
         setSuggestions(data)
         setShowDrop(data.length > 0)
       } catch { setSuggestions([]); setShowDrop(false) }

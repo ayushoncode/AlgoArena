@@ -115,6 +115,7 @@ function AppLayout() {
           
           <Route path="/match/:roomId" element={<Match />} />
           <Route path="/result" element={<Result />} />
+          <Route path="*" element={<Navigate to="/lobby" replace />} />
         </Routes>
       </main>
     </>
