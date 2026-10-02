@@ -178,16 +178,8 @@ function registerMatchmaking(io) {
 
     console.log(`[Socket] authed  user=${username}  id=${socket.id}  transport=${socket.conn.transport.name}`)
 
-    // ── Single Active Session Enforcement ─────────────────────
-    // Disconnect any older sockets for the same user ID so a single account cannot be active in 2 places
-    for (const [sId, existingSocket] of io.sockets.sockets) {
-      if (sId !== socket.id && existingSocket.user && existingSocket.user.id === userId) {
-        console.log(`[Socket] Single session enforcement: disconnecting older socket ${sId} for user ${username}`)
-        existingSocket.emit('force_logout', { message: 'Your account was logged in from another browser or window.' })
-        removeFromQueues(sId, userId)
-        existingSocket.disconnect(true)
-      }
-    }
+    // ── Multiple Tab Support ─────────────────────
+    // Removed single active session enforcement so users can open multiple tabs.
 
     /* ── join_queue ─────────────────────────────────────── */
     socket.on('join_queue', async ({ topic, difficulty }) => {
