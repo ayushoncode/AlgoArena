@@ -22,6 +22,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error?.response?.status === 401) {
+      localStorage.removeItem('aa_token')
+      localStorage.removeItem('aa_user')
+      window.dispatchEvent(new Event('auth-logout'))
+    }
     const msg = error?.response?.data?.message || error.message || 'Unknown error'
     console.error('[API Error]', msg)
     return Promise.reject(new Error(msg))

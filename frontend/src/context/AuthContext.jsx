@@ -35,34 +35,25 @@ export function AuthProvider({ children }) {
         const stored  = localStorage.getItem('aa_user')
         if (token && stored) {
           const parsed = JSON.parse(stored)
+          // Optimistically set user
+          setUser({ ...parsed, token })
           
-          // Fix: JWT payload is Base64URL encoded, so we need to convert it to standard Base64 first
-          const [, payload] = token.split('.')
-          let base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
-          const pad = base64.length % 4
-          if (pad) base64 += '='.repeat(4 - pad)
-          
-          const { exp } = JSON.parse(atob(base64))
-          if (Date.now() / 1000 < exp) {
-            setUser({ ...parsed, token })
-            try {
-              const { data } = await api.get('/api/users/me')
-              if (data) {
-                setUser({ ...data, token })
-                localStorage.setItem('aa_user', JSON.stringify(data))
-              }
-            } catch (err) {
-              console.warn('[Session Sync Warning]', err.message)
+          try {
+            const { data } = await api.get('/api/users/me')
+            if (data) {
+              setUser({ ...data, token })
+              localStorage.setItem('aa_user', JSON.stringify(data))
             }
-          } else {
-            localStorage.removeItem('aa_token')
-            localStorage.removeItem('aa_user')
+          } catch (err) {
+            console.warn('[Session Sync Warning]', err.message)
+            // If api throws 401, api.js interceptor will dispatch 'auth-logout' and clear tokens.
           }
         }
       } catch (err) {
         console.error('[Session Restore Error]', err)
         localStorage.removeItem('aa_token')
         localStorage.removeItem('aa_user')
+        setUser(null)
       } finally {
         setLoading(false)
       }
@@ -74,7 +65,7 @@ export function AuthProvider({ children }) {
   // ── Sync Auth State across multiple tabs in the same browser ──
   useEffect(() => {
     function handleStorageChange(e) {
-      if (e.key === 'aa_user' || e.key === 'aa_token') {
+      if (e.key === 'aa_user' || e.key === 'aa_token' || e.type === 'auth-logout') {
         const token = localStorage.getItem('aa_token')
         const stored = localStorage.getItem('aa_user')
         if (token && stored) {
@@ -89,7 +80,11 @@ export function AuthProvider({ children }) {
       }
     }
     window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
+    window.addEventListener('auth-logout', handleStorageChange)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('auth-logout', handleStorageChange)
+    }
   }, [])
 
   /** Called after successful /login or /register response */
