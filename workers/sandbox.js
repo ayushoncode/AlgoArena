@@ -854,6 +854,9 @@ function spawnWithTimeout(cmd, args, timeoutMs, opts = {}) {
         err.isRuntime = true
         return reject(err)
       }
+      if (stderr.trim()) {
+        console.error("[Sandbox STDERR] Code:", code, "Error:\\n", stderr.slice(0, 2000));
+      }
       resolve(stdout)
     })
 
@@ -923,7 +926,7 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
     runnerFile = 'Runner.java'
     runnerContent = buildJavaRunner(testCases)
     dockerCompileCmd = ['javac', '-d', '/sandbox', './Solution.java', './Runner.java']
-    dockerRunCmd = ['java', '-cp', '/sandbox', 'Runner']
+    dockerRunCmd = ['java', '-Xmx400m', '-cp', '/sandbox', 'Runner']
   } else {
     codeFile = 'solution.js'
     runnerFile = 'runner.js'
@@ -963,6 +966,7 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
     }
 
     // ── Write user code and runner to temp dir ─────────────────
+    console.log("SANDBOX TMP DIR IS:", tmpDir);
     fs.writeFileSync(path.join(tmpDir, codeFile), userCodeToWrite, 'utf8')
     fs.writeFileSync(path.join(tmpDir, runnerFile), runnerContent, 'utf8')
     fs.writeFileSync(path.join(tmpDir, 'test_cases.json'), JSON.stringify(testCases), 'utf8')

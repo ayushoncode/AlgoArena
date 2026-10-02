@@ -14,8 +14,12 @@ router.get('/stats', async (_req, res) => {
     const { rows: userCount } = await db.query(`SELECT COUNT(*)::int as total FROM users`)
     const { rows: matchCount } = await db.query(`SELECT COUNT(*)::int as total FROM matches WHERE status = 'finished'`)
     const { rows: subCount } = await db.query(`SELECT COUNT(*)::int as total FROM submissions`)
+    const io = req.app.get('io')
+    const onlineUsers = io ? io.engine.clientsCount : 0
+
     return res.json({
       totalUsers: userCount[0]?.total || 0,
+      onlineUsers: onlineUsers,
       totalMatches: matchCount[0]?.total || 0,
       totalSubmissions: subCount[0]?.total || 0,
     })

@@ -115,7 +115,7 @@ const DIFFS = [
    LIVE COUNTER HOOK
 ════════════════════════════════════════════════ */
 function useLiveCounter() {
-  const [stats, setStats] = useState({ players: 1, matches: 0, totalProblems: 174, loading: true })
+  const [stats, setStats] = useState({ players: 0, matches: 0, totalProblems: 0, loading: true })
   useEffect(() => {
     async function loadStats() {
       try {
@@ -124,9 +124,9 @@ function useLiveCounter() {
           api.get('/api/problems/stats').catch(() => ({ data: {} })),
         ])
         setStats({
-          players: Math.max(1, uRes.data?.totalUsers || 1),
+          players: Math.max(0, uRes.data?.onlineUsers || 0),
           matches: uRes.data?.totalMatches || 0,
-          totalProblems: pRes.data?.totalProblems || 174,
+          totalProblems: pRes.data?.totalProblems || 0,
           loading: false,
         })
       } catch (err) { console.error('[Lobby stats]', err) }

@@ -58,6 +58,9 @@ const io = new Server(server, {
   maxHttpBufferSize: 1e6,      // 1MB max message
 })
 
+// Expose io to routes
+app.set('io', io)
+
 // ── Socket auth middleware (Day 9) ────────────────────────────────────────────
 // Runs before any 'connection' event — rejects unauthenticated sockets
 io.use(socketAuth)
