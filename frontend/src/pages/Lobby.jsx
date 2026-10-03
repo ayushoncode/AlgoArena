@@ -883,7 +883,7 @@ export default function Lobby() {
     handleSelectTopic(randomTopic)
   }
 
-  const isDailySelected = topic === dailyObj.topic && diff === dailyObj.difficulty
+  const isDailySelected = dailyObj ? (topic === dailyObj.topic && diff === dailyObj.difficulty) : false
 
   return (
     <>
