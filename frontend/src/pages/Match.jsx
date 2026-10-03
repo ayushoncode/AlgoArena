@@ -545,7 +545,8 @@ export default function Match() {
   const [activeProblem, setActiveProblem] = useState(null)
   const [userHasTyped, setUserHasTyped] = useState(false)
   const [lang, setLang] = useState('javascript')
-  const [code, setCode] = useState(TEMPLATES.javascript)
+  const [codeMap, setCodeMap] = useState({ javascript: TEMPLATES.javascript })
+  const code = codeMap[lang] ?? TEMPLATES.javascript
   const [submitting, setSubmitting] = useState(false)
   const [running, setRunning] = useState(false)
 
@@ -679,6 +680,21 @@ export default function Match() {
     }
   }, [on, off, emit, navigate, user, roomId])
 
+  // Prevent browser back button during an active match
+  useEffect(() => {
+    if (myVerdict === 'ACCEPTED' || remaining === 0) return
+
+    window.history.pushState(null, '', window.location.href)
+    
+    function handlePopState(e) {
+      window.history.pushState(null, '', window.location.href)
+      setShowResignModal(true)
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [myVerdict, remaining])
+
   // Re-initialize matchState if page was refreshed directly at /match/:roomId
   useEffect(() => {
     if (!matchState && roomId) {
@@ -712,13 +728,15 @@ export default function Match() {
   function handleProblemLoaded(p) {
     setActiveProblem(p)
     if (!userHasTyped) {
-      setCode(buildStarterTemplate(p, lang))
+      setCodeMap(prev => ({ ...prev, [lang]: buildStarterTemplate(p, lang) }))
     }
   }
 
   function handleLangChange(newLang) {
     setLang(newLang)
-    setCode(buildStarterTemplate(activeProblem, newLang))
+    if (!codeMap[newLang]) {
+      setCodeMap(prev => ({ ...prev, [newLang]: buildStarterTemplate(activeProblem, newLang) }))
+    }
   }
 
   async function handleRun() {
@@ -827,11 +845,11 @@ export default function Match() {
 
           <button
             onClick={() => setShowResignModal(true)}
-            className="font-mono text-[9px] md:text-[10px] font-bold px-2 md:px-2.5 py-1 transition-all active:scale-[0.97] flex items-center gap-1"
-            style={{ background: 'rgba(225,29,72,0.1)', color: 'var(--c-red)', border: '1px solid rgba(225,29,72,0.3)', cursor: 'pointer' }}
+            className="font-mono text-xs font-bold px-3 md:px-4 py-1.5 md:py-2 transition-all active:scale-[0.97] flex items-center gap-2 rounded hover:brightness-110"
+            style={{ background: 'rgba(225,29,72,0.15)', color: 'var(--c-red)', border: '1px solid rgba(225,29,72,0.5)', cursor: 'pointer', boxShadow: '0 0 10px rgba(225,29,72,0.1)' }}
             title="Resign & Exit Match"
           >
-            <Flag size={10} className="md:w-[11px] md:h-[11px]" /> Resign
+            <Flag size={14} className="md:w-4 md:h-4" /> Resign
           </button>
         </div>
       </div>
@@ -1003,7 +1021,7 @@ export default function Match() {
               onChange={v => {
                 const val = v ?? ''
                 setUserHasTyped(true)
-                setCode(val)
+                setCodeMap(prev => ({ ...prev, [lang]: val }))
                 const lineCount = val.split('\n').length
                 const charCount = val.length
                 emit('code_change', { roomId, lineCount, charCount, isTyping: true })
