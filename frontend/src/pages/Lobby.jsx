@@ -827,9 +827,8 @@ export default function Lobby() {
   useEffect(() => {
     function onMatchFound(data) { console.log('[Lobby] match_found →', data?.roomId); setQueuing(false); setMatchFoundData(data) }
     on('match_found', onMatchFound)
-    if (connected) emit('check_active_match')
     return () => off('match_found', onMatchFound)
-  }, [on, off, connected, emit])
+  }, [on, off])
 
   useEffect(() => {
     api.get('/api/problems/daily').then(({ data }) => setDailyProblem(data)).catch(() => { })

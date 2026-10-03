@@ -197,17 +197,18 @@ function registerMatch(io) {
     socket.on('check_active_match', () => {
       for (const [roomId, match] of activeMatches.entries()) {
         if (!match.isResolved && match.players?.some(p => String(p.userId) === String(userId))) {
-          // Re-join the room immediately so they don't miss events while clicking "Enter"
           socket.join(roomId)
-          socket.emit('match_found', {
+          console.log(`[Match] check_active_match → user=${username} has active room=${roomId}`)
+          socket.emit('active_match', {
             roomId,
             topic: match.topic,
             difficulty: match.difficulty,
             players: match.players,
             problemId: match.problemId,
-            isCustom: match.isCustom || false
+            isCustom: match.isCustom || false,
+            startedAt: match.startedAt,
           })
-          break;
+          break
         }
       }
     })
@@ -263,6 +264,9 @@ function registerMatch(io) {
               winner: { userId: m.winner_id, username: m.winner_name },
               loser: { userId: m.winner_id === m.player_one_id ? m.player_two_id : m.player_one_id, username: m.loser_name },
             })
+          } else {
+            // Room is gone from memory (server restart / stale link) — let client leave
+            socket.emit('match_not_found', { roomId })
           }
         } catch (err) {
           console.error('[rejoin_match DB lookup failed]', err.message)
