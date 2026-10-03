@@ -15,12 +15,12 @@ import {
    RANK TIER CONFIG — canonical, import from here everywhere
 ══════════════════════════════════════════════════════════ */
 export const ARENA_TIERS = [
-  { name: 'Recruit',   min: 0,    max: 1199, col: '#94a3b8', bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.3)', glow: 'rgba(100,116,139,0.2)',  icon: Shield  },
-  { name: 'Operative', min: 1200, max: 1399, col: '#10b981', bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.3)',  glow: 'rgba(16,185,129,0.25)',  icon: Zap     },
-  { name: 'Vanguard',  min: 1400, max: 1599, col: '#38BDF8', bg: 'rgba(56,189,248,0.12)',  border: 'rgba(56,189,248,0.3)',  glow: 'rgba(56,189,248,0.25)',  icon: Star    },
-  { name: 'Champion',  min: 1600, max: 1799, col: '#818cf8', bg: 'rgba(129,140,248,0.14)', border: 'rgba(129,140,248,0.35)',glow: 'rgba(129,140,248,0.3)',  icon: Crown   },
-  { name: 'Legend',    min: 1800, max: 2199, col: '#c084fc', bg: 'rgba(192,132,252,0.14)', border: 'rgba(192,132,252,0.35)',glow: 'rgba(192,132,252,0.3)',  icon: Trophy  },
-  { name: 'Bihari',    min: 2200, max: 9999, col: '#F5B942', bg: 'rgba(245,185,66,0.14)',  border: 'rgba(245,185,66,0.35)', glow: 'rgba(245,185,66,0.35)',  icon: Crown   },
+  { name: 'Recruit', min: 0, max: 1199, col: '#94a3b8', bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.3)', glow: 'rgba(100,116,139,0.2)', icon: Shield },
+  { name: 'Operative', min: 1200, max: 1399, col: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', glow: 'rgba(16,185,129,0.25)', icon: Zap },
+  { name: 'Vanguard', min: 1400, max: 1599, col: '#38BDF8', bg: 'rgba(56,189,248,0.12)', border: 'rgba(56,189,248,0.3)', glow: 'rgba(56,189,248,0.25)', icon: Star },
+  { name: 'Champion', min: 1600, max: 1799, col: '#818cf8', bg: 'rgba(129,140,248,0.14)', border: 'rgba(129,140,248,0.35)', glow: 'rgba(129,140,248,0.3)', icon: Crown },
+  { name: 'Legend', min: 1800, max: 2199, col: '#c084fc', bg: 'rgba(192,132,252,0.14)', border: 'rgba(192,132,252,0.35)', glow: 'rgba(192,132,252,0.3)', icon: Trophy },
+  { name: 'Bihari', min: 2200, max: 9999, col: '#F5B942', bg: 'rgba(245,185,66,0.14)', border: 'rgba(245,185,66,0.35)', glow: 'rgba(245,185,66,0.35)', icon: Crown },
 ]
 
 export function getArenaTier(elo) {
@@ -195,9 +195,9 @@ export function Modal({ isOpen, onClose, title, subtitle, children, maxWidth = 4
 ══════════════════════════════════════════════════════════ */
 const TOAST_CFG = {
   success: { col: 'var(--c-green)', icon: CheckCircle },
-  error:   { col: 'var(--c-red)',   icon: XCircle     },
-  info:    { col: 'var(--c-blue)',  icon: Info         },
-  warning: { col: '#f59e0b',        icon: AlertTriangle },
+  error: { col: 'var(--c-red)', icon: XCircle },
+  info: { col: 'var(--c-blue)', icon: Info },
+  warning: { col: '#f59e0b', icon: AlertTriangle },
 }
 
 export function Toast({ message, type = 'info', onDismiss }) {
@@ -318,10 +318,10 @@ export function HudSelect({ label, options = [], className = '', style = {}, ...
 export function Tooltip({ children, text, position = 'top' }) {
   const [visible, setVisible] = useState(false)
   const posStyles = {
-    top:    { bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 6 },
-    bottom: { top: '100%',   left: '50%', transform: 'translateX(-50%)', marginTop: 6    },
-    left:   { right: '100%', top: '50%',  transform: 'translateY(-50%)', marginRight: 6  },
-    right:  { left: '100%',  top: '50%',  transform: 'translateY(-50%)', marginLeft: 6   },
+    top: { bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 6 },
+    bottom: { top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 6 },
+    left: { right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: 6 },
+    right: { left: '100%', top: '50%', transform: 'translateY(-50%)', marginLeft: 6 },
   }
   return (
     <div className="relative inline-flex" onMouseEnter={() => setVisible(true)} onMouseLeave={() => setVisible(false)}>
@@ -342,12 +342,12 @@ export function Tooltip({ children, text, position = 'top' }) {
    VERDICT CHIP
 ══════════════════════════════════════════════════════════ */
 const VERDICT_CFG = {
-  ACCEPTED:            { col: '#10b981', bg: 'rgba(16,185,129,0.15)',  border: 'rgba(16,185,129,0.3)',  label: 'Accepted',      icon: CheckCircle  },
-  WRONG_ANSWER:        { col: '#E11D48', bg: 'rgba(225,29,72,0.15)',   border: 'rgba(225,29,72,0.3)',   label: 'Wrong Answer',  icon: XCircle      },
-  RUNTIME_ERROR:       { col: '#E11D48', bg: 'rgba(225,29,72,0.15)',   border: 'rgba(225,29,72,0.3)',   label: 'Runtime Error', icon: XCircle      },
-  COMPILATION_ERROR:   { col: '#f59e0b', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.3)', label: 'Compile Error', icon: AlertTriangle },
-  TIME_LIMIT_EXCEEDED: { col: '#f59e0b', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.3)', label: 'Time Limit',    icon: Clock        },
-  PENDING:             { col: '#38BDF8', bg: 'rgba(56,189,248,0.1)',   border: 'rgba(56,189,248,0.25)',  label: 'Judging',       icon: Loader2      },
+  ACCEPTED: { col: '#10b981', bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.3)', label: 'Accepted', icon: CheckCircle },
+  WRONG_ANSWER: { col: '#E11D48', bg: 'rgba(225,29,72,0.15)', border: 'rgba(225,29,72,0.3)', label: 'Wrong Answer', icon: XCircle },
+  RUNTIME_ERROR: { col: '#E11D48', bg: 'rgba(225,29,72,0.15)', border: 'rgba(225,29,72,0.3)', label: 'Runtime Error', icon: XCircle },
+  COMPILATION_ERROR: { col: '#f59e0b', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.3)', label: 'Compile Error', icon: AlertTriangle },
+  TIME_LIMIT_EXCEEDED: { col: '#f59e0b', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.3)', label: 'Time Limit', icon: Clock },
+  PENDING: { col: '#38BDF8', bg: 'rgba(56,189,248,0.1)', border: 'rgba(56,189,248,0.25)', label: 'Judging', icon: Loader2 },
 }
 
 export function VerdictChip({ verdict, label, size = 'sm', className = '' }) {
@@ -370,9 +370,9 @@ export function VerdictChip({ verdict, label, size = 'sm', className = '' }) {
    DIFF CHIP
 ══════════════════════════════════════════════════════════ */
 const DIFF_CFG = {
-  easy:   { col: '#10b981', bg: 'rgba(16,185,129,0.12)',  label: 'Easy'   },
+  easy: { col: '#10b981', bg: 'rgba(16,185,129,0.12)', label: 'Easy' },
   medium: { col: '#f59e0b', bg: 'rgba(245,158,11,0.12)', label: 'Medium' },
-  hard:   { col: '#E11D48', bg: 'rgba(225,29,72,0.12)',   label: 'Hard'   },
+  hard: { col: '#E11D48', bg: 'rgba(225,29,72,0.12)', label: 'Hard' },
 }
 
 export function DiffChip({ difficulty, className = '' }) {
@@ -390,7 +390,7 @@ export function DiffChip({ difficulty, className = '' }) {
 export function PageWrapper({ children, className = '', heroGlow = false, style = {} }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}
-      className={`min-h-[calc(100vh-3.5rem)] relative ${className}`}
+      className={`min-h-[calc(100vh-3.5rem)] relative overflow-x-hidden w-full ${className}`}
       style={{ background: 'var(--c-void)', ...style }}
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0"

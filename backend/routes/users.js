@@ -3,19 +3,23 @@
  * Stub: GET /api/users/:id  (full implementation in Week 9)
  */
 
-const express        = require('express')
+const express = require('express')
 const authMiddleware = require('../middleware/auth')
-const db             = require('../db')
-const router         = express.Router()
+const db = require('../db')
+const router = express.Router()
 
 // GET /api/users/stats — live platform statistics
-router.get('/stats', async (req, res) => {
+router.get('/stats', async (_req, res) => {
   try {
     const { rows: userCount } = await db.query(`SELECT COUNT(*)::int as total FROM users`)
     const { rows: matchCount } = await db.query(`SELECT COUNT(*)::int as total FROM matches WHERE status = 'finished'`)
     const { rows: subCount } = await db.query(`SELECT COUNT(*)::int as total FROM submissions`)
-    const io = req.app.get('io')
-    const onlineUsers = io ? io.engine.clientsCount : 0
+    const io = _req.app.get('io')
+    let onlineUsers = 0
+    if (io) {
+      const sockets = await io.fetchSockets()
+      onlineUsers = new Set(sockets.map(s => s.user?.id).filter(Boolean)).size
+    }
 
     return res.json({
       totalUsers: userCount[0]?.total || 0,

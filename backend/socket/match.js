@@ -194,6 +194,25 @@ function registerMatch(io) {
   io.on('connection', (socket) => {
     const { id: userId, username, elo_rating } = socket.user
 
+    socket.on('check_active_match', () => {
+      for (const [roomId, match] of activeMatches.entries()) {
+        if (!match.isResolved && match.players?.some(p => String(p.userId) === String(userId))) {
+          socket.join(roomId)
+          console.log(`[Match] check_active_match → user=${username} has active room=${roomId}`)
+          socket.emit('active_match', {
+            roomId,
+            topic: match.topic,
+            difficulty: match.difficulty,
+            players: match.players,
+            problemId: match.problemId,
+            isCustom: match.isCustom || false,
+            startedAt: match.startedAt,
+          })
+          break
+        }
+      }
+    })
+
     /* ── rejoin_match (clear disconnect timer if reconnected) ────── */
     socket.on('rejoin_match', async ({ roomId }) => {
       if (roomId) socket.join(roomId)
@@ -203,8 +222,26 @@ function registerMatch(io) {
         if (match.disconnectTimers && match.disconnectTimers.has(userId)) {
           clearTimeout(match.disconnectTimers.get(userId))
           match.disconnectTimers.delete(userId)
-          console.log(`[Match] player reconnected user=${username} room=${roomId}`)
-          io.to(roomId).emit('player_reconnected', { userId, username })
+          match.disconnectDeadlines?.delete(userId)
+        }
+        // Always tell the room this player is back (clears any stale "Disconnected" UI)
+        console.log(`[Match] player (re)joined user=${username} room=${roomId}`)
+        io.to(roomId).emit('player_reconnected', { userId, username })
+
+        // If the opponent is currently disconnected, tell this (fresh) client
+        if (match.disconnectTimers && match.disconnectDeadlines) {
+          for (const [uid] of match.disconnectTimers) {
+            if (String(uid) === String(userId)) continue
+            const deadline = match.disconnectDeadlines.get(uid)
+            const opp = match.players?.find(p => String(p.userId) === String(uid))
+            if (deadline && opp) {
+              socket.emit('player_disconnected', {
+                userId: uid,
+                username: opp.username,
+                gracePeriodSec: Math.max(1, Math.ceil((deadline - Date.now()) / 1000)),
+              })
+            }
+          }
         }
 
         if (match.isResolved && match.matchEndPayload) {
@@ -245,6 +282,9 @@ function registerMatch(io) {
               winner: { userId: m.winner_id, username: m.winner_name },
               loser: { userId: m.winner_id === m.player_one_id ? m.player_two_id : m.player_one_id, username: m.loser_name },
             })
+          } else {
+            // Room is gone from memory (server restart / stale link) — let client leave
+            socket.emit('match_not_found', { roomId })
           }
         } catch (err) {
           console.error('[rejoin_match DB lookup failed]', err.message)
@@ -570,9 +610,20 @@ function registerMatch(io) {
         // Ignore if user already solved it or match already ended
         if (match.isResolved || match.submissions?.get(userId) === 'ACCEPTED') continue
 
+        // Reload / new tab race: the new socket may have rejoined BEFORE this old
+        // socket's disconnect was detected. If the user still has a live socket
+        // in the room, they are not actually gone.
+        if (userHasOtherSocketInRoom(io, roomId, userId, socket.id)) {
+          console.log(`[Match] stale socket closed for user=${username} room=${roomId} — user still connected, no forfeit timer`)
+          continue
+        }
+
         console.log(`[Match] player disconnected user=${username} room=${roomId} reason=${reason}`)
 
         if (!match.disconnectTimers) match.disconnectTimers = new Map()
+        if (!match.disconnectDeadlines) match.disconnectDeadlines = new Map()
+        if (match.disconnectTimers.has(userId)) clearTimeout(match.disconnectTimers.get(userId))
+        match.disconnectDeadlines.set(userId, Date.now() + 30_000)
 
         // Broadcast disconnect alert to room
         io.to(roomId).emit('player_disconnected', {
@@ -583,8 +634,15 @@ function registerMatch(io) {
 
         // 30-Second Forfeit Countdown Timer
         const timer = setTimeout(async () => {
+          match.disconnectTimers?.delete(userId)
+          match.disconnectDeadlines?.delete(userId)
           if (!activeMatches.has(roomId)) return
           if (match.isResolved) return
+          // Final safety: user came back on another socket → no forfeit
+          if (userHasOtherSocketInRoom(io, roomId, userId, socket.id)) {
+            io.to(roomId).emit('player_reconnected', { userId, username })
+            return
+          }
           match.isResolved = true
 
           console.log(`[Match] FORFEIT EXPIRED user=${username} room=${roomId}`)
@@ -643,6 +701,18 @@ function registerMatch(io) {
       }
     })
   })
+}
+
+/* ── Is this user connected to the room via some other socket? ── */
+function userHasOtherSocketInRoom(io, roomId, userId, excludeSocketId) {
+  const sids = io.sockets.adapter.rooms.get(roomId)
+  if (!sids) return false
+  for (const sid of sids) {
+    if (sid === excludeSocketId) continue
+    const s = io.sockets.sockets.get(sid)
+    if (s?.connected && String(s.user?.id) === String(userId)) return true
+  }
+  return false
 }
 
 /* ── Called by verdictSubscriber for Docker sandbox verdicts ─── */

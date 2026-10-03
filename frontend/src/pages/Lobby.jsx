@@ -188,13 +188,12 @@ function HeaderRosterSearch({ inputRef }) {
   }, [showDrop])
 
   function handleInput(val) {
-    const sanitized = val.replace(/[^a-zA-Z0-9_]/g, '')
-    setQuery(sanitized)
+    setQuery(val)
     clearTimeout(debounce.current)
-    if (sanitized.trim().length < 1) { setSuggestions([]); setShowDrop(false); return }
+    if (val.trim().length < 1) { setSuggestions([]); setShowDrop(false); return }
     debounce.current = setTimeout(async () => {
       try {
-        const { data } = await api.get(`/api/users/search?q=${encodeURIComponent(sanitized.trim())}`)
+        const { data } = await api.get(`/api/users/search?q=${encodeURIComponent(val.trim())}`)
         setSuggestions(data)
         setShowDrop(data.length > 0)
       } catch { setSuggestions([]); setShowDrop(false) }
@@ -244,19 +243,19 @@ function HeaderRosterSearch({ inputRef }) {
           ref={dropRef}
           onWheel={e => e.stopPropagation()}
           style={{
-          position: 'absolute',
-          top: 'calc(100% + 6px)',
-          left: 0,
-          right: 0,
-          zIndex: 9999,
-          background: 'var(--c-panel)',
-          border: '1px solid var(--c-border)',
-          borderRadius: '8px',
-          boxShadow: '0 16px 40px rgba(0,0,0,0.7)',
-          maxHeight: '260px',
-          overflowY: 'auto',
-          overscrollBehavior: 'contain',
-        }}>
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            background: 'var(--c-panel)',
+            border: '1px solid var(--c-border)',
+            borderRadius: '8px',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.7)',
+            maxHeight: '260px',
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
+          }}>
           {suggestions.map(s => {
             const st = getArenaTier(s.elo_rating)
             return (
@@ -762,7 +761,8 @@ export default function Lobby() {
   const [customModalOpen, setCustomModalOpen] = useState(false)
   const [dailyProblem, setDailyProblem] = useState(null)
 
-  const searchInputRef = useRef(null)
+  const desktopSearchRef = useRef(null)
+  const mobileSearchRef = useRef(null)
   const initialRoomCode = searchParams.get('room')
 
   const { connected, emit, on, off, socket } = useSocket()
@@ -808,7 +808,11 @@ export default function Lobby() {
         handleSelectTopic(randTopic)
       } else if (e.key === '/') {
         e.preventDefault()
-        searchInputRef.current?.focus()
+        if (window.innerWidth < 640) {
+          mobileSearchRef.current?.focus()
+        } else {
+          desktopSearchRef.current?.focus()
+        }
       } else if (e.key === 'Enter') {
         if (topic) startQueue()
       }
@@ -879,7 +883,7 @@ export default function Lobby() {
     handleSelectTopic(randomTopic)
   }
 
-  const isDailySelected = dailyObj && topic === dailyObj.topic && diff === dailyObj.difficulty
+  const isDailySelected = dailyObj ? (topic === dailyObj.topic && diff === dailyObj.difficulty) : false
 
   return (
     <>
@@ -919,14 +923,14 @@ export default function Lobby() {
 
             {/* Center — Roster Search */}
             <div className="flex-1 max-w-xs sm:max-w-sm mx-4 hidden sm:block">
-              <HeaderRosterSearch inputRef={searchInputRef} />
+              <HeaderRosterSearch inputRef={desktopSearchRef} />
             </div>
 
             {/* Right — System Info */}
             <div className="flex items-center gap-3 flex-shrink-0">
               {/* Mobile search icon */}
               <div className="sm:hidden">
-                <HeaderRosterSearch inputRef={searchInputRef} />
+                <HeaderRosterSearch inputRef={mobileSearchRef} />
               </div>
               <div className="text-right font-mono text-[11px] px-3 py-2"
                 style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)', clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}>
@@ -953,7 +957,7 @@ export default function Lobby() {
         </div>
 
         {/* ── MAIN CONTENT ────────────────────────────────── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 pb-24 lg:pb-6 space-y-6">
 
           {/* STEPPER STRIP */}
           <div className="grid grid-cols-3 gap-2 sm:gap-4 p-2 rounded" style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)' }}>
@@ -998,72 +1002,72 @@ export default function Lobby() {
           </div>
 
           {/* FEATURED DAILY CHALLENGE BANNER */}
-          <HudPanel accentTopLeft="var(--c-gold)" accentBotRight="var(--c-gold)" glow glowColor="rgba(245,185,66,0.15)" style={{ padding: 0, overflow: 'hidden' }}>
-            <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              {dailyObj ? (
-                <>
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
-                        style={{ background: 'rgba(245,185,66,0.15)', color: 'var(--c-gold)', border: '1px solid rgba(245,185,66,0.3)' }}>
-                        Daily Challenge
-                      </span>
-                      <span className="font-mono text-xs uppercase" style={{ color: 'var(--c-text-mute)' }}>Topic: {dailyObj.topic}</span>
-                      <DiffChip difficulty={dailyObj.difficulty} />
-                    </div>
-                    <h3 className="font-display font-bold text-lg sm:text-xl" style={{ color: 'var(--c-text)' }}>
-                      {dailyObj.title}
-                    </h3>
-                    <p className="font-sans text-xs max-w-3xl leading-relaxed" style={{ color: 'var(--c-text-dim)' }}>
-                      {dailyObj.desc}
-                    </p>
-                  </div>
-    
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (isDailySelected) {
-                          handleSelectTopic(null)
-                        } else {
-                          handleSelectTopic(dailyObj.topic)
-                          handleSelectDiff(dailyObj.difficulty)
-                        }
-                      }}
-                      className="px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider rounded transition-all flex items-center gap-2 cursor-pointer"
-                      style={{
-                        background: isDailySelected ? 'rgba(245,185,66,0.2)' : 'var(--c-gold)',
-                        color: isDailySelected ? 'var(--c-gold)' : '#000',
-                        border: `1px solid var(--c-gold)`,
-                        boxShadow: '0 0 15px rgba(245,185,66,0.3)'
-                      }}
-                    >
-                      {isDailySelected ? (
-                        <>
-                          <CheckCircle2 size={15} /> Daily Selected (Click to Deselect)
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={15} /> Take Daily Challenge
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="space-y-3 flex-1 py-2">
+          {dailyObj ? (
+            <HudPanel accentTopLeft="var(--c-gold)" accentBotRight="var(--c-gold)" glow glowColor="rgba(245,185,66,0.15)" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-2 flex-1">
                   <div className="flex items-center gap-2">
-                    <Skeleton className="w-24 h-5 rounded" />
-                    <Skeleton className="w-20 h-4 rounded" />
-                    <Skeleton className="w-16 h-4 rounded" />
+                    <span className="font-mono text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+                      style={{ background: 'rgba(245,185,66,0.15)', color: 'var(--c-gold)', border: '1px solid rgba(245,185,66,0.3)' }}>
+                      Daily Challenge
+                    </span>
+                    <span className="font-mono text-xs uppercase" style={{ color: 'var(--c-text-mute)' }}>Topic: {dailyObj.topic}</span>
+                    <DiffChip difficulty={dailyObj.difficulty} />
                   </div>
-                  <Skeleton className="w-3/4 max-w-md h-7 rounded" />
-                  <Skeleton className="w-full max-w-2xl h-4 rounded" />
-                  <Skeleton className="w-5/6 max-w-xl h-4 rounded" />
+                  <h3 className="font-display font-bold text-lg sm:text-xl" style={{ color: 'var(--c-text)' }}>
+                    {dailyObj.title}
+                  </h3>
+                  <p className="font-sans text-xs max-w-3xl leading-relaxed" style={{ color: 'var(--c-text-dim)' }}>
+                    {dailyObj.desc}
+                  </p>
                 </div>
-              )}
-            </div>
-          </HudPanel>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isDailySelected) {
+                        handleSelectTopic(null)
+                      } else {
+                        handleSelectTopic(dailyObj.topic)
+                        handleSelectDiff(dailyObj.difficulty)
+                      }
+                    }}
+                    className="px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider rounded transition-all flex items-center gap-2 cursor-pointer"
+                    style={{
+                      background: isDailySelected ? 'rgba(245,185,66,0.2)' : 'var(--c-gold)',
+                      color: isDailySelected ? 'var(--c-gold)' : '#000',
+                      border: `1px solid var(--c-gold)`,
+                      boxShadow: '0 0 15px rgba(245,185,66,0.3)'
+                    }}
+                  >
+                    {isDailySelected ? (
+                      <>
+                        <CheckCircle2 size={15} /> Daily Selected (Click to Deselect)
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={15} /> Take Daily Challenge
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </HudPanel>
+          ) : (
+            <HudPanel accentTopLeft="var(--c-border)" accentBotRight="var(--c-border)" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-2 flex-1 w-full">
+                  <Skeleton height={20} width={120} />
+                  <Skeleton height={28} width="60%" />
+                  <Skeleton height={14} width="90%" />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Skeleton height={40} width={180} />
+                </div>
+              </div>
+            </HudPanel>
+          )}
 
           {/* TWO COLUMN CONTENT: TOPIC & DIFF GRID vs STICKY DEPLOY LOADOUT */}
           <div className="grid lg:grid-cols-[1fr_340px] gap-6 items-start">
