@@ -194,11 +194,11 @@ function registerMatch(io) {
   io.on('connection', (socket) => {
     const { id: userId, username, elo_rating } = socket.user
 
-    // Auto-reconnect: if user is already in an active match, notify them immediately
-    for (const [roomId, match] of activeMatches.entries()) {
-      if (!match.isResolved && match.players?.some(p => p.userId === userId)) {
-        // Delay slightly so frontend has time to mount listeners if it just loaded
-        setTimeout(() => {
+    socket.on('check_active_match', () => {
+      for (const [roomId, match] of activeMatches.entries()) {
+        if (!match.isResolved && match.players?.some(p => String(p.userId) === String(userId))) {
+          // Re-join the room immediately so they don't miss events while clicking "Enter"
+          socket.join(roomId)
           socket.emit('match_found', {
             roomId,
             topic: match.topic,
@@ -207,10 +207,10 @@ function registerMatch(io) {
             problemId: match.problemId,
             isCustom: match.isCustom || false
           })
-        }, 500)
-        break;
+          break;
+        }
       }
-    }
+    })
 
     /* ── rejoin_match (clear disconnect timer if reconnected) ────── */
     socket.on('rejoin_match', async ({ roomId }) => {
