@@ -11,6 +11,7 @@ import { Flag, Play, ChevronUp, Clock, AlertTriangle, Loader2, CheckCircle, XCir
 import { RankBadge, DiffChip, VerdictChip, getArenaTier } from '../components/ui'
 
 import { ArenaLogo } from '../components/ArenaLogo'
+import { setActiveMatch, clearActiveMatch } from '../utils/activeMatch'
 
 /* ════════════════════════════════════════════════
    MATCH TIMER
@@ -528,6 +529,11 @@ export default function Match() {
     }
   }, [matchState, roomId])
 
+  // Remember this match across tabs so an accidentally closed tab can rejoin
+  useEffect(() => {
+    if (roomId) setActiveMatch(roomId, user?.id)
+  }, [roomId, user?.id])
+
   // Persistent match start timestamp across browser refreshes
   const [startedAt, setStartedAt] = useState(() => {
     if (!roomId) return Date.now()
@@ -580,6 +586,10 @@ export default function Match() {
     }
     function onMatchStateRestored(restored) {
       setMatchState(prev => ({ ...(prev || {}), ...restored }))
+      if (restored?.startedAt && roomId) {
+        setStartedAt(restored.startedAt)
+        try { localStorage.setItem(`aa_start_${roomId}`, String(restored.startedAt)) } catch { }
+      }
     }
     function onSubmissionStarted({ userId }) {
       if (userId === user?.id) {
@@ -625,6 +635,7 @@ export default function Match() {
       if (roomId) {
         localStorage.removeItem(`aa_start_${roomId}`)
         sessionStorage.removeItem(`aa_match_${roomId}`)
+        clearActiveMatch(roomId)
       }
       // Give 1.4s for user to see the green ACCEPTED indicator before going to results
       setTimeout(() => {
@@ -649,7 +660,15 @@ export default function Match() {
     function onSocketConnect() {
       emit('rejoin_match', { roomId })
     }
+    function onMatchNotFound({ roomId: rid }) {
+      if (rid && rid !== roomId) return
+      clearActiveMatch(roomId)
+      localStorage.removeItem(`aa_start_${roomId}`)
+      sessionStorage.removeItem(`aa_match_${roomId}`)
+      navigate('/lobby', { replace: true })
+    }
 
+    on('match_not_found', onMatchNotFound)
     on('connect', onSocketConnect)
     on('match_found', onMatchFound)
     on('match_problem_set', onMatchProblemSet)
@@ -666,6 +685,7 @@ export default function Match() {
     emit('rejoin_match', { roomId })
 
     return () => {
+      off('match_not_found', onMatchNotFound)
       off('connect', onSocketConnect)
       off('match_found', onMatchFound)
       off('match_problem_set', onMatchProblemSet)
@@ -721,6 +741,7 @@ export default function Match() {
   // Time's up
   useEffect(() => {
     if (remaining === 0) {
+      clearActiveMatch(roomId)
       navigate('/result', { state: { result: 'DRAW', roomId, matchState } })
     }
   }, [remaining, navigate, roomId, matchState])
@@ -875,6 +896,7 @@ export default function Match() {
                 onClick={() => {
                   setShowResignModal(false)
                   if (roomId) localStorage.removeItem(`aa_start_${roomId}`)
+                  clearActiveMatch(roomId)
                   emit('resign_match', { roomId })
                   setTimeout(() => {
                     navigate('/result', {

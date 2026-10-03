@@ -15,6 +15,8 @@ import WhoWeAre from './pages/WhoWeAre'
 import IntelReports from './pages/IntelReports'
 import IntelReportDetail from './pages/IntelReportDetail'
 import ShareExperienceWizard from './pages/ShareExperienceWizard'
+import { useSocket } from './hooks/useSocket'
+import { getActiveMatch, setActiveMatch } from './utils/activeMatch'
 
 import { Shield, ChevronRight } from 'lucide-react'
 import { PageWrapper, HudPanel } from './components/ui/index.jsx'
@@ -86,6 +88,47 @@ function RequireAuthGate({ children }) {
   return children
 }
 
+/**
+ * ActiveMatchGuard — if the user accidentally closed their match tab and
+ * reopens the site, send them straight back into the running match.
+ *  1. Instant: localStorage record written by Match.jsx
+ *  2. Fallback: ask the server (check_active_match → active_match)
+ */
+function ActiveMatchGuard() {
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const { user, isAuthenticated, loading } = useAuth()
+  const { connected, emit, on, off } = useSocket()
+  const onMatchPage = pathname.startsWith('/match') || pathname.startsWith('/result')
+
+  // 1. localStorage (works even before socket connects)
+  useEffect(() => {
+    if (loading || !isAuthenticated || onMatchPage) return
+    const active = getActiveMatch()
+    if (active && (!active.userId || !user?.id || String(active.userId) === String(user.id))) {
+      navigate(`/match/${active.roomId}`, { replace: true })
+    }
+  }, [loading, isAuthenticated, onMatchPage, user?.id, navigate])
+
+  // 2. Server-side check
+  useEffect(() => {
+    if (!isAuthenticated || onMatchPage) return
+    function onActiveMatch(data) {
+      if (!data?.roomId) return
+      setActiveMatch(data.roomId, user?.id)
+      navigate(`/match/${data.roomId}`, {
+        replace: true,
+        state: { roomId: data.roomId, topic: data.topic, difficulty: data.difficulty, players: data.players, problemId: data.problemId, isCustom: data.isCustom, startedAt: data.startedAt },
+      })
+    }
+    on('active_match', onActiveMatch)
+    if (connected) emit('check_active_match')
+    return () => off('active_match', onActiveMatch)
+  }, [isAuthenticated, onMatchPage, connected, emit, on, off, navigate, user?.id])
+
+  return null
+}
+
 function AppLayout() {
   const { pathname } = useLocation()
   const isMatchPage = pathname.startsWith('/match')
@@ -93,6 +136,7 @@ function AppLayout() {
   return (
     <>
       <ScrollToTop />
+      <ActiveMatchGuard />
       <UsernameOnboardingModal />
       <InstituteOnboardingModal />
       {!isMatchPage && <Navbar />}
