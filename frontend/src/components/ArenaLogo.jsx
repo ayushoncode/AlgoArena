@@ -122,8 +122,8 @@ export function ArenaLogo({
             alignItems: 'center',
           }}
         >
-          <span style={{ color: '#F1F5F9' }}>ALGO</span>
-          <span style={{ color: '#E11D48' }}>ARENA</span>
+          <span style={{ color: 'var(--c-text)' }}>ALGO</span>
+          <span style={{ color: 'var(--c-red)' }}>ARENA</span>
         </div>
 
         {/* Tagline */}
@@ -133,7 +133,7 @@ export function ArenaLogo({
               fontFamily: 'var(--font-mono, monospace)',
               fontSize: fonts.tagline,
               fontWeight: 500,
-              color: '#475569',
+              color: 'var(--c-text-mute)',
               letterSpacing: '0.28em',
               textTransform: 'uppercase',
               marginTop: 4,

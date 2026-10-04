@@ -393,9 +393,7 @@ export function PageWrapper({ children, className = '', heroGlow = false, style 
       className={`min-h-[calc(100vh-3.5rem)] relative overflow-x-hidden w-full ${className}`}
       style={{ background: 'var(--c-void)', ...style }}
     >
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0"
-        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='70'%3E%3Cpath d='M30 5 L55 20 L55 50 L30 65 L5 50 L5 20 Z' fill='none' stroke='rgba(28,37,64,0.45)' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: '60px 70px', opacity: 0.6 }}
-      />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-hex-pattern" />
       {heroGlow && (
         <>
           <div aria-hidden="true" className="pointer-events-none absolute top-0 left-0 w-96 h-96 rounded-full blur-[120px]" style={{ background: 'rgba(225,29,72,0.08)' }} />
@@ -441,7 +439,7 @@ export function AnimatedCounter({ value, duration = 800, className = '', style =
 ══════════════════════════════════════════════════════════ */
 export function Scanlines() {
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0"
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 scanline-overlay"
       style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px)', zIndex: 1 }}
     />
   )

@@ -174,7 +174,7 @@ export default function WhoWeAre() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="font-display font-black text-4xl sm:text-6xl md:text-7xl tracking-tight text-white uppercase leading-none"
+              className="font-display font-black text-4xl sm:text-6xl md:text-7xl tracking-tight text-[color:var(--c-text)] uppercase leading-none"
             >
               {story.headline.split(".")[0]}. <span style={{ color: "var(--c-red)" }}>{story.headline.split(".")[1] || "ONE ARENA."}</span>
             </motion.h1>
@@ -185,7 +185,7 @@ export default function WhoWeAre() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.25 }}
-            className="font-sans text-base sm:text-lg md:text-xl max-w-2xl mx-auto text-slate-300 leading-relaxed font-normal"
+            className="font-sans text-base sm:text-lg md:text-xl max-w-2xl mx-auto text-[color:var(--c-text-dim)] leading-relaxed font-normal"
           >
             {story.subline}
           </motion.p>
@@ -197,7 +197,7 @@ export default function WhoWeAre() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: [0, 8, 0] }}
           transition={{ duration: 2, repeat: Infinity, delay: 0.6 }}
-          className="mt-14 inline-flex items-center gap-2 font-mono text-xs text-slate-400 hover:text-white transition-colors"
+          className="mt-14 inline-flex items-center gap-2 font-mono text-xs text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)] transition-colors"
           aria-label="Scroll to character selection"
         >
           <span>ROSTER STAGE</span>
@@ -217,7 +217,7 @@ export default function WhoWeAre() {
               <Command size={13} className="text-cyan-400" />
               // CHARACTER SELECT STAGE
             </span>
-            <span className="font-mono text-xs px-2 py-0.5 bg-slate-900 border border-slate-800 text-slate-400">
+            <span className="font-mono text-xs px-2 py-0.5 bg-[color:var(--c-panel)] border border-[color:var(--c-border)] text-[color:var(--c-text-mute)]">
               0{selectedIndex + 1} / 0{team.length}
             </span>
           </div>
@@ -226,7 +226,7 @@ export default function WhoWeAre() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsPlaying(!isPlaying)}
-              className="inline-flex items-center gap-1.5 px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-slate-400 hover:text-white bg-slate-900 border border-slate-800 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)] bg-[color:var(--c-panel)] border border-[color:var(--c-border)] transition-colors"
               title={isPlaying ? "Pause automatic character rotation" : "Play automatic character rotation"}
             >
               {isPlaying ? <Pause size={11} className="text-rose-400" /> : <Play size={11} className="text-cyan-400" />}
@@ -235,14 +235,14 @@ export default function WhoWeAre() {
             <div className="flex items-center gap-1">
               <button
                 onClick={handlePrev}
-                className="p-1.5 bg-slate-900 border border-slate-800 text-slate-300 hover:text-rose-400 transition-colors"
+                className="p-1.5 bg-[color:var(--c-panel)] border border-[color:var(--c-border)] text-[color:var(--c-text-dim)] hover:text-rose-400 transition-colors"
                 aria-label="Previous character"
               >
                 <ChevronLeft size={16} />
               </button>
               <button
                 onClick={handleNext}
-                className="p-1.5 bg-slate-900 border border-slate-800 text-slate-300 hover:text-rose-400 transition-colors"
+                className="p-1.5 bg-[color:var(--c-panel)] border border-[color:var(--c-border)] text-[color:var(--c-text-dim)] hover:text-rose-400 transition-colors"
                 aria-label="Next character"
               >
                 <ChevronRight size={16} />
@@ -280,7 +280,7 @@ export default function WhoWeAre() {
               {/* Faint Giant Background Initial Letter */}
               <div
                 aria-hidden="true"
-                className="absolute right-4 top-1/2 -translate-y-1/2 font-display font-black text-[180px] sm:text-[240px] text-slate-800/10 select-none pointer-events-none z-0"
+                className="absolute right-4 top-1/2 -translate-y-1/2 font-display font-black text-[180px] sm:text-[240px] text-[color:var(--c-text-mute)] opacity-10 select-none pointer-events-none z-0"
               >
                 {selectedMember.classTitle?.[0] || selectedMember.name?.[0] || "A"}
               </div>
@@ -344,14 +344,14 @@ export default function WhoWeAre() {
                         <span className="font-mono text-[11px] font-black uppercase tracking-widest px-2.5 py-1 bg-rose-500/15 border border-rose-500/40 text-rose-400">
                           CLASS // {selectedMember.classTitle || "DEVELOPER"}
                         </span>
-                        <span className="font-mono text-xs text-slate-400">
+                        <span className="font-mono text-xs text-[color:var(--c-text-mute)]">
                           {selectedMember.role}
                         </span>
                       </div>
 
                       {/* Member Name */}
                       <div>
-                        <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-wide uppercase">
+                        <h2 className="font-display font-black text-3xl sm:text-5xl text-[color:var(--c-text)] tracking-wide uppercase">
                           {selectedMember.name}
                         </h2>
                         {selectedMember.name === "Add Your Name" && (
@@ -362,17 +362,17 @@ export default function WhoWeAre() {
                       </div>
 
                       {/* Quote */}
-                      <blockquote className="font-sans italic text-sm sm:text-base text-slate-300 border-l-2 border-rose-500 pl-4 py-0.5 my-2">
+                      <blockquote className="font-sans italic text-sm sm:text-base text-[color:var(--c-text-dim)] border-l-2 border-rose-500 pl-4 py-0.5 my-2">
                         "{selectedMember.quote}"
                       </blockquote>
 
                       {/* Signature Move */}
                       {selectedMember.signatureMove && (
-                        <div className="p-3 bg-slate-900/90 border border-slate-800 rounded space-y-1">
+                        <div className="p-3 bg-[color:var(--c-panel)]/90 border border-[color:var(--c-border)] rounded space-y-1">
                           <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                             <Zap size={13} /> SIGNATURE MOVE
                           </p>
-                          <p className="font-sans text-xs text-slate-300">
+                          <p className="font-sans text-xs text-[color:var(--c-text-dim)]">
                             {selectedMember.signatureMove}
                           </p>
                         </div>
@@ -381,17 +381,17 @@ export default function WhoWeAre() {
                       {/* Focus Areas (Skill Bars) */}
                       {selectedMember.focusAreas?.length > 0 && (
                         <div className="space-y-2 pt-2">
-                          <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                          <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-[color:var(--c-text-mute)]">
                             FOCUS AREAS
                           </p>
                           <div className="grid grid-cols-1 gap-2">
                             {selectedMember.focusAreas.map((skill, idx) => (
                               <div key={idx} className="space-y-1">
                                 <div className="flex justify-between font-mono text-[10px]">
-                                  <span className="text-slate-300">{skill.label}</span>
+                                  <span className="text-[color:var(--c-text-dim)]">{skill.label}</span>
                                   <span className="text-cyan-400 font-bold">{skill.value}%</span>
                                 </div>
-                                <div className="h-1.5 bg-slate-900 rounded overflow-hidden border border-slate-800">
+                                <div className="h-1.5 bg-[color:var(--c-panel)] rounded overflow-hidden border border-[color:var(--c-border)]">
                                   <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${skill.value}%` }}
@@ -406,7 +406,7 @@ export default function WhoWeAre() {
                       )}
 
                       {/* Social Action Links (Hidden if URL missing) */}
-                      <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-800/80 relative z-50 pointer-events-auto">
+                      <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-[color:var(--c-border)]/80 relative z-50 pointer-events-auto">
                         {selectedMember.links?.github && (
                           <a
                             href={selectedMember.links.github}
@@ -416,13 +416,13 @@ export default function WhoWeAre() {
                               e.stopPropagation()
                               if (selectedMember.links.github) window.open(selectedMember.links.github, "_blank")
                             }}
-                            className="inline-flex items-center gap-2 px-3.5 py-2 font-mono text-xs font-bold text-slate-200 bg-slate-900 border border-slate-700 hover:border-rose-500 hover:bg-rose-500/20 hover:text-white transition-all cursor-pointer relative z-50 pointer-events-auto"
+                            className="inline-flex items-center gap-2 px-3.5 py-2 font-mono text-xs font-bold text-[color:var(--c-text)] bg-[color:var(--c-panel)] border border-[color:var(--c-border)] hover:border-rose-500 hover:bg-rose-500/20 hover:text-[color:var(--c-text)] transition-all cursor-pointer relative z-50 pointer-events-auto"
                             aria-label={`${selectedMember.name}'s GitHub Profile`}
                             title="GitHub Profile"
                           >
                             <GithubIcon size={15} />
                             <span>GITHUB</span>
-                            <ExternalLink size={12} className="text-slate-500" />
+                            <ExternalLink size={12} className="text-[color:var(--c-text-mute)]" />
                           </a>
                         )}
                         {selectedMember.links?.linkedin && (
@@ -434,13 +434,13 @@ export default function WhoWeAre() {
                               e.stopPropagation()
                               if (selectedMember.links.linkedin) window.open(selectedMember.links.linkedin, "_blank")
                             }}
-                            className="inline-flex items-center gap-2 px-3.5 py-2 font-mono text-xs font-bold text-slate-200 bg-slate-900 border border-slate-700 hover:border-cyan-400 hover:bg-cyan-500/20 hover:text-white transition-all cursor-pointer relative z-50 pointer-events-auto"
+                            className="inline-flex items-center gap-2 px-3.5 py-2 font-mono text-xs font-bold text-[color:var(--c-text)] bg-[color:var(--c-panel)] border border-[color:var(--c-border)] hover:border-cyan-400 hover:bg-cyan-500/20 hover:text-[color:var(--c-text)] transition-all cursor-pointer relative z-50 pointer-events-auto"
                             aria-label={`${selectedMember.name}'s LinkedIn Profile`}
                             title="LinkedIn Profile"
                           >
                             <LinkedinIcon size={15} />
                             <span>LINKEDIN</span>
-                            <ExternalLink size={12} className="text-slate-500" />
+                            <ExternalLink size={12} className="text-[color:var(--c-text-mute)]" />
                           </a>
                         )}
                         {selectedMember.links?.site && (
@@ -452,13 +452,13 @@ export default function WhoWeAre() {
                               e.stopPropagation()
                               if (selectedMember.links.site) window.open(selectedMember.links.site, "_blank")
                             }}
-                            className="inline-flex items-center gap-2 px-3.5 py-2 font-mono text-xs font-bold text-slate-200 bg-slate-900 border border-slate-700 hover:border-amber-400 hover:bg-amber-500/20 hover:text-white transition-all cursor-pointer relative z-50 pointer-events-auto"
+                            className="inline-flex items-center gap-2 px-3.5 py-2 font-mono text-xs font-bold text-[color:var(--c-text)] bg-[color:var(--c-panel)] border border-[color:var(--c-border)] hover:border-amber-400 hover:bg-amber-500/20 hover:text-[color:var(--c-text)] transition-all cursor-pointer relative z-50 pointer-events-auto"
                             aria-label={`${selectedMember.name}'s Portfolio Website`}
                             title="Portfolio Website"
                           >
                             <Globe size={15} />
                             <span>PORTFOLIO</span>
-                            <ExternalLink size={12} className="text-slate-500" />
+                            <ExternalLink size={12} className="text-[color:var(--c-text-mute)]" />
                           </a>
                         )}
                       </div>
@@ -482,8 +482,8 @@ export default function WhoWeAre() {
                 onClick={() => handleSelectMember(idx)}
                 className={`relative shrink-0 flex items-center gap-3 px-3 py-2 border transition-all text-left group ${
                   isActive
-                    ? "bg-slate-900 border-rose-500 shadow-[0_0_15px_rgba(225,29,72,0.3)]"
-                    : "bg-slate-950/80 border-slate-800 hover:border-slate-700 opacity-70 hover:opacity-100"
+                    ? "bg-[color:var(--c-panel)] border-rose-500 shadow-[0_0_15px_rgba(225,29,72,0.3)]"
+                    : "bg-[color:var(--c-panel2)] border-[color:var(--c-border)] hover:border-[color:var(--c-border)] opacity-70 hover:opacity-100"
                 }`}
                 aria-label={`Select character ${member.name}`}
               >
@@ -495,7 +495,7 @@ export default function WhoWeAre() {
                 )}
 
                 {/* Thumbnail */}
-                <div className={`w-10 h-12 rounded overflow-hidden border ${isActive ? "border-rose-400" : "border-slate-700"}`}>
+                <div className={`w-10 h-12 rounded overflow-hidden border ${isActive ? "border-rose-400" : "border-[color:var(--c-border)]"}`}>
                   <img
                     src={member.photo}
                     alt={member.name}
@@ -506,10 +506,10 @@ export default function WhoWeAre() {
 
                 {/* Mini Info */}
                 <div className="hidden sm:block text-left">
-                  <p className={`font-display font-bold text-xs uppercase ${isActive ? "text-white" : "text-slate-400"}`}>
+                  <p className={`font-display font-bold text-xs uppercase ${isActive ? "text-[color:var(--c-text)]" : "text-[color:var(--c-text-mute)]"}`}>
                     {member.name}
                   </p>
-                  <p className="font-mono text-[9px] text-slate-400 uppercase">
+                  <p className="font-mono text-[9px] text-[color:var(--c-text-mute)] uppercase">
                     {member.classTitle || "DEVELOPER"}
                   </p>
                 </div>
@@ -526,13 +526,13 @@ export default function WhoWeAre() {
         <section ref={timelineRef} className="max-w-4xl mx-auto px-5 sm:px-8 my-20">
           <div className="text-center mb-12 space-y-2">
             <span className="section-label">// ORIGIN LOG</span>
-            <h2 className="font-display font-black text-3xl sm:text-4xl text-white uppercase tracking-tight">
+            <h2 className="font-display font-black text-3xl sm:text-4xl text-[color:var(--c-text)] uppercase tracking-tight">
               HOW ALGOARENA WAS <span style={{ color: "var(--c-red)" }}>FORGED</span>
             </h2>
           </div>
 
           {/* Timeline Container */}
-          <div className="relative border-l-2 border-slate-800 ml-4 md:ml-0 md:left-1/2 md:-translate-x-1/2 space-y-10">
+          <div className="relative border-l-2 border-[color:var(--c-border)] ml-4 md:ml-0 md:left-1/2 md:-translate-x-1/2 space-y-10">
             {origin.map((item, idx) => {
               const isEven = idx % 2 === 0
               return (
@@ -547,26 +547,26 @@ export default function WhoWeAre() {
                   }`}
                 >
                   {/* Timeline Center Node */}
-                  <div className="absolute -left-[17px] md:left-1/2 md:-translate-x-1/2 top-1.5 w-8 h-8 rounded-full bg-slate-950 border-2 border-rose-500 flex items-center justify-center z-10 shadow-[0_0_12px_rgba(225,29,72,0.4)]">
+                  <div className="absolute -left-[17px] md:left-1/2 md:-translate-x-1/2 top-1.5 w-8 h-8 rounded-full bg-[color:var(--c-panel2)] border-2 border-rose-500 flex items-center justify-center z-10 shadow-[0_0_12px_rgba(225,29,72,0.4)]">
                     <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
                   </div>
 
                   {/* Card Content (Occupies half width on desktop) */}
                   <div className="w-full md:w-[45%] pl-6 md:pl-0">
-                    <HudPanel className="p-5 space-y-2 bg-slate-950/90 border-slate-800">
-                      <div className="flex items-center justify-between font-mono text-[10px] text-slate-400">
+                    <HudPanel className="p-5 space-y-2 bg-[color:var(--c-panel2)] border-[color:var(--c-border)]">
+                      <div className="flex items-center justify-between font-mono text-[10px] text-[color:var(--c-text-mute)]">
                         <span className="font-bold text-rose-400">{item.phase}</span>
                         <span>{item.date}</span>
                       </div>
-                      <h3 className="font-display font-bold text-lg text-white tracking-wide">
+                      <h3 className="font-display font-bold text-lg text-[color:var(--c-text)] tracking-wide">
                         {item.title}
                       </h3>
-                      <p className="font-sans text-xs text-slate-300 leading-relaxed">
+                      <p className="font-sans text-xs text-[color:var(--c-text-dim)] leading-relaxed">
                         {item.text}
                       </p>
                       {item.tag && (
                         <div className="pt-1">
-                          <span className="inline-block font-mono text-[9px] uppercase px-2 py-0.5 bg-slate-900 border border-slate-800 text-cyan-400">
+                          <span className="inline-block font-mono text-[9px] uppercase px-2 py-0.5 bg-[color:var(--c-panel)] border border-[color:var(--c-border)] text-cyan-400">
                             TAG // {item.tag}
                           </span>
                         </div>
@@ -586,7 +586,7 @@ export default function WhoWeAre() {
       <section ref={statsRef} className="max-w-5xl mx-auto px-5 sm:px-8 my-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((stat, idx) => (
-            <HudPanel key={idx} className="p-5 text-center space-y-1 bg-slate-950/90 border-slate-800">
+            <HudPanel key={idx} className="p-5 text-center space-y-1 bg-[color:var(--c-panel2)] border-[color:var(--c-border)]">
               <p className="font-display font-black text-3xl sm:text-4xl text-rose-400 tabular-nums">
                 {typeof stat.value === "number" ? (
                   statsInView ? <AnimatedCounter value={stat.value} duration={1000} /> : 0
@@ -594,7 +594,7 @@ export default function WhoWeAre() {
                   stat.value
                 )}
               </p>
-              <p className="font-mono text-[10px] uppercase font-bold tracking-wider text-slate-400">
+              <p className="font-mono text-[10px] uppercase font-bold tracking-wider text-[color:var(--c-text-mute)]">
                 {stat.label}
               </p>
             </HudPanel>
@@ -605,7 +605,7 @@ export default function WhoWeAre() {
       {/* ══════════════════════════════════════════════════════════
          SECTION 5: TECH ARSENAL (Infinite Marquee)
       ══════════════════════════════════════════════════════════ */}
-      <section className="my-20 overflow-hidden border-y border-slate-800/80 py-8 bg-slate-950/50">
+      <section className="my-20 overflow-hidden border-y border-[color:var(--c-border)] py-8 bg-[color:var(--c-panel2)]">
         <div className="text-center mb-6">
           <span className="section-label mb-0">// CORE TECH ARSENAL</span>
         </div>
@@ -616,7 +616,7 @@ export default function WhoWeAre() {
             {stack.concat(stack).map((tech, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/90 border border-slate-800 text-slate-300 font-mono text-xs font-bold uppercase tracking-wider"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[color:var(--c-panel)] border border-[color:var(--c-border)] text-[color:var(--c-text-dim)] font-mono text-xs font-bold uppercase tracking-wider"
               >
                 <Code2 size={13} className="text-cyan-400" />
                 {tech}
@@ -630,19 +630,19 @@ export default function WhoWeAre() {
          SECTION 6: FINAL CTA
       ══════════════════════════════════════════════════════════ */}
       <section className="max-w-4xl mx-auto px-5 sm:px-8 mt-16 text-center">
-        <HudPanel className="p-8 sm:p-12 relative overflow-hidden border-rose-500/40 bg-slate-950/90" glow glowColor="rgba(225,29,72,0.15)">
+        <HudPanel className="p-8 sm:p-12 relative overflow-hidden border-rose-500/40 bg-[color:var(--c-panel2)]" glow glowColor="rgba(225,29,72,0.15)">
           <div className="space-y-4 max-w-xl mx-auto relative z-10">
-            <h2 className="font-display font-black text-3xl sm:text-5xl text-white uppercase tracking-tight">
+            <h2 className="font-display font-black text-3xl sm:text-5xl text-[color:var(--c-text)] uppercase tracking-tight">
               WANT TO <span style={{ color: "var(--c-red)" }}>DUEL US?</span>
             </h2>
-            <p className="font-sans text-sm sm:text-base text-slate-300 leading-relaxed">
+            <p className="font-sans text-sm sm:text-base text-[color:var(--c-text-dim)] leading-relaxed">
               Step into the arena, compete in real-time 1v1 algorithmic battles, and rise through the ELO ranks.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
               <HudButton
                 onClick={() => navigate(isAuthenticated ? "/lobby" : "/?auth=register")}
-                className="px-6 py-3 font-display font-bold text-sm uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-500 shadow-[0_0_20px_rgba(225,29,72,0.4)]"
+                className="px-6 py-3 font-display font-bold text-sm uppercase tracking-wider text-[color:var(--c-text)] bg-rose-600 hover:bg-rose-500 shadow-[0_0_20px_rgba(225,29,72,0.4)]"
               >
                 <span className="flex items-center gap-2">
                   ENTER THE ARENA <ChevronRight size={16} />

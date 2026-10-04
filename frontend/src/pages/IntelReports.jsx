@@ -241,17 +241,17 @@ export default function IntelReports() {
             <div className="inline-flex items-center gap-2 px-3 py-1 font-mono text-xs font-bold uppercase tracking-widest bg-rose-500/10 border border-rose-500/30 text-rose-400">
               <FileText size={13} /> {cfg.label}
             </div>
-            <h1 className="font-display font-black text-3xl sm:text-5xl text-white uppercase tracking-tight">
+            <h1 className="font-display font-black text-3xl sm:text-5xl text-[color:var(--c-text)] uppercase tracking-tight">
               {cfg.title} <span style={{ color: "var(--c-red)" }}>{cfg.titleAccent}</span>
             </h1>
-            <p className="font-sans text-sm sm:text-base text-slate-300 max-w-xl">{cfg.sub}</p>
+            <p className="font-sans text-sm sm:text-base text-[color:var(--c-text-dim)] max-w-xl">{cfg.sub}</p>
           </div>
 
           {/* Action Header Buttons */}
           <div className="flex flex-wrap items-center gap-3">
             {viewMode !== "all" && (
               <GhostButton onClick={() => navigate("/experiences")} className="font-mono text-xs font-bold">
-                <FileText size={14} className="mr-1.5 text-slate-400" /> ALL REPORTS
+                <FileText size={14} className="mr-1.5 text-[color:var(--c-text-mute)]" /> ALL REPORTS
               </GhostButton>
             )}
             {viewMode !== "mine" && (
@@ -279,11 +279,11 @@ export default function IntelReports() {
             className={`flex-1 py-3 font-mono text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2 relative z-10 ${
               track === "intern"
                 ? "text-white shadow-lg bg-rose-600"
-                : "text-slate-400 hover:text-white"
+                : "text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)]"
             }`}
           >
             <span>INTERN TRACK</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded ${track === "intern" ? "bg-black/30 text-white" : "bg-slate-900 text-slate-400"}`}>
+            <span className={`text-[10px] px-2 py-0.5 rounded ${track === "intern" ? "bg-black/30 text-white" : "bg-[color:var(--c-panel)] text-[color:var(--c-text-mute)]"}`}>
               {meta.counts.intern || 0}
             </span>
           </button>
@@ -293,11 +293,11 @@ export default function IntelReports() {
             className={`flex-1 py-3 font-mono text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2 relative z-10 ${
               track === "sde"
                 ? "text-white shadow-lg bg-cyan-600"
-                : "text-slate-400 hover:text-white"
+                : "text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)]"
             }`}
           >
             <span>SDE TRACK</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded ${track === "sde" ? "bg-black/30 text-white" : "bg-slate-900 text-slate-400"}`}>
+            <span className={`text-[10px] px-2 py-0.5 rounded ${track === "sde" ? "bg-black/30 text-white" : "bg-[color:var(--c-panel)] text-[color:var(--c-text-mute)]"}`}>
               {meta.counts.sde || 0}
             </span>
           </button>
@@ -314,17 +314,17 @@ export default function IntelReports() {
           <div className="flex flex-col md:flex-row items-center gap-3">
             
             {/* Keyword Search */}
-            <div className="flex-1 w-full flex items-center gap-2 px-3 py-2 bg-slate-900 border border-slate-800 rounded font-mono text-xs text-slate-200">
-              <Search size={14} className="text-slate-400 shrink-0" />
+            <div className="flex-1 w-full flex items-center gap-2 px-3 py-2 bg-[color:var(--c-panel)] border border-slate-800 rounded font-mono text-xs text-slate-200">
+              <Search size={14} className="text-[color:var(--c-text-mute)] shrink-0" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
                 placeholder="Search keywords, roles, questions..."
-                className="w-full bg-transparent outline-none text-white placeholder-slate-500"
+                className="w-full bg-transparent outline-none text-[color:var(--c-text)] placeholder-slate-500"
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="text-slate-400 hover:text-white">
+                <button onClick={() => setSearchQuery("")} className="text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)]">
                   <X size={12} />
                 </button>
               )}
@@ -332,8 +332,8 @@ export default function IntelReports() {
 
             {/* Company Autocomplete */}
             <div className="relative w-full md:w-56 shrink-0">
-              <div className="flex items-center gap-2 px-3 py-2 bg-slate-900 border border-slate-800 rounded font-mono text-xs text-slate-200">
-                <Building size={14} className="text-slate-400 shrink-0" />
+              <div className="flex items-center gap-2 px-3 py-2 bg-[color:var(--c-panel)] border border-slate-800 rounded font-mono text-xs text-slate-200">
+                <Building size={14} className="text-[color:var(--c-text-mute)] shrink-0" />
                 <input
                   type="text"
                   value={companySearch}
@@ -341,10 +341,10 @@ export default function IntelReports() {
                   onFocus={() => setShowCompanySuggestions(true)}
                   onBlur={() => setTimeout(() => setShowCompanySuggestions(false), 200)}
                   placeholder="Filter company..."
-                  className="w-full bg-transparent outline-none text-white placeholder-slate-500"
+                  className="w-full bg-transparent outline-none text-[color:var(--c-text)] placeholder-slate-500"
                 />
                 {companySearch && (
-                  <button onClick={() => setCompanySearch("")} className="text-slate-400 hover:text-white">
+                  <button onClick={() => setCompanySearch("")} className="text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)]">
                     <X size={12} />
                   </button>
                 )}
@@ -352,7 +352,7 @@ export default function IntelReports() {
 
               {/* Suggestions Dropdown */}
               {showCompanySuggestions && companySuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-slate-900 border border-slate-800 rounded shadow-2xl py-1 font-mono text-xs">
+                <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[color:var(--c-panel)] border border-slate-800 rounded shadow-2xl py-1 font-mono text-xs">
                   {companySuggestions.map((comp, idx) => (
                     <div
                       key={idx}
@@ -362,7 +362,7 @@ export default function IntelReports() {
                         setShowCompanySuggestions(false)
                         setPage(1)
                       }}
-                      className="px-3 py-2 cursor-pointer hover:bg-slate-800 text-slate-200 flex items-center justify-between"
+                      className="px-3 py-2 cursor-pointer hover:bg-[color:var(--c-panel2)] text-slate-200 flex items-center justify-between"
                     >
                       <span>{comp}</span>
                       <ChevronRight size={12} className="text-slate-500" />
@@ -377,7 +377,7 @@ export default function IntelReports() {
               <select
                 value={sortOrder}
                 onChange={(e) => { setSortOrder(e.target.value); setPage(1); }}
-                className="w-full bg-slate-900 border border-slate-800 text-slate-200 font-mono text-xs px-3 py-2 outline-none cursor-pointer"
+                className="w-full bg-[color:var(--c-panel)] border border-slate-800 text-slate-200 font-mono text-xs px-3 py-2 outline-none cursor-pointer"
               >
                 <option value="latest">Sort: Latest</option>
                 <option value="helpful">Sort: Most Helpful</option>
@@ -391,7 +391,7 @@ export default function IntelReports() {
             <select
               value={outcomeFilter}
               onChange={(e) => { setOutcomeFilter(e.target.value); setPage(1); }}
-              className="bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1.5 rounded outline-none"
+              className="bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text-dim)] px-2.5 py-1.5 rounded outline-none"
             >
               <option value="">All Outcomes</option>
               <option value="selected">Selected</option>
@@ -404,7 +404,7 @@ export default function IntelReports() {
             <select
               value={difficultyFilter}
               onChange={(e) => { setDifficultyFilter(e.target.value); setPage(1); }}
-              className="bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1.5 rounded outline-none"
+              className="bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text-dim)] px-2.5 py-1.5 rounded outline-none"
             >
               <option value="">All Difficulties</option>
               <option value="easy">Easy</option>
@@ -416,7 +416,7 @@ export default function IntelReports() {
             <select
               value={yearFilter}
               onChange={(e) => { setYearFilter(e.target.value); setPage(1); }}
-              className="bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1.5 rounded outline-none"
+              className="bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text-dim)] px-2.5 py-1.5 rounded outline-none"
             >
               <option value="">All Years</option>
               <option value="2026">2026</option>
@@ -428,7 +428,7 @@ export default function IntelReports() {
             <select
               value={roundFilter}
               onChange={(e) => { setRoundFilter(e.target.value); setPage(1); }}
-              className="bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1.5 rounded outline-none"
+              className="bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text-dim)] px-2.5 py-1.5 rounded outline-none"
             >
               <option value="">All Round Types</option>
               <option value="online_assessment">Online Assessment</option>
@@ -443,7 +443,7 @@ export default function IntelReports() {
             <select
               value={topicFilter}
               onChange={(e) => { setTopicFilter(e.target.value); setPage(1); }}
-              className="bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1.5 rounded outline-none"
+              className="bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text-dim)] px-2.5 py-1.5 rounded outline-none"
             >
               <option value="">All Topics</option>
               <option value="arrays">Arrays</option>
@@ -459,7 +459,7 @@ export default function IntelReports() {
               <select
                 value={sourceFilter}
                 onChange={(e) => { setSourceFilter(e.target.value); setPage(1); }}
-                className="bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1.5 rounded outline-none"
+                className="bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text-dim)] px-2.5 py-1.5 rounded outline-none"
               >
                 <option value="">All Sources</option>
                 <option value="on_campus">On Campus</option>
@@ -487,7 +487,7 @@ export default function IntelReports() {
             <select
               value={sortOrder}
               onChange={(e) => { setSortOrder(e.target.value); setPage(1); }}
-              className="bg-slate-900 border border-slate-800 text-slate-200 font-mono text-xs px-3 py-2 outline-none cursor-pointer rounded"
+              className="bg-[color:var(--c-panel)] border border-slate-800 text-slate-200 font-mono text-xs px-3 py-2 outline-none cursor-pointer rounded"
             >
               <option value="latest">Sort: Latest</option>
               <option value="helpful">Sort: Most Helpful</option>
@@ -537,7 +537,7 @@ export default function IntelReports() {
                 <HudPanel
                   className="p-5 relative transition-all duration-200 hover:border-slate-700 hover:scale-[1.005]"
                   style={{
-                    background: "rgba(10, 15, 30, 0.9)",
+                    background: "var(--c-panel)",
                     borderLeft: exp.outcome === "selected" ? "4px solid #10b981" : "1px solid var(--c-border)",
                   }}
                 >
@@ -549,10 +549,10 @@ export default function IntelReports() {
 
                       <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-display font-black text-xl text-white tracking-wide group-hover:text-rose-400 transition-colors">
+                          <h3 className="font-display font-black text-xl text-[color:var(--c-text)] tracking-wide group-hover:text-rose-400 transition-colors">
                             {exp.company}
                           </h3>
-                          <span className="font-mono text-[10px] text-slate-400">
+                          <span className="font-mono text-[10px] text-[color:var(--c-text-mute)]">
                             • {exp.role_title}
                           </span>
                           {exp.status === "pending" && (
@@ -571,15 +571,15 @@ export default function IntelReports() {
                             {outcomeObj.label}
                           </span>
                           <span
-                            className="font-bold px-2 py-0.5 bg-slate-900 border border-slate-800"
+                            className="font-bold px-2 py-0.5 bg-[color:var(--c-panel)] border border-slate-800"
                             style={{ color: diffObj.col }}
                           >
                             {diffObj.label}
                           </span>
-                          <span className="text-slate-400 px-2 py-0.5 bg-slate-900 border border-slate-800">
+                          <span className="text-[color:var(--c-text-mute)] px-2 py-0.5 bg-[color:var(--c-panel)] border border-slate-800">
                             {roundsCount} ROUND{roundsCount === 1 ? "" : "S"}
                           </span>
-                          <span className="text-slate-400">
+                          <span className="text-[color:var(--c-text-mute)]">
                             {exp.year} {exp.location ? `• ${exp.location}` : ""}
                           </span>
                         </div>
@@ -607,7 +607,7 @@ export default function IntelReports() {
                           className={`flex items-center gap-1 px-2.5 py-1.5 font-mono text-xs rounded border transition-colors ${
                             exp.is_helpful
                               ? "bg-rose-500/20 border-rose-500/50 text-rose-400"
-                              : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+                              : "bg-[color:var(--c-panel)] border-slate-800 text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)]"
                           }`}
                           title="Mark as helpful"
                         >
@@ -620,7 +620,7 @@ export default function IntelReports() {
                           className={`p-1.5 rounded border transition-colors ${
                             exp.is_bookmarked
                               ? "bg-amber-500/20 border-amber-500/50 text-amber-400"
-                              : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+                              : "bg-[color:var(--c-panel)] border-slate-800 text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)]"
                           }`}
                           title="Bookmark report"
                         >
@@ -632,7 +632,7 @@ export default function IntelReports() {
                   </div>
 
                   {/* Summary Snippet */}
-                  <p className="font-sans text-xs text-slate-300 mt-3 line-clamp-2 leading-relaxed">
+                  <p className="font-sans text-xs text-[color:var(--c-text-dim)] mt-3 line-clamp-2 leading-relaxed">
                     {exp.overall_experience}
                   </p>
                 </HudPanel>
@@ -647,19 +647,19 @@ export default function IntelReports() {
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-900 border border-slate-800 text-slate-300 disabled:opacity-40"
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text-dim)] disabled:opacity-40"
             >
               <ChevronLeft size={14} /> PREVIOUS
             </button>
 
-            <span className="text-slate-400">
+            <span className="text-[color:var(--c-text-mute)]">
               PAGE {pagination.page} OF {pagination.totalPages}
             </span>
 
             <button
               disabled={page >= pagination.totalPages}
               onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-900 border border-slate-800 text-slate-300 disabled:opacity-40"
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text-dim)] disabled:opacity-40"
             >
               NEXT <ChevronRight size={14} />
             </button>

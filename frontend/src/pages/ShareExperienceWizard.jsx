@@ -41,7 +41,7 @@ function newRound() {
 function Field({ label, error, children }) {
   return (
     <div className="space-y-1.5">
-      <label className="block font-mono text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</label>
+      <label className="block font-mono text-[10px] font-bold uppercase tracking-widest text-[color:var(--c-text-mute)]">{label}</label>
       {children}
       {error && <p className="font-mono text-[10px] text-rose-400">{error}</p>}
     </div>
@@ -55,7 +55,7 @@ function TextInput({ value, onChange, placeholder, type = "text", className = ""
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className={`w-full bg-slate-900 border border-slate-800 text-white font-sans text-sm p-3 outline-none focus:border-rose-500 transition-colors rounded ${className}`}
+      className={`w-full bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text)] font-sans text-sm p-3 outline-none focus:border-rose-500 transition-colors rounded ${className}`}
     />
   )
 }
@@ -67,7 +67,7 @@ function Textarea({ value, onChange, placeholder, rows = 4 }) {
       onChange={onChange}
       placeholder={placeholder}
       rows={rows}
-      className="w-full bg-slate-900 border border-slate-800 text-white font-sans text-sm p-3 outline-none focus:border-rose-500 transition-colors rounded resize-none"
+      className="w-full bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text)] font-sans text-sm p-3 outline-none focus:border-rose-500 transition-colors rounded resize-none"
     />
   )
 }
@@ -80,12 +80,12 @@ function RoundTypeCard({ rt, selected, onClick }) {
       onClick={onClick}
       className={`w-full text-left p-3 rounded border transition-all ${
         selected
-          ? "bg-cyan-500/10 border-cyan-500 text-white"
-          : "bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-600 hover:text-white"
+          ? "bg-cyan-500/10 border-cyan-500 text-[color:var(--c-text)]"
+          : "bg-[color:var(--c-panel)] border-slate-800 text-[color:var(--c-text-dim)] hover:border-slate-600 hover:text-[color:var(--c-text)]"
       }`}
     >
       <p className="font-mono text-xs font-bold uppercase">{rt.label}</p>
-      <p className="font-sans text-[11px] text-slate-400 mt-0.5">{rt.desc}</p>
+      <p className="font-sans text-[11px] text-[color:var(--c-text-mute)] mt-0.5">{rt.desc}</p>
     </button>
   )
 }
@@ -243,7 +243,7 @@ export default function ShareExperienceWizard() {
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate("/experiences")}
-            className="inline-flex items-center gap-2 font-mono text-xs text-slate-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 font-mono text-xs text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)] transition-colors"
           >
             <ArrowLeft size={13} className="text-rose-500" /> EXIT
           </button>
@@ -263,8 +263,8 @@ export default function ShareExperienceWizard() {
                   onClick={() => done && setStep(s.id)}
                   disabled={!done}
                   className={`flex items-center gap-1.5 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-wider transition-colors rounded ${
-                    active ? "text-white bg-rose-600" :
-                    done  ? "text-emerald-400 hover:text-white cursor-pointer" :
+                    active ? "text-[color:var(--c-text)] bg-rose-600" :
+                    done  ? "text-emerald-400 hover:text-[color:var(--c-text)] cursor-pointer" :
                     "text-slate-600 cursor-default"
                   }`}
                 >
@@ -272,7 +272,7 @@ export default function ShareExperienceWizard() {
                   {s.label}
                 </button>
                 {i < STEPS.length - 1 && (
-                  <div className={`flex-1 h-px mx-1 transition-colors ${done ? "bg-emerald-500/40" : "bg-slate-800"}`} />
+                  <div className={`flex-1 h-px mx-1 transition-colors ${done ? "bg-emerald-500/40" : "bg-[color:var(--c-panel2)]"}`} />
                 )}
               </React.Fragment>
             )
@@ -295,8 +295,8 @@ export default function ShareExperienceWizard() {
               {step === 1 && (
                 <>
                   <div>
-                    <h2 className="font-display font-black text-2xl text-white uppercase">Company & Role</h2>
-                    <p className="font-sans text-xs text-slate-400 mt-1">Start with the basics — who hired you and for what.</p>
+                    <h2 className="font-display font-black text-2xl text-[color:var(--c-text)] uppercase">Company & Role</h2>
+                    <p className="font-sans text-xs text-[color:var(--c-text-mute)] mt-1">Start with the basics — who hired you and for what.</p>
                   </div>
 
                   {/* Track */}
@@ -309,9 +309,9 @@ export default function ShareExperienceWizard() {
                         className={`py-3.5 rounded font-mono text-xs font-bold uppercase tracking-wider border transition-all ${
                           form.track === t
                             ? t === "intern"
-                              ? "bg-rose-500/20 border-rose-500 text-white"
-                              : "bg-cyan-500/20 border-cyan-500 text-white"
-                            : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+                              ? "bg-rose-500/20 border-rose-500 text-[color:var(--c-text)]"
+                              : "bg-cyan-500/20 border-cyan-500 text-[color:var(--c-text)]"
+                            : "bg-[color:var(--c-panel)] border-slate-800 text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)]"
                         }`}
                       >
                         {t === "intern" ? "Internship" : "Full-Time SDE"}
@@ -350,7 +350,7 @@ export default function ShareExperienceWizard() {
                       <select
                         value={form.month}
                         onChange={e => set("month", parseInt(e.target.value, 10))}
-                        className="w-full bg-slate-900 border border-slate-800 text-white font-sans text-sm p-3 outline-none rounded"
+                        className="w-full bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text)] font-sans text-sm p-3 outline-none rounded"
                       >
                         {MONTHS.map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
                       </select>
@@ -370,7 +370,7 @@ export default function ShareExperienceWizard() {
                       <select
                         value={form.source}
                         onChange={e => set("source", e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-800 text-white font-sans text-sm p-3 outline-none rounded"
+                        className="w-full bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text)] font-sans text-sm p-3 outline-none rounded"
                       >
                         <option value="on_campus">On Campus</option>
                         <option value="off_campus">Off Campus</option>
@@ -392,7 +392,7 @@ export default function ShareExperienceWizard() {
                       <select
                         value={form.outcome}
                         onChange={e => set("outcome", e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-800 text-white font-sans text-sm p-3 outline-none rounded"
+                        className="w-full bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text)] font-sans text-sm p-3 outline-none rounded"
                       >
                         <option value="selected">Got the offer</option>
                         <option value="rejected">Rejected</option>
@@ -412,7 +412,7 @@ export default function ShareExperienceWizard() {
                                 ? d === "easy"   ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
                                 : d === "medium" ? "bg-amber-500/20 border-amber-500 text-amber-400"
                                 :                  "bg-rose-500/20 border-rose-500 text-rose-400"
-                                : "bg-slate-900 border-slate-800 text-slate-500 hover:text-white"
+                                : "bg-[color:var(--c-panel)] border-slate-800 text-slate-500 hover:text-[color:var(--c-text)]"
                             }`}
                           >
                             {d}
@@ -428,8 +428,8 @@ export default function ShareExperienceWizard() {
               {step === 2 && (
                 <>
                   <div>
-                    <h2 className="font-display font-black text-2xl text-white uppercase">Interview Rounds</h2>
-                    <p className="font-sans text-xs text-slate-400 mt-1">
+                    <h2 className="font-display font-black text-2xl text-[color:var(--c-text)] uppercase">Interview Rounds</h2>
+                    <p className="font-sans text-xs text-[color:var(--c-text-mute)] mt-1">
                       Add each round in order. Select the type, then describe what happened.
                     </p>
                   </div>
@@ -454,7 +454,7 @@ export default function ShareExperienceWizard() {
                   <button
                     type="button"
                     onClick={addRound}
-                    className="w-full py-3.5 border-2 border-dashed border-slate-700 text-slate-400 hover:border-rose-500 hover:text-rose-400 transition-all rounded font-mono text-xs font-bold uppercase flex items-center justify-center gap-2"
+                    className="w-full py-3.5 border-2 border-dashed border-slate-700 text-[color:var(--c-text-mute)] hover:border-rose-500 hover:text-rose-400 transition-all rounded font-mono text-xs font-bold uppercase flex items-center justify-center gap-2"
                   >
                     <Plus size={14} /> ADD ROUND
                   </button>
@@ -465,8 +465,8 @@ export default function ShareExperienceWizard() {
               {step === 3 && (
                 <>
                   <div>
-                    <h2 className="font-display font-black text-2xl text-white uppercase">Your Take</h2>
-                    <p className="font-sans text-xs text-slate-400 mt-1">Help the next person. Be honest.</p>
+                    <h2 className="font-display font-black text-2xl text-[color:var(--c-text)] uppercase">Your Take</h2>
+                    <p className="font-sans text-xs text-[color:var(--c-text-mute)] mt-1">Help the next person. Be honest.</p>
                   </div>
 
                   <Field label="Overall Experience * (min 20 chars)" error={errors.overallExperience}>
@@ -492,19 +492,19 @@ export default function ShareExperienceWizard() {
 
                   {/* Anonymous toggle */}
                   <div
-                    className="flex items-center justify-between p-4 bg-slate-900 border border-slate-800 rounded cursor-pointer"
+                    className="flex items-center justify-between p-4 bg-[color:var(--c-panel)] border border-slate-800 rounded cursor-pointer"
                     onClick={() => set("isAnonymous", !form.isAnonymous)}
                   >
                     <div>
-                      <p className="font-mono text-xs font-bold text-white flex items-center gap-1.5">
+                      <p className="font-mono text-xs font-bold text-[color:var(--c-text)] flex items-center gap-1.5">
                         <Lock size={13} className="text-amber-400" /> Post anonymously
                       </p>
-                      <p className="font-sans text-xs text-slate-400 mt-0.5">
+                      <p className="font-sans text-xs text-[color:var(--c-text-mute)] mt-0.5">
                         Your name will show as "Anonymous Challenger"
                       </p>
                     </div>
                     <div className={`w-11 h-6 rounded-full border-2 transition-all relative ${
-                      form.isAnonymous ? "bg-amber-500 border-amber-500" : "bg-slate-800 border-slate-700"
+                      form.isAnonymous ? "bg-amber-500 border-amber-500" : "bg-[color:var(--c-panel2)] border-slate-700"
                     }`}>
                       <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${
                         form.isAnonymous ? "left-5" : "left-0.5"
@@ -518,24 +518,24 @@ export default function ShareExperienceWizard() {
               {step === 4 && (
                 <>
                   <div>
-                    <h2 className="font-display font-black text-2xl text-white uppercase">Review & Submit</h2>
-                    <p className="font-sans text-xs text-slate-400 mt-1">Quick preview before publishing.</p>
+                    <h2 className="font-display font-black text-2xl text-[color:var(--c-text)] uppercase">Review & Submit</h2>
+                    <p className="font-sans text-xs text-[color:var(--c-text-mute)] mt-1">Quick preview before publishing.</p>
                   </div>
 
                   {/* Preview card */}
-                  <div className="p-5 bg-slate-900/80 border border-slate-800 rounded space-y-2">
+                  <div className="p-5 bg-[color:var(--c-panel)]/80 border border-slate-800 rounded space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-display font-black text-xl text-white">{form.company || "Company"}</span>
+                      <span className="font-display font-black text-xl text-[color:var(--c-text)]">{form.company || "Company"}</span>
                       <span className={`font-mono text-[10px] font-bold px-2 py-1 rounded ${
                         form.track === "intern" ? "bg-rose-500/20 text-rose-400" : "bg-cyan-500/20 text-cyan-400"
                       }`}>
                         {form.track === "intern" ? "INTERN" : "SDE"}
                       </span>
                     </div>
-                    <p className="font-sans text-sm text-slate-300">{form.roleTitle} · {
+                    <p className="font-sans text-sm text-[color:var(--c-text-dim)]">{form.roleTitle} · {
                       { selected: "Offer received", rejected: "Rejected", waiting: "Waiting", withdrew: "Withdrew" }[form.outcome]
                     }</p>
-                    <p className="font-sans text-xs text-slate-400 line-clamp-2 italic">"{form.overallExperience}"</p>
+                    <p className="font-sans text-xs text-[color:var(--c-text-mute)] line-clamp-2 italic">"{form.overallExperience}"</p>
                     <div className="flex items-center gap-2 pt-1 font-mono text-[10px] text-slate-500">
                       <span>{form.rounds.length} round{form.rounds.length !== 1 ? "s" : ""}</span>
                       <span>·</span>
@@ -550,7 +550,7 @@ export default function ShareExperienceWizard() {
                       <AlertTriangle size={16} className="text-rose-400 shrink-0 mt-0.5" />
                       <div>
                         <p className="font-mono text-[11px] font-bold text-rose-300 uppercase">NDA & Privacy</p>
-                        <p className="font-sans text-xs text-slate-300 mt-1 leading-relaxed">
+                        <p className="font-sans text-xs text-[color:var(--c-text-dim)] mt-1 leading-relaxed">
                           Do not share NDA-protected content, real interviewer names, or proprietary code.
                           Describe question types and topics — not exact verbatim problems.
                         </p>
@@ -560,10 +560,10 @@ export default function ShareExperienceWizard() {
                       <div
                         onClick={() => setNda(v => !v)}
                         className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
-                          nda ? "bg-rose-600 border-rose-600" : "bg-slate-900 border-slate-600"
+                          nda ? "bg-rose-600 border-rose-600" : "bg-[color:var(--c-panel)] border-slate-600"
                         }`}
                       >
-                        {nda && <Check size={11} className="text-white" strokeWidth={3} />}
+                        {nda && <Check size={11} className="text-[color:var(--c-text)]" strokeWidth={3} />}
                       </div>
                       <span className="font-sans text-xs text-slate-200">
                         I confirm this report follows NDA & privacy guidelines.
@@ -617,10 +617,10 @@ function RoundCard({ round, index, onUpdate, onRemove, error }) {
       round.type ? "border-slate-700" : "border-slate-800"
     }`}>
       {/* Round header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-slate-900/70">
+      <div className="flex items-center justify-between px-4 py-3 bg-[color:var(--c-panel)]/70">
         <div className="flex items-center gap-2">
           <span className={`font-mono text-[10px] font-bold w-6 h-6 rounded flex items-center justify-center ${
-            round.type ? "bg-cyan-500/20 text-cyan-400" : "bg-slate-800 text-slate-500"
+            round.type ? "bg-cyan-500/20 text-cyan-400" : "bg-[color:var(--c-panel2)] text-slate-500"
           }`}>
             {index + 1}
           </span>
@@ -629,7 +629,7 @@ function RoundCard({ round, index, onUpdate, onRemove, error }) {
           {round.cleared === false && <span className="font-mono text-[9px] text-rose-400 bg-rose-500/10 border border-rose-500/30 px-1.5 py-0.5 rounded">DROPPED</span>}
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setOpen(o => !o)} className="p-1.5 text-slate-400 hover:text-white transition-colors">
+          <button onClick={() => setOpen(o => !o)} className="p-1.5 text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)] transition-colors">
             {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
           <button onClick={onRemove} className="p-1.5 text-slate-600 hover:text-rose-400 transition-colors">
@@ -652,7 +652,7 @@ function RoundCard({ round, index, onUpdate, onRemove, error }) {
 
               {/* Round type grid */}
               <div>
-                <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Select Round Type *</p>
+                <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-[color:var(--c-text-mute)] mb-2">Select Round Type *</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {ROUND_TYPES.map(rt => (
                     <RoundTypeCard
@@ -669,26 +669,26 @@ function RoundCard({ round, index, onUpdate, onRemove, error }) {
               {/* Duration (optional inline) */}
               <div className="flex items-center gap-3">
                 <div className="flex-1">
-                  <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Duration (minutes, optional)</p>
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-[color:var(--c-text-mute)] mb-1.5">Duration (minutes, optional)</p>
                   <input
                     type="number"
                     value={round.durationMinutes || ""}
                     onChange={e => onUpdate("durationMinutes", parseInt(e.target.value, 10) || "")}
                     placeholder="e.g. 45"
-                    className="w-full bg-slate-900 border border-slate-800 text-white font-sans text-sm p-2.5 outline-none rounded"
+                    className="w-full bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text)] font-sans text-sm p-2.5 outline-none rounded"
                   />
                 </div>
               </div>
 
               {/* Description */}
               <div>
-                <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">What happened in this round?</p>
+                <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-[color:var(--c-text-mute)] mb-1.5">What happened in this round?</p>
                 <textarea
                   value={round.description}
                   onChange={e => onUpdate("description", e.target.value)}
                   placeholder="Describe the round — questions asked, format, difficulty, how it went..."
                   rows={3}
-                  className="w-full bg-slate-900 border border-slate-800 text-white font-sans text-sm p-3 outline-none rounded resize-none focus:border-rose-500 transition-colors"
+                  className="w-full bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text)] font-sans text-sm p-3 outline-none rounded resize-none focus:border-rose-500 transition-colors"
                 />
               </div>
 
@@ -700,7 +700,7 @@ function RoundCard({ round, index, onUpdate, onRemove, error }) {
 
               {/* Cleared? */}
               <div>
-                <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Did you clear this round?</p>
+                <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-[color:var(--c-text-mute)] mb-2">Did you clear this round?</p>
                 <div className="flex items-center gap-2">
                   {[
                     { val: true,  label: "Yes, cleared" },
@@ -716,7 +716,7 @@ function RoundCard({ round, index, onUpdate, onRemove, error }) {
                           ? opt.val === true  ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
                           : opt.val === false ? "bg-rose-500/20 border-rose-500 text-rose-400"
                           :                     "bg-slate-700 border-slate-600 text-slate-200"
-                          : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+                          : "bg-[color:var(--c-panel)] border-slate-800 text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)]"
                       }`}
                     >
                       {opt.label}
@@ -755,7 +755,7 @@ function QuestionsSection({ questions, onChange }) {
       <button
         type="button"
         onClick={() => setExpanded(e => !e)}
-        className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-white transition-colors"
+        className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-widest text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)] transition-colors"
       >
         {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
         Questions asked in this round
@@ -776,27 +776,27 @@ function QuestionsSection({ questions, onChange }) {
           >
             <div className="mt-3 space-y-2">
               {questions.map((q, i) => (
-                <div key={i} className="flex items-start gap-2 p-3 bg-slate-900 border border-slate-800 rounded">
+                <div key={i} className="flex items-start gap-2 p-3 bg-[color:var(--c-panel)] border border-slate-800 rounded">
                   <div className="flex-1 space-y-2">
                     <input
                       type="text"
                       value={q.text}
                       onChange={e => updateQ(i, "text", e.target.value)}
                       placeholder="e.g. Find LCA in a Binary Tree"
-                      className="w-full bg-slate-800 border border-slate-700 text-white font-sans text-xs p-2 outline-none rounded"
+                      className="w-full bg-[color:var(--c-panel2)] border border-slate-700 text-[color:var(--c-text)] font-sans text-xs p-2 outline-none rounded"
                     />
                     <div className="flex items-center gap-2">
                       <select
                         value={q.topic}
                         onChange={e => updateQ(i, "topic", e.target.value)}
-                        className="bg-slate-800 border border-slate-700 text-slate-300 font-mono text-[11px] px-2 py-1.5 rounded outline-none"
+                        className="bg-[color:var(--c-panel2)] border border-slate-700 text-[color:var(--c-text-dim)] font-mono text-[11px] px-2 py-1.5 rounded outline-none"
                       >
                         {TOPICS.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                       <select
                         value={q.difficulty || "medium"}
                         onChange={e => updateQ(i, "difficulty", e.target.value)}
-                        className="bg-slate-800 border border-slate-700 text-slate-300 font-mono text-[11px] px-2 py-1.5 rounded outline-none"
+                        className="bg-[color:var(--c-panel2)] border border-slate-700 text-[color:var(--c-text-dim)] font-mono text-[11px] px-2 py-1.5 rounded outline-none"
                       >
                         <option value="easy">Easy</option>
                         <option value="medium">Medium</option>

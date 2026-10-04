@@ -32,7 +32,7 @@ function renderInline(text) {
 
     if (chunk.startsWith('**') && chunk.endsWith('**')) {
       return (
-        <strong key={i} className="font-semibold text-white">
+        <strong key={i} className="font-semibold text-[color:var(--c-text)]">
           {renderInline(chunk.slice(2, -2))}
         </strong>
       )
@@ -40,7 +40,7 @@ function renderInline(text) {
 
     if ((chunk.startsWith('*') && chunk.endsWith('*')) || (chunk.startsWith('_') && chunk.endsWith('_'))) {
       return (
-        <em key={i} className="italic text-[#cbd5e1]">
+        <em key={i} className="italic text-[color:var(--c-text)]">
           {renderInline(chunk.slice(1, -1))}
         </em>
       )
@@ -244,7 +244,7 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
 
   if (!problem) {
     return (
-      <div className="p-4 text-center text-[#6b7280] font-mono text-[11px]">
+      <div className="p-4 text-center text-[color:var(--c-text-mute)] font-mono text-[11px]">
         Loading problem details...
       </div>
     )
@@ -288,10 +288,10 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
     .filter(Boolean)
 
   return (
-    <div className="flex flex-col space-y-6 pb-6 text-[#eff1f6]" style={{ fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+    <div className="flex flex-col space-y-6 pb-6 text-[color:var(--c-text)]" style={{ fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
       {/* ── Problem Title & LC Header ──────────────────────── */}
       <div className="space-y-3 pt-1">
-        <h1 className="text-[17px] font-bold tracking-tight text-white leading-snug">
+        <h1 className="text-[17px] font-bold tracking-tight text-[color:var(--c-text)] leading-snug">
           {problem.title}
         </h1>
 
@@ -312,10 +312,10 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
           {/* Topics Tag Button */}
           <button
             onClick={() => setShowTopics(!showTopics)}
-            className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-medium transition-colors hover:bg-[#1f2433]"
+            className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-medium transition-colors hover:bg-[color:var(--c-panel2)]"
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.06)',
-              color: '#94a3b8',
+              color: 'var(--c-text-dim)',
               border: '1px solid rgba(255, 255, 255, 0.08)'
             }}
           >
@@ -331,7 +331,7 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
             className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-medium cursor-default"
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              color: '#64748b',
+              color: 'var(--c-text-mute)',
               border: '1px solid rgba(255, 255, 255, 0.06)'
             }}
           >
@@ -364,7 +364,7 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
       </div>
 
       {/* ── Problem Statement Paragraphs ───────────────────── */}
-      <div className="space-y-3.5 text-[13px] leading-[1.65] text-[#d1d5db]">
+      <div className="space-y-3.5 text-[13px] leading-[1.65] text-[color:var(--c-text)]">
         {paragraphs.length > 0 ? (
           paragraphs.map((item, idx) => {
             if (item.type === 'code') {
@@ -373,7 +373,7 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                   key={idx}
                   className="rounded-lg p-3 my-2 font-mono text-[12px] overflow-x-auto"
                   style={{
-                    background: '#0d111a',
+                    background: 'var(--c-panel2)',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
                     color: '#38bdf8'
                   }}
@@ -398,14 +398,14 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
         <div className="space-y-5">
           {examples.map((ex, idx) => (
             <div key={idx} className="space-y-2">
-              <h3 className="text-[13px] font-bold text-white tracking-wide">
+              <h3 className="text-[13px] font-bold text-[color:var(--c-text)] tracking-wide">
                 Example {ex.num || idx + 1}:
               </h3>
 
               <div
                 className="rounded-lg overflow-hidden"
                 style={{
-                  backgroundColor: '#11141e',
+                  backgroundColor: 'var(--c-panel2)',
                   border: '1px solid rgba(255, 255, 255, 0.09)'
                 }}
               >
@@ -414,7 +414,7 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                   <div
                     className="px-4 py-3 font-mono text-[12px] leading-tight overflow-x-auto border-b"
                     style={{
-                      backgroundColor: '#0a0d14',
+                      backgroundColor: 'var(--c-panel)',
                       borderColor: 'rgba(255, 255, 255, 0.06)',
                       color: '#38bdf8'
                     }}
@@ -427,22 +427,22 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                 <div className="px-4 py-3 space-y-2 font-mono text-[12px]">
                   {ex.input && (
                     <div className="flex flex-wrap items-baseline gap-1.5">
-                      <span className="font-bold text-[#9ca3af] shrink-0 font-sans text-[12px]">Input:</span>
-                      <code className="text-[#f1f5f9] break-all">{ex.input}</code>
+                      <span className="font-bold text-[color:var(--c-text-mute)] shrink-0 font-sans text-[12px]">Input:</span>
+                      <code className="text-[color:var(--c-text)] break-all">{ex.input}</code>
                     </div>
                   )}
 
                   {ex.output && (
                     <div className="flex flex-wrap items-baseline gap-1.5">
-                      <span className="font-bold text-[#9ca3af] shrink-0 font-sans text-[12px]">Output:</span>
+                      <span className="font-bold text-[color:var(--c-text-mute)] shrink-0 font-sans text-[12px]">Output:</span>
                       <code className="text-[#34d399] font-bold break-all">{ex.output}</code>
                     </div>
                   )}
 
                   {ex.explanation && (
                     <div className="flex flex-wrap items-baseline gap-1.5 pt-0.5">
-                      <span className="font-bold text-[#9ca3af] shrink-0 font-sans text-[12px]">Explanation:</span>
-                      <span className="text-[#cbd5e1] font-sans text-[12px] leading-relaxed">
+                      <span className="font-bold text-[color:var(--c-text-mute)] shrink-0 font-sans text-[12px]">Explanation:</span>
+                      <span className="text-[color:var(--c-text)] font-sans text-[12px] leading-relaxed">
                         {renderInline(ex.explanation)}
                       </span>
                     </div>
@@ -457,13 +457,13 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
       {/* ── Constraints Section ────────────────────────────── */}
       {constraints.length > 0 && (
         <div className="space-y-2.5 pt-1">
-          <h3 className="text-[13px] font-bold text-white tracking-wide">
+          <h3 className="text-[13px] font-bold text-[color:var(--c-text)] tracking-wide">
             Constraints:
           </h3>
-          <ul className="space-y-1.5 text-[12.5px] text-[#cbd5e1] pl-1">
+          <ul className="space-y-1.5 text-[12.5px] text-[color:var(--c-text)] pl-1">
             {constraints.map((c, idx) => (
               <li key={idx} className="flex items-start gap-2.5 leading-relaxed">
-                <span className="text-[#64748b] text-[10px] mt-1 shrink-0">•</span>
+                <span className="text-[color:var(--c-text-mute)] text-[10px] mt-1 shrink-0">•</span>
                 <div className="flex-1">
                   {renderInline(c.startsWith('`') ? c : `\`${c}\``)}
                 </div>
