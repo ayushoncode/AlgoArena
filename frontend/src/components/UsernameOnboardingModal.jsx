@@ -102,11 +102,11 @@ export default function UsernameOnboardingModal() {
   const isValid = /^[a-zA-Z0-9_]{3,30}$/.test(handle.trim()) && available === true
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[9999] flex items-center justify-center p-4 select-none">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[9999] flex items-center justify-center p-4 select-none">
       <div 
         className="max-w-md w-full p-6 sm:p-8 rounded-2xl space-y-6 relative overflow-hidden shadow-2xl border fade-in"
         style={{ 
-          background: 'linear-gradient(135deg, rgba(13,19,36,0.98) 0%, rgba(8,12,28,0.99) 100%)', 
+          background: 'var(--c-panel)', 
           borderColor: 'rgba(56,189,248,0.25)',
           boxShadow: '0 0 50px rgba(56,189,248,0.15)'
         }}
