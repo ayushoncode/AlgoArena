@@ -31,7 +31,7 @@ function CompanyMonogram({ name }) {
 
   return (
     <div
-      className="w-16 h-16 shrink-0 flex items-center justify-center font-display font-black text-xl tracking-wider text-white rounded-xl shadow-xl relative overflow-hidden"
+      className="w-16 h-16 shrink-0 flex items-center justify-center font-display font-black text-xl tracking-wider text-[color:var(--c-text)] rounded-xl shadow-xl relative overflow-hidden"
       style={{
         background: `linear-gradient(135deg, hsl(${colorHue}, 60%, 25%), hsl(${colorHue}, 70%, 12%))`,
         border: `1.5px solid hsl(${colorHue}, 70%, 45%)`,
@@ -204,7 +204,7 @@ export default function IntelReportDetail() {
         {/* Top Back Link */}
         <button
           onClick={() => navigate("/experiences")}
-          className="inline-flex items-center gap-2 font-mono text-xs font-bold text-slate-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 font-mono text-xs font-bold text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)] transition-colors"
         >
           <ArrowLeft size={14} className="text-rose-500" /> BACK TO INTEL REPORTS
         </button>
@@ -227,14 +227,14 @@ export default function IntelReportDetail() {
               <CompanyMonogram name={report.company} />
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="font-display font-black text-2xl sm:text-4xl text-white tracking-wide">
+                  <h1 className="font-display font-black text-2xl sm:text-4xl text-[color:var(--c-text)] tracking-wide">
                     {report.company}
                   </h1>
                   <span className="font-mono text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-300">
                     {report.track} TRACK
                   </span>
                 </div>
-                <p className="font-sans text-base text-slate-300 font-medium">
+                <p className="font-sans text-base text-[color:var(--c-text-dim)] font-medium">
                   {report.role_title}
                 </p>
               </div>
@@ -249,7 +249,7 @@ export default function IntelReportDetail() {
                 {outcomeObj.label}
               </span>
               <span
-                className="font-bold px-3 py-1 bg-slate-900 border border-slate-800"
+                className="font-bold px-3 py-1 bg-[color:var(--c-panel)] border border-slate-800"
                 style={{ color: diffObj.col }}
               >
                 {diffObj.label}
@@ -259,36 +259,36 @@ export default function IntelReportDetail() {
 
           {/* Key Facts Meta Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 font-mono text-xs">
-            <div className="p-3 bg-slate-900/80 border border-slate-800 space-y-1">
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider flex items-center gap-1">
+            <div className="p-3 bg-[color:var(--c-panel)]/80 border border-slate-800 space-y-1">
+              <p className="text-[10px] text-[color:var(--c-text-mute)] uppercase tracking-wider flex items-center gap-1">
                 <Calendar size={12} /> YEAR / MONTH
               </p>
-              <p className="font-bold text-white">
+              <p className="font-bold text-[color:var(--c-text)]">
                 {report.year} {report.month ? `/ Month ${report.month}` : ""}
               </p>
             </div>
 
             {report.location && (
-              <div className="p-3 bg-slate-900/80 border border-slate-800 space-y-1">
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider flex items-center gap-1">
+              <div className="p-3 bg-[color:var(--c-panel)]/80 border border-slate-800 space-y-1">
+                <p className="text-[10px] text-[color:var(--c-text-mute)] uppercase tracking-wider flex items-center gap-1">
                   <MapPin size={12} /> LOCATION
                 </p>
-                <p className="font-bold text-white truncate">{report.location}</p>
+                <p className="font-bold text-[color:var(--c-text)] truncate">{report.location}</p>
               </div>
             )}
 
             {report.source && (
-              <div className="p-3 bg-slate-900/80 border border-slate-800 space-y-1">
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider flex items-center gap-1">
+              <div className="p-3 bg-[color:var(--c-panel)]/80 border border-slate-800 space-y-1">
+                <p className="text-[10px] text-[color:var(--c-text-mute)] uppercase tracking-wider flex items-center gap-1">
                   <Briefcase size={12} /> SOURCE
                 </p>
-                <p className="font-bold text-white uppercase">{report.source.replace("_", " ")}</p>
+                <p className="font-bold text-[color:var(--c-text)] uppercase">{report.source.replace("_", " ")}</p>
               </div>
             )}
 
             {(report.stipend_range || report.ctc_range) && (
-              <div className="p-3 bg-slate-900/80 border border-slate-800 space-y-1">
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider flex items-center gap-1">
+              <div className="p-3 bg-[color:var(--c-panel)]/80 border border-slate-800 space-y-1">
+                <p className="text-[10px] text-[color:var(--c-text-mute)] uppercase tracking-wider flex items-center gap-1">
                   <DollarSign size={12} /> COMPENSATION
                 </p>
                 <p className="font-bold text-amber-400 truncate">
@@ -310,7 +310,7 @@ export default function IntelReportDetail() {
                 size={34}
               />
               <div>
-                <p className="font-mono text-xs font-bold text-white">
+                <p className="font-mono text-xs font-bold text-[color:var(--c-text)]">
                   {report.author.username}
                 </p>
                 {report.author.elo_rating && (
@@ -326,7 +326,7 @@ export default function IntelReportDetail() {
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs font-bold rounded border transition-colors ${
                   report.is_helpful
                     ? "bg-rose-500/20 border-rose-500/50 text-rose-400"
-                    : "bg-slate-900 border-slate-800 text-slate-300 hover:text-white"
+                    : "bg-[color:var(--c-panel)] border-slate-800 text-[color:var(--c-text-dim)] hover:text-[color:var(--c-text)]"
                 }`}
               >
                 <ThumbsUp size={13} />
@@ -338,7 +338,7 @@ export default function IntelReportDetail() {
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs font-bold rounded border transition-colors ${
                   report.is_bookmarked
                     ? "bg-amber-500/20 border-amber-500/50 text-amber-400"
-                    : "bg-slate-900 border-slate-800 text-slate-300 hover:text-white"
+                    : "bg-[color:var(--c-panel)] border-slate-800 text-[color:var(--c-text-dim)] hover:text-[color:var(--c-text)]"
                 }`}
               >
                 <Bookmark size={13} />
@@ -347,7 +347,7 @@ export default function IntelReportDetail() {
 
               <button
                 onClick={handleShare}
-                className="p-2 bg-slate-900 border border-slate-800 text-slate-300 hover:text-white rounded"
+                className="p-2 bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text-dim)] hover:text-[color:var(--c-text)] rounded"
                 title="Share link"
               >
                 <Share2 size={14} />
@@ -355,7 +355,7 @@ export default function IntelReportDetail() {
 
               <button
                 onClick={() => setShowReportModal(true)}
-                className="p-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400 rounded"
+                className="p-2 bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text-mute)] hover:text-rose-400 rounded"
                 title="Report inappropriate content"
               >
                 <Flag size={14} />
@@ -366,14 +366,14 @@ export default function IntelReportDetail() {
                 <>
                   <button
                     onClick={() => navigate(`/experiences/${id}/edit`)}
-                    className="p-2 bg-slate-900 border border-slate-800 text-cyan-400 hover:text-cyan-300 rounded"
+                    className="p-2 bg-[color:var(--c-panel)] border border-slate-800 text-cyan-400 hover:text-cyan-300 rounded"
                     title="Edit report"
                   >
                     <Edit size={14} />
                   </button>
                   <button
                     onClick={handleDeleteReport}
-                    className="p-2 bg-slate-900 border border-slate-800 text-rose-500 hover:text-rose-400 rounded"
+                    className="p-2 bg-[color:var(--c-panel)] border border-slate-800 text-rose-500 hover:text-rose-400 rounded"
                     title="Delete report"
                   >
                     <Trash2 size={14} />
@@ -387,7 +387,7 @@ export default function IntelReportDetail() {
 
         {/* OVERALL EXPERIENCE */}
         <section className="space-y-3">
-          <h2 className="font-display font-black text-xl text-white uppercase tracking-wide flex items-center gap-2">
+          <h2 className="font-display font-black text-xl text-[color:var(--c-text)] uppercase tracking-wide flex items-center gap-2">
             <FileText size={18} className="text-rose-500" /> OVERALL EXPERIENCE
           </h2>
           <HudPanel className="p-6 bg-slate-950/90 font-sans text-sm text-slate-200 leading-relaxed whitespace-pre-line border-slate-800">
@@ -398,7 +398,7 @@ export default function IntelReportDetail() {
         {/* INTERVIEW ROUNDS STEPPER TIMELINE */}
         {Array.isArray(report.rounds) && report.rounds.length > 0 && (
           <section className="space-y-6">
-            <h2 className="font-display font-black text-xl text-white uppercase tracking-wide flex items-center gap-2">
+            <h2 className="font-display font-black text-xl text-[color:var(--c-text)] uppercase tracking-wide flex items-center gap-2">
               <Zap size={18} className="text-cyan-400" /> ROUND BREAKDOWN ({report.rounds.length})
             </h2>
 
@@ -418,12 +418,12 @@ export default function IntelReportDetail() {
                         <span className="font-mono text-[10px] text-cyan-400 font-bold uppercase tracking-wider">
                           ROUND // {round.type?.replace("_", " ")}
                         </span>
-                        <h3 className="font-display font-bold text-lg text-white">
+                        <h3 className="font-display font-bold text-lg text-[color:var(--c-text)]">
                           {round.title || round.type?.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) || `Round ${rIdx + 1}`}
                         </h3>
                       </div>
                       {round.durationMinutes && (
-                        <span className="font-mono text-xs text-slate-400 flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded border border-slate-800">
+                        <span className="font-mono text-xs text-[color:var(--c-text-mute)] flex items-center gap-1 bg-[color:var(--c-panel)] px-2.5 py-1 rounded border border-slate-800">
                           <Clock size={12} /> {round.durationMinutes} MIN
                         </span>
                       )}
@@ -431,7 +431,7 @@ export default function IntelReportDetail() {
 
                     {/* Round Description */}
                     {round.description && (
-                      <p className="font-sans text-xs text-slate-300 leading-relaxed whitespace-pre-line">
+                      <p className="font-sans text-xs text-[color:var(--c-text-dim)] leading-relaxed whitespace-pre-line">
                         {round.description}
                       </p>
                     )}
@@ -439,14 +439,14 @@ export default function IntelReportDetail() {
                     {/* Questions List */}
                     {Array.isArray(round.questions) && round.questions.length > 0 && (
                       <div className="space-y-2 pt-2 border-t border-slate-800/80">
-                        <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-[color:var(--c-text-mute)]">
                           QUESTIONS ASKED ({round.questions.length})
                         </p>
                         <div className="space-y-2">
                           {round.questions.map((q, qIdx) => (
                             <div
                               key={qIdx}
-                              className="p-3 bg-slate-900/90 border border-slate-800 rounded flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                              className="p-3 bg-[color:var(--c-panel)]/90 border border-slate-800 rounded flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                             >
                               <div className="space-y-1">
                                 <p className="font-sans text-xs text-slate-200 font-medium">
@@ -466,7 +466,7 @@ export default function IntelReportDetail() {
                                       href={q.link}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className="text-slate-400 hover:text-white inline-flex items-center gap-1"
+                                      className="text-[color:var(--c-text-mute)] hover:text-[color:var(--c-text)] inline-flex items-center gap-1"
                                     >
                                       <ExternalLink size={10} /> Link
                                     </a>
@@ -477,7 +477,7 @@ export default function IntelReportDetail() {
                               {/* Practice This Topic Button -> Navigates to Lobby with Topic preselected */}
                               <button
                                 onClick={() => navigate(`/lobby?topic=${encodeURIComponent(q.topic)}`)}
-                                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-500 rounded transition-colors"
+                                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-[color:var(--c-text)] bg-rose-600 hover:bg-rose-500 rounded transition-colors"
                               >
                                 <Swords size={12} /> PRACTICE TOPIC
                               </button>
@@ -499,10 +499,10 @@ export default function IntelReportDetail() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {report.tips && (
               <section className="space-y-3">
-                <h2 className="font-display font-black text-lg text-white uppercase tracking-wide flex items-center gap-2">
+                <h2 className="font-display font-black text-lg text-[color:var(--c-text)] uppercase tracking-wide flex items-center gap-2">
                   <Sparkles size={16} className="text-amber-400" /> TIPS & ADVICE
                 </h2>
-                <HudPanel className="p-5 bg-slate-950/90 font-sans text-xs text-slate-300 leading-relaxed whitespace-pre-line border-slate-800">
+                <HudPanel className="p-5 bg-slate-950/90 font-sans text-xs text-[color:var(--c-text-dim)] leading-relaxed whitespace-pre-line border-slate-800">
                   {report.tips}
                 </HudPanel>
               </section>
@@ -510,10 +510,10 @@ export default function IntelReportDetail() {
 
             {report.prep_resources && (
               <section className="space-y-3">
-                <h2 className="font-display font-black text-lg text-white uppercase tracking-wide flex items-center gap-2">
+                <h2 className="font-display font-black text-lg text-[color:var(--c-text)] uppercase tracking-wide flex items-center gap-2">
                   <BookMarked size={16} className="text-cyan-400" /> PREPARATION RESOURCES
                 </h2>
-                <HudPanel className="p-5 bg-slate-950/90 font-sans text-xs text-slate-300 leading-relaxed whitespace-pre-line border-slate-800">
+                <HudPanel className="p-5 bg-slate-950/90 font-sans text-xs text-[color:var(--c-text-dim)] leading-relaxed whitespace-pre-line border-slate-800">
                   {report.prep_resources}
                 </HudPanel>
               </section>
@@ -531,7 +531,7 @@ export default function IntelReportDetail() {
         subtitle="// COMMUNITY SAFETY"
       >
         <div className="space-y-4">
-          <p className="font-sans text-xs text-slate-300">
+          <p className="font-sans text-xs text-[color:var(--c-text-dim)]">
             Please specify why you are reporting this experience report. Flagged posts exceeding threshold will be sent for moderation.
           </p>
           <textarea
@@ -539,7 +539,7 @@ export default function IntelReportDetail() {
             onChange={(e) => setReportReason(e.target.value)}
             placeholder="Reason for report (e.g. NDA violation, inappropriate content, fake report)..."
             rows={4}
-            className="w-full bg-slate-900 border border-slate-800 text-white font-mono text-xs p-3 outline-none focus:border-rose-500 rounded"
+            className="w-full bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text)] font-mono text-xs p-3 outline-none focus:border-rose-500 rounded"
           />
           <div className="flex items-center justify-end gap-3 pt-2">
             <GhostButton onClick={() => setShowReportModal(false)}>CANCEL</GhostButton>

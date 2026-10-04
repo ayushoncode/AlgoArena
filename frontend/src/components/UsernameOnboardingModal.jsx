@@ -119,11 +119,11 @@ export default function UsernameOnboardingModal() {
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono tracking-wider text-[#38BDF8] bg-[#38BDF8]/10 border border-[#38BDF8]/20 uppercase">
             <Sparkles size={12} /> New Warrior Onboarding
           </div>
-          <h2 className="font-display font-black text-2xl sm:text-3xl text-white tracking-wide uppercase">
+          <h2 className="font-display font-black text-2xl sm:text-3xl text-[color:var(--c-text)] tracking-wide uppercase">
             Choose Your Cool Handle
           </h2>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-            Welcome to <span className="text-white font-semibold">AlgoArena</span>! Pick a unique username for leaderboards and live 1v1 battles.
+          <p className="text-xs text-[color:var(--c-text-mute)] max-w-sm mx-auto leading-relaxed">
+            Welcome to <span className="text-[color:var(--c-text)] font-semibold">AlgoArena</span>! Pick a unique username for leaderboards and live 1v1 battles.
           </p>
         </div>
 
@@ -137,7 +137,7 @@ export default function UsernameOnboardingModal() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="block font-mono text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+            <label className="block font-mono text-[10px] uppercase tracking-widest text-[color:var(--c-text-mute)] font-bold">
               Arena Username / Coolname
             </label>
             <div className="relative">
@@ -151,7 +151,7 @@ export default function UsernameOnboardingModal() {
                 placeholder="ninja_coder"
                 value={handle}
                 onChange={e => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
-                className="w-full bg-[#05070F] border rounded-lg py-3 pl-8 pr-10 font-mono text-sm text-white placeholder-slate-600 outline-none transition-all"
+                className="w-full bg-[color:var(--c-void)] border rounded-lg py-3 pl-8 pr-10 font-mono text-sm text-[color:var(--c-text)] placeholder-slate-600 outline-none transition-all"
                 style={{
                   borderColor: available === true
                     ? '#22C55E'
@@ -199,7 +199,7 @@ export default function UsernameOnboardingModal() {
             </div>
           </div>
 
-          <div className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 text-[11px] text-slate-400 font-mono flex items-center gap-2">
+          <div className="p-3 rounded-lg bg-[color:var(--c-panel)]/60 border border-slate-800 text-[11px] text-[color:var(--c-text-mute)] font-mono flex items-center gap-2">
             <Lock size={13} className="text-amber-400 shrink-0" />
             <span>Note: Once saved, this handle is permanently locked to your account.</span>
           </div>

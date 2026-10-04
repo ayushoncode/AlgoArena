@@ -44,7 +44,7 @@ function PodiumCard({ player, rank, onSelect, delay = 0 }) {
         style={{
           borderColor: m.col + "55",
           boxShadow: isFirst ? `0 0 40px ${m.glow}` : `0 0 18px ${m.glow}`,
-          background: isFirst ? "rgba(15,20,36,0.95)" : "var(--c-panel)",
+          background: isFirst ? "var(--c-panel)" : "var(--c-panel)",
         }}
       >
         <div
@@ -67,7 +67,7 @@ function PodiumCard({ player, rank, onSelect, delay = 0 }) {
             {player.username}
           </p>
           {player.institute && (
-            <p className="font-mono text-[9px] text-slate-400 truncate max-w-[160px] mx-auto mt-0.5" title={player.institute}>
+            <p className="font-mono text-[9px] text-[color:var(--c-text-mute)] truncate max-w-[160px] mx-auto mt-0.5" title={player.institute}>
               {player.institute}
             </p>
           )}
@@ -142,7 +142,7 @@ function PlayerRow({ player, actualRank, isMe, onClick, delay = 0 }) {
               )}
             </div>
             {player.institute && (
-              <span className="font-mono text-[10px] text-slate-400 mt-0.5 max-w-[160px] sm:max-w-[200px] truncate" title={player.institute}>
+              <span className="font-mono text-[10px] text-[color:var(--c-text-mute)] mt-0.5 max-w-[160px] sm:max-w-[200px] truncate" title={player.institute}>
                 {player.institute}
               </span>
             )}
@@ -380,7 +380,7 @@ export default function Leaderboard() {
       <div className="max-w-5xl mx-auto px-5 sm:px-8">
         <HudPanel style={{ overflow: "hidden" }}>
           <div className="flex items-center gap-3 px-4 sm:px-6 py-3"
-            style={{ borderBottom: "1px solid var(--c-border)", background: "rgba(5,7,15,0.5)" }}>
+            style={{ borderBottom: "1px solid var(--c-border)", background: "var(--c-panel2)" }}>
             <Users size={12} style={{ color: "var(--c-text-mute)" }} />
             <span className="section-label" style={{ marginBottom: 0 }}>RANK TABLE</span>
             <div className="flex-1" />
@@ -395,7 +395,7 @@ export default function Leaderboard() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="font-mono text-[9.5px] uppercase tracking-wider"
-                  style={{ borderBottom: "1px solid var(--c-border)", color: "var(--c-text-mute)", background: "rgba(5,7,15,0.3)" }}>
+                  style={{ borderBottom: "1px solid var(--c-border)", color: "var(--c-text-mute)", background: "var(--c-panel2)" }}>
                   <th className="py-3 px-4 sm:px-6 font-semibold">RANK</th>
                   <th className="py-3 px-4 sm:px-6 font-semibold">PLAYER</th>
                   <th className="py-3 px-4 sm:px-6 font-semibold">ELO</th>

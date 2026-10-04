@@ -557,7 +557,7 @@ function MatchFoundOverlay({ matchData, onComplete }) {
         {/* You */}
         <div className="w-full md:w-[380px] animate-clash-left">
           <div className="relative p-6 sm:p-8 flex flex-col items-center text-center space-y-4 shadow-2xl transition-transform"
-            style={{ background: 'linear-gradient(145deg, rgba(14,16,23,0.95) 0%, rgba(9,11,17,0.9) 100%)', border: `2px solid ${youTier.col}`, boxShadow: `0 0 35px ${youTier.col}35`, clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))' }}
+            style={{ background: 'var(--c-panel)', border: `2px solid ${youTier.col}`, boxShadow: `0 0 35px ${youTier.col}35`, clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))' }}
           >
             <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: `linear-gradient(90deg, ${youTier.col}, transparent)` }} />
             <div className="absolute top-3 left-4 px-2.5 py-0.5 font-mono text-[9px] font-black uppercase tracking-wider rounded" style={{ background: youTier.bg, color: youTier.col, border: `1px solid ${youTier.border}` }}>YOU</div>
@@ -565,7 +565,7 @@ function MatchFoundOverlay({ matchData, onComplete }) {
               <UserAvatar username={you.username} seed={you.avatar_seed} style={you.avatar_style} elo={you.rating} size={84} />
             </div>
             <div className="space-y-1 w-full">
-              <h3 className="font-display font-black text-2xl sm:text-3xl text-white truncate px-2 tracking-tight">{you.username}</h3>
+              <h3 className="font-display font-black text-2xl sm:text-3xl text-[color:var(--c-text)] truncate px-2 tracking-tight">{you.username}</h3>
               <div className="flex items-center justify-center gap-2 pt-1">
                 <RankBadge elo={you.rating || 1200} size="sm" />
                 <span className="font-mono text-sm font-black" style={{ color: youTier.col }}>{you.rating} Elo</span>
@@ -592,7 +592,7 @@ function MatchFoundOverlay({ matchData, onComplete }) {
         {/* Opponent */}
         <div className="w-full md:w-[380px] animate-clash-right">
           <div className="relative p-6 sm:p-8 flex flex-col items-center text-center space-y-4 shadow-2xl transition-transform"
-            style={{ background: 'linear-gradient(145deg, rgba(14,16,23,0.95) 0%, rgba(9,11,17,0.9) 100%)', border: `2px solid ${oppTier.col}`, boxShadow: `0 0 35px ${oppTier.col}35`, clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))' }}
+            style={{ background: 'var(--c-panel)', border: `2px solid ${oppTier.col}`, boxShadow: `0 0 35px ${oppTier.col}35`, clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))' }}
           >
             <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: `linear-gradient(90deg, transparent, ${oppTier.col})` }} />
             <div className="absolute top-3 right-4 px-2.5 py-0.5 font-mono text-[9px] font-black uppercase tracking-wider rounded" style={{ background: oppTier.bg, color: oppTier.col, border: `1px solid ${oppTier.border}` }}>RIVAL</div>
@@ -600,7 +600,7 @@ function MatchFoundOverlay({ matchData, onComplete }) {
               <UserAvatar username={opponent.username} seed={opponent.avatar_seed} style={opponent.avatar_style} elo={opponent.rating} size={84} />
             </div>
             <div className="space-y-1 w-full">
-              <h3 className="font-display font-black text-2xl sm:text-3xl text-white truncate px-2 tracking-tight">{opponent.username}</h3>
+              <h3 className="font-display font-black text-2xl sm:text-3xl text-[color:var(--c-text)] truncate px-2 tracking-tight">{opponent.username}</h3>
               <div className="flex items-center justify-center gap-2 pt-1">
                 <RankBadge elo={opponent.rating || 1200} size="sm" />
                 <span className="font-mono text-sm font-black" style={{ color: oppTier.col }}>{opponent.rating} Elo</span>
@@ -908,7 +908,7 @@ export default function Lobby() {
 
       <PageWrapper heroGlow>
 
-        <div style={{ borderBottom: '1px solid var(--c-border)', background: 'rgba(11,17,32,0.85)', backdropFilter: 'blur(16px)' }}>
+        <div style={{ borderBottom: '1px solid var(--c-border)', background: 'var(--c-nav-bg)', backdropFilter: 'blur(16px)' }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
 
             {/* Left — Title */}
@@ -1105,7 +1105,7 @@ export default function Lobby() {
                     whileTap={{ scale: 0.98 }}
                     className="relative text-left p-4 transition-all duration-200 outline-none cursor-pointer flex flex-col justify-between"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(56,189,248,0.1) 0%, rgba(14,16,23,0.95) 100%)',
+                      background: 'linear-gradient(135deg, rgba(56,189,248,0.1) 0%, var(--c-panel) 100%)',
                       border: '1px dashed var(--c-blue)',
                       clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))'
                     }}

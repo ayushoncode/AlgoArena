@@ -17,6 +17,7 @@ import IntelReportDetail from './pages/IntelReportDetail'
 import ShareExperienceWizard from './pages/ShareExperienceWizard'
 import { useSocket } from './hooks/useSocket'
 import { getActiveMatch, setActiveMatch } from './utils/activeMatch'
+import { ThemeProvider } from './context/ThemeContext'
 
 import { Shield, ChevronRight } from 'lucide-react'
 import { PageWrapper, HudPanel } from './components/ui/index.jsx'
@@ -167,11 +168,12 @@ function AppLayout() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AppLayout />
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppLayout />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
-

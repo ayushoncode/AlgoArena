@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import Editor from '@monaco-editor/react'
 import { useAuth } from '../hooks/useAuth'
+import { useTheme } from '../context/ThemeContext'
 import { useSocket } from '../hooks/useSocket'
 import api from '../utils/api'
 import { UserAvatar, getUserEmoji } from '../utils/avatar'
@@ -90,7 +91,7 @@ function VerdictBadge({ verdict, progress }) {
     RUNTIME_ERROR: { col: '#f43f5e', bg: 'rgba(244,63,94,0.15)', border: 'rgba(244,63,94,0.3)', label: 'RUNTIME ERROR' },
     COMPILATION_ERROR: { col: '#eab308', bg: 'rgba(234,179,8,0.15)', border: 'rgba(234,179,8,0.3)', label: 'COMPILATION ERROR' },
     TIME_LIMIT_EXCEEDED: { col: '#f59e0b', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.3)', label: 'TIME LIMIT' },
-    PENDING: { col: '#6b7280', bg: 'rgba(107,114,128,0.12)', border: 'rgba(107,114,128,0.3)', label: 'JUDGING...' },
+    PENDING: { col: 'var(--c-text-dim)', bg: 'rgba(107,114,128,0.12)', border: 'rgba(107,114,128,0.3)', label: 'JUDGING...' },
   }
   const v = cfg[verdict] ?? cfg.PENDING
 
@@ -134,7 +135,7 @@ function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, on
     TIME_LIMIT_EXCEEDED: { col: '#f59e0b', label: 'Time Limit Exceeded' },
     RUNTIME_ERROR: { col: '#f43f5e', label: 'Runtime Error' },
     COMPILATION_ERROR: { col: '#eab308', label: 'Compilation Error' },
-    PENDING: { col: '#6b7280', label: 'Judging…' },
+    PENDING: { col: 'var(--c-text-dim)', label: 'Judging…' },
   }
 
   const details = tab === 'run' ? runResult : submitResult
@@ -147,16 +148,16 @@ function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, on
   const progressPercent = totalTestsCount > 0 ? Math.min(100, Math.round((currentTest / totalTestsCount) * 100)) : 15
 
   return (
-    <div className="shrink-0 border-t" style={{ background: '#0a0c14', borderColor: '#1e2130', maxHeight: 250, display: 'flex', flexDirection: 'column' }}>
+    <div className="shrink-0 border-t" style={{ background: 'var(--c-void)', borderColor: 'var(--c-border)', maxHeight: 250, display: 'flex', flexDirection: 'column' }}>
       {/* Header bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 shrink-0" style={{ background: '#07080c', borderBottom: '1px solid #1e2130' }}>
+      <div className="flex items-center justify-between px-3 py-1.5 shrink-0" style={{ background: 'var(--c-panel)', borderBottom: '1px solid var(--c-border)' }}>
         <div className="flex items-center gap-1">
           {runResult && (
             <button onClick={() => setTab('run')}
               className="font-mono text-[10px] px-2.5 py-1 transition-all"
               style={{
-                borderRadius: 3, background: tab === 'run' ? '#1e2130' : 'transparent',
-                color: tab === 'run' ? '#dde1ea' : '#4b5563', border: `1px solid ${tab === 'run' ? '#374151' : 'transparent'}`
+                borderRadius: 3, background: tab === 'run' ? 'var(--c-border)' : 'transparent',
+                color: tab === 'run' ? 'var(--c-text)' : 'var(--c-text-mute)', border: `1px solid ${tab === 'run' ? 'var(--c-border2)' : 'transparent'}`
               }}>
               ▶ Run
             </button>
@@ -165,8 +166,8 @@ function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, on
             <button onClick={() => setTab('submit')}
               className="font-mono text-[10px] px-2.5 py-1 transition-all flex items-center gap-1.5"
               style={{
-                borderRadius: 3, background: tab === 'submit' ? '#1e2130' : 'transparent',
-                color: tab === 'submit' ? '#dde1ea' : '#4b5563', border: `1px solid ${tab === 'submit' ? '#374151' : 'transparent'}`
+                borderRadius: 3, background: tab === 'submit' ? 'var(--c-border)' : 'transparent',
+                color: tab === 'submit' ? 'var(--c-text)' : 'var(--c-text-mute)', border: `1px solid ${tab === 'submit' ? 'var(--c-border2)' : 'transparent'}`
               }}>
               {isLiveJudging && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />}
               ⬆ Submit {isLiveJudging ? `(${currentTest}/${totalTestsCount || '...'})` : ''}
@@ -183,11 +184,11 @@ function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, on
             <span className="font-mono text-[10px] font-bold" style={{ color: vc.col }}>{vc.label}</span>
           )}
           {!isLiveJudging && details && total > 0 && (
-            <span className="font-mono text-[9px]" style={{ color: '#9ca3af' }}>
+            <span className="font-mono text-[9px]" style={{ color: 'var(--c-text-dim)' }}>
               {passed}/{total} cases · {details.runtimeMs || 0}ms
             </span>
           )}
-          <button onClick={onClose} className="font-mono text-[11px] hover:text-white transition-colors" style={{ color: '#4b5563' }}>✕</button>
+          <button onClick={onClose} className="font-mono text-[11px] hover:text-white transition-colors" style={{ color: 'var(--c-text-mute)' }}>✕</button>
         </div>
       </div>
 
@@ -202,7 +203,7 @@ function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, on
             <span className="text-emerald-400 font-bold tabular-nums">{progressPercent}%</span>
           </div>
 
-          <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background: '#1e2130', border: '1px solid #2e3346' }}>
+          <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--c-border)', border: '1px solid var(--c-border2)' }}>
             <div
               className="h-full rounded-full transition-all duration-150 ease-out"
               style={{
@@ -225,29 +226,29 @@ function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, on
             const isHiddenFailed = tc.isHidden && !tc.passed
             const borderCol = tc.passed ? 'rgba(16,185,129,0.25)' : tc.error ? 'rgba(244,63,94,0.35)' : 'rgba(245,158,11,0.3)'
             return (
-              <div key={idx} className="rounded overflow-hidden" style={{ border: `1px solid ${borderCol}`, background: '#0d0f17' }}>
+              <div key={idx} className="rounded overflow-hidden" style={{ border: `1px solid ${borderCol}`, background: 'var(--c-panel2)' }}>
                 {/* Row header */}
                 <div className="flex items-center justify-between px-3 py-1.5" style={{ background: tc.passed ? 'rgba(16,185,129,0.06)' : 'rgba(244,63,94,0.06)' }}>
                   <span className="font-mono text-[10px] font-bold" style={{ color: tc.passed ? '#10b981' : '#f43f5e' }}>
                     {tc.passed ? '✓' : '✗'} Test {tc.testIndex}{tc.isHidden ? ' (Hidden)' : ''}
                   </span>
-                  {tc.runtimeMs > 0 && <span className="font-mono text-[9px]" style={{ color: '#4b5563' }}>{tc.runtimeMs}ms</span>}
+                  {tc.runtimeMs > 0 && <span className="font-mono text-[9px]" style={{ color: 'var(--c-text-mute)' }}>{tc.runtimeMs}ms</span>}
                 </div>
 
                 {/* Test content */}
                 {!isHiddenFailed && !tc.isHidden && (
                   <div className="px-3 py-2 space-y-1.5">
                     <div className="font-mono text-[10px]">
-                      <span style={{ color: '#4b5563' }}>Input  </span>
+                      <span style={{ color: 'var(--c-text-mute)' }}>Input  </span>
                       <code style={{ color: '#22d3ee' }}>{typeof tc.input === 'object' ? JSON.stringify(tc.input) : String(tc.input ?? '')}</code>
                     </div>
                     <div className="font-mono text-[10px]">
-                      <span style={{ color: '#4b5563' }}>Expected </span>
+                      <span style={{ color: 'var(--c-text-mute)' }}>Expected </span>
                       <code style={{ color: '#10b981' }}>{typeof tc.expected === 'object' ? JSON.stringify(tc.expected) : String(tc.expected ?? '')}</code>
                     </div>
                     {!tc.passed && (
                       <div className="font-mono text-[10px]">
-                        <span style={{ color: '#4b5563' }}>Got  </span>
+                        <span style={{ color: 'var(--c-text-mute)' }}>Got  </span>
                         <code style={{ color: tc.error ? '#f43f5e' : '#f59e0b' }}>
                           {tc.error ? tc.error.slice(0, 120) : (typeof tc.actual === 'object' ? JSON.stringify(tc.actual) : String(tc.actual ?? 'null'))}
                         </code>
@@ -256,7 +257,7 @@ function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, on
                   </div>
                 )}
                 {isHiddenFailed && (
-                  <div className="px-3 py-2 font-mono text-[10px]" style={{ color: '#6b7280' }}>
+                  <div className="px-3 py-2 font-mono text-[10px]" style={{ color: 'var(--c-text-dim)' }}>
                     {tc.error ? `Error: ${tc.error.slice(0, 100)}` : 'Output does not match expected'}
                   </div>
                 )}
@@ -416,7 +417,7 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
             ) : problem && activeTab === 'description' ? (
               <LeetCodeProblemView problem={problem} difficulty={difficulty} topic={topic} />
             ) : !problem ? (
-              <p className="font-mono text-[11px] text-[#6b7280] py-4">No problem found</p>
+              <p className="font-mono text-[11px] text-[var(--c-text-dim)] py-4">No problem found</p>
             ) : null}
           </div>
         </div>
@@ -425,7 +426,7 @@ function ProblemPanel({ problemId, topic, difficulty, forcedWidth, collapsed, on
       {/* Collapsed: show vertical label */}
       {collapsed && (
         <div className="flex-1 flex flex-col items-center justify-center gap-2 py-4">
-          <span style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', color: '#374151', fontSize: 9, fontFamily: 'monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          <span style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', color: 'var(--c-border2)', fontSize: 9, fontFamily: 'monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             Problem
           </span>
         </div>
@@ -498,6 +499,7 @@ function DragHandle({ onMouseDown, onDoubleClick }) {
    MATCH PAGE
 ════════════════════════════════════════════════ */
 export default function Match() {
+  const { theme } = useTheme()
   const { roomId } = useParams()
   const { state } = useLocation()
   const { user } = useAuth()
@@ -975,7 +977,7 @@ export default function Match() {
         </div>
 
         {/* EDITOR PANEL — fills remaining space */}
-        <div className={`${mobileTab === 'editor' ? 'flex absolute inset-0 z-10 bg-[var(--c-void)]' : 'hidden'} md:flex flex-col flex-1 min-w-0 md:relative md:z-auto max-md:!w-full`}>
+        <div  className={`${mobileTab === 'editor' ? 'flex absolute inset-0 z-10 bg-[var(--c-void)]' : 'hidden'} md:flex flex-col flex-1 min-w-0 md:relative md:z-auto max-md:!w-full`}>
           <PlayerHeader player={me ?? { username: user?.username, rating: user?.elo_rating }} isMe={true} verdict={myVerdict} progress={submitProgress} />
 
           {/* Lang selector + submit */}
@@ -1052,7 +1054,7 @@ export default function Match() {
                   emit('code_change', { roomId, lineCount, charCount, isTyping: false })
                 }, 1200)
               }}
-              theme="algoarena"
+              theme={theme === 'dark' ? 'vs-dark' : 'vs'}
               beforeMount={defineTheme}
               onMount={e => { editorRef.current = e }}
               options={{
@@ -1111,7 +1113,7 @@ export default function Match() {
         </div>
 
         {/* OPPONENT PANEL */}
-        <div className={`${mobileTab === 'opponent' ? 'flex absolute inset-0 z-10 bg-[var(--c-panel)]' : 'hidden'} md:flex flex-col shrink-0 md:relative md:z-auto max-md:!w-full max-md:!min-w-0`}
+        <div  className={`${mobileTab === 'opponent' ? 'flex absolute inset-0 z-10 bg-[var(--c-panel)]' : 'hidden'} md:flex flex-col shrink-0 md:relative md:z-auto max-md:!w-full max-md:!min-w-0`}
           style={{ width: oppPanel.width, minWidth: oppPanel.width, background: 'var(--c-panel)', overflow: 'hidden', borderLeft: '1px solid var(--c-border)' }}>
           <PlayerHeader player={opp} isMe={false} verdict={oppVerdict} progress={oppProgress} />
 

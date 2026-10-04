@@ -40,7 +40,7 @@ function GridFloor() {
         float line = min(grid.x, grid.y);
         float c = 1.0 - min(line, 1.0);
         float dist = length(vWorldPos.xz);
-        float alpha = c * smoothstep(28.0, 2.0, dist) * 0.25;
+        float alpha = c * smoothstep(28.0, 2.0, dist) * 0.04;
         gl_FragColor = vec4(uColor, alpha);
       }
     `,

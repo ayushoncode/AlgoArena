@@ -76,10 +76,10 @@ export default function InstituteOnboardingModal() {
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono tracking-wider text-[#38BDF8] bg-[#38BDF8]/10 border border-[#38BDF8]/20 uppercase">
             <Sparkles size={12} /> Represent Your Institute
           </div>
-          <h2 className="font-display font-black text-2xl sm:text-3xl text-white tracking-wide uppercase">
+          <h2 className="font-display font-black text-2xl sm:text-3xl text-[color:var(--c-text)] tracking-wide uppercase">
             Select Your College
           </h2>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+          <p className="text-xs text-[color:var(--c-text-mute)] max-w-sm mx-auto leading-relaxed">
             Enter your college or university to appear on the institution leaderboards. 
           </p>
         </div>
@@ -93,7 +93,7 @@ export default function InstituteOnboardingModal() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5 relative">
-            <label className="block font-mono text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+            <label className="block font-mono text-[10px] uppercase tracking-widest text-[color:var(--c-text-mute)] font-bold">
               Institute Name
             </label>
             <div className="relative">
@@ -109,14 +109,14 @@ export default function InstituteOnboardingModal() {
                 onChange={e => setInstitute(e.target.value)}
                 onFocus={() => setShowSuggestions(true)}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                className="w-full bg-[#05070F] border border-slate-700 rounded-lg py-3 pl-10 pr-4 font-mono text-sm text-white placeholder-slate-600 outline-none transition-all focus:border-[#38BDF8] focus:shadow-[0_0_15px_rgba(56,189,248,0.15)]"
+                className="w-full bg-[color:var(--c-void)] border border-slate-700 rounded-lg py-3 pl-10 pr-4 font-mono text-sm text-[color:var(--c-text)] placeholder-slate-600 outline-none transition-all focus:border-[#38BDF8] focus:shadow-[0_0_15px_rgba(56,189,248,0.15)]"
               />
               {showSuggestions && suggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-[#0A0F1C] border border-slate-700 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto">
                   {suggestions.map((sug, idx) => (
                     <div
                       key={idx}
-                      className="px-4 py-2.5 text-sm font-mono text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer border-b border-slate-800 last:border-0"
+                      className="px-4 py-2.5 text-sm font-mono text-[color:var(--c-text-dim)] hover:bg-[color:var(--c-panel2)] hover:text-[color:var(--c-text)] cursor-pointer border-b border-slate-800 last:border-0"
                       onMouseDown={(e) => {
                         e.preventDefault()
                         setInstitute(sug)
@@ -136,7 +136,7 @@ export default function InstituteOnboardingModal() {
             </div>
           </div>
 
-          <div className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 text-[11px] text-slate-400 font-mono flex items-center gap-2">
+          <div className="p-3 rounded-lg bg-[color:var(--c-panel)]/60 border border-slate-800 text-[11px] text-[color:var(--c-text-mute)] font-mono flex items-center gap-2">
             <Lock size={13} className="text-amber-400 shrink-0" />
             <span>Note: Once saved, your institute is permanently locked.</span>
           </div>
