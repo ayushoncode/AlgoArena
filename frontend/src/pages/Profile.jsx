@@ -471,7 +471,7 @@ function StreakCalendar({ history, matches = [] }) {
         >
           <Calendar size={11} className="text-[#38BDF8]" />
           <span>{hoveredCell.date}:</span>
-          <span className="font-bold text-[#F5B942]">
+          <span className="font-bold text-[color:var(--c-gold)]">
             {hoveredCell.count === 0 ? 'No battles' : `${hoveredCell.count} duel${hoveredCell.count > 1 ? 's' : ''}`}
           </span>
         </div>
@@ -797,6 +797,7 @@ export default function Profile() {
           setNotFound(true)
         } else {
           console.error('[Profile API Error]', err)
+          setNotFound(true)
         }
       } finally {
         if (!unmounted) setDataLoading(false)
@@ -1094,7 +1095,7 @@ export default function Profile() {
                 <div className="space-y-1 pt-1 max-w-md">
                   <div className="flex items-center justify-between font-mono text-[10px]">
                     <span className="text-[color:var(--c-text-mute)] uppercase tracking-wider">{currentTier.name}</span>
-                    <span className="font-bold text-[#F5B942]">
+                    <span className="font-bold text-[color:var(--c-gold)]">
                       {tierProgress.nextName === 'MAX TIER' ? 'MAX TIER REACHED' : `${tierProgress.needed} ELO TO ${tierProgress.nextName}`}
                     </span>
                   </div>
@@ -1148,9 +1149,9 @@ export default function Profile() {
                   boxShadow: '0 0 16px rgba(245, 185, 66, 0.1)'
                 }}
               >
-                <Flame size={28} className="text-[#F5B942]" />
+                <Flame size={28} className="text-[color:var(--c-gold)]" />
                 <div>
-                  <p className="font-display font-black text-2xl leading-none text-[#F5B942]">{streak}</p>
+                  <p className="font-display font-black text-2xl leading-none text-[color:var(--c-gold)]">{streak}</p>
                   <p className="font-mono text-[9px] uppercase tracking-widest text-[color:var(--c-text-mute)] mt-0.5">Day Streak</p>
                 </div>
               </div>
@@ -1207,9 +1208,9 @@ export default function Profile() {
           <HudPanel className="p-3 sm:p-4 space-y-1 sm:space-y-1.5 transition-transform hover:-translate-y-0.5">
             <div className="flex items-center justify-between text-[color:var(--c-text-mute)]">
               <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider">Streak</span>
-              <Flame size={14} className="text-[#F5B942]" />
+              <Flame size={14} className="text-[color:var(--c-gold)]" />
             </div>
-            <p className="font-display font-black text-xl sm:text-3xl text-[#F5B942]">{streak}d</p>
+            <p className="font-display font-black text-xl sm:text-3xl text-[color:var(--c-gold)]">{streak}d</p>
             <p className="font-mono text-[9px] sm:text-[10px] text-[color:var(--c-text-mute)]">Active Streak</p>
           </HudPanel>
 
@@ -1320,7 +1321,7 @@ export default function Profile() {
 
               <div className="flex items-center justify-between pt-2 border-t border-[color:var(--c-border)] font-mono text-[10px] text-[color:var(--c-text-mute)]">
                 <span>Active Days: <strong className="text-[color:var(--c-text)]">{activeDates.size}</strong></span>
-                <span>Streak: <strong className="text-[#F5B942]">{streak}d</strong></span>
+                <span>Streak: <strong className="text-[color:var(--c-gold)]">{streak}d</strong></span>
               </div>
             </HudPanel>
 
@@ -1353,11 +1354,11 @@ export default function Profile() {
                         <div key={topKey} className="space-y-1">
                           <div className="flex items-center justify-between font-mono text-xs">
                             <div className="flex items-center gap-1.5">
-                              <span className={`font-bold ${isTop ? 'text-[#F5B942]' : 'text-slate-200'}`}>
+                              <span className={`font-bold ${isTop ? 'text-[color:var(--c-gold)]' : 'text-[color:var(--c-text)]'}`}>
                                 {title}
                               </span>
                               {isTop && (
-                                <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-[#F5B942]/10 border border-[#F5B942]/30 text-[#F5B942]">
+                                <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-[color:var(--c-gold)]/10 border border-[color:var(--c-gold)]/30 text-[color:var(--c-gold)]">
                                   MOST PLAYED
                                 </span>
                               )}
