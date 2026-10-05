@@ -968,7 +968,7 @@ export default function Lobby() {
                 style={{ background: topic ? 'var(--c-red)' : 'var(--c-panel2)', color: topic ? '#fff' : 'var(--c-text-mute)' }}>
                 1
               </div>
-              <div className="hidden sm:block min-w-0">
+              <div className="min-w-0">
                 <p className="font-mono text-[10px] uppercase font-bold tracking-wider" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)', background: 'transparent' }}>Step 1</p>
                 <p className="font-display font-semibold text-xs truncate" style={{ color: 'var(--c-text)', background: 'transparent' }}>Select Topic</p>
               </div>
@@ -981,7 +981,7 @@ export default function Lobby() {
                 style={{ background: diffObj.col, color: diffObj.id === 'easy' ? '#000' : '#fff' }}>
                 2
               </div>
-              <div className="hidden sm:block min-w-0">
+              <div className="min-w-0">
                 <p className="font-mono text-[10px] uppercase font-bold tracking-wider" style={{ color: diffObj.col, background: 'transparent' }}>Step 2</p>
                 <p className="font-display font-semibold text-xs truncate" style={{ color: 'var(--c-text)', background: 'transparent' }}>Choose Difficulty</p>
               </div>
@@ -994,7 +994,7 @@ export default function Lobby() {
                 style={{ background: topic ? 'var(--c-red)' : 'var(--c-panel2)', color: topic ? '#fff' : 'var(--c-text-mute)' }}>
                 3
               </div>
-              <div className="hidden sm:block min-w-0">
+              <div className="min-w-0">
                 <p className="font-mono text-[10px] uppercase font-bold tracking-wider" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)', background: 'transparent' }}>Step 3</p>
                 <p className="font-display font-semibold text-xs truncate" style={{ color: 'var(--c-text)', background: 'transparent' }}>Deploy Match</p>
               </div>
@@ -1017,8 +1017,8 @@ export default function Lobby() {
                   <h3 className="font-display font-bold text-lg sm:text-xl" style={{ color: 'var(--c-text)' }}>
                     {dailyObj.title}
                   </h3>
-                  <p className="font-sans text-xs max-w-3xl leading-relaxed" style={{ color: 'var(--c-text-dim)' }}>
-                    {dailyObj.desc}
+                  <p className="font-sans text-xs max-w-3xl leading-relaxed line-clamp-2" style={{ color: 'var(--c-text-dim)' }}>
+                    {dailyObj.desc.replace(/[*#`_]/g, '').replace(/\n/g, ' ').substring(0, 160)}...
                   </p>
                 </div>
 
@@ -1306,7 +1306,7 @@ export default function Lobby() {
 
         {/* MOBILE STICKY BOTTOM DEPLOY BAR */}
         <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 flex items-center gap-3 backdrop-blur-md"
-          style={{ background: 'rgba(11,17,32,0.95)', borderTop: '1px solid var(--c-border)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
+          style={{ background: 'var(--c-nav-bg)', borderTop: '1px solid var(--c-border)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
           <div className="flex-1 min-w-0">
             <p className="font-mono text-[10px] uppercase font-bold truncate" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)' }}>
               {selectedTopicObj ? selectedTopicObj.label : 'Select Topic'} • {diffObj.label}

@@ -90,15 +90,15 @@ export function ArenaLogo({
   style = {},
 }) {
   const emblemSizes = { sm: 22, md: 30, lg: 42, xl: 60 }
-  const fontSizes   = {
-    sm: { main: 15, tagline: 8  },
-    md: { main: 20, tagline: 9  },
+  const fontSizes = {
+    sm: { main: 15, tagline: 8 },
+    md: { main: 20, tagline: 9 },
     lg: { main: 28, tagline: 11 },
     xl: { main: 42, tagline: 14 },
   }
 
   const emblemSize = typeof size === 'number' ? size : (emblemSizes[size] ?? 30)
-  const fonts      = typeof size === 'number'
+  const fonts = typeof size === 'number'
     ? { main: Math.round(size * 0.65), tagline: Math.max(8, Math.round(size * 0.28)) }
     : (fontSizes[size] ?? fontSizes.md)
 

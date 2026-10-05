@@ -211,8 +211,8 @@ export default function IntelReportDetail() {
 
         {/* Pending Review Warning for Author */}
         {report.status === "pending" && (
-          <div className="p-4 bg-amber-500/10 border border-amber-500/40 rounded-lg flex items-center gap-3 text-amber-300 font-mono text-xs">
-            <AlertTriangle size={18} className="shrink-0 text-amber-400" />
+          <div className="p-4 bg-amber-500/10 border border-amber-500/40 rounded-lg flex items-center gap-3 text-[color:var(--c-gold)] font-mono text-xs">
+            <AlertTriangle size={18} className="shrink-0 text-[color:var(--c-gold)]" />
             <span>
               <strong>PENDING MODERATION REVIEW:</strong> This report is currently visible only to you while our moderators verify its content.
             </span>
@@ -220,9 +220,9 @@ export default function IntelReportDetail() {
         )}
 
         {/* HEADER DOSSIER CARD */}
-        <HudPanel className="p-6 sm:p-8 space-y-6 relative overflow-hidden bg-slate-950/90" glow glowColor="rgba(225,29,72,0.12)">
+        <HudPanel className="p-6 sm:p-8 space-y-6 relative overflow-hidden bg-[color:var(--c-panel2)]" glow glowColor="rgba(225,29,72,0.12)">
           
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-slate-800">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-[color:var(--c-border)]">
             <div className="flex items-start gap-4">
               <CompanyMonogram name={report.company} />
               <div className="space-y-1">
@@ -249,7 +249,7 @@ export default function IntelReportDetail() {
                 {outcomeObj.label}
               </span>
               <span
-                className="font-bold px-3 py-1 bg-[color:var(--c-panel)] border border-slate-800"
+                className="font-bold px-3 py-1 bg-[color:var(--c-panel)] border border-[color:var(--c-border)]"
                 style={{ color: diffObj.col }}
               >
                 {diffObj.label}
@@ -259,7 +259,7 @@ export default function IntelReportDetail() {
 
           {/* Key Facts Meta Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 font-mono text-xs">
-            <div className="p-3 bg-[color:var(--c-panel)]/80 border border-slate-800 space-y-1">
+            <div className="p-3 bg-[color:var(--c-panel)]/80 border border-[color:var(--c-border)] space-y-1">
               <p className="text-[10px] text-[color:var(--c-text-mute)] uppercase tracking-wider flex items-center gap-1">
                 <Calendar size={12} /> YEAR / MONTH
               </p>
@@ -269,7 +269,7 @@ export default function IntelReportDetail() {
             </div>
 
             {report.location && (
-              <div className="p-3 bg-[color:var(--c-panel)]/80 border border-slate-800 space-y-1">
+              <div className="p-3 bg-[color:var(--c-panel)]/80 border border-[color:var(--c-border)] space-y-1">
                 <p className="text-[10px] text-[color:var(--c-text-mute)] uppercase tracking-wider flex items-center gap-1">
                   <MapPin size={12} /> LOCATION
                 </p>
@@ -278,7 +278,7 @@ export default function IntelReportDetail() {
             )}
 
             {report.source && (
-              <div className="p-3 bg-[color:var(--c-panel)]/80 border border-slate-800 space-y-1">
+              <div className="p-3 bg-[color:var(--c-panel)]/80 border border-[color:var(--c-border)] space-y-1">
                 <p className="text-[10px] text-[color:var(--c-text-mute)] uppercase tracking-wider flex items-center gap-1">
                   <Briefcase size={12} /> SOURCE
                 </p>
@@ -287,11 +287,11 @@ export default function IntelReportDetail() {
             )}
 
             {(report.stipend_range || report.ctc_range) && (
-              <div className="p-3 bg-[color:var(--c-panel)]/80 border border-slate-800 space-y-1">
+              <div className="p-3 bg-[color:var(--c-panel)]/80 border border-[color:var(--c-border)] space-y-1">
                 <p className="text-[10px] text-[color:var(--c-text-mute)] uppercase tracking-wider flex items-center gap-1">
                   <DollarSign size={12} /> COMPENSATION
                 </p>
-                <p className="font-bold text-amber-400 truncate">
+                <p className="font-bold text-[color:var(--c-gold)] truncate">
                   {report.stipend_range || report.ctc_range}
                 </p>
               </div>
@@ -299,9 +299,9 @@ export default function IntelReportDetail() {
           </div>
 
           {/* Author Block & Interaction Action Bar */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-slate-800">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-[color:var(--c-border)]">
             {/* Author */}
-            <div className="flex items-center gap-3">
+            <button onClick={() => navigate(`/profile/${report.author.username}`)} className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity">
               <UserAvatar
                 username={report.author.username}
                 seed={report.author.avatar_seed}
@@ -317,7 +317,7 @@ export default function IntelReportDetail() {
                   <RankBadge elo={report.author.elo_rating} size="xs" />
                 )}
               </div>
-            </div>
+            </button>
 
             {/* Interaction Buttons */}
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
@@ -326,7 +326,7 @@ export default function IntelReportDetail() {
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs font-bold rounded border transition-colors ${
                   report.is_helpful
                     ? "bg-rose-500/20 border-rose-500/50 text-rose-400"
-                    : "bg-[color:var(--c-panel)] border-slate-800 text-[color:var(--c-text-dim)] hover:text-[color:var(--c-text)]"
+                    : "bg-[color:var(--c-panel)] border-[color:var(--c-border)] text-[color:var(--c-text-dim)] hover:text-[color:var(--c-text)]"
                 }`}
               >
                 <ThumbsUp size={13} />
@@ -337,8 +337,8 @@ export default function IntelReportDetail() {
                 onClick={handleToggleBookmark}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs font-bold rounded border transition-colors ${
                   report.is_bookmarked
-                    ? "bg-amber-500/20 border-amber-500/50 text-amber-400"
-                    : "bg-[color:var(--c-panel)] border-slate-800 text-[color:var(--c-text-dim)] hover:text-[color:var(--c-text)]"
+                    ? "bg-amber-500/20 border-amber-500/50 text-[color:var(--c-gold)]"
+                    : "bg-[color:var(--c-panel)] border-[color:var(--c-border)] text-[color:var(--c-text-dim)] hover:text-[color:var(--c-text)]"
                 }`}
               >
                 <Bookmark size={13} />
@@ -347,7 +347,7 @@ export default function IntelReportDetail() {
 
               <button
                 onClick={handleShare}
-                className="p-2 bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text-dim)] hover:text-[color:var(--c-text)] rounded"
+                className="p-2 bg-[color:var(--c-panel)] border border-[color:var(--c-border)] text-[color:var(--c-text-dim)] hover:text-[color:var(--c-text)] rounded"
                 title="Share link"
               >
                 <Share2 size={14} />
@@ -355,7 +355,7 @@ export default function IntelReportDetail() {
 
               <button
                 onClick={() => setShowReportModal(true)}
-                className="p-2 bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text-mute)] hover:text-rose-400 rounded"
+                className="p-2 bg-[color:var(--c-panel)] border border-[color:var(--c-border)] text-[color:var(--c-text-mute)] hover:text-rose-400 rounded"
                 title="Report inappropriate content"
               >
                 <Flag size={14} />
@@ -366,14 +366,14 @@ export default function IntelReportDetail() {
                 <>
                   <button
                     onClick={() => navigate(`/experiences/${id}/edit`)}
-                    className="p-2 bg-[color:var(--c-panel)] border border-slate-800 text-cyan-400 hover:text-cyan-300 rounded"
+                    className="p-2 bg-[color:var(--c-panel)] border border-[color:var(--c-border)] text-[color:var(--c-blue)] hover:text-cyan-300 rounded"
                     title="Edit report"
                   >
                     <Edit size={14} />
                   </button>
                   <button
                     onClick={handleDeleteReport}
-                    className="p-2 bg-[color:var(--c-panel)] border border-slate-800 text-rose-500 hover:text-rose-400 rounded"
+                    className="p-2 bg-[color:var(--c-panel)] border border-[color:var(--c-border)] text-rose-500 hover:text-rose-400 rounded"
                     title="Delete report"
                   >
                     <Trash2 size={14} />
@@ -390,7 +390,7 @@ export default function IntelReportDetail() {
           <h2 className="font-display font-black text-xl text-[color:var(--c-text)] uppercase tracking-wide flex items-center gap-2">
             <FileText size={18} className="text-rose-500" /> OVERALL EXPERIENCE
           </h2>
-          <HudPanel className="p-6 bg-slate-950/90 font-sans text-sm text-slate-200 leading-relaxed whitespace-pre-line border-slate-800">
+          <HudPanel className="p-6 bg-[color:var(--c-panel2)] font-sans text-sm text-[color:var(--c-text)] leading-relaxed whitespace-pre-line border-[color:var(--c-border)]">
             {report.overall_experience}
           </HudPanel>
         </section>
@@ -399,23 +399,23 @@ export default function IntelReportDetail() {
         {Array.isArray(report.rounds) && report.rounds.length > 0 && (
           <section className="space-y-6">
             <h2 className="font-display font-black text-xl text-[color:var(--c-text)] uppercase tracking-wide flex items-center gap-2">
-              <Zap size={18} className="text-cyan-400" /> ROUND BREAKDOWN ({report.rounds.length})
+              <Zap size={18} className="text-[color:var(--c-blue)]" /> ROUND BREAKDOWN ({report.rounds.length})
             </h2>
 
-            <div className="space-y-6 relative border-l-2 border-slate-800 ml-4 pl-6">
+            <div className="space-y-6 relative border-l-2 border-[color:var(--c-border)] ml-4 pl-6">
               {report.rounds.map((round, rIdx) => (
                 <div key={rIdx} className="relative space-y-3">
                   
                   {/* Stepper Node */}
-                  <div className="absolute -left-[33px] top-0 w-8 h-8 rounded-full bg-slate-950 border-2 border-cyan-500 flex items-center justify-center font-mono text-xs font-bold text-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.4)]">
+                  <div className="absolute -left-[33px] top-0 w-8 h-8 rounded-full bg-[color:var(--c-panel2)] border-2 border-[color:var(--c-blue)] flex items-center justify-center font-mono text-xs font-bold text-[color:var(--c-blue)] shadow-[0_0_10px_rgba(6,182,212,0.4)]">
                     {rIdx + 1}
                   </div>
 
-                  <HudPanel className="p-5 space-y-4 bg-slate-950/90 border-slate-800">
+                  <HudPanel className="p-5 space-y-4 bg-[color:var(--c-panel2)] border-[color:var(--c-border)]">
                     {/* Round Header */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[color:var(--c-border)]">
                       <div>
-                        <span className="font-mono text-[10px] text-cyan-400 font-bold uppercase tracking-wider">
+                        <span className="font-mono text-[10px] text-[color:var(--c-blue)] font-bold uppercase tracking-wider">
                           ROUND // {round.type?.replace("_", " ")}
                         </span>
                         <h3 className="font-display font-bold text-lg text-[color:var(--c-text)]">
@@ -423,7 +423,7 @@ export default function IntelReportDetail() {
                         </h3>
                       </div>
                       {round.durationMinutes && (
-                        <span className="font-mono text-xs text-[color:var(--c-text-mute)] flex items-center gap-1 bg-[color:var(--c-panel)] px-2.5 py-1 rounded border border-slate-800">
+                        <span className="font-mono text-xs text-[color:var(--c-text-mute)] flex items-center gap-1 bg-[color:var(--c-panel)] px-2.5 py-1 rounded border border-[color:var(--c-border)]">
                           <Clock size={12} /> {round.durationMinutes} MIN
                         </span>
                       )}
@@ -438,7 +438,7 @@ export default function IntelReportDetail() {
 
                     {/* Questions List */}
                     {Array.isArray(round.questions) && round.questions.length > 0 && (
-                      <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                      <div className="space-y-2 pt-2 border-t border-[color:var(--c-border)]">
                         <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-[color:var(--c-text-mute)]">
                           QUESTIONS ASKED ({round.questions.length})
                         </p>
@@ -446,18 +446,18 @@ export default function IntelReportDetail() {
                           {round.questions.map((q, qIdx) => (
                             <div
                               key={qIdx}
-                              className="p-3 bg-[color:var(--c-panel)]/90 border border-slate-800 rounded flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                              className="p-3 bg-[color:var(--c-panel)]/90 border border-[color:var(--c-border)] rounded flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                             >
                               <div className="space-y-1">
-                                <p className="font-sans text-xs text-slate-200 font-medium">
+                                <p className="font-sans text-xs text-[color:var(--c-text)] font-medium">
                                   {q.text}
                                 </p>
                                 <div className="flex flex-wrap items-center gap-2 font-mono text-[10px]">
-                                  <span className="px-2 py-0.5 bg-slate-950 border border-slate-800 text-cyan-400 font-bold uppercase">
+                                  <span className="px-2 py-0.5 bg-[color:var(--c-panel2)] border border-[color:var(--c-border)] text-[color:var(--c-blue)] font-bold uppercase">
                                     TOPIC // {q.topic}
                                   </span>
                                   {q.difficulty && (
-                                    <span className="px-2 py-0.5 bg-slate-950 border border-slate-800 text-amber-400 font-bold uppercase">
+                                    <span className="px-2 py-0.5 bg-[color:var(--c-panel2)] border border-[color:var(--c-border)] text-[color:var(--c-gold)] font-bold uppercase">
                                       {q.difficulty}
                                     </span>
                                   )}
@@ -500,9 +500,9 @@ export default function IntelReportDetail() {
             {report.tips && (
               <section className="space-y-3">
                 <h2 className="font-display font-black text-lg text-[color:var(--c-text)] uppercase tracking-wide flex items-center gap-2">
-                  <Sparkles size={16} className="text-amber-400" /> TIPS & ADVICE
+                  <Sparkles size={16} className="text-[color:var(--c-gold)]" /> TIPS & ADVICE
                 </h2>
-                <HudPanel className="p-5 bg-slate-950/90 font-sans text-xs text-[color:var(--c-text-dim)] leading-relaxed whitespace-pre-line border-slate-800">
+                <HudPanel className="p-5 bg-[color:var(--c-panel2)] font-sans text-xs text-[color:var(--c-text-dim)] leading-relaxed whitespace-pre-line border-[color:var(--c-border)]">
                   {report.tips}
                 </HudPanel>
               </section>
@@ -511,9 +511,9 @@ export default function IntelReportDetail() {
             {report.prep_resources && (
               <section className="space-y-3">
                 <h2 className="font-display font-black text-lg text-[color:var(--c-text)] uppercase tracking-wide flex items-center gap-2">
-                  <BookMarked size={16} className="text-cyan-400" /> PREPARATION RESOURCES
+                  <BookMarked size={16} className="text-[color:var(--c-blue)]" /> PREPARATION RESOURCES
                 </h2>
-                <HudPanel className="p-5 bg-slate-950/90 font-sans text-xs text-[color:var(--c-text-dim)] leading-relaxed whitespace-pre-line border-slate-800">
+                <HudPanel className="p-5 bg-[color:var(--c-panel2)] font-sans text-xs text-[color:var(--c-text-dim)] leading-relaxed whitespace-pre-line border-[color:var(--c-border)]">
                   {report.prep_resources}
                 </HudPanel>
               </section>
@@ -539,7 +539,7 @@ export default function IntelReportDetail() {
             onChange={(e) => setReportReason(e.target.value)}
             placeholder="Reason for report (e.g. NDA violation, inappropriate content, fake report)..."
             rows={4}
-            className="w-full bg-[color:var(--c-panel)] border border-slate-800 text-[color:var(--c-text)] font-mono text-xs p-3 outline-none focus:border-rose-500 rounded"
+            className="w-full bg-[color:var(--c-panel)] border border-[color:var(--c-border)] text-[color:var(--c-text)] font-mono text-xs p-3 outline-none focus:border-rose-500 rounded"
           />
           <div className="flex items-center justify-end gap-3 pt-2">
             <GhostButton onClick={() => setShowReportModal(false)}>CANCEL</GhostButton>
