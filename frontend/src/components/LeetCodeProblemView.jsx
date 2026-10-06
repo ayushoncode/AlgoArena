@@ -168,8 +168,13 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
         curExample.input += ' ' + trimmed
       } else {
         // If it's an ASCII diagram line not wrapped in code fences
-        if (!curExample.diagram) curExample.diagram = trimmed
-        else curExample.diagram += '\n' + line
+        const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/)
+        if (imgMatch) {
+          curExample.image = imgMatch[2]
+        } else {
+          if (!curExample.diagram) curExample.diagram = trimmed
+          else curExample.diagram += '\n' + line
+        }
       }
       continue
     }
@@ -186,7 +191,12 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
     // Body section paragraphs
     if (currentSection === 'body') {
       if (trimmed !== '---') {
-        paragraphs.push({ type: 'text', content: trimmed })
+        const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/)
+        if (imgMatch) {
+          paragraphs.push({ type: 'image', url: imgMatch[2], alt: imgMatch[1] })
+        } else {
+          paragraphs.push({ type: 'text', content: trimmed })
+        }
       }
     }
   }
@@ -381,6 +391,12 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                   <pre className="whitespace-pre">{item.content}</pre>
                 </div>
               )
+            if (item.type === 'image') {
+              return (
+                <div key={idx} className="bg-white p-2 rounded-lg my-3 border" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
+                  <img src={item.url} alt={item.alt} className="max-w-full h-auto max-h-64 object-contain" />
+                </div>
+              )
             }
             return (
               <p key={idx} className="leading-relaxed">
@@ -409,6 +425,11 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                   border: '1px solid rgba(255, 255, 255, 0.09)'
                 }}
               >
+                {ex.image && (
+                  <div className="bg-white p-2 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.06)' }}>
+                    <img src={ex.image} alt={`Example ${ex.num || idx + 1}`} className="max-w-full h-auto max-h-64 object-contain" />
+                  </div>
+                )}
                 {/* Visual Tree / ASCII Diagram Preview if present */}
                 {ex.diagram && (
                   <div
