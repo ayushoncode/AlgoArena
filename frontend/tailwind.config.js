@@ -4,9 +4,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        mono: ['"JetBrains Mono"', 'monospace'],
-        display: ['Oswald', '"Arial Narrow"', 'sans-serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)'],
+        display: ['var(--font-display)'],
+        sans: ['var(--font-body)'],
       },
       colors: {
         arena: {

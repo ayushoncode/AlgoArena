@@ -231,15 +231,27 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile hamburger */}
-          <button
-            className="sm:hidden p-2 transition-colors"
-            onClick={() => setMobileOpen(o => !o)}
-            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-            style={{ color: 'var(--c-text-dim)', background: 'transparent', border: 'none', cursor: 'pointer' }}
-          >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+          {/* Mobile right icons */}
+          <div className="flex sm:hidden items-center gap-1">
+            <button
+              onClick={toggleTheme}
+              className="p-2 transition-colors flex items-center justify-center rounded-md"
+              style={{ color: 'var(--c-text-dim)' }}
+              onMouseOver={e => { e.currentTarget.style.color = 'var(--c-text)' }}
+              onMouseOut={e => { e.currentTarget.style.color = 'var(--c-text-dim)' }}
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <button
+              className="p-2 transition-colors"
+              onClick={() => setMobileOpen(o => !o)}
+              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              style={{ color: 'var(--c-text-dim)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+            >
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
       </nav>
 
