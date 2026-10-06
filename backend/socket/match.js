@@ -771,4 +771,13 @@ function trackRoom(roomId, dbMatchId, problemId, isCustom = false, players = [],
   }
 }
 
-module.exports = { registerMatch, trackRoom, handleVerdict }
+function isUserInActiveMatch(userId) {
+  for (const match of activeMatches.values()) {
+    if (!match.isResolved && match.players?.some(p => String(p.userId) === String(userId))) {
+      return true
+    }
+  }
+  return false
+}
+
+module.exports = { registerMatch, trackRoom, handleVerdict, isUserInActiveMatch }

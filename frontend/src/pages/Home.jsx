@@ -594,6 +594,11 @@ function OtpLoginForm({ onSwitchPassword }) {
           <button id="send-otp-submit" type="submit" disabled={busy} className="btn-primary w-full py-3">
             {busy ? <><Spinner /> Sending OTP…</> : 'Send 6-Digit Login Code'}
           </button>
+          <div className="text-center pt-1">
+            <button type="button" onClick={onSwitchPassword} style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-text-mute)' }} className="hover:text-[color:var(--c-text)] transition-colors">
+              Sign in with password instead
+            </button>
+          </div>
         </form>
       )}
       {step === 2 && (
@@ -651,6 +656,10 @@ function PasswordLoginForm({ onSwitchOtp, onSwitchRegister, onSwitchForgot }) {
       <button id="login-submit" type="submit" disabled={busy} className="btn-primary w-full py-3">
         {busy ? <><Spinner /> Authenticating…</> : 'Sign In'}
       </button>
+      <div className="flex items-center justify-between" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+        <button type="button" onClick={onSwitchOtp} style={{ color: 'var(--c-blue)' }} className="hover:underline">Fast OTP Sign In</button>
+        <button type="button" onClick={onSwitchRegister} style={{ color: 'var(--c-text-mute)' }} className="hover:text-[color:var(--c-text)]">Register →</button>
+      </div>
     </form>
   )
 }
@@ -810,6 +819,10 @@ function RegisterForm({ onSwitchLogin }) {
           <button id="register-submit" type="submit" disabled={busy} className="btn-primary w-full py-3 mt-2">
             {busy ? <><Spinner /> Sending Verification Code…</> : 'Verify Email & Create Account'}
           </button>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textAlign: 'center', color: 'var(--c-text-mute)' }}>
+            Already have an account?{' '}
+            <button type="button" onClick={onSwitchLogin} style={{ color: 'var(--c-blue)' }} className="hover:underline">Sign In →</button>
+          </p>
         </form>
       )}
       {step === 2 && (
@@ -1004,8 +1017,8 @@ function HeroSection({ onJoinClick }) {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          style={{ fontFamily: 'var(--font-display)', fontWeight: 800, lineHeight: 1.0, letterSpacing: '-0.02em', textTransform: 'uppercase' }}
-          className="text-4xl sm:text-6xl lg:text-7xl"
+          style={{ fontFamily: 'var(--font-display)', fontWeight: 700, lineHeight: 1.0, letterSpacing: '0.04em', textTransform: 'uppercase' }}
+          className="text-5xl sm:text-7xl lg:text-8xl"
         >
           <span style={{ color: 'var(--c-text)' }}>ASSEMBLE.</span>
           <br />

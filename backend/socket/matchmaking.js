@@ -30,7 +30,7 @@
 
 const { randomBytes } = require('crypto')
 const db              = require('../db')
-const { trackRoom }   = require('./match')
+const { trackRoom, isUserInActiveMatch } = require('./match')
 
 // ── In-memory queue ────────────────────────────────────────────
 // Map<topicKey, WaitingEntry[]>
@@ -201,6 +201,12 @@ function registerMatchmaking(io) {
       }
 
       const topicKey = `${topic}:${difficulty}`
+
+      // Guard: don't let user join if they are already in an active match
+      if (isUserInActiveMatch(userId)) {
+        console.warn(`[Queue] User ${username} tried to join queue while in active match`)
+        return
+      }
 
       // Guard: don't let same user join twice from any window
       removeFromQueues(socket.id, userId)

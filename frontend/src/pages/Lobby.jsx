@@ -870,7 +870,7 @@ export default function Lobby() {
 
 
   function startQueue() {
-    if (!topic) return
+    if (!topic || queuing) return
     setQueuing(true)
     if (connected) { emit('join_queue', { topic, difficulty: diff }) }
     else { socket.once('connect', () => emit('join_queue', { topic, difficulty: diff })) }
