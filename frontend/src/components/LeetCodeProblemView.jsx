@@ -391,6 +391,7 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                   <pre className="whitespace-pre">{item.content}</pre>
                 </div>
               )
+            }
             if (item.type === 'image') {
               return (
                 <div key={idx} className="bg-white p-2 rounded-lg my-3 border" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
