@@ -59,17 +59,18 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
     return {
       paragraphs: [],
       examples: sampleInput ? [{ num: 1, diagram: null, input: sampleInput, output: sampleOutput || '', explanation: '' }] : [],
-      constraints: []
+      constraints: [],
+      hints: []
     }
   }
 
   // Normalize newlines and strip excessive trailing/leading spacing
   const desc = rawDesc.replace(/\r\n/g, '\n').trim()
 
-  // Extract sections by splitting on Example headers and Constraints
   const paragraphs = []
   const examples = []
   const constraints = []
+  const hints = []
 
   // Split the markdown content into lines
   const lines = desc.split('\n')
@@ -136,6 +137,17 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
       continue
     }
 
+    // Detect Hints Header
+    const hintsMatch = trimmed.match(/^(?:###\s*)?(?:\*\*)?Hints:?(?:\*\*)?:?/i)
+    if (hintsMatch) {
+      if (curExample) {
+        examples.push(curExample)
+        curExample = null
+      }
+      currentSection = 'hints'
+      continue
+    }
+
     if (!trimmed) continue
 
     // Handle Example section lines
@@ -188,6 +200,15 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
       continue
     }
 
+    // Handle Hints section lines
+    if (currentSection === 'hints') {
+      let cleanHint = trimmed.replace(/^\d+\.\s*/, '').replace(/^[-*•]\s*/, '').trim()
+      if (cleanHint) {
+        hints.push(cleanHint)
+      }
+      continue
+    }
+
     // Body section paragraphs
     if (currentSection === 'body') {
       if (trimmed !== '---') {
@@ -216,7 +237,7 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
     })
   }
 
-  return { paragraphs, examples, constraints }
+  return { paragraphs, examples, constraints, hints }
 }
 
 function parseBlockIntoExample(block, ex) {
@@ -260,7 +281,7 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
     )
   }
 
-  const { paragraphs, examples, constraints } = parseLeetCodeDescription(
+  const { paragraphs, examples, constraints, hints } = parseLeetCodeDescription(
     problem.description,
     problem.sample_input,
     problem.sample_output
@@ -492,6 +513,32 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+      {/* ── Hints Section ──────────────────────────────────── */}
+      {hints && hints.length > 0 && (
+        <div className="space-y-2 pt-5 border-t mt-4" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
+          {hints.map((hint, idx) => (
+            <details key={idx} className="group overflow-hidden rounded-md" style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <summary className="cursor-pointer select-none px-4 py-2.5 text-[13px] font-medium text-[color:var(--c-text)] flex items-center justify-between hover:bg-[rgba(255,255,255,0.02)] transition-colors">
+                <span className="flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--c-text-mute)' }}>
+                    <path d="M9 18h6" />
+                    <path d="M10 22h4" />
+                    <path d="M12 2v1" />
+                    <path d="M12 7a5 5 0 0 0-5 5c0 2 1.5 3.5 1.5 5h7c0-1.5 1.5-3 1.5-5a5 5 0 0 0-5-5z" />
+                  </svg>
+                  Hint {idx + 1}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-200 group-open:rotate-180" style={{ color: 'var(--c-text-mute)' }}>
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </summary>
+              <div className="px-4 py-3 text-[13px] leading-relaxed border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.05)', backgroundColor: 'var(--c-panel)', color: 'var(--c-text)' }}>
+                {renderInline(hint)}
+              </div>
+            </details>
+          ))}
         </div>
       )}
     </div>
