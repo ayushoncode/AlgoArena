@@ -611,9 +611,9 @@ export default function WhoWeAre() {
         </div>
 
         {/* Marquee Row 1 */}
-        <div className="flex overflow-hidden group select-none">
-          <div className="flex animate-marquee space-x-4 shrink-0 group-hover:[animation-play-state:paused]">
-            {stack.concat(stack).map((tech, i) => (
+        <div className="flex overflow-x-auto px-5 sm:px-8 pb-4">
+          <div className="flex space-x-4 shrink-0">
+            {stack.map((tech, i) => (
               <span
                 key={i}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[color:var(--c-panel)] border border-[color:var(--c-border)] text-[color:var(--c-text-dim)] font-mono text-xs font-bold uppercase tracking-wider"
