@@ -25,6 +25,7 @@ import { UserAvatar } from '../utils/avatar'
 import { ArenaEmblem, ArenaLogo } from '../components/ArenaLogo'
 
 const HeroScene3D = lazy(() => import('../components/HeroScene3D'))
+import HeroBattleMockup from '../components/HeroBattleMockup'
 import { motion, AnimatePresence, useInView, useAnimation } from 'framer-motion'
 import {
   Zap, Shield, Trophy, Swords, Users, ChevronDown,
@@ -1018,7 +1019,7 @@ function HeroSection({ onJoinClick }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           style={{ fontFamily: 'var(--font-display)', fontWeight: 700, lineHeight: 1.0, letterSpacing: '0.04em', textTransform: 'uppercase' }}
-          className="text-5xl sm:text-7xl lg:text-8xl"
+          className="text-4xl sm:text-7xl lg:text-8xl leading-tight"
         >
           <span style={{ color: 'var(--c-text)' }}>ASSEMBLE.</span>
           <br />
@@ -1030,7 +1031,7 @@ function HeroSection({ onJoinClick }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.4 }}
-          className="text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed"
+          className="text-base sm:text-xl max-w-2xl mx-auto leading-relaxed px-4"
           style={{ color: 'var(--c-text-dim)' }}
         >
           1v1 real-time coding duels. Same problem. Same second.{' '}
@@ -1039,6 +1040,9 @@ function HeroSection({ onJoinClick }) {
           </span>{' '}
           first takes the Elo.
         </motion.p>
+
+        {/* Dynamic 1v1 Battle Visualization */}
+        <HeroBattleMockup />
 
         {/* CTAs */}
         <motion.div
@@ -1075,7 +1079,7 @@ function HeroSection({ onJoinClick }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="flex items-center justify-center gap-8 flex-wrap pt-4"
+          className="grid grid-cols-2 sm:flex items-center justify-center gap-4 sm:gap-8 pt-4 w-full"
           style={{ borderTop: '1px solid var(--c-border)', paddingTop: 20 }}
         >
           {[
@@ -1272,7 +1276,7 @@ function MissionBriefingSection() {
             </div>
 
             {/* Code preview */}
-            <div style={{ background: 'var(--c-void)', border: '1px solid var(--c-border)', borderRadius: 0 }}>
+            <div className="min-w-0" style={{ background: 'var(--c-void)', border: '1px solid var(--c-border)', borderRadius: 0 }}>
               <div className="flex items-center justify-between px-4 py-2 border-b" style={{ borderColor: 'var(--c-border)' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--c-text-mute)' }}>// engine_{curr.id}.js</span>
                 <span className="flex items-center gap-1.5" style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#10b981' }}>
@@ -1460,7 +1464,7 @@ function LoadoutSection() {
           <div style={{ background: 'var(--c-void)', border: '1px solid var(--c-border)' }}>
             {/* Tab bar */}
             <div className="flex items-center justify-between px-4 py-3 border-b flex-wrap gap-3" style={{ borderColor: 'var(--c-border)', background: 'var(--c-panel)' }}>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-wrap">
                 {Object.entries(LANG_SNIPPETS).map(([id, l]) => (
                   <button
                     key={id}
