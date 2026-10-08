@@ -872,8 +872,6 @@ export default function Lobby() {
   function startQueue() {
     if (!topic || queuing) return
     setQueuing(true)
-    if (connected) { emit('join_queue', { topic, difficulty: diff }) }
-    else { socket.once('connect', () => emit('join_queue', { topic, difficulty: diff })) }
   }
 
   function cancelQueue() { emit('leave_queue'); setQueuing(false) }

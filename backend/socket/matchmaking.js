@@ -36,6 +36,10 @@ const { trackRoom, isUserInActiveMatch } = require('./match')
 // Map<topicKey, WaitingEntry[]>
 const queues = new Map()
 
+// ── In-memory lock for matching players ────────────────────────
+// Prevents a user from joining the queue while db is spinning up their match
+const matchingUsers = new Set()
+
 /** Current Elo band for a player who joined at `joinedAt` */
 function currentBand(joinedAt) {
   const waitSec = (Date.now() - joinedAt) / 1000
@@ -158,7 +162,15 @@ function sweepQueues(io) {
           bucket.splice(j, 1)
           bucket.splice(i, 1)
           const [t, d] = topicKey.split(':')
-          executeMatch(io, p1, p2, t, d)
+          
+          matchingUsers.add(p1.userId)
+          matchingUsers.add(p2.userId)
+          
+          executeMatch(io, p1, p2, t, d).finally(() => {
+            matchingUsers.delete(p1.userId)
+            matchingUsers.delete(p2.userId)
+          })
+          
           return
         }
       }
@@ -203,8 +215,8 @@ function registerMatchmaking(io) {
       const topicKey = `${topic}:${difficulty}`
 
       // Guard: don't let user join if they are already in an active match
-      if (isUserInActiveMatch(userId)) {
-        console.warn(`[Queue] User ${username} tried to join queue while in active match`)
+      if (matchingUsers.has(userId) || isUserInActiveMatch(userId)) {
+        console.warn(`[Queue] User ${username} tried to join queue while in active match or matching`)
         return
       }
 
@@ -235,7 +247,14 @@ function registerMatchmaking(io) {
         // ── Match found! ──────────────────────────────────
         const { opponent, index } = result
         bucket.splice(index, 1)   // remove opponent from queue
-        executeMatch(io, newEntry, opponent, topic, difficulty)
+        
+        matchingUsers.add(newEntry.userId)
+        matchingUsers.add(opponent.userId)
+        
+        executeMatch(io, newEntry, opponent, topic, difficulty).finally(() => {
+          matchingUsers.delete(newEntry.userId)
+          matchingUsers.delete(opponent.userId)
+        })
       } else {
         // ── No match yet — push into queue ────────────────
         bucket.push(newEntry)
