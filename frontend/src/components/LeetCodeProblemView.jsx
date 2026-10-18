@@ -17,11 +17,11 @@ function renderInline(text) {
       return (
         <code
           key={i}
-          className="font-mono text-[11px] px-1.5 py-0.5 rounded mx-0.5"
+          className="font-mono text-[11.5px] px-1.5 py-0.5 rounded font-medium inline-block my-0.5"
           style={{
-            background: 'rgba(255, 255, 255, 0.07)',
-            color: '#93c5fd',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'var(--c-panel2)',
+            color: 'var(--c-text)',
+            border: '1px solid var(--c-border)',
             fontFamily: "'JetBrains Mono', 'Fira Code', monospace"
           }}
         >
@@ -215,6 +215,21 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
         const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/)
         if (imgMatch) {
           paragraphs.push({ type: 'image', url: imgMatch[2], alt: imgMatch[1] })
+        } else if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+          // Check if previous paragraph was a table
+          const prev = paragraphs[paragraphs.length - 1]
+          const cells = trimmed.slice(1, -1).split('|').map(c => c.trim())
+          const isSeparator = cells.every(c => /^:?-+:?$/.test(c))
+          
+          if (prev && prev.type === 'table') {
+            if (!isSeparator) {
+              prev.rows.push(cells)
+            }
+          } else {
+            paragraphs.push({ type: 'table', headers: cells, rows: [] })
+          }
+        } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+          paragraphs.push({ type: 'list_item', content: trimmed.slice(2).trim() })
         } else {
           paragraphs.push({ type: 'text', content: trimmed })
         }
@@ -345,9 +360,9 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
             onClick={() => setShowTopics(!showTopics)}
             className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-medium transition-colors hover:bg-[color:var(--c-panel2)]"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.06)',
+              backgroundColor: 'var(--c-panel2)',
               color: 'var(--c-text-dim)',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
+              border: '1px solid var(--c-border)'
             }}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -361,9 +376,9 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
           <div
             className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-medium cursor-default"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              backgroundColor: 'var(--c-panel2)',
               color: 'var(--c-text-mute)',
-              border: '1px solid rgba(255, 255, 255, 0.06)'
+              border: '1px solid var(--c-border)'
             }}
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -382,9 +397,9 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                 key={idx}
                 className="px-2 py-0.5 rounded-md font-mono text-[10.5px] font-medium"
                 style={{
-                  backgroundColor: 'rgba(34, 211, 238, 0.1)',
-                  color: '#38bdf8',
-                  border: '1px solid rgba(34, 211, 238, 0.2)'
+                  backgroundColor: 'var(--c-panel2)',
+                  color: 'var(--c-text)',
+                  border: '1px solid var(--c-border)'
                 }}
               >
                 {tag}
@@ -405,8 +420,8 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                   className="rounded-lg p-3 my-2 font-mono text-[12px] overflow-x-auto"
                   style={{
                     background: 'var(--c-panel2)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    color: '#38bdf8'
+                    border: '1px solid var(--c-border)',
+                    color: 'var(--c-text)'
                   }}
                 >
                   <pre className="whitespace-pre">{item.content}</pre>
@@ -415,9 +430,51 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
             }
             if (item.type === 'image') {
               return (
-                <div key={idx} className="bg-white p-2 rounded-lg my-3 border" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
-                  <img src={item.url} alt={item.alt} className="max-w-full h-auto max-h-64 object-contain" />
+                <div key={idx} className="bg-white p-2.5 rounded-lg my-3 border inline-block" style={{ borderColor: 'var(--c-border)' }}>
+                  <img
+                    src={item.url}
+                    alt={item.alt || "Problem illustration"}
+                    className="max-w-full h-auto max-h-64 object-contain rounded"
+                    onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+                  />
                 </div>
+              )
+            }
+            if (item.type === 'table') {
+              return (
+                <div key={idx} className="my-3 overflow-x-auto">
+                  <table className="border-collapse text-[12px] border" style={{ borderColor: 'var(--c-border)' }}>
+                    {item.headers && item.headers.length > 0 && (
+                      <thead>
+                        <tr style={{ background: 'var(--c-panel2)' }}>
+                          {item.headers.map((h, hi) => (
+                            <th key={hi} className="px-4 py-1.5 border font-semibold text-center" style={{ borderColor: 'var(--c-border)', color: 'var(--c-text)' }}>
+                              {renderInline(h)}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                    )}
+                    <tbody>
+                      {item.rows.map((row, ri) => (
+                        <tr key={ri} className="hover:bg-[color:var(--c-panel2)]/50">
+                          {row.map((cell, ci) => (
+                            <td key={ci} className="px-4 py-1.5 border text-center font-mono text-[12px]" style={{ borderColor: 'var(--c-border)', color: 'var(--c-text)' }}>
+                              {renderInline(cell)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            }
+            if (item.type === 'list_item') {
+              return (
+                <li key={idx} className="ml-5 list-disc pl-1 leading-relaxed text-[13px]">
+                  {renderInline(item.content)}
+                </li>
               )
             }
             return (
@@ -444,12 +501,17 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                 className="rounded-lg overflow-hidden"
                 style={{
                   backgroundColor: 'var(--c-panel2)',
-                  border: '1px solid rgba(255, 255, 255, 0.09)'
+                  border: '1px solid var(--c-border)'
                 }}
               >
                 {ex.image && (
-                  <div className="bg-white p-2 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.06)' }}>
-                    <img src={ex.image} alt={`Example ${ex.num || idx + 1}`} className="max-w-full h-auto max-h-64 object-contain" />
+                  <div className="bg-white p-2.5 border-b flex items-center justify-center" style={{ borderColor: 'var(--c-border)' }}>
+                    <img
+                      src={ex.image}
+                      alt={`Example ${ex.num || idx + 1}`}
+                      className="max-w-full h-auto max-h-64 object-contain rounded"
+                      onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+                    />
                   </div>
                 )}
                 {/* Visual Tree / ASCII Diagram Preview if present */}
@@ -458,8 +520,8 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                     className="px-4 py-3 font-mono text-[12px] leading-tight overflow-x-auto border-b"
                     style={{
                       backgroundColor: 'var(--c-panel)',
-                      borderColor: 'rgba(255, 255, 255, 0.06)',
-                      color: '#38bdf8'
+                      borderColor: 'var(--c-border)',
+                      color: 'var(--c-text)'
                     }}
                   >
                     <pre className="whitespace-pre font-mono font-medium">{ex.diagram}</pre>
@@ -504,23 +566,31 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
             Constraints:
           </h3>
           <ul className="space-y-1.5 text-[12.5px] text-[color:var(--c-text)] pl-1">
-            {constraints.map((c, idx) => (
-              <li key={idx} className="flex items-start gap-2.5 leading-relaxed">
-                <span className="text-[color:var(--c-text-mute)] text-[10px] mt-1 shrink-0">•</span>
-                <div className="flex-1">
-                  {renderInline(c.startsWith('`') ? c : `\`${c}\``)}
-                </div>
-              </li>
-            ))}
+            {constraints.map((c, idx) => {
+              let content = c
+              if (!c.includes('`')) {
+                if (/^[0-9\s\-+*^≤≥<>=a-zA-Z_\[\].]+$/.test(c) && (/[<>=≤≥]/.test(c) || c.includes('length'))) {
+                  content = `\`${c}\``
+                }
+              }
+              return (
+                <li key={idx} className="flex items-start gap-2.5 leading-relaxed">
+                  <span className="text-[color:var(--c-text-mute)] text-[10px] mt-1 shrink-0">•</span>
+                  <div className="flex-1 text-[color:var(--c-text)]">
+                    {renderInline(content)}
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         </div>
       )}
       {/* ── Hints Section ──────────────────────────────────── */}
       {hints && hints.length > 0 && (
-        <div className="space-y-2 pt-5 border-t mt-4" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
+        <div className="space-y-2 pt-5 border-t mt-4" style={{ borderColor: 'var(--c-border)' }}>
           {hints.map((hint, idx) => (
-            <details key={idx} className="group overflow-hidden rounded-md" style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <summary className="cursor-pointer select-none px-4 py-2.5 text-[13px] font-medium text-[color:var(--c-text)] flex items-center justify-between hover:bg-[rgba(255,255,255,0.02)] transition-colors">
+            <details key={idx} className="group overflow-hidden rounded-md" style={{ backgroundColor: 'var(--c-panel2)', border: '1px solid var(--c-border)' }}>
+              <summary className="cursor-pointer select-none px-4 py-2.5 text-[13px] font-medium text-[color:var(--c-text)] flex items-center justify-between hover:bg-[color:var(--c-panel)] transition-colors">
                 <span className="flex items-center gap-2">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--c-text-mute)' }}>
                     <path d="M9 18h6" />
@@ -534,7 +604,7 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </summary>
-              <div className="px-4 py-3 text-[13px] leading-relaxed border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.05)', backgroundColor: 'var(--c-panel)', color: 'var(--c-text)' }}>
+              <div className="px-4 py-3 text-[13px] leading-relaxed border-t" style={{ borderColor: 'var(--c-border)', backgroundColor: 'var(--c-panel)', color: 'var(--c-text)' }}>
                 {renderInline(hint)}
               </div>
             </details>
