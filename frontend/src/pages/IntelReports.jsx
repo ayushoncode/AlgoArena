@@ -241,8 +241,8 @@ export default function IntelReports() {
             <div className="inline-flex items-center gap-2 px-3 py-1 font-mono text-xs font-bold uppercase tracking-widest bg-rose-500/10 border border-rose-500/30 text-rose-400">
               <FileText size={13} /> {cfg.label}
             </div>
-            <h1 className="font-display font-black text-3xl sm:text-5xl text-[color:var(--c-text)] uppercase tracking-tight">
-              {cfg.title} <span style={{ color: "var(--c-red)" }}>{cfg.titleAccent}</span>
+            <h1 className="font-display font-black text-3xl sm:text-5xl uppercase tracking-tight">
+              <span style={{ color: "var(--c-red)" }}>{cfg.title} </span><span style={{ color: "var(--c-blue)" }}>{cfg.titleAccent}</span>
             </h1>
             <p className="font-sans text-sm sm:text-base text-[color:var(--c-text-dim)] max-w-xl">{cfg.sub}</p>
           </div>

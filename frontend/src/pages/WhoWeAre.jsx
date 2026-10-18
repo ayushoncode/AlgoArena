@@ -174,9 +174,9 @@ export default function WhoWeAre() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="font-display font-black text-4xl sm:text-6xl md:text-7xl tracking-tight text-[color:var(--c-text)] uppercase leading-none"
+              className="font-display font-black text-4xl sm:text-6xl md:text-7xl tracking-tight uppercase leading-none"
             >
-              {story.headline.split(".")[0]}. <span style={{ color: "var(--c-red)" }}>{story.headline.split(".")[1] || "ONE ARENA."}</span>
+              <span style={{ color: "var(--c-red)" }}>{story.headline.split(".")[0]}.</span> <span style={{ color: "var(--c-blue)" }}>{story.headline.split(".")[1] || "ONE ARENA."}</span>
             </motion.h1>
           </div>
 
@@ -526,8 +526,8 @@ export default function WhoWeAre() {
         <section ref={timelineRef} className="max-w-4xl mx-auto px-5 sm:px-8 my-20">
           <div className="text-center mb-12 space-y-2">
             <span className="section-label">// ORIGIN LOG</span>
-            <h2 className="font-display font-black text-3xl sm:text-4xl text-[color:var(--c-text)] uppercase tracking-tight">
-              HOW ALGOARENA WAS <span style={{ color: "var(--c-red)" }}>FORGED</span>
+            <h2 className="font-display font-black text-3xl sm:text-4xl uppercase tracking-tight">
+              <span style={{ color: "var(--c-red)" }}>HOW ALGOARENA WAS </span><span style={{ color: "var(--c-blue)" }}>FORGED</span>
             </h2>
           </div>
 
@@ -632,8 +632,8 @@ export default function WhoWeAre() {
       <section className="max-w-4xl mx-auto px-5 sm:px-8 mt-16 text-center">
         <HudPanel className="p-8 sm:p-12 relative overflow-hidden border-rose-500/40 bg-[color:var(--c-panel2)]" glow glowColor="rgba(225,29,72,0.15)">
           <div className="space-y-4 max-w-xl mx-auto relative z-10">
-            <h2 className="font-display font-black text-3xl sm:text-5xl text-[color:var(--c-text)] uppercase tracking-tight">
-              WANT TO <span style={{ color: "var(--c-red)" }}>DUEL US?</span>
+            <h2 className="font-display font-black text-3xl sm:text-5xl uppercase tracking-tight">
+              <span style={{ color: "var(--c-red)" }}>WANT TO </span><span style={{ color: "var(--c-blue)" }}>DUEL US?</span>
             </h2>
             <p className="font-sans text-sm sm:text-base text-[color:var(--c-text-dim)] leading-relaxed">
               Step into the arena, compete in real-time 1v1 algorithmic battles, and rise through the ELO ranks.

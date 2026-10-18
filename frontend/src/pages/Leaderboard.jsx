@@ -225,11 +225,11 @@ export default function Leaderboard() {
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
           className="max-w-4xl mx-auto space-y-3 relative z-10">
           <p className="section-label">// Global Arena Ranks</p>
-          <h1 className="font-display font-black text-4xl sm:text-6xl tracking-tight" style={{ color: "var(--c-text)", letterSpacing: "0.02em" }}>
+          <h1 className="font-display font-black text-4xl sm:text-6xl tracking-tight" style={{ letterSpacing: "0.02em" }}>
             {instituteFilter ? (
               <span className="text-xl sm:text-3xl line-clamp-1 truncate max-w-full" style={{ color: "var(--c-red)" }}>{instituteFilter.toUpperCase()}</span>
             ) : (
-              <>GLOBAL <span style={{ color: "var(--c-red)" }}>RANKINGS</span></>
+              <><span style={{ color: "var(--c-red)" }}>GLOBAL </span><span style={{ color: "var(--c-blue)" }}>RANKINGS</span></>
             )}
           </h1>
           <p className="font-sans text-sm sm:text-base max-w-xl mx-auto" style={{ color: "var(--c-text-mute)" }}>
