@@ -187,7 +187,7 @@ for (let i = 0; i < testCases.length; i++) {
       if (Array.isArray(arg)) {
         const pName = paramNames[argIdx] || '';
         const isTreeParam = ['root', 'p', 'q', 't1', 't2', 'node', 'tree'].includes(pName);
-        const isListParam = ['head', 'l1', 'l2', 'list'].includes(pName);
+        const isListParam = ['head', 'l1', 'l2', 'list', 'list1', 'list2'].includes(pName);
         const isArrayParam = ['lists', 'preorder', 'inorder', 'postorder', 'nums', 'arr', 'edges', 'matrix', 'grid', 'words', 'dictionary'].includes(pName);
 
         if (isTreeParam || arg.includes(null)) return __buildTree(arg);
@@ -365,7 +365,7 @@ for i, tc in enumerate(test_cases):
             p_name = param_list[arg_idx].name.lower() if arg_idx < len(param_list) else ''
             p_anno = str(param_list[arg_idx].annotation) if arg_idx < len(param_list) else ''
             is_tree_param = 'treenode' in p_anno.lower() or p_name in ('root', 'p', 'q', 't1', 't2', 'node', 'tree')
-            is_list_param = 'listnode' in p_anno.lower() or p_name in ('head', 'l1', 'l2', 'list')
+            is_list_param = 'listnode' in p_anno.lower() or p_name in ('head', 'l1', 'l2', 'list', 'list1', 'list2')
             is_array_param = p_name in ('lists', 'preorder', 'inorder', 'postorder', 'nums', 'arr', 'edges', 'matrix', 'grid', 'words', 'dictionary')
 
             if isinstance(arg, list):

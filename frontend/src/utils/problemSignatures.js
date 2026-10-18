@@ -78,6 +78,10 @@ export const CANONICAL_SIGNATURES = {
     params: [{ name: 's', ...TYPE_STRING }],
     ret: TYPE_STRING,
   },
+  'longest common subsequence': {
+    params: [{ name: 'text1', ...TYPE_STRING }, { name: 'text2', ...TYPE_STRING }],
+    ret: TYPE_INT,
+  },
   'zigzag conversion': {
     params: [{ name: 's', ...TYPE_STRING }, { name: 'numRows', ...TYPE_INT }],
     ret: TYPE_STRING,
@@ -713,6 +717,10 @@ export const CANONICAL_SIGNATURES = {
   },
   'factorial trailing zeroes': {
     params: [{ name: 'n', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'maximum gap': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
     ret: TYPE_INT,
   },
   'dungeon game': {
