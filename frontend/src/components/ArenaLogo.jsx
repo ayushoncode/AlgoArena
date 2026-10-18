@@ -79,7 +79,7 @@ export function ArenaEmblem({ size = 32, glow = false, className = '', style = {
 
 /**
  * ArenaLogo — Full Brand Logo Component
- * Renders Emblem + "ALGO" (White) + "ARENA" (Crimson) + optional tagline
+ * Renders Emblem + "ALGO" (Red) + "ARENA" (Blue) + optional tagline
  */
 export function ArenaLogo({
   size = 'md',        // 'sm' | 'md' | 'lg' | 'xl' | number
@@ -122,8 +122,8 @@ export function ArenaLogo({
             alignItems: 'center',
           }}
         >
-          <span style={{ color: 'var(--c-text)' }}>ALGO</span>
-          <span style={{ color: 'var(--c-red)' }}>ARENA</span>
+          <span style={{ color: 'var(--c-red)' }}>ALGO</span>
+          <span style={{ color: 'var(--c-blue)' }}>ARENA</span>
         </div>
 
         {/* Tagline */}
