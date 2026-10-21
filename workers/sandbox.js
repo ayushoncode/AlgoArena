@@ -54,15 +54,25 @@ const TIMEOUT_MS = parseInt(process.env.SANDBOX_TIMEOUT_MS, 10) || 8000
 function buildJsRunner(testCases) {
   return `'use strict';
 
-function TreeNode(val, left, right) {
+function TreeNode(val, left, right, next) {
   this.val = (val===undefined ? 0 : val);
   this.left = (left===undefined ? null : left);
   this.right = (right===undefined ? null : right);
+  this.next = (next===undefined ? null : next);
 }
 
 function ListNode(val, next) {
   this.val = (val===undefined ? 0 : val);
   this.next = (next===undefined ? null : next);
+}
+
+function Node(val, neighbors, left, right, next, random) {
+  this.val = (val===undefined ? 0 : val);
+  this.neighbors = (neighbors===undefined ? [] : neighbors);
+  this.left = (left===undefined ? null : left);
+  this.right = (right===undefined ? null : right);
+  this.next = (next===undefined ? null : next);
+  this.random = (random===undefined ? null : random);
 }
 
 function __buildTree(arr) {
@@ -92,21 +102,99 @@ function __buildTree(arr) {
   return root;
 }
 
-function __buildList(arr) {
+function __buildList(arr, pos) {
   if (!Array.isArray(arr) || arr.length === 0) return null;
+  const nodes = [];
   const dummy = new ListNode(0);
   let curr = dummy;
   for (const v of arr) {
     if (v !== null && v !== undefined) {
-      curr.next = new ListNode(v);
+      const node = new ListNode(v);
+      nodes.push(node);
+      curr.next = node;
       curr = curr.next;
     }
+  }
+  if (typeof pos === 'number' && pos >= 0 && pos < nodes.length) {
+    curr.next = nodes[pos];
   }
   return dummy.next;
 }
 
-function __serialize(obj) {
-  if (obj === null || obj === undefined) return null;
+function __buildGraph(adjList) {
+  if (!Array.isArray(adjList) || adjList.length === 0) return null;
+  const nodes = [];
+  for (let i = 1; i <= adjList.length; i++) {
+    nodes.push(new Node(i, []));
+  }
+  for (let i = 0; i < adjList.length; i++) {
+    const neighbors = adjList[i];
+    if (Array.isArray(neighbors)) {
+      for (const neighborVal of neighbors) {
+        if (neighborVal >= 1 && neighborVal <= nodes.length) {
+          nodes[i].neighbors.push(nodes[neighborVal - 1]);
+        }
+      }
+    }
+  }
+  return nodes[0];
+}
+
+function __serialize(obj, expected) {
+  if (obj === null || obj === undefined) {
+    if (typeof expected === 'string' && expected.trim() === '[]') return [];
+    return null;
+  }
+  if (typeof obj === 'object' && Array.isArray(obj.neighbors) && 'val' in obj) {
+    const map = new Map();
+    const q = [obj];
+    map.set(obj.val, obj);
+    while (q.length > 0) {
+      const curr = q.shift();
+      if (curr.neighbors) {
+        for (const neighbor of curr.neighbors) {
+          if (neighbor && !map.has(neighbor.val)) {
+            map.set(neighbor.val, neighbor);
+            q.push(neighbor);
+          }
+        }
+      }
+    }
+    const maxVal = Math.max(...map.keys());
+    const adj = [];
+    for (let i = 1; i <= maxVal; i++) {
+      const n = map.get(i);
+      adj.push(n ? (n.neighbors || []).filter(Boolean).map(nb => nb.val) : []);
+    }
+    return adj;
+  }
+  if (typeof expected === 'string' && (expected.includes('#') || expected.includes('"#"'))) {
+    const res = [];
+    let leftmost = obj;
+    while (leftmost) {
+      let curr = leftmost;
+      let nextLeftmost = null;
+      while (curr) {
+        res.push(curr.val);
+        if (!nextLeftmost) {
+          if (curr.left) nextLeftmost = curr.left;
+          else if (curr.right) nextLeftmost = curr.right;
+        }
+        curr = curr.next;
+      }
+      res.push('#');
+      if (!nextLeftmost) {
+        let temp = leftmost;
+        while (temp && !nextLeftmost) {
+          if (temp.left) nextLeftmost = temp.left;
+          else if (temp.right) nextLeftmost = temp.right;
+          temp = temp.next;
+        }
+      }
+      leftmost = nextLeftmost;
+    }
+    return res;
+  }
   if (obj instanceof TreeNode || (typeof obj === 'object' && ('left' in obj || 'right' in obj) && 'val' in obj)) {
     const res = [];
     const q = [obj];
@@ -125,8 +213,10 @@ function __serialize(obj) {
   }
   if (obj instanceof ListNode || (typeof obj === 'object' && 'next' in obj && 'val' in obj)) {
     const res = [];
+    const seen = new Set();
     let curr = obj;
-    while (curr) {
+    while (curr && !seen.has(curr) && res.length < 5000) {
+      seen.add(curr);
       res.push(curr.val);
       curr = curr.next;
     }
@@ -141,7 +231,7 @@ let src = '';
 try {
   src = require('fs').readFileSync('./solution.js', 'utf8');
   const loader = new Function(
-    'TreeNode', 'ListNode', 'exports', 'module', 'console',
+    'TreeNode', 'ListNode', 'Node', 'exports', 'module', 'console',
     src + '\\n\\n' +
     'if (typeof solution === "function") return solution;\\n' +
     'if (typeof Solution === "function") {\\n' +
@@ -152,7 +242,7 @@ try {
     '}\\n' +
     'return undefined;'
   );
-  solution = loader(TreeNode, ListNode, {}, {}, { log: () => {} });
+  solution = loader(TreeNode, ListNode, Node, {}, {}, { log: () => {} });
   if (typeof solution !== 'function') {
     throw new Error("No function named 'solution' found. Please define: function solution(...) { ... }");
   }
@@ -183,24 +273,32 @@ for (let i = 0; i < testCases.length; i++) {
   
   try {
     const rawArgs = JSON.parse('[' + tc.input + ']');
-    const convertedArgs = rawArgs.map((arg, argIdx) => {
-      if (Array.isArray(arg)) {
-        const pName = paramNames[argIdx] || '';
-        const isTreeParam = ['root', 'p', 'q', 't1', 't2', 'node', 'tree'].includes(pName);
-        const isListParam = ['head', 'l1', 'l2', 'list', 'list1', 'list2'].includes(pName);
-        const isArrayParam = ['lists', 'preorder', 'inorder', 'postorder', 'nums', 'arr', 'edges', 'matrix', 'grid', 'words', 'dictionary'].includes(pName);
+    let convertedArgs;
+    if (rawArgs.length === 2 && Array.isArray(rawArgs[0]) && typeof rawArgs[1] === 'number' && (isListFn || ['head', 'list'].includes(paramNames[0] || ''))) {
+      const head = __buildList(rawArgs[0], rawArgs[1]);
+      convertedArgs = paramNames.length === 1 ? [head] : [head, rawArgs[1]];
+    } else {
+      convertedArgs = rawArgs.map((arg, argIdx) => {
+        if (Array.isArray(arg)) {
+          const pName = paramNames[argIdx] || '';
+          const isTreeParam = ['root', 'p', 'q', 't1', 't2', 'node', 'tree'].includes(pName);
+          const isListParam = ['head', 'l1', 'l2', 'list', 'list1', 'list2'].includes(pName);
+          const isGraphParam = ['node'].includes(pName) || fnSrc.includes('.neighbors');
+          const isArrayParam = ['lists', 'preorder', 'inorder', 'postorder', 'nums', 'arr', 'edges', 'matrix', 'grid', 'words', 'dictionary'].includes(pName);
 
-        if (isTreeParam || arg.includes(null)) return __buildTree(arg);
-        if (isListParam) return __buildList(arg);
-        if (isTreeFn && !isListParam && !isArrayParam) return __buildTree(arg);
-        if (isListFn && !isTreeParam && !isArrayParam) return __buildList(arg);
-      }
-      return arg;
-    });
+          if (isGraphParam) return __buildGraph(arg);
+          if (isTreeParam || arg.includes(null)) return __buildTree(arg);
+          if (isListParam) return __buildList(arg);
+          if (isTreeFn && !isListParam && !isArrayParam) return __buildTree(arg);
+          if (isListFn && !isTreeParam && !isArrayParam) return __buildList(arg);
+        }
+        return arg;
+      });
+    }
 
     const retVal = solution(...convertedArgs);
     const actual = retVal !== undefined ? retVal : (convertedArgs.length > 0 ? convertedArgs[0] : null);
-    const serialized = __serialize(actual);
+    const serialized = __serialize(actual, tc.output);
     
     resultObj = {
       index:     i + 1,
@@ -235,15 +333,25 @@ function buildPyRunner(testCases) {
 from typing import List, Optional, Dict, Set, Tuple
 
 class TreeNode:
-    def __init__(self, val=0, left=None, right=None):
+    def __init__(self, val=0, left=None, right=None, next=None):
         self.val = val
         self.left = left
         self.right = right
+        self.next = next
 
 class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
+
+class Node:
+    def __init__(self, val=0, neighbors=None, left=None, right=None, next=None, random=None):
+        self.val = val
+        self.neighbors = neighbors if neighbors is not None else []
+        self.left = left
+        self.right = right
+        self.next = next
+        self.random = random
 
 def __build_tree(arr):
     if not isinstance(arr, list) or len(arr) == 0 or arr[0] is None:
@@ -268,22 +376,79 @@ def __build_tree(arr):
                     q.append(curr.right)
     return root
 
-def __build_list(arr):
+def __build_list(arr, pos=None):
     if not isinstance(arr, list) or len(arr) == 0:
         return None
     dummy = ListNode(0)
     curr = dummy
+    nodes = []
     for v in arr:
         if v is not None:
-            curr.next = ListNode(v)
+            node = ListNode(v)
+            nodes.append(node)
+            curr.next = node
             curr = curr.next
+    if isinstance(pos, int) and 0 <= pos < len(nodes):
+        curr.next = nodes[pos]
     return dummy.next
+
+def __build_graph(adj_list):
+    if not isinstance(adj_list, list) or len(adj_list) == 0:
+        return None
+    nodes = [Node(i) for i in range(1, len(adj_list) + 1)]
+    for i, neighbors in enumerate(adj_list):
+        if isinstance(neighbors, list):
+            for nb_val in neighbors:
+                if 1 <= nb_val <= len(nodes):
+                    nodes[i].neighbors.append(nodes[nb_val - 1])
+    return nodes[0]
 
 def __serialize(obj, expected=''):
     if obj is None:
         if isinstance(expected, str) and expected.strip() == '[]':
             return []
         return None
+    if hasattr(obj, 'neighbors') and isinstance(getattr(obj, 'neighbors', None), list) and hasattr(obj, 'val'):
+        node_map = {}
+        q = collections.deque([obj])
+        node_map[obj.val] = obj
+        while q:
+            curr = q.popleft()
+            for nb in (curr.neighbors or []):
+                if nb and nb.val not in node_map:
+                    node_map[nb.val] = nb
+                    q.append(nb)
+        max_val = max(node_map.keys()) if node_map else 0
+        adj = []
+        for i in range(1, max_val + 1):
+            n = node_map.get(i)
+            adj.append([nb.val for nb in (n.neighbors or []) if nb] if n else [])
+        return adj
+    if isinstance(expected, str) and ('#' in expected or '"#"' in expected):
+        res = []
+        leftmost = obj
+        while leftmost:
+            curr = leftmost
+            next_leftmost = None
+            while curr:
+                res.append(curr.val)
+                if not next_leftmost:
+                    if getattr(curr, 'left', None):
+                        next_leftmost = curr.left
+                    elif getattr(curr, 'right', None):
+                        next_leftmost = curr.right
+                curr = getattr(curr, 'next', None)
+            res.append('#')
+            if not next_leftmost:
+                temp = leftmost
+                while temp and not next_leftmost:
+                    if getattr(temp, 'left', None):
+                        next_leftmost = temp.left
+                    elif getattr(temp, 'right', None):
+                        next_leftmost = temp.right
+                    temp = getattr(temp, 'next', None)
+            leftmost = next_leftmost
+        return res
     if isinstance(obj, TreeNode):
         res = []
         q = collections.deque([obj])
@@ -300,8 +465,10 @@ def __serialize(obj, expected=''):
         return res
     if isinstance(obj, ListNode):
         res = []
+        seen = set()
         curr = obj
-        while curr:
+        while curr and curr not in seen and len(res) < 5000:
+            seen.add(curr)
             res.append(curr.val)
             curr = curr.next
         return res
@@ -314,6 +481,7 @@ try:
     ns = {
         'TreeNode': TreeNode,
         'ListNode': ListNode,
+        'Node': Node,
         'List': List,
         'Optional': Optional,
         'Dict': Dict,
@@ -361,29 +529,36 @@ for i, tc in enumerate(test_cases):
     try:
         raw_args = json.loads('[' + tc['input'] + ']')
         converted_args = []
-        for arg_idx, arg in enumerate(raw_args):
-            p_name = param_list[arg_idx].name.lower() if arg_idx < len(param_list) else ''
-            p_anno = str(param_list[arg_idx].annotation) if arg_idx < len(param_list) else ''
-            is_tree_param = 'treenode' in p_anno.lower() or p_name in ('root', 'p', 'q', 't1', 't2', 'node', 'tree')
-            is_list_param = 'listnode' in p_anno.lower() or p_name in ('head', 'l1', 'l2', 'list', 'list1', 'list2')
-            is_array_param = p_name in ('lists', 'preorder', 'inorder', 'postorder', 'nums', 'arr', 'edges', 'matrix', 'grid', 'words', 'dictionary')
+        if len(raw_args) == 2 and isinstance(raw_args[0], list) and isinstance(raw_args[1], int) and (is_list or (param_list and param_list[0].name.lower() in ('head', 'list'))):
+            head = __build_list(raw_args[0], raw_args[1])
+            converted_args = [head] if len(param_list) == 1 else [head, raw_args[1]]
+        else:
+            for arg_idx, arg in enumerate(raw_args):
+                p_name = param_list[arg_idx].name.lower() if arg_idx < len(param_list) else ''
+                p_anno = str(param_list[arg_idx].annotation) if arg_idx < len(param_list) else ''
+                is_tree_param = 'treenode' in p_anno.lower() or p_name in ('root', 'p', 'q', 't1', 't2', 'node', 'tree')
+                is_list_param = 'listnode' in p_anno.lower() or p_name in ('head', 'l1', 'l2', 'list', 'list1', 'list2')
+                is_graph_param = p_name in ('node',) or 'neighbors' in fn_src
+                is_array_param = p_name in ('lists', 'preorder', 'inorder', 'postorder', 'nums', 'arr', 'edges', 'matrix', 'grid', 'words', 'dictionary')
 
-            if isinstance(arg, list):
-                if is_tree_param or None in arg:
-                    converted_args.append(__build_tree(arg))
-                elif is_list_param:
-                    if p_name == 'lists' or 'list[' in p_anno.lower():
-                        converted_args.append([__build_list(item) if isinstance(item, list) else item for item in arg])
-                    else:
+                if isinstance(arg, list):
+                    if is_graph_param:
+                        converted_args.append(__build_graph(arg))
+                    elif is_tree_param or None in arg:
+                        converted_args.append(__build_tree(arg))
+                    elif is_list_param:
+                        if p_name == 'lists' or 'list[' in p_anno.lower():
+                            converted_args.append([__build_list(item) if isinstance(item, list) else item for item in arg])
+                        else:
+                            converted_args.append(__build_list(arg))
+                    elif is_tree and not is_list_param and not is_array_param:
+                        converted_args.append(__build_tree(arg))
+                    elif is_list and not is_tree_param and not is_array_param:
                         converted_args.append(__build_list(arg))
-                elif is_tree and not is_list_param and not is_array_param:
-                    converted_args.append(__build_tree(arg))
-                elif is_list and not is_tree_param and not is_array_param:
-                    converted_args.append(__build_list(arg))
+                    else:
+                        converted_args.append(arg)
                 else:
                     converted_args.append(arg)
-            else:
-                converted_args.append(arg)
 
         ret_val = solution(*converted_args)
         if ret_val is not None:
@@ -468,6 +643,19 @@ struct ListNode {
     ListNode(int x, ListNode *next) : val(x), next(next) {}
 };
 
+struct Node {
+    int val;
+    vector<Node*> neighbors;
+    Node* left;
+    Node* right;
+    Node* next;
+    Node* random;
+    Node() : val(0), left(nullptr), right(nullptr), next(nullptr), random(nullptr) {}
+    Node(int _val) : val(_val), left(nullptr), right(nullptr), next(nullptr), random(nullptr) {}
+    Node(int _val, vector<Node*> _neighbors) : val(_val), neighbors(_neighbors), left(nullptr), right(nullptr), next(nullptr), random(nullptr) {}
+    Node(int _val, Node* _left, Node* _right, Node* _next) : val(_val), left(_left), right(_right), next(_next), random(nullptr) {}
+};
+
 inline TreeNode* __build_tree(const json& j) {
     if (j.is_null() || !j.is_array() || j.empty() || j[0].is_null()) return nullptr;
     TreeNode* root = new TreeNode(j[0].get<int>());
@@ -536,7 +724,8 @@ inline json __serialize_list(ListNode* head) {
     if (!head) return json::array();
     json res = json::array();
     ListNode* curr = head;
-    while (curr) {
+    unordered_set<ListNode*> seen;
+    while (curr && seen.insert(curr).second && res.size() < 5000) {
         res.push_back(curr->val);
         curr = curr->next;
     }

@@ -578,6 +578,16 @@ export const CANONICAL_SIGNATURES = {
     params: [{ name: 's', ...TYPE_STRING }],
     ret: TYPE_BOOL,
   },
+  'populating next right pointers in each node': {
+    params: [{ name: 'root', ...TYPE_TREE }],
+    ret: TYPE_TREE,
+    isTree: true,
+  },
+  'populating next right pointers in each node ii': {
+    params: [{ name: 'root', ...TYPE_TREE }],
+    ret: TYPE_TREE,
+    isTree: true,
+  },
   'word ladder': {
     params: [{ name: 'beginWord', ...TYPE_STRING }, { name: 'endWord', ...TYPE_STRING }, { name: 'wordList', ...TYPE_STR_LIST }],
     ret: TYPE_INT,
@@ -651,6 +661,11 @@ export const CANONICAL_SIGNATURES = {
     ret: TYPE_STR_LIST_RET,
   },
   'linked list cycle': {
+    params: [{ name: 'head', ...TYPE_LIST }],
+    ret: TYPE_BOOL,
+    isList: true,
+  },
+  'linked list cycle detection': {
     params: [{ name: 'head', ...TYPE_LIST }],
     ret: TYPE_BOOL,
     isList: true,
