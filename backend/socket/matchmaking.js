@@ -93,11 +93,25 @@ async function executeMatch(io, entryA, entryB, topic, difficulty) {
   if (socketB) socketB.join(roomId)
 
   try {
-    const { rows: problems } = await db.query(
+    let { rows: problems } = await db.query(
       `SELECT id FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY RANDOM() LIMIT 1`,
       [topic, difficulty]
     )
-    const problemId = problems[0]?.id ?? null
+    let problemId = problems[0]?.id ?? null
+    if (!problemId) {
+      const { rows: topicProblems } = await db.query(
+        `SELECT id FROM problems WHERE topic = $1 ORDER BY RANDOM() LIMIT 1`,
+        [topic]
+      )
+      problemId = topicProblems[0]?.id ?? null
+    }
+    if (!problemId) {
+      const { rows: diffProblems } = await db.query(
+        `SELECT id FROM problems WHERE difficulty = $1 ORDER BY RANDOM() LIMIT 1`,
+        [difficulty]
+      )
+      problemId = diffProblems[0]?.id ?? null
+    }
     const { rows } = await db.query(
       `INSERT INTO matches (player_one_id, player_two_id, problem_id, topic, difficulty, status)
        VALUES ($1, $2, $3, $4, $5, 'active') RETURNING id`,

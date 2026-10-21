@@ -9,7 +9,8 @@ import {
   Swords, Users, Zap, Target, Copy, Check, X, Hash,
   Radio, Shield, ChevronRight, Wifi, WifiOff, Clock,
   Brackets, Type, Link, GitBranch, Network, Layers,
-  Search, ArrowUpDown, Shuffle, Sparkles, Play, CheckCircle2
+  Search, ArrowUpDown, Shuffle, Sparkles, Play, CheckCircle2,
+  GitCommit, Compass, Cpu, Boxes, Flame
 } from 'lucide-react'
 import {
   HudPanel, HudButton, GhostButton, DangerButton, RankBadge,
@@ -27,15 +28,22 @@ const TOPICS = [
     id: 'arrays',
     label: 'Arrays',
     icon: Brackets,
-    subtopics: ['Two Pointers', 'Sliding Window', 'Prefix Sums'],
-    desc: 'Sequence manipulation & contiguous window algorithms'
+    subtopics: ['Matrix', 'Prefix Sums', 'Subarrays'],
+    desc: 'Sequence manipulation, matrix algebra & contiguous subarrays'
+  },
+  {
+    id: 'two-pointers',
+    label: 'Two Pointers',
+    icon: GitCommit,
+    subtopics: ['Sliding Window', 'Pair Sums', 'Fast-Slow'],
+    desc: 'Dual pointer traversals, window expansion & shrinking'
   },
   {
     id: 'strings',
     label: 'Strings',
     icon: Type,
-    subtopics: ['Anagrams', 'Palindromes', 'Z-Algorithm'],
-    desc: 'Pattern matching, text parsing & substring queries'
+    subtopics: ['Anagrams', 'Palindromes', 'Text Parsing'],
+    desc: 'Pattern matching, text parsing & string transformations'
   },
   {
     id: 'linked-lists',
@@ -45,8 +53,22 @@ const TOPICS = [
     desc: 'Node pointers, fast-slow runners & memory links'
   },
   {
+    id: 'stack',
+    label: 'Stack & Queue',
+    icon: Boxes,
+    subtopics: ['Monotonic Stack', 'Parentheses', 'RPN'],
+    desc: 'LIFO & FIFO structures, monotonic bounds & expressions'
+  },
+  {
+    id: 'binary-search',
+    label: 'Binary Search',
+    icon: Search,
+    subtopics: ['Rotated Arrays', 'Search Space', 'Lower Bound'],
+    desc: 'Logarithmic search space reduction & threshold bounds'
+  },
+  {
     id: 'trees',
-    label: 'Trees',
+    label: 'Trees & BST',
     icon: GitBranch,
     subtopics: ['Traversal', 'LCA', 'Path Sums'],
     desc: 'Hierarchical node branching, BST & depth exploration'
@@ -55,29 +77,50 @@ const TOPICS = [
     id: 'graphs',
     label: 'Graphs',
     icon: Network,
-    subtopics: ['Shortest Path', 'Union-Find', 'Topo Sort'],
+    subtopics: ['BFS/DFS', 'Shortest Path', 'Topo Sort'],
     desc: 'Vertices, edges, traversal & network connectivity'
   },
   {
     id: 'dp',
     label: 'Dynamic Prog.',
     icon: Layers,
-    subtopics: ['Memoization', 'Knapsack', 'LCS'],
+    subtopics: ['1D/2D DP', 'Subsequences', 'Knapsack'],
     desc: 'Subproblem optimal structure & state transitions'
   },
   {
-    id: 'binary-search',
-    label: 'Binary Search',
-    icon: Search,
-    subtopics: ['Rotated Arrays', 'Lower Bound', 'Search Space'],
-    desc: 'Logarithmic search space reduction & threshold bounds'
+    id: 'backtracking',
+    label: 'Backtracking',
+    icon: Compass,
+    subtopics: ['Subsets', 'Permutations', 'N-Queens'],
+    desc: 'Exhaustive state-space search & decision trees'
   },
   {
-    id: 'sorting',
-    label: 'Sorting',
-    icon: ArrowUpDown,
-    subtopics: ['Merge Sort', 'Quick Sort', 'Bucket Sort'],
-    desc: 'Ordering, comparator partitions & distribution sorts'
+    id: 'greedy',
+    label: 'Greedy',
+    icon: Flame,
+    subtopics: ['Gas Station', 'Candy', 'Intervals'],
+    desc: 'Local optimal choices yielding global optima'
+  },
+  {
+    id: 'bit-manipulation',
+    label: 'Bit Manipulation',
+    icon: Cpu,
+    subtopics: ['Bitwise Ops', 'Counting Bits', 'Bit Masking'],
+    desc: 'Low-level binary logic, bitwise flags & XOR arithmetic'
+  },
+  {
+    id: 'math',
+    label: 'Math',
+    icon: Hash,
+    subtopics: ['Primes', 'Powers', 'Combinatorics'],
+    desc: 'Number theory, digit extraction & algebraic manipulation'
+  },
+  {
+    id: 'intervals',
+    label: 'Intervals',
+    icon: Clock,
+    subtopics: ['Merge Overlaps', 'Insert', 'Sweep Line'],
+    desc: 'Range merging, interval scheduling & segment overlaps'
   },
 ]
 
@@ -333,9 +376,11 @@ const TopicCard = memo(function TopicCard({ topic, selected, onClick, indexKey }
                 style={{ color: selected ? 'var(--c-red)' : 'var(--c-text)' }}>
                 {topic.label}
               </span>
-              <span className="font-mono text-[9px] uppercase tracking-wider" style={{ color: 'var(--c-text-mute)' }}>
-                Key [{indexKey}]
-              </span>
+              {indexKey <= 8 && (
+                <span className="font-mono text-[9px] uppercase tracking-wider" style={{ color: 'var(--c-text-mute)' }}>
+                  Key [{indexKey}]
+                </span>
+              )}
             </div>
           </div>
           {selected && (
