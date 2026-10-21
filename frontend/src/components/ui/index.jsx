@@ -351,6 +351,7 @@ const VERDICT_CFG = {
 }
 
 export function VerdictChip({ verdict, label, size = 'sm', className = '' }) {
+  if (!verdict) return null
   const cfg = VERDICT_CFG[verdict] ?? VERDICT_CFG.PENDING
   const Icon = cfg.icon
   const fs = size === 'xs' ? 9 : size === 'sm' ? 10 : 12

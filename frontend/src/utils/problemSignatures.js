@@ -620,6 +620,11 @@ export const CANONICAL_SIGNATURES = {
     ret: TYPE_TREE,
     isTree: true,
   },
+  'serialize and deserialize binary tree': {
+    params: [{ name: 'root', ...TYPE_TREE }],
+    ret: TYPE_TREE,
+    isTree: true,
+  },
   'surrounded regions': {
     params: [{ name: 'board', ...TYPE_CHAR_MATRIX }],
     ret: TYPE_VOID,
@@ -634,6 +639,10 @@ export const CANONICAL_SIGNATURES = {
   },
   'clone graph': {
     params: [{ name: 'node', js: 'Node', py: 'Optional[Node]', java: 'Node', cpp: 'Node*' }],
+    ret: { js: 'Node', py: 'Optional[Node]', java: 'Node', cpp: 'Node*', retJava: 'null', retCpp: 'nullptr' },
+  },
+  'copy list with random pointer': {
+    params: [{ name: 'head', js: 'Node', py: 'Optional[Node]', java: 'Node', cpp: 'Node*' }],
     ret: { js: 'Node', py: 'Optional[Node]', java: 'Node', cpp: 'Node*', retJava: 'null', retCpp: 'nullptr' },
   },
   'gas station': {
@@ -675,6 +684,11 @@ export const CANONICAL_SIGNATURES = {
     ret: TYPE_LIST,
     isList: true,
   },
+  'intersection of two linked lists': {
+    params: [{ name: 'headA', ...TYPE_LIST }, { name: 'headB', ...TYPE_LIST }],
+    ret: TYPE_LIST,
+    isList: true,
+  },
   'reorder list': {
     params: [{ name: 'head', ...TYPE_LIST }],
     ret: TYPE_VOID,
@@ -689,6 +703,10 @@ export const CANONICAL_SIGNATURES = {
     params: [{ name: 'head', ...TYPE_LIST }],
     ret: TYPE_LIST,
     isList: true,
+  },
+  'lru cache': {
+    params: [{ name: 'commands', ...TYPE_STR_LIST }, { name: 'args', ...TYPE_INT_MATRIX }],
+    ret: TYPE_INT_ARR_RET,
   },
   'evaluate reverse polish notation': {
     params: [{ name: 'tokens', ...TYPE_STR_ARR }],
