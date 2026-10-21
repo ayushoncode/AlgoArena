@@ -111,6 +111,22 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
       continue
     }
 
+    // Defensive check: if inside code fence and encounter a major section header, force close fence
+    if (inCodeFence && /^###\s+/i.test(trimmed)) {
+      inCodeFence = false
+      const blockContent = codeFenceBuffer.join('\n').trimEnd()
+      codeFenceBuffer = []
+      if (currentSection === 'example' && curExample) {
+        if (/Input:|Output:/i.test(blockContent)) {
+          parseBlockIntoExample(blockContent, curExample)
+        } else {
+          curExample.diagram = blockContent
+        }
+      } else if (currentSection === 'body') {
+        paragraphs.push({ type: 'code', content: blockContent })
+      }
+    }
+
     if (inCodeFence) {
       codeFenceBuffer.push(line)
       continue
