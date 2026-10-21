@@ -288,7 +288,7 @@ function parseBlockIntoExample(block, ex) {
     } else if (ex.input && !ex.output) {
       ex.input += ' ' + trimmed
     } else if (!ex.input) {
-      if (trimmed.startsWith('root =') || trimmed.startsWith('nums =') || trimmed.startsWith('s =') || trimmed.startsWith('p =') || trimmed.startsWith('grid =')) {
+      if ((trimmed.includes('=') || /^([a-zA-Z0-9_,\s]+=\s*.*)/.test(trimmed)) && !trimmed.toLowerCase().startsWith('output') && !trimmed.toLowerCase().startsWith('explanation')) {
         ex.input = trimmed
       } else {
         if (!ex.diagram) ex.diagram = trimmed
