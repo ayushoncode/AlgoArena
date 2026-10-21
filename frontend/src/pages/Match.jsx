@@ -289,7 +289,7 @@ function PlayerHeader({ player, isMe, verdict, progress }) {
             style={{ background: 'rgba(225,29,72,0.1)', color: 'var(--c-red)', border: '1px solid rgba(225,29,72,0.2)' }}>You</span>
         )}
       </div>
-      <VerdictChip verdict={verdict} size="xs" label={verdict === 'PENDING' && progress ? `Judging ${progress.testIndex}/${progress.totalTests}` : undefined} />
+      {verdict && <VerdictChip verdict={verdict} size="xs" label={verdict === 'PENDING' && progress ? `Judging ${progress.testIndex}/${progress.totalTests}` : undefined} />}
     </div>
   )
 }
