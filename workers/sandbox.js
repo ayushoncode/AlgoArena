@@ -121,6 +121,76 @@ function __buildList(arr, pos) {
   return dummy.next;
 }
 
+function __buildIntersectionLists(intersectVal, listA, listB, skipA, skipB) {
+  if (!Array.isArray(listA) || !Array.isArray(listB)) return [null, null];
+  const nodesA = listA.map(v => new ListNode(v));
+  for (let i = 0; i < nodesA.length - 1; i++) nodesA[i].next = nodesA[i + 1];
+  const headA = nodesA.length > 0 ? nodesA[0] : null;
+  if (typeof intersectVal === 'number' && intersectVal !== 0 && skipA >= 0 && skipA < nodesA.length) {
+    const interNode = nodesA[skipA];
+    if (skipB === 0) return [headA, interNode];
+    const nodesB = [];
+    for (let i = 0; i < skipB; i++) nodesB.push(new ListNode(listB[i]));
+    for (let i = 0; i < nodesB.length - 1; i++) nodesB[i].next = nodesB[i + 1];
+    if (nodesB.length > 0) nodesB[nodesB.length - 1].next = interNode;
+    return [headA, nodesB[0] || interNode];
+  } else {
+    const nodesB = listB.map(v => new ListNode(v));
+    for (let i = 0; i < nodesB.length - 1; i++) nodesB[i].next = nodesB[i + 1];
+    return [headA, nodesB.length > 0 ? nodesB[0] : null];
+  }
+}
+
+function __buildListWithRandom(arr) {
+  if (!Array.isArray(arr) || arr.length === 0) return null;
+  const nodes = arr.map(item => new Node(item[0], [], null, null, null, null));
+  for (let i = 0; i < arr.length; i++) {
+    if (i + 1 < nodes.length) nodes[i].next = nodes[i + 1];
+    const rIdx = arr[i][1];
+    if (typeof rIdx === 'number' && rIdx >= 0 && rIdx < nodes.length) {
+      nodes[i].random = nodes[rIdx];
+    }
+  }
+  return nodes[0];
+}
+
+function __serializeListWithRandom(head) {
+  if (!head) return [];
+  const nodes = [];
+  const map = new Map();
+  let curr = head;
+  while (curr && !map.has(curr) && nodes.length < 5000) {
+    map.set(curr, nodes.length);
+    nodes.push(curr);
+    curr = curr.next;
+  }
+  const res = [];
+  for (const node of nodes) {
+    const rIdx = node.random ? (map.has(node.random) ? map.get(node.random) : null) : null;
+    res.push([node.val, rIdx]);
+  }
+  return res;
+}
+
+function runClassCommands(Cls, commands, args) {
+  let instance = null;
+  const outputs = [];
+  for (let i = 0; i < commands.length; i++) {
+    const cmd = commands[i];
+    const a = args[i] || [];
+    if (cmd === 'LRUCache' || cmd === Cls.name) {
+      instance = new Cls(...a);
+      outputs.push(null);
+    } else if (instance && typeof instance[cmd] === 'function') {
+      const res = instance[cmd](...a);
+      outputs.push(res !== undefined ? res : null);
+    } else {
+      outputs.push(null);
+    }
+  }
+  return outputs;
+}
+
 function __buildGraph(adjList) {
   if (!Array.isArray(adjList) || adjList.length === 0) return null;
   const nodes = [];
@@ -143,7 +213,17 @@ function __buildGraph(adjList) {
 function __serialize(obj, expected) {
   if (obj === null || obj === undefined) {
     if (typeof expected === 'string' && expected.trim() === '[]') return [];
+    if (typeof expected === 'string' && expected.includes('No intersection')) return "No intersection";
     return null;
+  }
+  if (typeof expected === 'string' && (expected.includes('Intersected at') || expected.includes('No intersection'))) {
+    if (obj && typeof obj === 'object' && 'val' in obj) {
+      return "Intersected at '" + obj.val + "'";
+    }
+    return "No intersection";
+  }
+  if (typeof obj === 'object' && 'random' in obj && obj.random !== undefined) {
+    return __serializeListWithRandom(obj);
   }
   if (typeof obj === 'object' && Array.isArray(obj.neighbors) && 'val' in obj) {
     const map = new Map();
@@ -231,9 +311,17 @@ let src = '';
 try {
   src = require('fs').readFileSync('./solution.js', 'utf8');
   const loader = new Function(
-    'TreeNode', 'ListNode', 'Node', 'exports', 'module', 'console',
+    'TreeNode', 'ListNode', 'Node', 'exports', 'module', 'console', 'runClassCommands',
     src + '\\n\\n' +
     'if (typeof solution === "function") return solution;\\n' +
+    'if (typeof getIntersectionNode === "function") return getIntersectionNode;\\n' +
+    'if (typeof copyRandomList === "function") return copyRandomList;\\n' +
+    'if (typeof LRUCache === "function") return (cmds, args) => runClassCommands(LRUCache, cmds, args);\\n' +
+    'if (typeof serialize === "function" && typeof deserialize === "function") return (root) => deserialize(serialize(root));\\n' +
+    'if (typeof Codec === "function") {\\n' +
+    '  const c = new Codec();\\n' +
+    '  if (typeof c.serialize === "function" && typeof c.deserialize === "function") return (root) => c.deserialize(c.serialize(root));\\n' +
+    '}\\n' +
     'if (typeof Solution === "function") {\\n' +
     '  const inst = new Solution();\\n' +
     '  const methods = Object.getOwnPropertyNames(Solution.prototype).filter(m => m !== "constructor");\\n' +
@@ -242,7 +330,7 @@ try {
     '}\\n' +
     'return undefined;'
   );
-  solution = loader(TreeNode, ListNode, Node, {}, {}, { log: () => {} });
+  solution = loader(TreeNode, ListNode, Node, {}, {}, { log: () => {} }, runClassCommands);
   if (typeof solution !== 'function') {
     throw new Error("No function named 'solution' found. Please define: function solution(...) { ... }");
   }
@@ -274,7 +362,11 @@ for (let i = 0; i < testCases.length; i++) {
   try {
     const rawArgs = JSON.parse('[' + tc.input + ']');
     let convertedArgs;
-    if (rawArgs.length === 2 && Array.isArray(rawArgs[0]) && typeof rawArgs[1] === 'number' && (isListFn || ['head', 'list'].includes(paramNames[0] || ''))) {
+    if (rawArgs.length === 5 && Array.isArray(rawArgs[1]) && Array.isArray(rawArgs[2])) {
+      convertedArgs = __buildIntersectionLists(rawArgs[0], rawArgs[1], rawArgs[2], rawArgs[3], rawArgs[4]);
+    } else if (rawArgs.length === 2 && Array.isArray(rawArgs[0]) && rawArgs[0].length > 0 && typeof rawArgs[0][0] === 'string') {
+      convertedArgs = rawArgs;
+    } else if (rawArgs.length === 2 && Array.isArray(rawArgs[0]) && typeof rawArgs[1] === 'number' && (isListFn || ['head', 'list'].includes(paramNames[0] || ''))) {
       const head = __buildList(rawArgs[0], rawArgs[1]);
       convertedArgs = paramNames.length === 1 ? [head] : [head, rawArgs[1]];
     } else {
@@ -282,11 +374,14 @@ for (let i = 0; i < testCases.length; i++) {
         if (Array.isArray(arg)) {
           const pName = paramNames[argIdx] || '';
           const isTreeParam = ['root', 'p', 'q', 't1', 't2', 'node', 'tree'].includes(pName);
-          const isListParam = ['head', 'l1', 'l2', 'list', 'list1', 'list2'].includes(pName);
+          const isListParam = ['head', 'l1', 'l2', 'list', 'list1', 'list2', 'heada', 'headb'].includes(pName);
           const isGraphParam = ['node'].includes(pName) || fnSrc.includes('.neighbors');
-          const isArrayParam = ['lists', 'preorder', 'inorder', 'postorder', 'nums', 'arr', 'edges', 'matrix', 'grid', 'words', 'dictionary'].includes(pName);
+          const isArrayParam = ['lists', 'preorder', 'inorder', 'postorder', 'nums', 'arr', 'edges', 'matrix', 'grid', 'words', 'dictionary', 'commands', 'args'].includes(pName);
 
           if (isGraphParam) return __buildGraph(arg);
+          if (arg.length > 0 && Array.isArray(arg[0]) && arg[0].length === 2 && (fnSrc.includes('.random') || fnSrc.includes('random') || isListParam)) {
+            return __buildListWithRandom(arg);
+          }
           if (isTreeParam || arg.includes(null)) return __buildTree(arg);
           if (isListParam) return __buildList(arg);
           if (isTreeFn && !isListParam && !isArrayParam) return __buildTree(arg);
@@ -392,6 +487,57 @@ def __build_list(arr, pos=None):
         curr.next = nodes[pos]
     return dummy.next
 
+def __build_intersection_lists(intersect_val, list_a, list_b, skip_a, skip_b):
+    if not isinstance(list_a, list) or not isinstance(list_b, list):
+        return None, None
+    nodes_a = [ListNode(v) for v in list_a]
+    for i in range(len(nodes_a) - 1):
+        nodes_a[i].next = nodes_a[i + 1]
+    head_a = nodes_a[0] if nodes_a else None
+    if isinstance(intersect_val, int) and intersect_val != 0 and 0 <= skip_a < len(nodes_a):
+        inter_node = nodes_a[skip_a]
+        if skip_b == 0:
+            return head_a, inter_node
+        nodes_b = [ListNode(list_b[i]) for i in range(skip_b)]
+        for i in range(len(nodes_b) - 1):
+            nodes_b[i].next = nodes_b[i + 1]
+        if nodes_b:
+            nodes_b[-1].next = inter_node
+        return head_a, (nodes_b[0] if nodes_b else inter_node)
+    else:
+        nodes_b = [ListNode(v) for v in list_b]
+        for i in range(len(nodes_b) - 1):
+            nodes_b[i].next = nodes_b[i + 1]
+        return head_a, (nodes_b[0] if nodes_b else None)
+
+def __build_list_with_random(arr):
+    if not isinstance(arr, list) or len(arr) == 0:
+        return None
+    nodes = [Node(item[0]) for item in arr]
+    for i in range(len(arr)):
+        if i + 1 < len(nodes):
+            nodes[i].next = nodes[i + 1]
+        r_idx = arr[i][1]
+        if isinstance(r_idx, int) and 0 <= r_idx < len(nodes):
+            nodes[i].random = nodes[r_idx]
+    return nodes[0]
+
+def __serialize_list_with_random(head):
+    if not head:
+        return []
+    nodes = []
+    node_map = {}
+    curr = head
+    while curr and curr not in node_map and len(nodes) < 5000:
+        node_map[curr] = len(nodes)
+        nodes.append(curr)
+        curr = curr.next
+    res = []
+    for node in nodes:
+        r_idx = node_map.get(node.random, None) if getattr(node, 'random', None) else None
+        res.append([node.val, r_idx])
+    return res
+
 def __build_graph(adj_list):
     if not isinstance(adj_list, list) or len(adj_list) == 0:
         return None
@@ -407,7 +553,15 @@ def __serialize(obj, expected=''):
     if obj is None:
         if isinstance(expected, str) and expected.strip() == '[]':
             return []
+        if isinstance(expected, str) and 'No intersection' in expected:
+            return "No intersection"
         return None
+    if isinstance(expected, str) and ('Intersected at' in expected or 'No intersection' in expected):
+        if obj is not None and hasattr(obj, 'val'):
+            return f"Intersected at '{obj.val}'"
+        return "No intersection"
+    if hasattr(obj, 'random'):
+        return __serialize_list_with_random(obj)
     if hasattr(obj, 'neighbors') and isinstance(getattr(obj, 'neighbors', None), list) and hasattr(obj, 'val'):
         node_map = {}
         q = collections.deque([obj])
@@ -494,6 +648,31 @@ try:
     }
     exec(src, ns)
     solution = ns.get('solution')
+    if 'LRUCache' in ns and inspect.isclass(ns['LRUCache']):
+        Cls = ns['LRUCache']
+        def class_runner(commands, args):
+            inst = None
+            outputs = []
+            for cmd, a in zip(commands, args):
+                if cmd == 'LRUCache' or cmd == Cls.__name__:
+                    inst = Cls(*a)
+                    outputs.append(None)
+                elif inst and hasattr(inst, cmd) and callable(getattr(inst, cmd)):
+                    res = getattr(inst, cmd)(*a)
+                    outputs.append(res)
+                else:
+                    outputs.append(None)
+            return outputs
+        solution = class_runner
+    if 'Codec' in ns and inspect.isclass(ns['Codec']):
+        c = ns['Codec']()
+        if hasattr(c, 'serialize') and hasattr(c, 'deserialize'):
+            solution = lambda root: c.deserialize(c.serialize(root))
+    if not callable(solution):
+        for fn_name in ['getIntersectionNode', 'copyRandomList']:
+            if fn_name in ns and callable(ns[fn_name]):
+                solution = ns[fn_name]
+                break
     if not callable(solution) and 'Solution' in ns:
         inst = ns['Solution']()
         if hasattr(inst, 'solution') and callable(getattr(inst, 'solution')):
@@ -529,7 +708,11 @@ for i, tc in enumerate(test_cases):
     try:
         raw_args = json.loads('[' + tc['input'] + ']')
         converted_args = []
-        if len(raw_args) == 2 and isinstance(raw_args[0], list) and isinstance(raw_args[1], int) and (is_list or (param_list and param_list[0].name.lower() in ('head', 'list'))):
+        if len(raw_args) == 5 and isinstance(raw_args[1], list) and isinstance(raw_args[2], list):
+            converted_args = list(__build_intersection_lists(raw_args[0], raw_args[1], raw_args[2], raw_args[3], raw_args[4]))
+        elif len(raw_args) == 2 and isinstance(raw_args[0], list) and len(raw_args[0]) > 0 and isinstance(raw_args[0][0], str):
+            converted_args = raw_args
+        elif len(raw_args) == 2 and isinstance(raw_args[0], list) and isinstance(raw_args[1], int) and (is_list or (param_list and param_list[0].name.lower() in ('head', 'list'))):
             head = __build_list(raw_args[0], raw_args[1])
             converted_args = [head] if len(param_list) == 1 else [head, raw_args[1]]
         else:
@@ -537,13 +720,15 @@ for i, tc in enumerate(test_cases):
                 p_name = param_list[arg_idx].name.lower() if arg_idx < len(param_list) else ''
                 p_anno = str(param_list[arg_idx].annotation) if arg_idx < len(param_list) else ''
                 is_tree_param = 'treenode' in p_anno.lower() or p_name in ('root', 'p', 'q', 't1', 't2', 'node', 'tree')
-                is_list_param = 'listnode' in p_anno.lower() or p_name in ('head', 'l1', 'l2', 'list', 'list1', 'list2')
+                is_list_param = 'listnode' in p_anno.lower() or p_name in ('head', 'l1', 'l2', 'list', 'list1', 'list2', 'heada', 'headb')
                 is_graph_param = p_name in ('node',) or 'neighbors' in fn_src
-                is_array_param = p_name in ('lists', 'preorder', 'inorder', 'postorder', 'nums', 'arr', 'edges', 'matrix', 'grid', 'words', 'dictionary')
+                is_array_param = p_name in ('lists', 'preorder', 'inorder', 'postorder', 'nums', 'arr', 'edges', 'matrix', 'grid', 'words', 'dictionary', 'commands', 'args')
 
                 if isinstance(arg, list):
                     if is_graph_param:
                         converted_args.append(__build_graph(arg))
+                    elif len(arg) > 0 and isinstance(arg[0], list) and len(arg[0]) == 2 and ('random' in fn_src or is_list_param):
+                        converted_args.append(__build_list_with_random(arg))
                     elif is_tree_param or None in arg:
                         converted_args.append(__build_tree(arg))
                     elif is_list_param:
