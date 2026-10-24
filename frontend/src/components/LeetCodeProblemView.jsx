@@ -137,7 +137,7 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
     if (exampleMatch) {
       if (curExample) examples.push(curExample)
       const num = exampleMatch[1] ? parseInt(exampleMatch[1], 10) : examples.length + 1
-      curExample = { num, diagram: null, input: '', output: '', explanation: '' }
+      curExample = { num, diagram: null, input: '', output: '', explanation: '', inExplanation: false }
       currentSection = 'example'
       continue
     }
@@ -170,14 +170,17 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
     if (currentSection === 'example' && curExample) {
       if (/^\*?\*?Input\*?\*?:?/i.test(trimmed)) {
         curExample.input = trimmed.replace(/^\*?\*?Input\*?\*?:?\s*/i, '').trim()
+        curExample.inExplanation = false
         continue
       }
       if (/^\*?\*?Output\*?\*?:?/i.test(trimmed)) {
         curExample.output = trimmed.replace(/^\*?\*?Output\*?\*?:?\s*/i, '').trim()
+        curExample.inExplanation = false
         continue
       }
       if (/^\*?\*?Explanation\*?\*?:?/i.test(trimmed)) {
         curExample.explanation = trimmed.replace(/^\*?\*?Explanation\*?\*?:?\s*/i, '').trim()
+        curExample.inExplanation = true
         continue
       }
 
@@ -188,12 +191,15 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
       }
 
       // Continuation lines
-      if (curExample.explanation) {
-        curExample.explanation += ' ' + trimmed
+      if (curExample.inExplanation) {
+        curExample.explanation = curExample.explanation ? curExample.explanation + '\n' + trimmed : trimmed
+        continue
       } else if (curExample.output) {
         curExample.output += ' ' + trimmed
+        continue
       } else if (curExample.input) {
         curExample.input += ' ' + trimmed
+        continue
       } else {
         // If it's an ASCII diagram line not wrapped in code fences
         const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/)
@@ -275,15 +281,19 @@ function parseBlockIntoExample(block, ex) {
   const lines = block.split('\n')
   for (const l of lines) {
     const trimmed = l.trim()
+    if (!trimmed) continue
     if (/^Input:/i.test(trimmed)) {
       ex.input = trimmed.replace(/^Input:\s*/i, '').trim()
+      ex.inExplanation = false
     } else if (/^Output:/i.test(trimmed)) {
       ex.output = trimmed.replace(/^Output:\s*/i, '').trim()
+      ex.inExplanation = false
     } else if (/^Explanation:/i.test(trimmed)) {
       ex.explanation = trimmed.replace(/^Explanation:\s*/i, '').trim()
-    } else if (ex.explanation) {
-      ex.explanation += ' ' + trimmed
-    } else if (ex.output && !ex.explanation) {
+      ex.inExplanation = true
+    } else if (ex.inExplanation) {
+      ex.explanation = ex.explanation ? ex.explanation + '\n' + trimmed : trimmed
+    } else if (ex.output && !ex.inExplanation) {
       ex.output += ' ' + trimmed
     } else if (ex.input && !ex.output) {
       ex.input += ' ' + trimmed
@@ -549,23 +559,27 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                   {ex.input && (
                     <div className="flex flex-wrap items-baseline gap-1.5">
                       <span className="font-bold text-[color:var(--c-text-mute)] shrink-0 font-sans text-[12px]">Input:</span>
-                      <code className="text-[color:var(--c-text)] break-all">{ex.input}</code>
+                      <code className="text-[color:var(--c-text)] break-all max-h-36 overflow-y-auto block pr-1">
+                        {ex.input.length > 500 ? ex.input.slice(0, 300) + ` ... [truncated ${ex.input.length - 300} chars]` : ex.input}
+                      </code>
                     </div>
                   )}
 
                   {ex.output && (
                     <div className="flex flex-wrap items-baseline gap-1.5">
                       <span className="font-bold text-[color:var(--c-text-mute)] shrink-0 font-sans text-[12px]">Output:</span>
-                      <code className="text-[#34d399] font-bold break-all">{ex.output}</code>
+                      <code className="text-[#34d399] font-bold break-all max-h-36 overflow-y-auto block pr-1">
+                        {ex.output.length > 500 ? ex.output.slice(0, 300) + ` ... [truncated ${ex.output.length - 300} chars]` : ex.output}
+                      </code>
                     </div>
                   )}
 
                   {ex.explanation && (
-                    <div className="flex flex-wrap items-baseline gap-1.5 pt-0.5">
-                      <span className="font-bold text-[color:var(--c-text-mute)] shrink-0 font-sans text-[12px]">Explanation:</span>
-                      <span className="text-[color:var(--c-text)] font-sans text-[12px] leading-relaxed">
+                    <div className="pt-1 space-y-1">
+                      <span className="font-bold text-[color:var(--c-text-mute)] shrink-0 font-sans text-[12px] block">Explanation:</span>
+                      <div className="text-[color:var(--c-text)] font-sans text-[12px] leading-relaxed whitespace-pre-line pl-0.5">
                         {renderInline(ex.explanation)}
-                      </span>
+                      </div>
                     </div>
                   )}
                 </div>

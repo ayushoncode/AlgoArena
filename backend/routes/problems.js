@@ -92,19 +92,31 @@ router.get('/striver-sheet', async (_req, res) => {
               'majority-element',
               'maximum-subarray',
               'best-time-to-buy-and-sell-stock',
+              'rearrange-array-elements-by-sign',
               'next-permutation',
+              'leaders-in-an-array',
               'longest-consecutive-sequence',
               'set-matrix-zeroes',
               'rotate-image',
-              'spiral-matrix'
+              'spiral-matrix',
+              'subarray-sum-equals-k'
             ]
           },
           {
             title: 'Hard Problems',
             problems: [
               'pascal-s-triangle',
+              'majority-element-ii',
               '3sum',
               '4sum',
+              'largest-subarray-with-0-sum',
+              'subarrays-with-xor-k',
+              'merge-intervals',
+              'merge-sorted-array',
+              'find-missing-and-repeated-values',
+              'count-inversions',
+              'reverse-pairs',
+              'maximum-product-subarray',
               'first-missing-positive',
               'trapping-rain-water'
             ]
