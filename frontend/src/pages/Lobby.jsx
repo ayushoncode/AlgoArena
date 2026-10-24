@@ -19,6 +19,7 @@ import {
 } from '../components/ui'
 import { ArenaLogo } from '../components/ArenaLogo'
 import StriverSheetView from '../components/StriverSheetView'
+import { DEFAULT_STRIVER_CURRICULUM } from '../content/striverCurriculum'
 
 /* ════════════════════════════════════════════════
    DATA — topics + difficulties
@@ -815,7 +816,7 @@ export default function Lobby() {
   const [queuing, setQueuing] = useState(false)
   const [queuingProblem, setQueuingProblem] = useState(null)
   const [lobbyTab, setLobbyTab] = useState('random') // 'random' | 'striver'
-  const [striverData, setStriverData] = useState([])
+  const [striverData, setStriverData] = useState(DEFAULT_STRIVER_CURRICULUM)
   const [striverLoading, setStriverLoading] = useState(false)
   const [matchFoundData, setMatchFoundData] = useState(null)
   const [customModalOpen, setCustomModalOpen] = useState(false)
@@ -841,7 +842,11 @@ export default function Lobby() {
   useEffect(() => {
     setStriverLoading(true)
     api.get('/api/problems/striver-sheet')
-      .then(({ data }) => setStriverData(data))
+      .then(({ data }) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setStriverData(data)
+        }
+      })
       .catch(err => console.error('[Lobby] Failed to load striver sheet:', err))
       .finally(() => setStriverLoading(false))
   }, [])
@@ -914,7 +919,7 @@ export default function Lobby() {
     }
   }, [connected, queuing, topic, diff, queuingProblem, emit])
 
-  if (loading && !user) {
+  if (loading || !isAuthenticated) {
     return (
       <PageWrapper heroGlow>
         <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
@@ -928,8 +933,6 @@ export default function Lobby() {
       </PageWrapper>
     )
   }
-
-  if (!loading && !isAuthenticated) return null
 
   const elo = user?.elo_rating ?? 1200
   const userTier = getArenaTier(elo)
