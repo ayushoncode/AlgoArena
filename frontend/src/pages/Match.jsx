@@ -639,6 +639,7 @@ export default function Match() {
         sessionStorage.removeItem(`aa_match_${roomId}`)
         clearActiveMatch(roomId)
       }
+      try { emit('leave_queue') } catch {}
       // Give 1.4s for user to see the green ACCEPTED indicator before going to results
       setTimeout(() => {
         navigate('/result', { state: { ...payload, roomId } })
