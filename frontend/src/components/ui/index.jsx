@@ -394,7 +394,6 @@ export function PageWrapper({ children, className = '', heroGlow = false, style 
       className={`min-h-[calc(100vh-3.5rem)] relative overflow-x-hidden w-full ${className}`}
       style={{ background: 'var(--c-void)', ...style }}
     >
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-hex-pattern" />
       {heroGlow && (
         <>
           <div aria-hidden="true" className="pointer-events-none absolute top-0 left-0 w-96 h-96 rounded-full blur-[120px]" style={{ background: 'rgba(225,29,72,0.08)' }} />

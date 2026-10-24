@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Swords, Search, Sparkles, ChevronDown,
-  Shuffle, CheckCircle2, BookOpen, Zap, Flame, Target, Brackets,
+  Shuffle, CheckCircle2, BookOpen, Brackets,
   LayoutList, LayoutGrid
 } from 'lucide-react'
 import { HudPanel } from './ui'
@@ -10,9 +10,9 @@ import { DEFAULT_STRIVER_CURRICULUM } from '../content/striverCurriculum'
 
 // ── Difficulty config ──────────────────────────────────────────────
 const DIFF_CONFIG = {
-  easy:   { label: 'Easy',   color: 'var(--c-green, #10b981)', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)',  icon: <Zap size={11} />   },
-  medium: { label: 'Medium', color: 'var(--c-gold, #d97706)',  bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)',  icon: <Target size={11} /> },
-  hard:   { label: 'Hard',   color: 'var(--c-red, #E11D48)',   bg: 'rgba(225,29,72,0.12)',  border: 'rgba(225,29,72,0.3)',   icon: <Flame size={11} />  },
+  easy:   { label: 'Easy',   color: '#10b981', border: 'rgba(16,185,129,0.3)' },
+  medium: { label: 'Medium', color: '#f59e0b', border: 'rgba(245,158,11,0.3)' },
+  hard:   { label: 'Hard',   color: '#e11d48', border: 'rgba(225,29,72,0.3)' },
 }
 
 // ── Single Problem Row (Compact 1-Line Card) ───────────────────────
@@ -29,24 +29,18 @@ function ProblemRow({ problem, globalIdx, onBattleProblem, queuingProblemId, isQ
       className={`group relative flex items-center justify-between gap-2.5 sm:gap-4 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border transition-all duration-200 ${
         isThis
           ? 'border-rose-500 bg-rose-500/15 shadow-lg shadow-rose-900/30 ring-1 ring-rose-500/50'
-          : 'border-[var(--c-border)] bg-[var(--c-panel)] hover:bg-[var(--c-panel2)] hover:border-amber-500/40 hover:shadow-sm'
+          : 'border-[var(--c-border)] bg-[var(--c-panel)] hover:bg-[var(--c-panel2)] hover:border-[var(--c-blue)]/40 hover:shadow-sm'
       }`}
     >
-      {/* Left: #Idx + Title + Optional Sample In */}
+      {/* Left: #Idx + Title */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         <span className="font-mono text-[11px] sm:text-xs font-bold text-[var(--c-text-mute)] w-6 shrink-0 text-center">
           #{String(globalIdx + 1).padStart(2, '0')}
         </span>
 
-        <h4 className="font-display font-semibold text-xs sm:text-[13.5px] text-[var(--c-text)] truncate group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors">
+        <h4 className="font-display font-semibold text-xs sm:text-[13.5px] text-[var(--c-text)] truncate group-hover:text-[var(--c-blue)] transition-colors">
           {problem.title}
         </h4>
-
-        {problem.sample_input && (
-          <span className="hidden lg:inline-flex items-center gap-1 font-mono text-[10px] text-[var(--c-text-mute)] bg-[var(--c-bg)]/80 px-2 py-0.5 rounded border border-[var(--c-border)] truncate max-w-[220px]">
-            <span className="text-[var(--c-text-dim)] font-semibold">In:</span> {problem.sample_input}
-          </span>
-        )}
       </div>
 
       {/* Right: Tests count + 1v1 Battle Action */}
@@ -90,7 +84,7 @@ function ProblemGridCard({ problem, globalIdx, onBattleProblem, queuingProblemId
       className={`relative flex flex-col justify-between p-3 rounded-lg border transition-all duration-200 group ${
         isThis
           ? 'border-rose-500 bg-rose-500/10 shadow-lg shadow-rose-900/30 ring-1 ring-rose-500/50'
-          : 'bg-[var(--c-panel)] hover:bg-[var(--c-panel2)]/80 hover:border-amber-500/40'
+          : 'bg-[var(--c-panel)] hover:bg-[var(--c-panel2)] hover:border-[var(--c-blue)]/40'
       }`}
       style={{ borderColor: isThis ? undefined : diff.border }}
     >
@@ -101,15 +95,9 @@ function ProblemGridCard({ problem, globalIdx, onBattleProblem, queuingProblemId
           </span>
         </div>
 
-        <h4 className="font-display font-bold text-xs sm:text-[13px] text-[var(--c-text)] leading-snug group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors mb-2 truncate">
+        <h4 className="font-display font-bold text-xs sm:text-[13px] text-[var(--c-text)] leading-snug group-hover:text-[var(--c-blue)] transition-colors mb-2 truncate">
           {problem.title}
         </h4>
-
-        {problem.sample_input && (
-          <div className="p-1.5 rounded bg-[var(--c-bg)] border border-[var(--c-border)] font-mono text-[10px] space-y-0.5 mb-2 truncate">
-            <span className="text-[var(--c-text-dim)] font-semibold">In:</span> {problem.sample_input}
-          </div>
-        )}
       </div>
 
       <div className="pt-2 border-t border-[var(--c-border)] flex items-center justify-between gap-2">
@@ -159,22 +147,22 @@ function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, 
   const cfg = DIFF_CONFIG[diff]
 
   return (
-    <div className="rounded-lg border overflow-hidden" style={{ borderColor: cfg.border }}>
-      {/* Difficulty Header — clickable accordion toggle */}
+    <div className="rounded-lg border border-[var(--c-border)] bg-[var(--c-panel)] overflow-hidden transition-all duration-200 hover:border-[var(--c-border2)]">
+      {/* Difficulty Header — sleek tactical HUD strip */}
       <button
         type="button"
         onClick={() => setOpen(o => isSearchActive ? !isOpen : !o)}
-        className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 transition-colors hover:brightness-110"
-        style={{ background: cfg.bg }}
+        className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 transition-colors bg-[var(--c-panel)] hover:bg-[var(--c-panel2)] group"
+        style={{ borderLeft: `3px solid ${cfg.color}` }}
       >
-        <div className="flex items-center gap-2">
-          <span style={{ color: cfg.color }}>{cfg.icon}</span>
-          <span className="font-display font-black text-xs sm:text-sm uppercase tracking-wider" style={{ color: cfg.color }}>
+        <div className="flex items-center gap-2.5">
+          <span className="w-2 h-2 rounded-full shrink-0 shadow-sm" style={{ background: cfg.color }} />
+          <span className="font-display font-black text-xs sm:text-[13px] uppercase tracking-wider" style={{ color: cfg.color }}>
             {subsection.title}
           </span>
           <span
-            className="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold"
-            style={{ background: `${cfg.color}25`, color: cfg.color }}
+            className="px-1.5 py-0.5 rounded font-mono text-[9.5px] font-bold"
+            style={{ color: cfg.color, background: `${cfg.color}18`, border: `1px solid ${cfg.color}35` }}
           >
             {problems.length}
           </span>
@@ -197,7 +185,7 @@ function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, 
             transition={{ duration: 0.18 }}
             className="overflow-hidden"
           >
-            <div className="p-2 sm:p-2.5 bg-[var(--c-bg)]/40">
+            <div className="p-2 sm:p-2.5 bg-[var(--c-void)]/40 border-t border-[var(--c-border)]">
               {viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {problems.map((problem, i) => (
@@ -234,30 +222,48 @@ function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, 
 }
 
 // ── Topic Step Card (e.g., "Step 3: Solve Problems on Arrays") ──────
-function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId, isQueuing, searchQuery }) {
-  const [open, setOpen] = useState(true)
+function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId, isQueuing, searchQuery, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen)
   const [viewMode, setViewMode] = useState('list') // 'list' (1 line per question) | 'grid'
 
-  const totalProblems = useMemo(() => {
-    return (step.subsections || []).reduce((acc, sub) => acc + (sub.problems || []).length, 0)
+  const hasMatchingProblems = useMemo(() => {
+    if (!searchQuery || !searchQuery.trim()) return false
+    const q = searchQuery.toLowerCase().trim()
+    return (step.subsections || []).some(sub =>
+      (sub.problems || []).some(p => p.title.toLowerCase().includes(q))
+    )
+  }, [step.subsections, searchQuery])
+
+  const isOpen = (searchQuery && searchQuery.trim().length > 0) ? hasMatchingProblems : open
+
+  const allProblems = useMemo(() => {
+    return (step.subsections || []).flatMap(sub => sub.problems || [])
   }, [step.subsections])
 
-  const easyCount   = useMemo(() => (step.subsections?.find(s => s.title.toLowerCase().includes('easy'))?.problems || []).length, [step.subsections])
-  const mediumCount = useMemo(() => (step.subsections?.find(s => s.title.toLowerCase().includes('medium'))?.problems || []).length, [step.subsections])
-  const hardCount   = useMemo(() => (step.subsections?.find(s => s.title.toLowerCase().includes('hard'))?.problems || []).length, [step.subsections])
+  const totalProblems = allProblems.length
+  const easyCount   = useMemo(() => allProblems.filter(p => p.difficulty === 'easy').length, [allProblems])
+  const mediumCount = useMemo(() => allProblems.filter(p => p.difficulty === 'medium').length, [allProblems])
+  const hardCount   = useMemo(() => allProblems.filter(p => p.difficulty === 'hard').length, [allProblems])
+
+  const topicLabel = useMemo(() => {
+    const raw = (step.topic || step.title || '').toLowerCase()
+    if (raw.includes('binary search') || raw.includes('binary-search')) return 'Binary Search'
+    if (raw.includes('array')) return 'Arrays'
+    return (step.title || step.topic || '').replace(/^Step\s*\d+\s*:\s*(Solve\s+Problems\s+on\s+)?/i, '').trim()
+  }, [step.topic, step.title])
 
   let runningIdx = 0
 
   return (
     <HudPanel
       glow
-      glowColor="rgba(245, 158, 11, 0.08)"
-      accentTopLeft="var(--c-gold)"
-      accentBotRight="var(--c-gold)"
+      glowColor="rgba(56, 189, 248, 0.05)"
+      accentTopLeft="var(--c-blue)"
+      accentBotRight="var(--c-blue)"
       style={{
         padding: 0,
         background: 'var(--c-panel)',
-        border: '1px solid rgba(245,158,11,0.25)',
+        border: '1px solid var(--c-border)',
         overflow: 'hidden'
       }}
     >
@@ -265,38 +271,35 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
       <div className="flex items-center justify-between gap-3 px-3.5 sm:px-4 py-2.5 sm:py-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[var(--c-panel2)] border border-[var(--c-border)] text-[var(--c-blue)]"
           >
-            <Brackets size={16} className="text-amber-600 dark:text-amber-400" />
+            {step.topic === 'binary-search' ? (
+              <Search size={16} />
+            ) : (
+              <Brackets size={16} />
+            )}
           </div>
 
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8.5px] font-mono font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
-                <Sparkles size={8} className="animate-spin" />
-                Striver A2Z DSA Sheet
-              </span>
-            </div>
-            <h2 className="font-display font-black text-sm sm:text-[15px] uppercase tracking-tight text-[var(--c-text)] mt-0.5 truncate">
-              {(step.topic ? step.topic.charAt(0).toUpperCase() + step.topic.slice(1) : (step.title || 'Arrays')).replace(/^Step\s*\d+\s*:\s*(Solve\s+Problems\s+on\s+)?/i, '').trim()}
+            <h2 className="font-display font-black text-sm sm:text-base uppercase tracking-tight text-[var(--c-text)] truncate">
+              {topicLabel}
             </h2>
 
             {/* Pills: Easy / Medium / Hard counts */}
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               {easyCount > 0 && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] font-bold" style={{ background: DIFF_CONFIG.easy.bg, color: DIFF_CONFIG.easy.color, border: `1px solid ${DIFF_CONFIG.easy.border}` }}>
-                  <Zap size={8} /> Easy {easyCount}
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded font-mono text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                  Easy {easyCount}
                 </span>
               )}
               {mediumCount > 0 && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] font-bold" style={{ background: DIFF_CONFIG.medium.bg, color: DIFF_CONFIG.medium.color, border: `1px solid ${DIFF_CONFIG.medium.border}` }}>
-                  <Target size={8} /> Medium {mediumCount}
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded font-mono text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                  Medium {mediumCount}
                 </span>
               )}
               {hardCount > 0 && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] font-bold" style={{ background: DIFF_CONFIG.hard.bg, color: DIFF_CONFIG.hard.color, border: `1px solid ${DIFF_CONFIG.hard.border}` }}>
-                  <Flame size={8} /> Hard {hardCount}
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded font-mono text-[9px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">
+                  Hard {hardCount}
                 </span>
               )}
               <span className="font-mono text-[9.5px] text-[var(--c-text-mute)]">· {totalProblems} total</span>
@@ -312,7 +315,7 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
               type="button"
               title="Single-line list view"
               onClick={() => setViewMode('list')}
-              className={`p-1 rounded transition-colors ${viewMode === 'list' ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)]'}`}
+              className={`p-1 rounded transition-colors ${viewMode === 'list' ? 'bg-[var(--c-panel2)] text-[var(--c-blue)] border border-[var(--c-border2)]' : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)]'}`}
             >
               <LayoutList size={13} />
             </button>
@@ -320,7 +323,7 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
               type="button"
               title="Grid card view"
               onClick={() => setViewMode('grid')}
-              className={`p-1 rounded transition-colors ${viewMode === 'grid' ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)]'}`}
+              className={`p-1 rounded transition-colors ${viewMode === 'grid' ? 'bg-[var(--c-panel2)] text-[var(--c-blue)] border border-[var(--c-border2)]' : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)]'}`}
             >
               <LayoutGrid size={13} />
             </button>
@@ -330,10 +333,8 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
           <button
             type="button"
             onClick={() => onBattleRandom(step.topic || 'arrays', 'easy')}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded font-display font-bold text-[11px] uppercase tracking-wider text-white transition-all duration-200"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded font-display font-bold text-[11px] uppercase tracking-wider text-white transition-all duration-200 bg-[var(--c-red)] hover:bg-rose-500 shadow-md shadow-rose-950/40"
             style={{
-              background: 'linear-gradient(135deg, #f59e0b 0%, #e11d48 100%)',
-              boxShadow: '0 0 10px rgba(245,158,11,0.25)',
               clipPath: 'polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%)'
             }}
           >
@@ -345,12 +346,11 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
           <button
             type="button"
             onClick={() => setOpen(o => !o)}
-            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors hover:bg-amber-500/10 text-amber-600 dark:text-amber-400"
-            style={{ border: '1px solid rgba(245,158,11,0.25)' }}
+            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors border border-[var(--c-border)] bg-[var(--c-panel)] hover:bg-[var(--c-panel2)] text-[var(--c-text-dim)] hover:text-[var(--c-text)]"
           >
             <ChevronDown
               size={14}
-              className={`transition-transform duration-200 ${open ? '' : '-rotate-90'}`}
+              className={`transition-transform duration-200 ${isOpen ? '' : '-rotate-90'}`}
             />
           </button>
         </div>
@@ -358,7 +358,7 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
 
       {/* ── Subsections (Easy / Medium / Hard) ── */}
       <AnimatePresence initial={false}>
-        {open && (
+        {isOpen && (
           <motion.div
             key="step-body"
             initial={{ height: 0, opacity: 0 }}
@@ -367,7 +367,7 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-3 space-y-2.5 border-t border-[rgba(245,158,11,0.15)] pt-2.5">
+            <div className="px-3 pb-3 space-y-2.5 border-t border-[var(--c-border)] pt-2.5">
               {(step.subsections || []).map((sub, si) => {
                 const startIdx = runningIdx
                 runningIdx += (sub.problems || []).length
@@ -412,7 +412,7 @@ export default function StriverSheetView({
     return (
       <div className="flex items-center justify-center py-16">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-6 h-6 rounded-full animate-ping" style={{ background: '#f59e0b', opacity: 0.6 }} />
+          <div className="w-6 h-6 rounded-full animate-ping" style={{ background: 'var(--c-blue)', opacity: 0.6 }} />
           <p className="font-mono text-xs uppercase tracking-wider text-[var(--c-text-mute)]">Loading Curriculum…</p>
         </div>
       </div>
@@ -429,7 +429,7 @@ export default function StriverSheetView({
           placeholder="Search problems by name…"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          className="w-full pl-8 pr-4 py-2 rounded font-mono text-xs bg-[var(--c-panel)] border border-[var(--c-border)] text-[var(--c-text)] placeholder:text-[var(--c-text-mute)] focus:outline-none focus:border-amber-500/60 transition-colors"
+          className="w-full pl-8 pr-4 py-2 rounded font-mono text-xs bg-[var(--c-panel)] border border-[var(--c-border)] text-[var(--c-text)] placeholder:text-[var(--c-text-mute)] focus:outline-none focus:border-[var(--c-blue)] focus:ring-1 focus:ring-[var(--c-blue)]/30 transition-all"
         />
         {searchQuery && (
           <button
@@ -451,17 +451,21 @@ export default function StriverSheetView({
         </div>
       ) : (
         <div className="space-y-3">
-          {dataToUse.map(step => (
-            <TopicStepCard
-              key={step.id}
-              step={step}
-              onBattleProblem={onBattleProblem}
-              onBattleRandom={onBattleRandom}
-              queuingProblemId={queuingProblemId}
-              isQueuing={isQueuing}
-              searchQuery={searchQuery}
-            />
-          ))}
+          {dataToUse.map((step, idx) => {
+            const isArrays = (step.topic === 'arrays') || (step.id && step.id.includes('array')) || idx === 0
+            return (
+              <TopicStepCard
+                key={step.id}
+                step={step}
+                defaultOpen={isArrays}
+                onBattleProblem={onBattleProblem}
+                onBattleRandom={onBattleRandom}
+                queuingProblemId={queuingProblemId}
+                isQueuing={isQueuing}
+                searchQuery={searchQuery}
+              />
+            )
+          })}
         </div>
       )}
     </div>
