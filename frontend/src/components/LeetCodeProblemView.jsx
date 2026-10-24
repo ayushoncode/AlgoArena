@@ -167,7 +167,16 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
     if (!trimmed) continue
 
     // Handle Example section lines
+    // Handle Example section lines
     if (currentSection === 'example' && curExample) {
+      const mdImgMatch = trimmed.match(/!\[(.*?)\]\((.*?)\)/)
+      const htmlImgMatch = trimmed.match(/<img[^>]*src=["']([^"']+)["'][^>]*>/i)
+      const imgUrl = mdImgMatch ? mdImgMatch[2] : (htmlImgMatch ? htmlImgMatch[1] : null)
+      if (imgUrl) {
+        curExample.image = imgUrl
+        continue
+      }
+
       if (/^\*?\*?Input\*?\*?:?/i.test(trimmed)) {
         curExample.input = trimmed.replace(/^\*?\*?Input\*?\*?:?\s*/i, '').trim()
         curExample.inExplanation = false
@@ -202,13 +211,8 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
         continue
       } else {
         // If it's an ASCII diagram line not wrapped in code fences
-        const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/)
-        if (imgMatch) {
-          curExample.image = imgMatch[2]
-        } else {
-          if (!curExample.diagram) curExample.diagram = trimmed
-          else curExample.diagram += '\n' + line
-        }
+        if (!curExample.diagram) curExample.diagram = trimmed
+        else curExample.diagram += '\n' + line
       }
       continue
     }
@@ -234,9 +238,11 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
     // Body section paragraphs
     if (currentSection === 'body') {
       if (trimmed !== '---') {
-        const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/)
-        if (imgMatch) {
-          paragraphs.push({ type: 'image', url: imgMatch[2], alt: imgMatch[1] })
+        const mdImgMatch = trimmed.match(/!\[(.*?)\]\((.*?)\)/)
+        const htmlImgMatch = trimmed.match(/<img[^>]*src=["']([^"']+)["'][^>]*>/i)
+        const imgUrl = mdImgMatch ? mdImgMatch[2] : (htmlImgMatch ? htmlImgMatch[1] : null)
+        if (imgUrl) {
+          paragraphs.push({ type: 'image', url: imgUrl, alt: mdImgMatch ? mdImgMatch[1] : 'Diagram' })
         } else if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
           // Check if previous paragraph was a table
           const prev = paragraphs[paragraphs.length - 1]
@@ -322,11 +328,18 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
     )
   }
 
-  const { paragraphs, examples, constraints, hints } = parseLeetCodeDescription(
+  const { paragraphs, examples, constraints, hints: parsedHints } = parseLeetCodeDescription(
     problem.description,
     problem.sample_input,
     problem.sample_output
   )
+
+  const hints = React.useMemo(() => {
+    const fromProp = Array.isArray(problem?.hints) ? problem.hints : []
+    const fromDesc = parsedHints || []
+    const combined = [...fromProp, ...fromDesc]
+    return Array.from(new Set(combined.map(h => typeof h === 'string' ? h.trim() : h))).filter(Boolean)
+  }, [parsedHints, problem?.hints])
 
   const diffLower = (problem.difficulty || difficulty || 'medium').toLowerCase()
 

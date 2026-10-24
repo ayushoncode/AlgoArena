@@ -925,6 +925,22 @@ export const CANONICAL_SIGNATURES = {
     params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
     ret: TYPE_INT,
   },
+  'implement lower bound': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'lower bound': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'implement upper bound': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'upper bound': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
   'custom frequency sort': {
     params: [{ name: 'nums', ...TYPE_INT_ARR }],
     ret: TYPE_INT_ARR_RET,

@@ -754,13 +754,7 @@
 }
 
 .bg-hex-pattern {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='70'%3E%3Cpath d='M30 5 L55 20 L55 50 L30 65 L5 50 L5 20 Z' fill='none' stroke='rgba(28,37,64,0.45)' stroke-width='0.5'/%3E%3C/svg%3E");
-  background-size: 60px 70px;
-  opacity: 0.6;
-}
-
-[data-theme="light"] .bg-hex-pattern {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='70'%3E%3Cpath d='M30 5 L55 20 L55 50 L30 65 L5 50 L5 20 Z' fill='none' stroke='rgba(0,0,0,0.03)' stroke-width='0.5'/%3E%3C/svg%3E");
+  display: none;
 }
 
 /* ── Scanlines overlay ─────────────────────────────────── */
