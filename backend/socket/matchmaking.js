@@ -93,7 +93,7 @@ async function executeMatch(io, entryA, entryB, topic, difficulty, forcedProblem
   if (socketB) socketB.join(roomId)
 
   try {
-    let problemId = forcedProblemId
+    let problemId = forcedProblemId || entryA?.problemId || entryB?.problemId || null
     let matchTopic = topic
     let matchDifficulty = difficulty
 
@@ -194,7 +194,7 @@ function sweepQueues(io) {
           bucket.splice(i, 1)
           let t = p1.topic || 'arrays'
           let d = p1.difficulty || 'easy'
-          let probId = p1.problemId || null
+          let probId = p1.problemId || p2.problemId || null
           if (topicKey.startsWith('problem:')) {
             probId = topicKey.slice('problem:'.length)
           } else {
@@ -281,18 +281,47 @@ function registerMatchmaking(io) {
 
       console.log(`[Queue] ${username} (${rating}) → ${topicKey}  queue size before: ${bucket.length}`)
 
-      // Attempt immediate match
-      const result = findOpponent(bucket, newEntry)
+      // Attempt immediate match in exact bucket first
+      let result = findOpponent(bucket, newEntry)
+      let matchedBucket = bucket
+
+      // If entrant picked a specific problem, also check general topic queue so they match without waiting forever
+      if (!result && problemId) {
+        const genKey = `${topic}:${difficulty}`
+        if (queues.has(genKey)) {
+          const genBucket = queues.get(genKey)
+          result = findOpponent(genBucket, newEntry)
+          if (result) matchedBucket = genBucket
+        }
+      }
+
+      // If entrant joined general queue, check if someone is waiting in a problem queue of this topic & diff
+      if (!result && !problemId) {
+        for (const [key, q] of queues.entries()) {
+          if (key.startsWith('problem:') && q.length > 0) {
+            const first = q[0]
+            if (first.topic === topic && first.difficulty === difficulty) {
+              result = findOpponent(q, newEntry)
+              if (result) {
+                matchedBucket = q
+                break
+              }
+            }
+          }
+        }
+      }
 
       if (result) {
         // ── Match found! ──────────────────────────────────
         const { opponent, index } = result
-        bucket.splice(index, 1)   // remove opponent from queue
+        matchedBucket.splice(index, 1)   // remove opponent from their queue
+
+        const chosenProblemId = newEntry.problemId || opponent.problemId || problemId || null
         
         matchingUsers.add(newEntry.userId)
         matchingUsers.add(opponent.userId)
         
-        executeMatch(io, newEntry, opponent, topic, difficulty, problemId).finally(() => {
+        executeMatch(io, newEntry, opponent, topic, difficulty, chosenProblemId).finally(() => {
           matchingUsers.delete(newEntry.userId)
           matchingUsers.delete(opponent.userId)
         })
