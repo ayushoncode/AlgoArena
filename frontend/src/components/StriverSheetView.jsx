@@ -5,20 +5,19 @@ import {
   Shuffle, CheckCircle2, BookOpen, Zap, Flame, Target, Brackets,
   LayoutList, LayoutGrid
 } from 'lucide-react'
-import { HudPanel, DiffChip } from './ui'
+import { HudPanel } from './ui'
 import { DEFAULT_STRIVER_CURRICULUM } from '../content/striverCurriculum'
 
 // ── Difficulty config ──────────────────────────────────────────────
 const DIFF_CONFIG = {
-  easy:   { label: 'Easy',   color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)',  icon: <Zap size={11} />   },
-  medium: { label: 'Medium', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)',  icon: <Target size={11} /> },
-  hard:   { label: 'Hard',   color: '#E11D48', bg: 'rgba(225,29,72,0.12)',  border: 'rgba(225,29,72,0.35)',   icon: <Flame size={11} />  },
+  easy:   { label: 'Easy',   color: 'var(--c-green, #10b981)', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)',  icon: <Zap size={11} />   },
+  medium: { label: 'Medium', color: 'var(--c-gold, #d97706)',  bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)',  icon: <Target size={11} /> },
+  hard:   { label: 'Hard',   color: 'var(--c-red, #E11D48)',   bg: 'rgba(225,29,72,0.12)',  border: 'rgba(225,29,72,0.3)',   icon: <Flame size={11} />  },
 }
 
 // ── Single Problem Row (Compact 1-Line Card) ───────────────────────
 function ProblemRow({ problem, globalIdx, onBattleProblem, queuingProblemId, isQueuing }) {
   const isThis = isQueuing && queuingProblemId === problem.id
-  const diff   = DIFF_CONFIG[problem.difficulty] || DIFF_CONFIG.easy
 
   return (
     <motion.div
@@ -33,23 +32,15 @@ function ProblemRow({ problem, globalIdx, onBattleProblem, queuingProblemId, isQ
           : 'border-[var(--c-border)] bg-[var(--c-panel)] hover:bg-[var(--c-panel2)] hover:border-amber-500/40 hover:shadow-sm'
       }`}
     >
-      {/* Left: #Idx + Title + Diff Badge + Optional Sample In */}
+      {/* Left: #Idx + Title + Optional Sample In */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         <span className="font-mono text-[11px] sm:text-xs font-bold text-[var(--c-text-mute)] w-6 shrink-0 text-center">
           #{String(globalIdx + 1).padStart(2, '0')}
         </span>
 
-        <h4 className="font-display font-semibold text-xs sm:text-[13.5px] text-[var(--c-text)] truncate group-hover:text-amber-400 transition-colors">
+        <h4 className="font-display font-semibold text-xs sm:text-[13.5px] text-[var(--c-text)] truncate group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors">
           {problem.title}
         </h4>
-
-        <span
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] font-bold uppercase tracking-wider shrink-0"
-          style={{ background: diff.bg, color: diff.color, border: `1px solid ${diff.border}` }}
-        >
-          {diff.icon}
-          {diff.label}
-        </span>
 
         {problem.sample_input && (
           <span className="hidden lg:inline-flex items-center gap-1 font-mono text-[10px] text-[var(--c-text-mute)] bg-[var(--c-bg)]/80 px-2 py-0.5 rounded border border-[var(--c-border)] truncate max-w-[220px]">
@@ -108,10 +99,9 @@ function ProblemGridCard({ problem, globalIdx, onBattleProblem, queuingProblemId
           <span className="font-mono text-[10px] font-bold text-[var(--c-text-mute)]">
             #{globalIdx + 1}
           </span>
-          <DiffChip difficulty={problem.difficulty} />
         </div>
 
-        <h4 className="font-display font-bold text-xs sm:text-[13px] text-[var(--c-text)] leading-snug group-hover:text-amber-400 transition-colors mb-2 truncate">
+        <h4 className="font-display font-bold text-xs sm:text-[13px] text-[var(--c-text)] leading-snug group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors mb-2 truncate">
           {problem.title}
         </h4>
 
@@ -147,7 +137,9 @@ function ProblemGridCard({ problem, globalIdx, onBattleProblem, queuingProblemId
 
 // ── Difficulty Section (Easy / Medium / Hard) ──────────────────────
 function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, isQueuing, searchQuery, viewMode }) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
+  const isSearchActive = Boolean(searchQuery && searchQuery.trim().length > 0)
+  const isOpen = isSearchActive ? true : open
 
   const problems = useMemo(() => {
     const probs = subsection.problems || []
@@ -171,7 +163,7 @@ function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, 
       {/* Difficulty Header — clickable accordion toggle */}
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setOpen(o => isSearchActive ? !isOpen : !o)}
         className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 transition-colors hover:brightness-110"
         style={{ background: cfg.bg }}
       >
@@ -190,13 +182,13 @@ function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, 
         <ChevronDown
           size={14}
           style={{ color: cfg.color }}
-          className={`transition-transform duration-200 ${open ? '' : '-rotate-90'}`}
+          className={`transition-transform duration-200 ${isOpen ? '' : '-rotate-90'}`}
         />
       </button>
 
       {/* Problem Items */}
       <AnimatePresence initial={false}>
-        {open && (
+        {isOpen && (
           <motion.div
             key="diff-body"
             initial={{ height: 0, opacity: 0 }}
@@ -260,10 +252,12 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
     <HudPanel
       glow
       glowColor="rgba(245, 158, 11, 0.08)"
+      accentTopLeft="var(--c-gold)"
+      accentBotRight="var(--c-gold)"
       style={{
         padding: 0,
-        background: 'linear-gradient(135deg, rgba(245,158,11,0.05) 0%, rgba(225,29,72,0.05) 100%)',
-        border: '1px solid rgba(245,158,11,0.22)',
+        background: 'var(--c-panel)',
+        border: '1px solid rgba(245,158,11,0.25)',
         overflow: 'hidden'
       }}
     >
@@ -272,14 +266,14 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
         <div className="flex items-center gap-2.5 min-w-0">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)' }}
+            style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}
           >
-            <Brackets size={16} className="text-amber-400" />
+            <Brackets size={16} className="text-amber-600 dark:text-amber-400" />
           </div>
 
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8.5px] font-mono font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/25">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8.5px] font-mono font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
                 <Sparkles size={8} className="animate-spin" />
                 Striver A2Z DSA Sheet
               </span>
@@ -318,7 +312,7 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
               type="button"
               title="Single-line list view"
               onClick={() => setViewMode('list')}
-              className={`p-1 rounded transition-colors ${viewMode === 'list' ? 'bg-amber-500/20 text-amber-400' : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)]'}`}
+              className={`p-1 rounded transition-colors ${viewMode === 'list' ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)]'}`}
             >
               <LayoutList size={13} />
             </button>
@@ -326,7 +320,7 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
               type="button"
               title="Grid card view"
               onClick={() => setViewMode('grid')}
-              className={`p-1 rounded transition-colors ${viewMode === 'grid' ? 'bg-amber-500/20 text-amber-400' : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)]'}`}
+              className={`p-1 rounded transition-colors ${viewMode === 'grid' ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)]'}`}
             >
               <LayoutGrid size={13} />
             </button>
@@ -351,12 +345,12 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
           <button
             type="button"
             onClick={() => setOpen(o => !o)}
-            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors hover:bg-amber-500/10"
+            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors hover:bg-amber-500/10 text-amber-600 dark:text-amber-400"
             style={{ border: '1px solid rgba(245,158,11,0.25)' }}
           >
             <ChevronDown
               size={14}
-              className={`text-amber-400 transition-transform duration-200 ${open ? '' : '-rotate-90'}`}
+              className={`transition-transform duration-200 ${open ? '' : '-rotate-90'}`}
             />
           </button>
         </div>
