@@ -75,7 +75,10 @@ router.get('/striver-sheet', async (_req, res) => {
               'remove-duplicates-from-sorted-array',
               'left-rotate-an-array-by-one',
               'rotate-array',
-              'move-zeroes'
+              'move-zeroes',
+              'linear-search',
+              'union-of-two-sorted-arrays',
+              'missing-number'
             ]
           },
           {
