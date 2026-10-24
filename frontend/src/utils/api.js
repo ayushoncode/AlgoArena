@@ -22,7 +22,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error?.response?.status === 401) {
+    const url = error?.config?.url || ''
+    const isAuthRoute = url.includes('/auth') || url.includes('/users/me')
+    if (error?.response?.status === 401 && isAuthRoute) {
       localStorage.removeItem('aa_token')
       localStorage.removeItem('aa_user')
       window.dispatchEvent(new Event('auth-logout'))

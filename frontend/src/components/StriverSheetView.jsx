@@ -6,6 +6,7 @@ import {
   BookOpen, Award, Check, Hash
 } from 'lucide-react'
 import { HudPanel, DiffChip } from './ui'
+import { DEFAULT_STRIVER_CURRICULUM } from '../content/striverCurriculum'
 
 export default function StriverSheetView({
   striverData = [],
@@ -18,8 +19,11 @@ export default function StriverSheetView({
   const [selectedDifficulty, setSelectedDifficulty] = useState('all') // 'all' | 'easy' | 'medium' | 'hard'
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Flatten all problems from the curriculum
-  const currentStep = striverData[0] || null
+  // Flatten all problems from the curriculum (with robust fallback)
+  const dataToUse = (striverData && striverData.length > 0 && striverData[0]?.subsections?.length > 0)
+    ? striverData
+    : DEFAULT_STRIVER_CURRICULUM
+  const currentStep = dataToUse[0] || null
 
   const allProblems = useMemo(() => {
     if (!currentStep?.subsections) return []
