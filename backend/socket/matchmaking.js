@@ -102,11 +102,15 @@ async function executeMatch(io, entryA, entryB, topic, difficulty, forcedProblem
     let matchDifficulty = difficulty
 
     if (problemId) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(problemId)
       const { rows: probRows } = await db.query(
-        `SELECT id, topic, difficulty FROM problems WHERE id = $1`,
+        isUuid
+          ? `SELECT id, topic, difficulty FROM problems WHERE id = $1`
+          : `SELECT id, topic, difficulty FROM problems WHERE slug = $1`,
         [problemId]
       )
       if (probRows[0]) {
+        problemId = probRows[0].id
         matchTopic = probRows[0].topic || matchTopic
         matchDifficulty = probRows[0].difficulty || matchDifficulty
       }

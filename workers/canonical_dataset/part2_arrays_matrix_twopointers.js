@@ -910,6 +910,9 @@ rotate 3 steps to the right: [5,6,7,1,2,3,4]
 ### **Example 2:**
 **Input:** nums = [-1,-100,3,99], k = 2
 **Output:** [3,99,-1,-100]
+**Explanation:**
+rotate 1 steps to the right: [99,-1,-100,3]
+rotate 2 steps to the right: [3,99,-1,-100]
 
 ### **Constraints:**
 - \`1 <= nums.length <= 10⁵\`

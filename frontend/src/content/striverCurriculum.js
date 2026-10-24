@@ -1,6 +1,6 @@
 /**
  * frontend/src/content/striverCurriculum.js
- * Striver A2Z DSA Sheet — Step 3: Arrays (Easy) — 10 questions.
+ * Striver A2Z DSA Sheet — Step 3: Arrays
  * Synchronized with DB and https://github.com/Codensity30/Strivers-A2Z-DSA-Sheet
  */
 
@@ -103,6 +103,56 @@ export const DEFAULT_STRIVER_CURRICULUM = [
             difficulty: 'easy',
             sample_input: '[3, 0, 1]',
             sample_output: '2'
+          },
+          {
+            id: 'a565ca95-294d-414c-9c40-3ea7ec346311',
+            title: 'Max Consecutive Ones',
+            slug: 'max-consecutive-ones',
+            topic: 'arrays',
+            difficulty: 'easy',
+            sample_input: '[1, 1, 0, 1, 1, 1]',
+            sample_output: '3'
+          },
+          {
+            id: '1a737f9f-b386-4062-82ea-654f071e5f13',
+            title: 'Longest Subarray with Given Sum K',
+            slug: 'longest-subarray-with-given-sum',
+            topic: 'arrays',
+            difficulty: 'easy',
+            sample_input: '[10, 5, 2, 7, 1, 9], 15',
+            sample_output: '4'
+          },
+          {
+            id: '43ee7388-0e00-4e07-85cb-5e4cffb5940c',
+            title: 'Single Number',
+            slug: 'single-number',
+            topic: 'arrays',
+            difficulty: 'easy',
+            sample_input: '[2, 2, 1]',
+            sample_output: '1'
+          }
+        ]
+      },
+      {
+        title: 'Medium Problems',
+        problems: [
+          {
+            id: '24d10236-4ca2-40ea-81ad-604096b5df02',
+            title: 'Two Sum',
+            slug: 'two-sum',
+            topic: 'arrays',
+            difficulty: 'easy',
+            sample_input: '[2, 7, 11, 15], 9',
+            sample_output: '[0, 1]'
+          },
+          {
+            id: 'a72830b5-7c9d-4467-ba9b-78bc71556b95',
+            title: 'Sort Colors',
+            slug: 'sort-colors',
+            topic: 'arrays',
+            difficulty: 'medium',
+            sample_input: '[2, 0, 2, 1, 1, 0]',
+            sample_output: '[0, 0, 1, 1, 2, 2]'
           }
         ]
       }
