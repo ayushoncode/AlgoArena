@@ -919,7 +919,9 @@ export default function Lobby() {
     }
   }, [connected, queuing, topic, diff, queuingProblem, emit])
 
-  if (loading || !isAuthenticated) {
+  // Show loader only while auth is being restored from localStorage.
+  // The useEffect above (line 898) handles redirect to /login if not authenticated.
+  if (loading) {
     return (
       <PageWrapper heroGlow>
         <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
@@ -927,6 +929,22 @@ export default function Lobby() {
             <div className="w-8 h-8 rounded-full animate-ping" style={{ background: 'var(--c-red)', opacity: 0.6 }} />
             <p className="font-mono text-sm tracking-wider uppercase" style={{ color: 'var(--c-text-mute)' }}>
               Initializing Command Center…
+            </p>
+          </div>
+        </div>
+      </PageWrapper>
+    )
+  }
+
+  if (!isAuthenticated) {
+    // Navigate fires asynchronously — show loader instead of black screen
+    return (
+      <PageWrapper heroGlow>
+        <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 rounded-full animate-ping" style={{ background: 'var(--c-red)', opacity: 0.6 }} />
+            <p className="font-mono text-sm tracking-wider uppercase" style={{ color: 'var(--c-text-mute)' }}>
+              Redirecting to login…
             </p>
           </div>
         </div>
