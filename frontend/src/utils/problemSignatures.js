@@ -77,6 +77,18 @@ export const CANONICAL_SIGNATURES = {
     params: [{ name: 'nums', ...TYPE_INT_ARR }],
     ret: TYPE_INT_ARR_RET,
   },
+  'linear search': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'union of two sorted arrays': {
+    params: [{ name: 'nums1', ...TYPE_INT_ARR }, { name: 'nums2', ...TYPE_INT_ARR }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'missing number': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
   'two sum ii - input array is sorted': {
     params: [{ name: 'numbers', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
     ret: TYPE_INT_ARR_RET,
@@ -1039,7 +1051,7 @@ export function buildStarterTemplate(problem, lang = 'javascript') {
   if (!problem) return TEMPLATES[lang] || TEMPLATES.javascript
 
   const cleanTitle = (problem.title || '').trim().toLowerCase()
-  let sig = CANONICAL_SIGNATURES[cleanTitle]
+  let sig = CANONICAL_SIGNATURES[cleanTitle] || (problem.slug ? CANONICAL_SIGNATURES[problem.slug.replace(/-/g, ' ').toLowerCase()] : null)
 
   let params = []
   let ret = null

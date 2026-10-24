@@ -93,7 +93,9 @@ async function evaluateJavaScript(code, testCases, onProgress) {
           throw new Error("No function named 'solution' found. Please define 'function solution(...)'");
         }
         
-        result = __fn(${tc.input});
+        let __args = [${tc.input}];
+        let __res = __fn(...__args);
+        result = (__res !== undefined) ? __res : __args[0];
       `
 
       const script = new vm.Script(wrappedScript)
