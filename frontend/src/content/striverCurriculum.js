@@ -387,6 +387,64 @@ export const DEFAULT_STRIVER_CURRICULUM = [
         ]
       }
     ]
+  },
+  {
+    id: 'step-4-binary-search',
+    title: 'Binary Search',
+    topic: 'binary-search',
+    badge: 'Curriculum Ready',
+    subsections: [
+      {
+        title: 'BS on 1D Arrays',
+        problems: [
+          {
+            id: 'a19913b1-1af9-4c9e-aae6-ae8e4c1fc770',
+            title: 'Binary Search',
+            slug: 'binary-search',
+            topic: 'binary-search',
+            difficulty: 'easy',
+            sample_input: '[-1, 0, 3, 5, 9, 12], 9',
+            sample_output: '4'
+          },
+          {
+            id: '06229979-8987-47b1-a4c0-af068dbde14c',
+            title: 'Implement Lower Bound',
+            slug: 'lower-bound',
+            topic: 'binary-search',
+            difficulty: 'easy',
+            sample_input: '[1, 2, 8, 10, 11, 12, 19], 5',
+            sample_output: '2'
+          },
+          {
+            id: '45bba363-3ccb-4832-a57c-868212c71c03',
+            title: 'Implement Upper Bound',
+            slug: 'upper-bound',
+            topic: 'binary-search',
+            difficulty: 'easy',
+            sample_input: '[2, 3, 6, 7, 8, 8, 11, 11, 12], 6',
+            sample_output: '3'
+          },
+          {
+            id: '123e47ae-3e1d-4395-9a8b-fef0920d83cf',
+            title: 'Search Insert Position',
+            slug: 'search-insert-position',
+            topic: 'binary-search',
+            difficulty: 'easy',
+            sample_input: '[1, 3, 5, 6], 5',
+            sample_output: '2'
+          },
+          {
+            id: 'a7d2695f-6502-4c10-8a39-606903340f5e',
+            title: 'Find First and Last Position of Element in Sorted Array',
+            slug: 'find-first-and-last-position-of-element-in-sorted-array',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[5, 7, 7, 8, 8, 10], 8',
+            sample_output: '[3,4]'
+          }
+        ]
+      }
+    ]
   }
 ]
 

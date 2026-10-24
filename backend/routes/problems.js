@@ -31,7 +31,7 @@ router.get('/daily', async (_req, res) => {
   try {
     const doy = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
     const { rows: problems } = await db.query(
-      `SELECT id, title, topic, difficulty, description, sample_input, sample_output
+      `SELECT id, title, topic, difficulty, description, sample_input, sample_output, hints
        FROM problems ORDER BY id ASC`
     )
     if (!problems.length) {
@@ -61,7 +61,7 @@ router.get('/striver-sheet', async (_req, res) => {
     const CURRICULUM = [
       {
         id: 'step-3-arrays',
-        title: 'Step 3: Solve Problems on Arrays',
+        title: 'Arrays',
         topic: 'arrays',
         icon: 'Brackets',
         badge: 'Curriculum Ready',
@@ -122,6 +122,25 @@ router.get('/striver-sheet', async (_req, res) => {
             ]
           }
         ]
+      },
+      {
+        id: 'step-4-binary-search',
+        title: 'Binary Search',
+        topic: 'binary-search',
+        icon: 'Search',
+        badge: 'Curriculum Ready',
+        subsections: [
+          {
+            title: 'BS on 1D Arrays',
+            problems: [
+              'binary-search',
+              'lower-bound',
+              'upper-bound',
+              'search-insert-position',
+              'find-first-and-last-position-of-element-in-sorted-array'
+            ]
+          }
+        ]
       }
     ]
 
@@ -149,14 +168,14 @@ router.get('/', authMiddleware, async (req, res) => {
 
     if (topic && difficulty) {
       const { rows } = await db.query(
-        `SELECT id, title, topic, difficulty, description, sample_input, sample_output
+        `SELECT id, title, topic, difficulty, description, sample_input, sample_output, hints
          FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY RANDOM() LIMIT 5`,
         [topic, difficulty]
       )
       if (rows.length) return res.json(rows)
 
       const { rows: fallback } = await db.query(
-        `SELECT id, title, topic, difficulty, description, sample_input, sample_output
+        `SELECT id, title, topic, difficulty, description, sample_input, sample_output, hints
          FROM problems WHERE topic = $1 ORDER BY RANDOM() LIMIT 5`,
         [topic]
       )
@@ -368,8 +387,8 @@ router.get('/:id', authMiddleware, async (req, res) => {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.params.id)
     const { rows: [problem] } = await db.query(
       isUuid
-        ? `SELECT id, title, topic, difficulty, description, min_rating, max_rating, sample_input, sample_output, created_at, slug FROM problems WHERE id = $1`
-        : `SELECT id, title, topic, difficulty, description, min_rating, max_rating, sample_input, sample_output, created_at, slug FROM problems WHERE slug = $1`,
+        ? `SELECT id, title, topic, difficulty, description, min_rating, max_rating, sample_input, sample_output, created_at, slug, hints FROM problems WHERE id = $1`
+        : `SELECT id, title, topic, difficulty, description, min_rating, max_rating, sample_input, sample_output, created_at, slug, hints FROM problems WHERE slug = $1`,
       [req.params.id]
     )
     if (!problem) return res.status(404).json({ message: 'problem not found' })

@@ -10,7 +10,7 @@ import {
   Radio, Shield, ChevronRight, Wifi, WifiOff, Clock,
   Brackets, Type, Link, GitBranch, Network, Layers,
   Search, ArrowUpDown, Shuffle, Sparkles, Play, CheckCircle2,
-  GitCommit, Compass, Cpu, Boxes, Flame
+  GitCommit, Compass, Cpu, Boxes, Flame, BookOpen
 } from 'lucide-react'
 import {
   HudPanel, HudButton, GhostButton, DangerButton, RankBadge,
@@ -1108,14 +1108,14 @@ export default function Lobby() {
               onClick={() => setLobbyTab('striver')}
               className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md font-display font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 ${
                 lobbyTab === 'striver'
-                  ? 'bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-lg shadow-amber-900/40 ring-1 ring-white/20'
+                  ? 'bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-lg shadow-sky-950/40 ring-1 ring-sky-400/30'
                   : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)] hover:bg-[var(--c-panel2)]'
               }`}
             >
-              <Sparkles size={15} className={lobbyTab === 'striver' ? 'animate-spin text-amber-200' : ''} />
+              <BookOpen size={14} className={lobbyTab === 'striver' ? 'text-sky-200' : ''} />
               <span>Striver A2Z Sheet</span>
-              <span className="hidden sm:inline-block text-[9px] px-2 py-0.5 rounded font-mono bg-amber-400 text-black font-black uppercase tracking-normal">
-                Topic & Question Wise
+              <span className="hidden sm:inline-block text-[9px] px-2 py-0.5 rounded font-mono bg-black/25 text-white/90">
+                Curriculum
               </span>
             </button>
           </div>
@@ -1448,25 +1448,95 @@ export default function Lobby() {
                 </div>
               </HudPanel>
 
-              {/* PROMOTED PRIVATE DUEL CARD */}
-              <HudPanel style={{ padding: '1.25rem' }}>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Shield size={16} style={{ color: 'var(--c-blue)' }} />
-                    <h3 className="font-display font-bold text-sm uppercase" style={{ color: 'var(--c-text)' }}>
-                      Private Duel
-                    </h3>
-                    <span className="font-mono text-[9px] px-1.5 py-0.5 rounded ml-auto" style={{ background: 'var(--c-panel2)', color: 'var(--c-blue)', border: '1px solid var(--c-border)' }}>
-                      Casual
+              {/* PROMOTED PRIVATE DUEL CARD — EYE-CATCHING FRIEND BATTLE */}
+              <HudPanel
+                accentTopLeft="var(--c-blue)"
+                accentBotRight="var(--c-blue)"
+                glow
+                glowColor="rgba(56, 189, 248, 0.22)"
+                style={{
+                  padding: '1.25rem',
+                  background: 'linear-gradient(145deg, rgba(56,189,248,0.07) 0%, rgba(37,99,235,0.05) 50%, var(--c-panel) 100%)',
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
+                  boxShadow: '0 8px 24px -6px rgba(2, 132, 199, 0.15)'
+                }}
+              >
+                <div className="space-y-3.5">
+                  {/* Header with animated live badge */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(56,189,248,0.2) 0%, rgba(37,99,235,0.2) 100%)',
+                          border: '1px solid rgba(56,189,248,0.4)',
+                          color: 'var(--c-blue)'
+                        }}
+                      >
+                        <Users size={16} />
+                      </div>
+                      <div>
+                        <span className="font-mono text-[9px] font-extrabold uppercase tracking-widest flex items-center gap-1" style={{ color: 'var(--c-blue)' }}>
+                          <Sparkles size={9} className="animate-spin" />
+                          1v1 Friend Battle
+                        </span>
+                        <h3 className="font-display font-black text-sm uppercase tracking-tight" style={{ color: 'var(--c-text)' }}>
+                          Private Duel
+                        </h3>
+                      </div>
+                    </div>
+
+                    <span
+                      className="inline-flex items-center gap-1 font-mono text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                      style={{
+                        background: 'rgba(56,189,248,0.12)',
+                        color: 'var(--c-blue)',
+                        border: '1px solid rgba(56,189,248,0.35)'
+                      }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full animate-ping" style={{ background: 'var(--c-blue)' }} />
+                      Custom Code
                     </span>
                   </div>
-                  <p className="font-sans text-xs" style={{ color: 'var(--c-text-dim)' }}>
-                    Challenge a friend directly with a custom room code or join an existing session.
+
+                  {/* Catchy description */}
+                  <p className="font-sans text-xs leading-relaxed" style={{ color: 'var(--c-text-dim)' }}>
+                    Challenge your friends, peers, or classmates directly. Generate a 6-digit room code and code live head-to-head!
                   </p>
-                  <GhostButton onClick={() => setCustomModalOpen(true)} className="w-full py-2.5 text-xs">
-                    <Hash size={13} style={{ color: 'var(--c-blue)' }} />
-                    Create Or Join Private Room
-                  </GhostButton>
+
+                  {/* Feature perk chips */}
+                  <div className="grid grid-cols-2 gap-1.5 font-mono text-[9.5px]">
+                    <div
+                      className="flex items-center gap-1.5 px-2 py-1 rounded truncate"
+                      style={{ background: 'var(--c-panel2)', border: '1px solid var(--c-border)', color: 'var(--c-text-dim)' }}
+                    >
+                      <Shield size={11} style={{ color: 'var(--c-blue)' }} className="shrink-0" />
+                      <span className="truncate">Zero Elo Risk</span>
+                    </div>
+                    <div
+                      className="flex items-center gap-1.5 px-2 py-1 rounded truncate"
+                      style={{ background: 'var(--c-panel2)', border: '1px solid var(--c-border)', color: 'var(--c-text-dim)' }}
+                    >
+                      <Zap size={11} style={{ color: 'var(--c-gold)' }} className="shrink-0" />
+                      <span className="truncate">Live Match Sync</span>
+                    </div>
+                  </div>
+
+                  {/* High-visibility Action CTA Button */}
+                  <button
+                    type="button"
+                    onClick={() => setCustomModalOpen(true)}
+                    className="w-full py-2.5 px-4 rounded font-display font-extrabold text-xs uppercase tracking-wider text-white transition-all duration-200 flex items-center justify-center gap-2 group hover:brightness-110 active:scale-[0.99] cursor-pointer shadow-md"
+                    style={{
+                      background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 60%, #4f46e5 100%)',
+                      boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)',
+                      clipPath: 'polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%)'
+                    }}
+                  >
+                    <Swords size={13} className="group-hover:rotate-12 transition-transform duration-200" />
+                    <span>Create Or Join Room</span>
+                    <ChevronRight size={13} className="group-hover:translate-x-1 transition-transform duration-200 ml-auto" />
+                  </button>
                 </div>
               </HudPanel>
 
