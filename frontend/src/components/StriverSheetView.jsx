@@ -1,83 +1,82 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Swords, Search, Sparkles, ChevronDown, ChevronRight,
-  Shuffle, CheckCircle2, BookOpen, Zap, Flame, Target, Brackets
+  Swords, Search, Sparkles, ChevronDown,
+  Shuffle, CheckCircle2, BookOpen, Zap, Flame, Target, Brackets,
+  LayoutList, LayoutGrid
 } from 'lucide-react'
 import { HudPanel, DiffChip } from './ui'
 import { DEFAULT_STRIVER_CURRICULUM } from '../content/striverCurriculum'
 
 // ── Difficulty config ──────────────────────────────────────────────
 const DIFF_CONFIG = {
-  easy:   { label: 'Easy',   color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)',  icon: <Zap size={12} />   },
-  medium: { label: 'Medium', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)',  icon: <Target size={12} /> },
-  hard:   { label: 'Hard',   color: '#E11D48', bg: 'rgba(225,29,72,0.12)',  border: 'rgba(225,29,72,0.35)',   icon: <Flame size={12} />  },
+  easy:   { label: 'Easy',   color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)',  icon: <Zap size={11} />   },
+  medium: { label: 'Medium', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)',  icon: <Target size={11} /> },
+  hard:   { label: 'Hard',   color: '#E11D48', bg: 'rgba(225,29,72,0.12)',  border: 'rgba(225,29,72,0.35)',   icon: <Flame size={11} />  },
 }
 
-// ── Single Problem Card ────────────────────────────────────────────
-function ProblemCard({ problem, globalIdx, onBattleProblem, queuingProblemId, isQueuing }) {
+// ── Single Problem Row (Compact 1-Line Card) ───────────────────────
+function ProblemRow({ problem, globalIdx, onBattleProblem, queuingProblemId, isQueuing }) {
   const isThis = isQueuing && queuingProblemId === problem.id
   const diff   = DIFF_CONFIG[problem.difficulty] || DIFF_CONFIG.easy
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 6 }}
+      initial={{ opacity: 0, y: 3 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
-      transition={{ duration: 0.15 }}
-      className={`relative flex flex-col justify-between p-4 rounded-lg border transition-all duration-200 group ${
+      exit={{ opacity: 0, y: -3 }}
+      transition={{ duration: 0.12 }}
+      className={`group relative flex items-center justify-between gap-2.5 sm:gap-4 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border transition-all duration-200 ${
         isThis
-          ? 'border-rose-500 bg-rose-500/10 shadow-lg shadow-rose-900/30 ring-1 ring-rose-500/50'
-          : 'bg-[var(--c-panel)] hover:bg-[var(--c-panel2)]/70'
+          ? 'border-rose-500 bg-rose-500/15 shadow-lg shadow-rose-900/30 ring-1 ring-rose-500/50'
+          : 'border-[var(--c-border)] bg-[var(--c-panel)] hover:bg-[var(--c-panel2)] hover:border-amber-500/40 hover:shadow-sm'
       }`}
-      style={{ borderColor: isThis ? undefined : diff.border }}
     >
-      <div>
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2 mb-2.5">
-          <span className="font-mono text-[10px] font-bold text-[var(--c-text-mute)]">
-            #{globalIdx + 1}
-          </span>
-          <DiffChip difficulty={problem.difficulty} />
-        </div>
+      {/* Left: #Idx + Title + Diff Badge + Optional Sample In */}
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+        <span className="font-mono text-[11px] sm:text-xs font-bold text-[var(--c-text-mute)] w-6 shrink-0 text-center">
+          #{String(globalIdx + 1).padStart(2, '0')}
+        </span>
 
-        {/* Title */}
-        <h3 className="font-display font-bold text-sm sm:text-[15px] text-[var(--c-text)] leading-snug group-hover:text-amber-400 transition-colors mb-3">
+        <h4 className="font-display font-semibold text-xs sm:text-[13.5px] text-[var(--c-text)] truncate group-hover:text-amber-400 transition-colors">
           {problem.title}
-        </h3>
+        </h4>
 
-        {/* Sample I/O */}
+        <span
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] font-bold uppercase tracking-wider shrink-0"
+          style={{ background: diff.bg, color: diff.color, border: `1px solid ${diff.border}` }}
+        >
+          {diff.icon}
+          {diff.label}
+        </span>
+
         {problem.sample_input && (
-          <div className="p-2 rounded bg-[var(--c-bg)] border border-[var(--c-border)] font-mono text-[11px] space-y-0.5">
-            <div className="text-[var(--c-text-mute)] truncate">
-              <span className="text-[var(--c-text-dim)] font-semibold">In:</span> {problem.sample_input}
-            </div>
-            <div className="text-[var(--c-text-mute)] truncate">
-              <span className="text-[var(--c-text-dim)] font-semibold">Out:</span> {problem.sample_output}
-            </div>
-          </div>
+          <span className="hidden lg:inline-flex items-center gap-1 font-mono text-[10px] text-[var(--c-text-mute)] bg-[var(--c-bg)]/80 px-2 py-0.5 rounded border border-[var(--c-border)] truncate max-w-[220px]">
+            <span className="text-[var(--c-text-dim)] font-semibold">In:</span> {problem.sample_input}
+          </span>
         )}
       </div>
 
-      {/* Footer */}
-      <div className="mt-4 pt-3 border-t border-[var(--c-border)] flex items-center justify-between gap-2">
-        <div className="font-mono text-[10px] text-[var(--c-text-mute)] flex items-center gap-1">
+      {/* Right: Tests count + 1v1 Battle Action */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <span className="hidden md:inline-flex items-center gap-1 font-mono text-[10.5px] text-emerald-400/90 shrink-0">
           <CheckCircle2 size={11} className="text-emerald-400" />
-          25 Tests Verified
-        </div>
+          Verified
+        </span>
+
         <button
           type="button"
           onClick={() => onBattleProblem(problem)}
           disabled={isQueuing}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded font-display font-bold text-xs uppercase tracking-wider transition-all duration-200 ${
+          className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded font-display font-bold text-[11px] uppercase tracking-wider transition-all duration-200 shrink-0 ${
             isThis
               ? 'bg-rose-600 text-white animate-pulse'
               : 'bg-rose-600/90 hover:bg-rose-500 text-white hover:shadow-md hover:shadow-rose-900/40 disabled:opacity-50'
           }`}
           style={{ clipPath: 'polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%)' }}
         >
-          <Swords size={12} />
+          <Swords size={11} />
           <span>{isThis ? 'Queuing…' : '1v1 Battle'}</span>
         </button>
       </div>
@@ -85,8 +84,69 @@ function ProblemCard({ problem, globalIdx, onBattleProblem, queuingProblemId, is
   )
 }
 
+// ── Compact Grid Card (if user switches to grid) ───────────────────
+function ProblemGridCard({ problem, globalIdx, onBattleProblem, queuingProblemId, isQueuing }) {
+  const isThis = isQueuing && queuingProblemId === problem.id
+  const diff   = DIFF_CONFIG[problem.difficulty] || DIFF_CONFIG.easy
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -4 }}
+      transition={{ duration: 0.12 }}
+      className={`relative flex flex-col justify-between p-3 rounded-lg border transition-all duration-200 group ${
+        isThis
+          ? 'border-rose-500 bg-rose-500/10 shadow-lg shadow-rose-900/30 ring-1 ring-rose-500/50'
+          : 'bg-[var(--c-panel)] hover:bg-[var(--c-panel2)]/80 hover:border-amber-500/40'
+      }`}
+      style={{ borderColor: isThis ? undefined : diff.border }}
+    >
+      <div>
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="font-mono text-[10px] font-bold text-[var(--c-text-mute)]">
+            #{globalIdx + 1}
+          </span>
+          <DiffChip difficulty={problem.difficulty} />
+        </div>
+
+        <h4 className="font-display font-bold text-xs sm:text-[13px] text-[var(--c-text)] leading-snug group-hover:text-amber-400 transition-colors mb-2 truncate">
+          {problem.title}
+        </h4>
+
+        {problem.sample_input && (
+          <div className="p-1.5 rounded bg-[var(--c-bg)] border border-[var(--c-border)] font-mono text-[10px] space-y-0.5 mb-2 truncate">
+            <span className="text-[var(--c-text-dim)] font-semibold">In:</span> {problem.sample_input}
+          </div>
+        )}
+      </div>
+
+      <div className="pt-2 border-t border-[var(--c-border)] flex items-center justify-between gap-2">
+        <span className="font-mono text-[9px] text-emerald-400 flex items-center gap-1">
+          <CheckCircle2 size={10} /> Verified
+        </span>
+        <button
+          type="button"
+          onClick={() => onBattleProblem(problem)}
+          disabled={isQueuing}
+          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded font-display font-bold text-[10.5px] uppercase tracking-wider transition-all duration-200 ${
+            isThis
+              ? 'bg-rose-600 text-white animate-pulse'
+              : 'bg-rose-600/90 hover:bg-rose-500 text-white disabled:opacity-50'
+          }`}
+          style={{ clipPath: 'polygon(3px 0%, 100% 0%, calc(100% - 3px) 100%, 0% 100%)' }}
+        >
+          <Swords size={10} />
+          <span>{isThis ? 'Queuing…' : '1v1'}</span>
+        </button>
+      </div>
+    </motion.div>
+  )
+}
+
 // ── Difficulty Section (Easy / Medium / Hard) ──────────────────────
-function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, isQueuing, searchQuery }) {
+function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, isQueuing, searchQuery, viewMode }) {
   const [open, setOpen] = useState(true)
 
   const problems = useMemo(() => {
@@ -94,6 +154,9 @@ function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, 
     if (!searchQuery) return probs
     return probs.filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase()))
   }, [subsection.problems, searchQuery])
+
+  // Hide empty subsections
+  if (problems.length === 0) return null
 
   // Figure out difficulty from subsection title
   const diff = subsection.title.toLowerCase().includes('easy')
@@ -103,37 +166,35 @@ function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, 
     : 'hard'
   const cfg = DIFF_CONFIG[diff]
 
-  if (problems.length === 0 && searchQuery) return null
-
   return (
     <div className="rounded-lg border overflow-hidden" style={{ borderColor: cfg.border }}>
-      {/* Difficulty Header — clickable */}
+      {/* Difficulty Header — clickable accordion toggle */}
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 transition-colors"
+        className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 transition-colors hover:brightness-110"
         style={{ background: cfg.bg }}
       >
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <span style={{ color: cfg.color }}>{cfg.icon}</span>
-          <span className="font-display font-black text-sm uppercase tracking-wider" style={{ color: cfg.color }}>
+          <span className="font-display font-black text-xs sm:text-sm uppercase tracking-wider" style={{ color: cfg.color }}>
             {subsection.title}
           </span>
           <span
-            className="px-2 py-0.5 rounded font-mono text-[10px] font-bold"
-            style={{ background: `${cfg.color}20`, color: cfg.color }}
+            className="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold"
+            style={{ background: `${cfg.color}25`, color: cfg.color }}
           >
             {problems.length}
           </span>
         </div>
         <ChevronDown
-          size={16}
+          size={14}
           style={{ color: cfg.color }}
           className={`transition-transform duration-200 ${open ? '' : '-rotate-90'}`}
         />
       </button>
 
-      {/* Problem Cards */}
+      {/* Problem Items */}
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
@@ -141,16 +202,27 @@ function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, 
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.18 }}
             className="overflow-hidden"
           >
-            <div className="p-3 bg-[var(--c-bg)]/40">
-              {problems.length === 0 ? (
-                <p className="text-center py-4 font-mono text-xs text-[var(--c-text-mute)]">No problems here</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="p-2 sm:p-2.5 bg-[var(--c-bg)]/40">
+              {viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {problems.map((problem, i) => (
-                    <ProblemCard
+                    <ProblemGridCard
+                      key={problem.id}
+                      problem={problem}
+                      globalIdx={startIdx + i}
+                      onBattleProblem={onBattleProblem}
+                      queuingProblemId={queuingProblemId}
+                      isQueuing={isQueuing}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {problems.map((problem, i) => (
+                    <ProblemRow
                       key={problem.id}
                       problem={problem}
                       globalIdx={startIdx + i}
@@ -172,6 +244,7 @@ function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, 
 // ── Topic Step Card (e.g., "Step 3: Solve Problems on Arrays") ──────
 function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId, isQueuing, searchQuery }) {
   const [open, setOpen] = useState(true)
+  const [viewMode, setViewMode] = useState('list') // 'list' (1 line per question) | 'grid'
 
   const totalProblems = useMemo(() => {
     return (step.subsections || []).reduce((acc, sub) => acc + (sub.problems || []).length, 0)
@@ -181,89 +254,108 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
   const mediumCount = useMemo(() => (step.subsections?.find(s => s.title.toLowerCase().includes('medium'))?.problems || []).length, [step.subsections])
   const hardCount   = useMemo(() => (step.subsections?.find(s => s.title.toLowerCase().includes('hard'))?.problems || []).length, [step.subsections])
 
-  // Running index counter for problem numbering across subsections
   let runningIdx = 0
 
   return (
     <HudPanel
       glow
-      glowColor="rgba(245, 158, 11, 0.10)"
+      glowColor="rgba(245, 158, 11, 0.08)"
       style={{
         padding: 0,
-        background: 'linear-gradient(135deg, rgba(245,158,11,0.06) 0%, rgba(225,29,72,0.06) 100%)',
+        background: 'linear-gradient(135deg, rgba(245,158,11,0.05) 0%, rgba(225,29,72,0.05) 100%)',
         border: '1px solid rgba(245,158,11,0.22)',
         overflow: 'hidden'
       }}
     >
-      {/* ── Step Header ── */}
-      <div className="flex items-center justify-between gap-4 px-5 py-4">
-        <div className="flex items-center gap-3 min-w-0">
-          {/* Icon */}
+      {/* ── Step Header (Compact) ── */}
+      <div className="flex items-center justify-between gap-3 px-3.5 sm:px-4 py-2.5 sm:py-3">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
             style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)' }}
           >
-            <Brackets size={18} className="text-amber-400" />
+            <Brackets size={16} className="text-amber-400" />
           </div>
 
           <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-mono font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/25">
-                <Sparkles size={9} className="animate-spin" />
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8.5px] font-mono font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/25">
+                <Sparkles size={8} className="animate-spin" />
                 Striver A2Z DSA Sheet
               </span>
             </div>
-            <h2 className="font-display font-black text-base sm:text-lg uppercase tracking-tight text-[var(--c-text)] mt-0.5 truncate">
+            <h2 className="font-display font-black text-sm sm:text-[15px] uppercase tracking-tight text-[var(--c-text)] mt-0.5 truncate">
               {(step.topic ? step.topic.charAt(0).toUpperCase() + step.topic.slice(1) : (step.title || 'Arrays')).replace(/^Step\s*\d+\s*:\s*(Solve\s+Problems\s+on\s+)?/i, '').trim()}
             </h2>
 
             {/* Pills: Easy / Medium / Hard counts */}
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               {easyCount > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono text-[10px] font-bold" style={{ background: DIFF_CONFIG.easy.bg, color: DIFF_CONFIG.easy.color, border: `1px solid ${DIFF_CONFIG.easy.border}` }}>
-                  <Zap size={9} /> Easy {easyCount}
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] font-bold" style={{ background: DIFF_CONFIG.easy.bg, color: DIFF_CONFIG.easy.color, border: `1px solid ${DIFF_CONFIG.easy.border}` }}>
+                  <Zap size={8} /> Easy {easyCount}
                 </span>
               )}
               {mediumCount > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono text-[10px] font-bold" style={{ background: DIFF_CONFIG.medium.bg, color: DIFF_CONFIG.medium.color, border: `1px solid ${DIFF_CONFIG.medium.border}` }}>
-                  <Target size={9} /> Medium {mediumCount}
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] font-bold" style={{ background: DIFF_CONFIG.medium.bg, color: DIFF_CONFIG.medium.color, border: `1px solid ${DIFF_CONFIG.medium.border}` }}>
+                  <Target size={8} /> Medium {mediumCount}
                 </span>
               )}
               {hardCount > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono text-[10px] font-bold" style={{ background: DIFF_CONFIG.hard.bg, color: DIFF_CONFIG.hard.color, border: `1px solid ${DIFF_CONFIG.hard.border}` }}>
-                  <Flame size={9} /> Hard {hardCount}
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] font-bold" style={{ background: DIFF_CONFIG.hard.bg, color: DIFF_CONFIG.hard.color, border: `1px solid ${DIFF_CONFIG.hard.border}` }}>
+                  <Flame size={8} /> Hard {hardCount}
                 </span>
               )}
-              <span className="font-mono text-[10px] text-[var(--c-text-mute)]">· {totalProblems} total</span>
+              <span className="font-mono text-[9.5px] text-[var(--c-text-mute)]">· {totalProblems} total</span>
             </div>
           </div>
         </div>
 
+        {/* Header Right Actions: View Toggle + Random Battle + Collapse */}
         <div className="flex items-center gap-2 shrink-0">
+          {/* View Mode Toggle: Row View (1-line) vs Grid View */}
+          <div className="flex items-center rounded border border-[var(--c-border)] p-0.5 bg-[var(--c-panel)]">
+            <button
+              type="button"
+              title="Single-line list view"
+              onClick={() => setViewMode('list')}
+              className={`p-1 rounded transition-colors ${viewMode === 'list' ? 'bg-amber-500/20 text-amber-400' : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)]'}`}
+            >
+              <LayoutList size={13} />
+            </button>
+            <button
+              type="button"
+              title="Grid card view"
+              onClick={() => setViewMode('grid')}
+              className={`p-1 rounded transition-colors ${viewMode === 'grid' ? 'bg-amber-500/20 text-amber-400' : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)]'}`}
+            >
+              <LayoutGrid size={13} />
+            </button>
+          </div>
+
           {/* Random battle button */}
           <button
             type="button"
             onClick={() => onBattleRandom(step.topic || 'arrays', 'easy')}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded font-display font-bold text-xs uppercase tracking-wider text-white transition-all duration-200"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded font-display font-bold text-[11px] uppercase tracking-wider text-white transition-all duration-200"
             style={{
               background: 'linear-gradient(135deg, #f59e0b 0%, #e11d48 100%)',
-              boxShadow: '0 0 12px rgba(245,158,11,0.3)',
-              clipPath: 'polygon(5px 0%, 100% 0%, calc(100% - 5px) 100%, 0% 100%)'
+              boxShadow: '0 0 10px rgba(245,158,11,0.25)',
+              clipPath: 'polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%)'
             }}
           >
-            <Shuffle size={13} />
-            <span>Random Battle</span>
+            <Shuffle size={11} />
+            <span>Random</span>
           </button>
 
-          {/* Expand/collapse */}
+          {/* Expand/collapse entire topic */}
           <button
             type="button"
             onClick={() => setOpen(o => !o)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors hover:bg-amber-500/10"
+            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors hover:bg-amber-500/10"
             style={{ border: '1px solid rgba(245,158,11,0.25)' }}
           >
             <ChevronDown
-              size={16}
+              size={14}
               className={`text-amber-400 transition-transform duration-200 ${open ? '' : '-rotate-90'}`}
             />
           </button>
@@ -278,10 +370,10 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 space-y-3 border-t border-[rgba(245,158,11,0.15)] pt-4">
+            <div className="px-3 pb-3 space-y-2.5 border-t border-[rgba(245,158,11,0.15)] pt-2.5">
               {(step.subsections || []).map((sub, si) => {
                 const startIdx = runningIdx
                 runningIdx += (sub.problems || []).length
@@ -294,6 +386,7 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
                     queuingProblemId={queuingProblemId}
                     isQueuing={isQueuing}
                     searchQuery={searchQuery}
+                    viewMode={viewMode}
                   />
                 )
               })}
@@ -333,16 +426,16 @@ export default function StriverSheetView({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* ── Global Search Bar ── */}
       <div className="relative">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--c-text-mute)]" />
+        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--c-text-mute)]" />
         <input
           type="text"
-          placeholder="Search problems across all topics…"
+          placeholder="Search problems by name…"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 rounded font-mono text-xs bg-[var(--c-panel)] border border-[var(--c-border)] text-[var(--c-text)] placeholder:text-[var(--c-text-mute)] focus:outline-none focus:border-amber-500/60 transition-colors"
+          className="w-full pl-8 pr-4 py-2 rounded font-mono text-xs bg-[var(--c-panel)] border border-[var(--c-border)] text-[var(--c-text)] placeholder:text-[var(--c-text-mute)] focus:outline-none focus:border-amber-500/60 transition-colors"
         />
         {searchQuery && (
           <button
@@ -357,13 +450,13 @@ export default function StriverSheetView({
 
       {/* ── Topic Step Cards ── */}
       {dataToUse.length === 0 ? (
-        <div className="p-12 text-center rounded border border-dashed border-[var(--c-border)] bg-[var(--c-panel)]">
-          <BookOpen size={28} className="mx-auto text-[var(--c-text-mute)] mb-2 opacity-50" />
-          <p className="font-display font-bold text-sm text-[var(--c-text)] uppercase">No curriculum loaded</p>
-          <p className="font-mono text-xs text-[var(--c-text-mute)] mt-1">Check back soon.</p>
+        <div className="p-10 text-center rounded border border-dashed border-[var(--c-border)] bg-[var(--c-panel)]">
+          <BookOpen size={24} className="mx-auto text-[var(--c-text-mute)] mb-2 opacity-50" />
+          <p className="font-display font-bold text-xs text-[var(--c-text)] uppercase">No curriculum loaded</p>
+          <p className="font-mono text-[11px] text-[var(--c-text-mute)] mt-1">Check back soon.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {dataToUse.map(step => (
             <TopicStepCard
               key={step.id}
