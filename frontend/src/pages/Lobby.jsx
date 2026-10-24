@@ -478,7 +478,7 @@ function SearchingOverlay({ topic, difficulty, rating, problem = null, onCancel 
           </h2>
           <p className="font-sans text-sm" style={{ color: 'var(--c-text-dim)' }}>
             {problem ? (
-              <>Locked on Striver problem: <span className="font-bold text-white underline decoration-amber-500">{problem.title}</span></>
+              <>Locked on Striver problem: <span className="font-bold underline decoration-amber-500" style={{ color: 'var(--c-text)' }}>{problem.title}</span></>
             ) : (
               <>Scanning arena for opponents near your{' '}
               <span style={{ color: userTier.col, fontWeight: 700 }}>{userTier.name} ({rating})</span> Elo</>
@@ -486,7 +486,7 @@ function SearchingOverlay({ topic, difficulty, rating, problem = null, onCancel 
           </p>
           <div className="flex items-center justify-center gap-2 pt-2 font-mono text-xs">
             {problem && (
-              <span className="px-3 py-1 flex items-center gap-1.5 rounded text-amber-300 font-bold" style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)' }}>
+              <span className="px-3 py-1 flex items-center gap-1.5 rounded font-bold text-amber-600 dark:text-amber-300" style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)' }}>
                 <Target size={13} />
                 1v1 Problem Duel
               </span>
@@ -924,39 +924,6 @@ export default function Lobby() {
     }
   }, [connected, queuing, topic, diff, queuingProblem, emit])
 
-  // Show loader only while auth is being restored from localStorage.
-  // The useEffect above (line 898) handles redirect to /login if not authenticated.
-  if (loading) {
-    return (
-      <PageWrapper heroGlow>
-        <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-8 h-8 rounded-full animate-ping" style={{ background: 'var(--c-red)', opacity: 0.6 }} />
-            <p className="font-mono text-sm tracking-wider uppercase" style={{ color: 'var(--c-text-mute)' }}>
-              Initializing Command Center…
-            </p>
-          </div>
-        </div>
-      </PageWrapper>
-    )
-  }
-
-  if (!isAuthenticated) {
-    // Navigate fires asynchronously — show loader instead of black screen
-    return (
-      <PageWrapper heroGlow>
-        <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-8 h-8 rounded-full animate-ping" style={{ background: 'var(--c-red)', opacity: 0.6 }} />
-            <p className="font-mono text-sm tracking-wider uppercase" style={{ color: 'var(--c-text-mute)' }}>
-              Redirecting to login…
-            </p>
-          </div>
-        </div>
-      </PageWrapper>
-    )
-  }
-
   const elo = user?.elo_rating ?? 1200
   const userTier = getArenaTier(elo)
   const selectedTopicObj = TOPICS.find(t => t.id === topic)
@@ -1010,6 +977,39 @@ export default function Lobby() {
   }
 
   const isDailySelected = dailyObj ? (topic === dailyObj.topic && diff === dailyObj.difficulty) : false
+
+  // Show loader only while auth is being restored from localStorage.
+  // The useEffect above (line 898) handles redirect to /login if not authenticated.
+  if (loading) {
+    return (
+      <PageWrapper heroGlow>
+        <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 rounded-full animate-ping" style={{ background: 'var(--c-red)', opacity: 0.6 }} />
+            <p className="font-mono text-sm tracking-wider uppercase" style={{ color: 'var(--c-text-mute)' }}>
+              Initializing Command Center…
+            </p>
+          </div>
+        </div>
+      </PageWrapper>
+    )
+  }
+
+  if (!isAuthenticated) {
+    // Navigate fires asynchronously — show loader instead of black screen
+    return (
+      <PageWrapper heroGlow>
+        <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 rounded-full animate-ping" style={{ background: 'var(--c-red)', opacity: 0.6 }} />
+            <p className="font-mono text-sm tracking-wider uppercase" style={{ color: 'var(--c-text-mute)' }}>
+              Redirecting to login…
+            </p>
+          </div>
+        </div>
+      </PageWrapper>
+    )
+  }
 
   return (
     <>

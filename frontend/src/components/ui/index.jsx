@@ -371,16 +371,16 @@ export function VerdictChip({ verdict, label, size = 'sm', className = '' }) {
    DIFF CHIP
 ══════════════════════════════════════════════════════════ */
 const DIFF_CFG = {
-  easy: { col: '#10b981', bg: 'rgba(16,185,129,0.12)', label: 'Easy' },
-  medium: { col: '#f59e0b', bg: 'rgba(245,158,11,0.12)', label: 'Medium' },
-  hard: { col: '#E11D48', bg: 'rgba(225,29,72,0.12)', label: 'Hard' },
+  easy: { col: 'var(--c-green, #10b981)', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)', label: 'Easy' },
+  medium: { col: 'var(--c-gold, #d97706)', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)', label: 'Medium' },
+  hard: { col: 'var(--c-red, #E11D48)', bg: 'rgba(225,29,72,0.12)', border: 'rgba(225,29,72,0.35)', label: 'Hard' },
 }
 
 export function DiffChip({ difficulty, className = '' }) {
   const cfg = DIFF_CFG[String(difficulty ?? '').toLowerCase()] ?? DIFF_CFG.medium
   return (
-    <span className={`font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 ${className}`}
-      style={{ background: cfg.bg, color: cfg.col, border: `1px solid ${cfg.col}40`, letterSpacing: '0.1em' }}
+    <span className={`font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${className}`}
+      style={{ background: cfg.bg, color: cfg.col, border: `1px solid ${cfg.border}`, letterSpacing: '0.1em' }}
     >{cfg.label}</span>
   )
 }

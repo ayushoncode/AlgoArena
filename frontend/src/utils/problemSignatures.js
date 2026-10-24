@@ -101,6 +101,50 @@ export const CANONICAL_SIGNATURES = {
     params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
     ret: TYPE_INT,
   },
+  'rearrange array elements by sign': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'leaders in an array': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'superior elements': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'first missing positive': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
+  'majority element ii': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'reverse pairs': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
+  'subarray sum equals k': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'largest subarray with 0 sum': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
+  'subarrays with xor k': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'find missing and repeated values': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'count inversions': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
   'two sum ii - input array is sorted': {
     params: [{ name: 'numbers', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
     ret: TYPE_INT_ARR_RET,
