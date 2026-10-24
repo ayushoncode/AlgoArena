@@ -78,7 +78,10 @@ router.get('/striver-sheet', async (_req, res) => {
               'move-zeroes',
               'linear-search',
               'union-of-two-sorted-arrays',
-              'missing-number'
+              'missing-number',
+              'max-consecutive-ones',
+              'longest-subarray-with-given-sum',
+              'single-number'
             ]
           },
           {
@@ -167,8 +170,13 @@ router.get('/', authMiddleware, async (req, res) => {
 // POST /api/problems/:id/run — run code against visible sample test cases only (Run button)
 router.post('/:id/run', authMiddleware, async (req, res) => {
   try {
-    const { code, language = 'javascript' } = req.body
-    const problemId = req.params.id
+    const rawId = req.params.id
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}[0-9a-f]{8}$/i.test(rawId) || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId)
+    let problemId = rawId
+    if (!isUuid) {
+      const { rows: prob } = await db.query('SELECT id FROM problems WHERE slug = $1', [rawId])
+      if (prob[0]) problemId = prob[0].id
+    }
 
     if (!code) return res.status(400).json({ message: 'code is required' })
 
@@ -344,14 +352,18 @@ router.post('/:id/run', authMiddleware, async (req, res) => {
 // GET /api/problems/:id — single problem with visible test cases
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.params.id)
     const { rows: [problem] } = await db.query(
-      `SELECT id, title, topic, difficulty, description, min_rating, max_rating, sample_input, sample_output, created_at, slug FROM problems WHERE id = $1`, [req.params.id]
+      isUuid
+        ? `SELECT id, title, topic, difficulty, description, min_rating, max_rating, sample_input, sample_output, created_at, slug FROM problems WHERE id = $1`
+        : `SELECT id, title, topic, difficulty, description, min_rating, max_rating, sample_input, sample_output, created_at, slug FROM problems WHERE slug = $1`,
+      [req.params.id]
     )
     if (!problem) return res.status(404).json({ message: 'problem not found' })
 
     const { rows: tests } = await db.query(
       `SELECT id, input, output FROM test_cases
-       WHERE problem_id = $1 AND is_hidden = false`, [req.params.id]
+       WHERE problem_id = $1 AND is_hidden = false`, [problem.id]
     )
     return res.json({ ...problem, sample_tests: tests })
   } catch (err) {
@@ -363,8 +375,12 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // GET /api/problems/:id/hints — get hints for a problem
 router.get('/:id/hints', authMiddleware, async (req, res) => {
   try {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.params.id)
     const { rows: [problem] } = await db.query(
-      `SELECT hints FROM problems WHERE id = $1`, [req.params.id]
+      isUuid
+        ? `SELECT hints FROM problems WHERE id = $1`
+        : `SELECT hints FROM problems WHERE slug = $1`,
+      [req.params.id]
     )
     if (!problem) return res.status(404).json({ message: 'problem not found' })
     return res.json(problem.hints || [])
