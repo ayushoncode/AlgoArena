@@ -170,8 +170,9 @@ router.get('/', authMiddleware, async (req, res) => {
 // POST /api/problems/:id/run — run code against visible sample test cases only (Run button)
 router.post('/:id/run', authMiddleware, async (req, res) => {
   try {
+    const { code, language = 'javascript' } = req.body
     const rawId = req.params.id
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}[0-9a-f]{8}$/i.test(rawId) || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId)
     let problemId = rawId
     if (!isUuid) {
       const { rows: prob } = await db.query('SELECT id FROM problems WHERE slug = $1', [rawId])
