@@ -57,6 +57,26 @@ export const CANONICAL_SIGNATURES = {
     params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
     ret: TYPE_INT_ARR_RET,
   },
+  'largest element in an array': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
+  'second largest element in an array': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
+  'check if array is sorted and rotated': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_BOOL,
+  },
+  'left rotate an array by one': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'move zeroes': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT_ARR_RET,
+  },
   'two sum ii - input array is sorted': {
     params: [{ name: 'numbers', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
     ret: TYPE_INT_ARR_RET,

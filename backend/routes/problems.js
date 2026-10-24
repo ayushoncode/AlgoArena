@@ -45,6 +45,85 @@ router.get('/daily', async (_req, res) => {
   }
 })
 
+// GET /api/problems/striver-sheet — returns Striver A2Z curriculum populated with live DB problem rows
+router.get('/striver-sheet', async (_req, res) => {
+  try {
+    const { rows: allProbs } = await db.query(
+      `SELECT id, title, slug, topic, difficulty, sample_input, sample_output
+       FROM problems ORDER BY created_at ASC`
+    )
+    const probMap = new Map()
+    for (const p of allProbs) {
+      if (p.slug) probMap.set(p.slug, p)
+      probMap.set(p.title.toLowerCase(), p)
+    }
+
+    const CURRICULUM = [
+      {
+        id: 'step-3-arrays',
+        title: 'Step 3: Solve Problems on Arrays',
+        topic: 'arrays',
+        icon: 'Brackets',
+        badge: 'Curriculum Ready',
+        subsections: [
+          {
+            title: 'Easy Problems',
+            problems: [
+              'largest-element-in-an-array',
+              'second-largest-element-in-an-array',
+              'check-if-array-is-sorted-and-rotated',
+              'remove-duplicates-from-sorted-array',
+              'left-rotate-an-array-by-one',
+              'rotate-array',
+              'move-zeroes'
+            ]
+          },
+          {
+            title: 'Medium Problems',
+            problems: [
+              'two-sum',
+              'sort-colors',
+              'majority-element',
+              'maximum-subarray',
+              'best-time-to-buy-and-sell-stock',
+              'next-permutation',
+              'longest-consecutive-sequence',
+              'set-matrix-zeroes',
+              'rotate-image',
+              'spiral-matrix'
+            ]
+          },
+          {
+            title: 'Hard Problems',
+            problems: [
+              'pascal-s-triangle',
+              '3sum',
+              '4sum',
+              'first-missing-positive',
+              'trapping-rain-water'
+            ]
+          }
+        ]
+      }
+    ]
+
+    const result = CURRICULUM.map(step => ({
+      ...step,
+      subsections: step.subsections.map(sub => ({
+        ...sub,
+        problems: sub.problems
+          .map(slug => probMap.get(slug) || probMap.get(slug.replace(/-/g, ' ')))
+          .filter(Boolean)
+      }))
+    }))
+
+    return res.json(result)
+  } catch (err) {
+    console.error('[GET /problems/striver-sheet]', err)
+    return res.status(500).json({ message: 'internal server error' })
+  }
+})
+
 // GET /api/problems — list problems (filter by topic/difficulty, with fallback)
 router.get('/', authMiddleware, async (req, res) => {
   try {
