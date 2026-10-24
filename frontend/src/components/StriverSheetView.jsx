@@ -225,6 +225,7 @@ function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, 
 function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId, isQueuing, searchQuery, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen)
   const [viewMode, setViewMode] = useState('list') // 'list' (1 line per question) | 'grid'
+  const [showDiffMenu, setShowDiffMenu] = useState(false)
 
   const hasMatchingProblems = useMemo(() => {
     if (!searchQuery || !searchQuery.trim()) return false
@@ -241,9 +242,38 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
   }, [step.subsections])
 
   const totalProblems = allProblems.length
-  const easyCount   = useMemo(() => allProblems.filter(p => p.difficulty === 'easy').length, [allProblems])
-  const mediumCount = useMemo(() => allProblems.filter(p => p.difficulty === 'medium').length, [allProblems])
-  const hardCount   = useMemo(() => allProblems.filter(p => p.difficulty === 'hard').length, [allProblems])
+
+  const easyCount = useMemo(() => {
+    const easySubs = (step.subsections || []).filter(s => s.title.toLowerCase().includes('easy'))
+    if (easySubs.length > 0) {
+      return easySubs.reduce((acc, s) => acc + (s.problems || []).length, 0)
+    }
+    return allProblems.filter(p => p.difficulty === 'easy').length
+  }, [step.subsections, allProblems])
+
+  const mediumCount = useMemo(() => {
+    const medSubs = (step.subsections || []).filter(s => s.title.toLowerCase().includes('medium'))
+    if (medSubs.length > 0) {
+      return medSubs.reduce((acc, s) => acc + (s.problems || []).length, 0)
+    }
+    return allProblems.filter(p => p.difficulty === 'medium').length
+  }, [step.subsections, allProblems])
+
+  const hardCount = useMemo(() => {
+    const hardSubs = (step.subsections || []).filter(s => s.title.toLowerCase().includes('hard'))
+    if (hardSubs.length > 0) {
+      return hardSubs.reduce((acc, s) => acc + (s.problems || []).length, 0)
+    }
+    return allProblems.filter(p => p.difficulty === 'hard').length
+  }, [step.subsections, allProblems])
+
+  const availableDiffs = useMemo(() => {
+    const list = []
+    if (easyCount > 0) list.push({ id: 'easy', label: 'Easy', count: easyCount, color: '#10b981' })
+    if (mediumCount > 0) list.push({ id: 'medium', label: 'Medium', count: mediumCount, color: '#f59e0b' })
+    if (hardCount > 0) list.push({ id: 'hard', label: 'Hard', count: hardCount, color: '#e11d48' })
+    return list
+  }, [easyCount, mediumCount, hardCount])
 
   const topicLabel = useMemo(() => {
     const raw = (step.topic || step.title || '').toLowerCase()
@@ -264,7 +294,9 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
         padding: 0,
         background: 'var(--c-panel)',
         border: '1px solid var(--c-border)',
-        overflow: 'hidden'
+        clipPath: 'none',
+        borderRadius: '0.5rem',
+        overflow: 'visible'
       }}
     >
       {/* ── Step Header (Compact) ── */}
@@ -285,24 +317,34 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
               {topicLabel}
             </h2>
 
-            {/* Pills: Easy / Medium / Hard counts */}
-            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            {/* Clean inline meta: Easy / Medium / Hard counts (No boxes) */}
+            <div className="flex items-center gap-2 mt-0.5 font-mono text-[10.5px] text-[var(--c-text-mute)] flex-wrap">
               {easyCount > 0 && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded font-mono text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  Easy {easyCount}
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="text-emerald-400 font-semibold">{easyCount} Easy</span>
                 </span>
               )}
               {mediumCount > 0 && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded font-mono text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                  Medium {mediumCount}
-                </span>
+                <>
+                  <span className="text-[var(--c-border2)]">·</span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                    <span className="text-amber-400 font-semibold">{mediumCount} Medium</span>
+                  </span>
+                </>
               )}
               {hardCount > 0 && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded font-mono text-[9px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">
-                  Hard {hardCount}
-                </span>
+                <>
+                  <span className="text-[var(--c-border2)]">·</span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                    <span className="text-rose-400 font-semibold">{hardCount} Hard</span>
+                  </span>
+                </>
               )}
-              <span className="font-mono text-[9.5px] text-[var(--c-text-mute)]">· {totalProblems} total</span>
+              <span className="text-[var(--c-border2)]">·</span>
+              <span>{totalProblems} total</span>
             </div>
           </div>
         </div>
@@ -329,18 +371,90 @@ function TopicStepCard({ step, onBattleProblem, onBattleRandom, queuingProblemId
             </button>
           </div>
 
-          {/* Random battle button */}
-          <button
-            type="button"
-            onClick={() => onBattleRandom(step.topic || 'arrays', 'easy')}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded font-display font-bold text-[11px] uppercase tracking-wider text-white transition-all duration-200 bg-[var(--c-red)] hover:bg-rose-500 shadow-md shadow-rose-950/40"
-            style={{
-              clipPath: 'polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%)'
-            }}
+          {/* Random battle button with hover/click difficulty dropdown */}
+          <div
+            className="relative hidden sm:block"
+            onMouseEnter={() => setShowDiffMenu(true)}
+            onMouseLeave={() => setShowDiffMenu(false)}
           >
-            <Shuffle size={11} />
-            <span>Random</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setShowDiffMenu(prev => !prev)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded font-display font-bold text-[11px] uppercase tracking-wider text-white transition-all duration-200 bg-[var(--c-red)] hover:bg-rose-500 shadow-md shadow-rose-950/40 cursor-pointer"
+              style={{
+                clipPath: 'polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%)'
+              }}
+            >
+              <Shuffle size={11} />
+              <span>Random</span>
+              <ChevronDown size={10} className={`transition-transform duration-150 ${showDiffMenu ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {showDiffMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 4, scale: 0.96 }}
+                  transition={{ duration: 0.12 }}
+                  className="absolute right-0 top-full mt-1.5 w-44 rounded-lg border border-[var(--c-border2)] bg-[var(--c-panel)] shadow-2xl z-50 p-1.5 backdrop-blur-md"
+                  style={{ boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.1)' }}
+                >
+                  <div className="px-2 py-1 text-[8.5px] font-mono uppercase font-black tracking-wider text-[var(--c-text-mute)] border-b border-[var(--c-border)] mb-1">
+                    Select Difficulty
+                  </div>
+                  {availableDiffs.map(d => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowDiffMenu(false)
+                        onBattleRandom(step.topic || 'arrays', d.id)
+                      }}
+                      className="w-full flex items-center justify-between px-2 py-1.5 rounded text-left transition-colors hover:bg-[var(--c-panel2)] group cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full shrink-0 shadow-sm" style={{ background: d.color }} />
+                        <span className="font-display font-bold text-xs uppercase tracking-wide text-[var(--c-text)] group-hover:text-white transition-colors">
+                          {d.label}
+                        </span>
+                      </div>
+                      <span
+                        className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded"
+                        style={{ color: d.color, background: `${d.color}15`, border: `1px solid ${d.color}35` }}
+                      >
+                        {d.count}
+                      </span>
+                    </button>
+                  ))}
+
+                  <div className="pt-1 mt-1 border-t border-[var(--c-border)]">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowDiffMenu(false)
+                        const randomDiff = availableDiffs[Math.floor(Math.random() * availableDiffs.length)]?.id || 'easy'
+                        onBattleRandom(step.topic || 'arrays', randomDiff)
+                      }}
+                      className="w-full flex items-center justify-between px-2 py-1.5 rounded text-left transition-colors hover:bg-[var(--c-panel2)] group cursor-pointer text-[var(--c-text-mute)] hover:text-[var(--c-text)]"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <Sparkles size={11} className="text-[var(--c-blue)]" />
+                        <span className="font-display font-bold text-[10.5px] uppercase tracking-wide">
+                          Any Difficulty
+                        </span>
+                      </div>
+                      <span className="font-mono text-[8.5px] text-[var(--c-text-mute)]">
+                        🎲 Pick
+                      </span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Expand/collapse entire topic */}
           <button
