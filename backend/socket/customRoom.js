@@ -100,11 +100,14 @@ function registerCustomRoom(io) {
           const guestSeed = guestRows[0]?.avatar_seed ?? null
           const guestStyle = guestRows[0]?.avatar_style ?? null
 
-          let { rows: problems } = await db.query(
-            `SELECT id FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY RANDOM() LIMIT 1`,
-            [topic, difficulty]
-          )
-          let problemId = problems[0]?.id ?? null
+          let problemId = room.problemId || null
+          if (!problemId) {
+            let { rows: problems } = await db.query(
+              `SELECT id FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY RANDOM() LIMIT 1`,
+              [topic, difficulty]
+            )
+            problemId = problems[0]?.id ?? null
+          }
           if (!problemId) {
             const { rows: topicProblems } = await db.query(
               `SELECT id FROM problems WHERE topic = $1 ORDER BY RANDOM() LIMIT 1`,

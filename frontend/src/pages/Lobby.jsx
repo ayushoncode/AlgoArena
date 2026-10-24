@@ -18,6 +18,7 @@ import {
   Skeleton, EmptyState, VerdictChip, Tooltip,
 } from '../components/ui'
 import { ArenaLogo } from '../components/ArenaLogo'
+import StriverSheetView from '../components/StriverSheetView'
 
 /* ════════════════════════════════════════════════
    DATA — topics + difficulties
@@ -416,7 +417,7 @@ const TopicCard = memo(function TopicCard({ topic, selected, onClick, indexKey }
 /* ════════════════════════════════════════════════
    SEARCHING OVERLAY — Radar + Loadout
 ════════════════════════════════════════════════ */
-function SearchingOverlay({ topic, difficulty, rating, onCancel }) {
+function SearchingOverlay({ topic, difficulty, rating, problem = null, onCancel }) {
   const { user } = useAuth()
   const { sec } = useQueueTimer(true)
   const mm = String(Math.floor(sec / 60)).padStart(2, '0')
@@ -472,13 +473,23 @@ function SearchingOverlay({ topic, difficulty, rating, onCancel }) {
         {/* Title */}
         <div className="space-y-2">
           <h2 className="font-display font-black text-3xl sm:text-4xl tracking-tight uppercase" style={{ color: 'var(--c-text)' }}>
-            Searching For A Rival
+            {problem ? 'Targeting Specific Duel' : 'Searching For A Rival'}
           </h2>
           <p className="font-sans text-sm" style={{ color: 'var(--c-text-dim)' }}>
-            Scanning arena for opponents near your{' '}
-            <span style={{ color: userTier.col, fontWeight: 700 }}>{userTier.name} ({rating})</span> Elo
+            {problem ? (
+              <>Locked on Striver problem: <span className="font-bold text-white underline decoration-amber-500">{problem.title}</span></>
+            ) : (
+              <>Scanning arena for opponents near your{' '}
+              <span style={{ color: userTier.col, fontWeight: 700 }}>{userTier.name} ({rating})</span> Elo</>
+            )}
           </p>
           <div className="flex items-center justify-center gap-2 pt-2 font-mono text-xs">
+            {problem && (
+              <span className="px-3 py-1 flex items-center gap-1.5 rounded text-amber-300 font-bold" style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)' }}>
+                <Target size={13} />
+                1v1 Problem Duel
+              </span>
+            )}
             <span className="px-3 py-1 flex items-center gap-1.5 rounded" style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}>
               <Icon size={13} style={{ color: 'var(--c-red)' }} />
               {topicObj.label}
@@ -802,6 +813,10 @@ export default function Lobby() {
   const [topic, setTopic] = useState(null)
   const [diff, setDiff] = useState('medium')
   const [queuing, setQueuing] = useState(false)
+  const [queuingProblem, setQueuingProblem] = useState(null)
+  const [lobbyTab, setLobbyTab] = useState('random') // 'random' | 'striver'
+  const [striverData, setStriverData] = useState([])
+  const [striverLoading, setStriverLoading] = useState(false)
   const [matchFoundData, setMatchFoundData] = useState(null)
   const [customModalOpen, setCustomModalOpen] = useState(false)
   const [dailyProblem, setDailyProblem] = useState(null)
@@ -820,6 +835,15 @@ export default function Lobby() {
       if (savedTopic && TOPICS.some(t => t.id === savedTopic)) setTopic(savedTopic)
       if (savedDiff && DIFFS.some(d => d.id === savedDiff)) setDiff(savedDiff)
     } catch { }
+  }, [])
+
+  // Fetch Striver Sheet curriculum
+  useEffect(() => {
+    setStriverLoading(true)
+    api.get('/api/problems/striver-sheet')
+      .then(({ data }) => setStriverData(data))
+      .catch(err => console.error('[Lobby] Failed to load striver sheet:', err))
+      .finally(() => setStriverLoading(false))
   }, [])
 
   // Topic & Diff selection handlers with localStorage memory
@@ -870,7 +894,7 @@ export default function Lobby() {
   useEffect(() => { if (initialRoomCode) setCustomModalOpen(true) }, [initialRoomCode])
 
   useEffect(() => {
-    function onMatchFound(data) { console.log('[Lobby] match_found →', data?.roomId); setQueuing(false); setMatchFoundData(data) }
+    function onMatchFound(data) { console.log('[Lobby] match_found →', data?.roomId); setQueuing(false); setQueuingProblem(null); setMatchFoundData(data) }
     on('match_found', onMatchFound)
     return () => off('match_found', onMatchFound)
   }, [on, off])
@@ -881,8 +905,14 @@ export default function Lobby() {
 
   // Auto re-join on reconnect
   useEffect(() => {
-    if (connected && queuing && topic && diff) emit('join_queue', { topic, difficulty: diff })
-  }, [connected, queuing, topic, diff, emit])
+    if (connected && queuing) {
+      if (queuingProblem) {
+        emit('join_queue', { topic: queuingProblem.topic || 'arrays', difficulty: queuingProblem.difficulty || 'easy', problemId: queuingProblem.id })
+      } else if (topic && diff) {
+        emit('join_queue', { topic, difficulty: diff })
+      }
+    }
+  }, [connected, queuing, topic, diff, queuingProblem, emit])
 
   if (loading && !user) {
     return (
@@ -913,13 +943,40 @@ export default function Lobby() {
     desc: (dailyProblem.description || '').slice(0, 140) + '…'
   } : null
 
-
   function startQueue() {
     if (!topic || queuing) return
+    setQueuingProblem(null)
     setQueuing(true)
+    emit('join_queue', { topic, difficulty: diff })
   }
 
-  function cancelQueue() { emit('leave_queue'); setQueuing(false) }
+  function cancelQueue() {
+    emit('leave_queue')
+    setQueuing(false)
+    setQueuingProblem(null)
+  }
+
+  const handleBattleProblem = useCallback((prob) => {
+    if (queuing) return
+    setQueuingProblem(prob)
+    setTopic(prob.topic || 'arrays')
+    setDiff(prob.difficulty || 'easy')
+    setQueuing(true)
+    emit('join_queue', {
+      topic: prob.topic || 'arrays',
+      difficulty: prob.difficulty || 'easy',
+      problemId: prob.id
+    })
+  }, [queuing, emit])
+
+  const handleBattleRandomFromSheet = useCallback((sheetTopic = 'arrays', sheetDiff = 'easy') => {
+    if (queuing) return
+    setQueuingProblem(null)
+    setTopic(sheetTopic)
+    setDiff(sheetDiff)
+    setQueuing(true)
+    emit('join_queue', { topic: sheetTopic, difficulty: sheetDiff })
+  }, [queuing, emit])
 
   function handleSurpriseMe() {
     const randomTopic = TOPICS[Math.floor(Math.random() * TOPICS.length)].id
@@ -939,7 +996,7 @@ export default function Lobby() {
             navigate(`/match/${data.roomId}`, { state: { topic: data.topic, difficulty: data.difficulty, players: data.players, problemId: data.problemId } })
           }} />
         ) : queuing ? (
-          <SearchingOverlay topic={topic} difficulty={diff} rating={elo} onCancel={cancelQueue} />
+          <SearchingOverlay topic={topic} difficulty={diff} rating={elo} problem={queuingProblem} onCancel={cancelQueue} />
         ) : null}
       </AnimatePresence>
 
@@ -1002,8 +1059,54 @@ export default function Lobby() {
         {/* ── MAIN CONTENT ────────────────────────────────── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 pb-24 lg:pb-6 space-y-6">
 
-          {/* STEPPER STRIP */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 p-2 rounded" style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)' }}>
+          {/* ── LOBBY MODE SELECTOR (Quick Arena vs Striver Sheet) ── */}
+          <div className="flex items-center gap-2 p-1.5 rounded-lg border border-[var(--c-border)] bg-[var(--c-panel)] shadow-inner">
+            <button
+              type="button"
+              onClick={() => setLobbyTab('random')}
+              className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md font-display font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 ${
+                lobbyTab === 'random'
+                  ? 'bg-[var(--c-red)] text-white shadow-lg shadow-rose-900/40 ring-1 ring-white/20'
+                  : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)] hover:bg-[var(--c-panel2)]'
+              }`}
+            >
+              <Zap size={15} className={lobbyTab === 'random' ? 'animate-pulse text-amber-300' : ''} />
+              <span>Quick Arena (Random)</span>
+              <span className="hidden sm:inline-block text-[9px] px-2 py-0.5 rounded font-mono bg-black/20 text-white/90">
+                Topic & Diff
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setLobbyTab('striver')}
+              className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md font-display font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 ${
+                lobbyTab === 'striver'
+                  ? 'bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-lg shadow-amber-900/40 ring-1 ring-white/20'
+                  : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)] hover:bg-[var(--c-panel2)]'
+              }`}
+            >
+              <Sparkles size={15} className={lobbyTab === 'striver' ? 'animate-spin text-amber-200' : ''} />
+              <span>Striver A2Z Sheet</span>
+              <span className="hidden sm:inline-block text-[9px] px-2 py-0.5 rounded font-mono bg-amber-400 text-black font-black uppercase tracking-normal">
+                Topic & Question Wise
+              </span>
+            </button>
+          </div>
+
+          {lobbyTab === 'striver' ? (
+            <StriverSheetView
+              striverData={striverData}
+              loading={striverLoading}
+              onBattleProblem={handleBattleProblem}
+              onBattleRandom={handleBattleRandomFromSheet}
+              queuingProblemId={queuingProblem?.id}
+              isQueuing={queuing}
+            />
+          ) : (
+            <>
+              {/* STEPPER STRIP */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 p-2 rounded" style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)' }}>
             {/* Step 1: Select Topic */}
             <div className={`flex items-center gap-2 p-2 rounded transition-colors ${topic ? 'opacity-100' : 'opacity-70'}`}
               style={{ background: topic ? 'rgba(225,29,72,0.12)' : 'transparent', border: `1px solid ${topic ? 'rgba(225,29,72,0.35)' : 'var(--c-border)'}` }}>
@@ -1344,29 +1447,53 @@ export default function Lobby() {
             </div>
 
           </div>
+          </>
+        )}
 
         </div>
 
         {/* MOBILE STICKY BOTTOM DEPLOY BAR */}
-        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 flex items-center gap-3 backdrop-blur-md"
-          style={{ background: 'var(--c-nav-bg)', borderTop: '1px solid var(--c-border)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
-          <div className="flex-1 min-w-0">
-            <p className="font-mono text-[10px] uppercase font-bold truncate" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)' }}>
-              {selectedTopicObj ? selectedTopicObj.label : 'Select Topic'} • {diffObj.label}
-            </p>
-            <p className="font-mono text-[10px]" style={{ color: 'var(--c-text-mute)' }}>
-              Elo swing: +18 / −18
-            </p>
+        {lobbyTab === 'random' ? (
+          <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 flex items-center gap-3 backdrop-blur-md"
+            style={{ background: 'var(--c-nav-bg)', borderTop: '1px solid var(--c-border)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
+            <div className="flex-1 min-w-0">
+              <p className="font-mono text-[10px] uppercase font-bold truncate" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)' }}>
+                {selectedTopicObj ? selectedTopicObj.label : 'Select Topic'} • {diffObj.label}
+              </p>
+              <p className="font-mono text-[10px]" style={{ color: 'var(--c-text-mute)' }}>
+                Elo swing: +18 / −18
+              </p>
+            </div>
+            <HudButton
+              onClick={startQueue}
+              disabled={!topic}
+              className="px-5 py-3 text-xs font-bold whitespace-nowrap flex items-center gap-1.5"
+            >
+              <Swords size={14} />
+              {topic ? 'Deploy' : 'Pick Topic'}
+            </HudButton>
           </div>
-          <HudButton
-            onClick={startQueue}
-            disabled={!topic}
-            className="px-5 py-3 text-xs font-bold whitespace-nowrap flex items-center gap-1.5"
-          >
-            <Swords size={14} />
-            {topic ? 'Deploy' : 'Pick Topic'}
-          </HudButton>
-        </div>
+        ) : (
+          <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 flex items-center justify-between gap-3 backdrop-blur-md"
+            style={{ background: 'var(--c-nav-bg)', borderTop: '1px solid var(--c-border)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
+            <div className="flex-1 min-w-0">
+              <p className="font-mono text-[10px] uppercase font-bold truncate text-amber-400">
+                Striver A2Z Curriculum
+              </p>
+              <p className="font-mono text-[10px] text-[var(--c-text-mute)]">
+                Tap '1v1 Battle' on any problem
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleBattleRandomFromSheet('arrays', 'easy')}
+              className="px-4 py-2 text-xs font-bold font-display uppercase tracking-wider text-white bg-gradient-to-r from-amber-500 to-rose-600 rounded flex items-center gap-1.5 shadow-md shadow-rose-950/40"
+            >
+              <Shuffle size={13} />
+              Random
+            </button>
+          </div>
+        )}
 
       </PageWrapper>
     </>

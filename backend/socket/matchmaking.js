@@ -84,7 +84,7 @@ function findOpponent(bucket, newEntry) {
 /**
  * Execute a match between two waiting entries
  */
-async function executeMatch(io, entryA, entryB, topic, difficulty) {
+async function executeMatch(io, entryA, entryB, topic, difficulty, forcedProblemId = null) {
   const roomId = makeRoomId()
   const socketA = io.sockets.sockets.get(entryA.socketId)
   const socketB = io.sockets.sockets.get(entryB.socketId)
@@ -93,36 +93,52 @@ async function executeMatch(io, entryA, entryB, topic, difficulty) {
   if (socketB) socketB.join(roomId)
 
   try {
-    let { rows: problems } = await db.query(
-      `SELECT id FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY RANDOM() LIMIT 1`,
-      [topic, difficulty]
-    )
-    let problemId = problems[0]?.id ?? null
-    if (!problemId) {
-      const { rows: topicProblems } = await db.query(
-        `SELECT id FROM problems WHERE topic = $1 ORDER BY RANDOM() LIMIT 1`,
-        [topic]
+    let problemId = forcedProblemId
+    let matchTopic = topic
+    let matchDifficulty = difficulty
+
+    if (problemId) {
+      const { rows: probRows } = await db.query(
+        `SELECT id, topic, difficulty FROM problems WHERE id = $1`,
+        [problemId]
       )
-      problemId = topicProblems[0]?.id ?? null
-    }
-    if (!problemId) {
-      const { rows: diffProblems } = await db.query(
-        `SELECT id FROM problems WHERE difficulty = $1 ORDER BY RANDOM() LIMIT 1`,
-        [difficulty]
+      if (probRows[0]) {
+        matchTopic = probRows[0].topic || matchTopic
+        matchDifficulty = probRows[0].difficulty || matchDifficulty
+      }
+    } else {
+      let { rows: problems } = await db.query(
+        `SELECT id FROM problems WHERE topic = $1 AND difficulty = $2 ORDER BY RANDOM() LIMIT 1`,
+        [topic, difficulty]
       )
-      problemId = diffProblems[0]?.id ?? null
+      problemId = problems[0]?.id ?? null
+      if (!problemId) {
+        const { rows: topicProblems } = await db.query(
+          `SELECT id FROM problems WHERE topic = $1 ORDER BY RANDOM() LIMIT 1`,
+          [topic]
+        )
+        problemId = topicProblems[0]?.id ?? null
+      }
+      if (!problemId) {
+        const { rows: diffProblems } = await db.query(
+          `SELECT id FROM problems WHERE difficulty = $1 ORDER BY RANDOM() LIMIT 1`,
+          [difficulty]
+        )
+        problemId = diffProblems[0]?.id ?? null
+      }
     }
+
     const { rows } = await db.query(
       `INSERT INTO matches (player_one_id, player_two_id, problem_id, topic, difficulty, status)
        VALUES ($1, $2, $3, $4, $5, 'active') RETURNING id`,
-      [entryA.userId, entryB.userId, problemId, topic, difficulty]
+      [entryA.userId, entryB.userId, problemId, matchTopic, matchDifficulty]
     )
     const dbMatchId = rows[0]?.id ?? null
 
     const matchPayload = {
       roomId,
-      topic,
-      difficulty,
+      topic: matchTopic,
+      difficulty: matchDifficulty,
       problemId,
       dbMatchId,
       players: [
@@ -131,7 +147,7 @@ async function executeMatch(io, entryA, entryB, topic, difficulty) {
       ],
     }
 
-    trackRoom(roomId, dbMatchId, problemId, false, matchPayload.players, topic, difficulty)
+    trackRoom(roomId, dbMatchId, problemId, false, matchPayload.players, matchTopic, matchDifficulty)
     console.log(`[DB] match row created id=${dbMatchId} room=${roomId} prob=${problemId}`)
 
     // Emit to room and directly to both sockets to guarantee arrival
@@ -144,13 +160,14 @@ async function executeMatch(io, entryA, entryB, topic, difficulty) {
       roomId,
       topic,
       difficulty,
-      problemId: null,
+      problemId: forcedProblemId || null,
+      dbMatchId: null,
       players: [
         { userId: entryA.userId, username: entryA.username, rating: entryA.rating, avatar_seed: entryA.avatar_seed, avatar_style: entryA.avatar_style },
         { userId: entryB.userId, username: entryB.username, rating: entryB.rating, avatar_seed: entryB.avatar_seed, avatar_style: entryB.avatar_style },
       ],
     }
-    trackRoom(roomId, null, null, false, fallbackPayload.players, topic, difficulty)
+    trackRoom(roomId, null, forcedProblemId || null, false, fallbackPayload.players, topic, difficulty)
     io.to(roomId).emit('match_found', fallbackPayload)
     if (socketA) socketA.emit('match_found', fallbackPayload)
     if (socketB) socketB.emit('match_found', fallbackPayload)
@@ -175,12 +192,21 @@ function sweepQueues(io) {
         if (diff <= band) {
           bucket.splice(j, 1)
           bucket.splice(i, 1)
-          const [t, d] = topicKey.split(':')
+          let t = p1.topic || 'arrays'
+          let d = p1.difficulty || 'easy'
+          let probId = p1.problemId || null
+          if (topicKey.startsWith('problem:')) {
+            probId = topicKey.slice('problem:'.length)
+          } else {
+            const parts = topicKey.split(':')
+            t = parts[0]
+            d = parts[1]
+          }
           
           matchingUsers.add(p1.userId)
           matchingUsers.add(p2.userId)
           
-          executeMatch(io, p1, p2, t, d).finally(() => {
+          executeMatch(io, p1, p2, t, d, probId).finally(() => {
             matchingUsers.delete(p1.userId)
             matchingUsers.delete(p2.userId)
           })
@@ -208,7 +234,7 @@ function registerMatchmaking(io) {
     // Removed single active session enforcement so users can open multiple tabs.
 
     /* ── join_queue ─────────────────────────────────────── */
-    socket.on('join_queue', async ({ topic, difficulty }) => {
+    socket.on('join_queue', async ({ topic, difficulty, problemId = null }) => {
       let rating = elo_rating ?? 1200
       let avatar_seed = socket.user.avatar_seed ?? null
       let avatar_style = socket.user.avatar_style ?? null
@@ -226,7 +252,7 @@ function registerMatchmaking(io) {
         console.warn('[Queue] Could not fetch fresh user info from DB:', err.message)
       }
 
-      const topicKey = `${topic}:${difficulty}`
+      const topicKey = problemId ? `problem:${problemId}` : `${topic}:${difficulty}`
 
       // Guard: don't let user join if they are already in an active match
       if (matchingUsers.has(userId) || isUserInActiveMatch(userId)) {
@@ -246,6 +272,7 @@ function registerMatchmaking(io) {
         avatar_style,
         topic,
         difficulty,
+        problemId,
         joinedAt:   Date.now(),
       }
 
@@ -265,14 +292,14 @@ function registerMatchmaking(io) {
         matchingUsers.add(newEntry.userId)
         matchingUsers.add(opponent.userId)
         
-        executeMatch(io, newEntry, opponent, topic, difficulty).finally(() => {
+        executeMatch(io, newEntry, opponent, topic, difficulty, problemId).finally(() => {
           matchingUsers.delete(newEntry.userId)
           matchingUsers.delete(opponent.userId)
         })
       } else {
         // ── No match yet — push into queue ────────────────
         bucket.push(newEntry)
-        socket.emit('queue_status', { status: 'waiting', position: bucket.length, topic, difficulty })
+        socket.emit('queue_status', { status: 'waiting', position: bucket.length, topic, difficulty, problemId })
         console.log(`[Queue] waiting  ${username}  ${topicKey}  queue size: ${bucket.length}`)
       }
     })
