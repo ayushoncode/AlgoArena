@@ -289,35 +289,9 @@ function registerMatchmaking(io) {
 
       console.log(`[Queue] ${username} (${rating}) → ${topicKey}  queue size before: ${bucket.length}`)
 
-      // Attempt immediate match in exact bucket first
+      // Attempt immediate match in exact bucket
       let result = findOpponent(bucket, newEntry)
       let matchedBucket = bucket
-
-      // If entrant picked a specific problem, also check general topic queue so they match without waiting forever
-      if (!result && problemId) {
-        const genKey = `${topic}:${difficulty}`
-        if (queues.has(genKey)) {
-          const genBucket = queues.get(genKey)
-          result = findOpponent(genBucket, newEntry)
-          if (result) matchedBucket = genBucket
-        }
-      }
-
-      // If entrant joined general queue, check if someone is waiting in a problem queue of this topic & diff
-      if (!result && !problemId) {
-        for (const [key, q] of queues.entries()) {
-          if (key.startsWith('problem:') && q.length > 0) {
-            const first = q[0]
-            if (first.topic === topic && first.difficulty === difficulty) {
-              result = findOpponent(q, newEntry)
-              if (result) {
-                matchedBucket = q
-                break
-              }
-            }
-          }
-        }
-      }
 
       if (result) {
         // ── Match found! ──────────────────────────────────
