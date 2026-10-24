@@ -364,19 +364,19 @@ function EloChart({ data = [], username = 'Coder' }) {
       </div>
 
       {/* Explicit Rank Tier Ranges Legend Bar */}
-      <div className="flex items-center justify-between flex-wrap gap-3 pt-3 mt-3 border-t border-[#1C2842] font-mono text-[10px]">
+      <div className="flex items-center justify-between flex-wrap gap-3 pt-3 mt-3 border-t border-[color:var(--c-border)] font-mono text-[10px]">
         <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
           {ARENA_TIERS.map((tier) => (
             <div key={tier.name} className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: tier.col }} />
-              <span className="font-bold text-white uppercase">{tier.name}:</span>
-              <span className="text-slate-300 font-semibold">
+              <span className="font-bold text-[color:var(--c-text)] uppercase">{tier.name}:</span>
+              <span className="text-[color:var(--c-text-dim)] font-semibold">
                 {tier.min}–{tier.max >= 9999 ? '1800+' : tier.max} ELO
               </span>
             </div>
           ))}
         </div>
-        <div className="text-slate-400 flex items-center gap-1.5">
+        <div className="text-[color:var(--c-text-mute)] flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-[#F5B942]" />
           <span>Peak & Current Nodes</span>
         </div>
@@ -466,12 +466,12 @@ function StreakCalendar({ history, matches = [] }) {
       {/* Heatmap Tooltip */}
       {hoveredCell && (
         <div
-          className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded bg-[#0B1120] border border-[#1C2842] text-[10px] font-mono whitespace-nowrap shadow-lg pointer-events-none z-20 flex items-center gap-1.5"
+          className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded bg-[color:var(--c-panel)] border border-[color:var(--c-border)] text-[10px] font-mono whitespace-nowrap shadow-lg pointer-events-none z-20 flex items-center gap-1.5"
           style={{ color: 'var(--c-text)' }}
         >
           <Calendar size={11} className="text-[#38BDF8]" />
           <span>{hoveredCell.date}:</span>
-          <span className="font-bold text-[#F5B942]">
+          <span className="font-bold text-[color:var(--c-gold)]">
             {hoveredCell.count === 0 ? 'No battles' : `${hoveredCell.count} duel${hoveredCell.count > 1 ? 's' : ''}`}
           </span>
         </div>
@@ -500,7 +500,7 @@ function MatchRow({ m }) {
 
   return (
     <div
-      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-3 py-2.5 sm:px-4 sm:py-3 border-b border-[#1C2842]/60 transition-colors hover:bg-[#121A2E]/50 relative"
+      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-3 py-2.5 sm:px-4 sm:py-3 border-b border-[color:var(--c-border)]/60 transition-colors hover:bg-[color:var(--c-panel2)]/50 relative"
       style={{
         borderLeft: `3px solid ${isWin ? 'var(--c-green)' : isLoss ? 'var(--c-red)' : 'var(--c-gold)'}`,
       }}
@@ -522,7 +522,7 @@ function MatchRow({ m }) {
         </div>
 
         {/* Date (Mobile Only) */}
-        <div className="sm:hidden text-right font-mono text-[9px] text-slate-400">
+        <div className="sm:hidden text-right font-mono text-[9px] text-[color:var(--c-text-mute)]">
           {dateStr}
         </div>
       </div>
@@ -531,14 +531,14 @@ function MatchRow({ m }) {
         {/* Opponent Info */}
         <div className="flex-1 min-w-0 flex items-center gap-2">
           <UserAvatar username={m.opponent || 'Opponent'} size={20} className="sm:w-6 sm:h-6" />
-          <span className="font-mono text-xs font-bold text-white truncate max-w-[100px] sm:max-w-[120px]">
+          <span className="font-mono text-xs font-bold text-[color:var(--c-text)] truncate max-w-[100px] sm:max-w-[120px]">
             @{m.opponent || 'Warrior'}
           </span>
         </div>
 
         {/* Topic & Difficulty Chips (Desktop) */}
         <div className="hidden md:flex items-center gap-1.5 flex-1 min-w-0">
-          <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-[#0B1120] border border-[#1C2842] text-slate-300 truncate">
+          <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-[color:var(--c-panel)] border border-[color:var(--c-border)] text-[color:var(--c-text-dim)] truncate">
             {topicDisplay}
           </span>
           <DiffChip diff={diffLower} />
@@ -552,7 +552,7 @@ function MatchRow({ m }) {
         </div>
 
         {/* Date (Desktop) */}
-        <div className="hidden sm:block w-16 shrink-0 text-right font-mono text-[10px] text-slate-400">
+        <div className="hidden sm:block w-16 shrink-0 text-right font-mono text-[10px] text-[color:var(--c-text-mute)]">
           {dateStr}
         </div>
       </div>
@@ -617,27 +617,27 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(5, 7, 15, 0.88)', backdropFilter: 'blur(8px)' }}>
       <HudPanel className="w-full max-w-lg p-6 space-y-5 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#1C2842] pb-3">
+        <div className="flex items-center justify-between border-b border-[color:var(--c-border)] pb-3">
           <div className="flex items-center gap-2">
             <Camera size={18} className="text-[#38BDF8]" />
-            <h3 className="font-display font-bold text-lg text-white uppercase tracking-wide">
+            <h3 className="font-display font-bold text-lg text-[color:var(--c-text)] uppercase tracking-wide">
               Customize Avatar
             </h3>
           </div>
-          <button onClick={onClose} aria-label="Close" className="text-slate-400 hover:text-red-400 p-1">
+          <button onClick={onClose} aria-label="Close" className="text-[color:var(--c-text-mute)] hover:text-red-400 p-1">
             <X size={16} />
           </button>
         </div>
 
         {/* Preview Frame */}
-        <div className="flex items-center justify-center gap-6 p-4 rounded bg-[#05070F] border border-[#1C2842]">
+        <div className="flex items-center justify-center gap-6 p-4 rounded bg-[color:var(--c-void)] border border-[color:var(--c-border)]">
           <div className="p-1 rounded-xl border-2 border-[#38BDF8] shadow-lg shadow-[#38BDF8]/20">
             <UserAvatar username={username} seed={selectedSeed} style={selectedStyle} size={72} isMe={true} />
           </div>
           <div className="space-y-1 font-mono text-xs">
-            <p className="font-bold text-white">@{username}</p>
+            <p className="font-bold text-[color:var(--c-text)]">@{username}</p>
             <p className="text-[#38BDF8]">Style: {selectedStyle}</p>
-            <p className="text-[10px] text-slate-400 truncate max-w-[180px]">Seed: {selectedSeed}</p>
+            <p className="text-[10px] text-[color:var(--c-text-mute)] truncate max-w-[180px]">Seed: {selectedSeed}</p>
           </div>
         </div>
 
@@ -652,7 +652,7 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
                 onClick={() => { setSelectedStyle(st.id); setSelectedSeed(PRESETS[st.id]?.[0] || 'seed1') }}
                 className={`px-3 py-1.5 rounded font-mono text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${active
                     ? 'bg-[#38BDF8]/20 text-[#38BDF8] border border-[#38BDF8]/50'
-                    : 'bg-[#0B1120] text-slate-400 border border-[#1C2842] hover:border-slate-600'
+                    : 'bg-[color:var(--c-panel)] text-[color:var(--c-text-mute)] border border-[color:var(--c-border)] hover:border-slate-600'
                   }`}
               >
                 <Icon size={12} />
@@ -665,7 +665,7 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
         {/* Presets Grid */}
         <div className="space-y-2">
           <div className="flex items-center justify-between font-mono text-[10px]">
-            <span className="text-slate-400 uppercase tracking-wider">Curated Presets</span>
+            <span className="text-[color:var(--c-text-mute)] uppercase tracking-wider">Curated Presets</span>
             <button
               onClick={handleRandom}
               className="text-[#38BDF8] hover:underline flex items-center gap-1 cursor-pointer font-bold"
@@ -683,7 +683,7 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
                   onClick={() => setSelectedSeed(preset)}
                   className={`p-1 rounded border transition-all flex items-center justify-center cursor-pointer ${active
                       ? 'bg-[#38BDF8]/20 border-[#38BDF8] scale-105 shadow-md shadow-[#38BDF8]/20'
-                      : 'bg-[#0B1120] border-[#1C2842] hover:border-slate-500'
+                      : 'bg-[color:var(--c-panel)] border-[color:var(--c-border)] hover:border-slate-500'
                     }`}
                 >
                   <UserAvatar username={username} seed={preset} style={selectedStyle} size={34} />
@@ -700,7 +700,7 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
             placeholder="Type custom seed name..."
             value={customInput}
             onChange={e => setCustomInput(e.target.value)}
-            className="flex-1 bg-[#05070F] border border-[#1C2842] rounded px-3 py-2 text-xs font-mono text-white outline-none focus:border-[#38BDF8]"
+            className="flex-1 bg-[color:var(--c-void)] border border-[color:var(--c-border)] rounded px-3 py-2 text-xs font-mono text-[color:var(--c-text)] outline-none focus:border-[#38BDF8]"
           />
           <GhostButton type="submit" style={{ padding: '6px 12px', fontSize: 11 }}>
             Apply
@@ -708,7 +708,7 @@ function AvatarSelectorModal({ isOpen, onClose, currentSeed, currentStyle, usern
         </form>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#1C2842]">
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-[color:var(--c-border)]">
           <GhostButton type="button" onClick={onClose}>
             Cancel
           </GhostButton>
@@ -797,6 +797,7 @@ export default function Profile() {
           setNotFound(true)
         } else {
           console.error('[Profile API Error]', err)
+          setNotFound(true)
         }
       } finally {
         if (!unmounted) setDataLoading(false)
@@ -1015,7 +1016,7 @@ export default function Profile() {
                 {isMe && (
                   <button
                     onClick={() => setShowAvatarModal(true)}
-                    className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-[#0B1120] border border-[#38BDF8] text-[#38BDF8] hover:bg-[#38BDF8] hover:text-[#05070F] transition-all shadow-lg cursor-pointer"
+                    className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-[color:var(--c-panel)] border border-[#38BDF8] text-[#38BDF8] hover:bg-[#38BDF8] hover:text-[#05070F] transition-all shadow-lg cursor-pointer"
                     title="Change Avatar"
                     aria-label="Change Avatar"
                   >
@@ -1035,7 +1036,7 @@ export default function Profile() {
                         maxLength={30}
                         value={newHandle}
                         onChange={e => setNewHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
-                        className="bg-[#05070F] border border-[#38BDF8] rounded px-3 py-1 font-mono text-sm text-white outline-none"
+                        className="bg-[color:var(--c-void)] border border-[#38BDF8] rounded px-3 py-1 font-mono text-sm text-[color:var(--c-text)] outline-none"
                       />
                       <HudButton type="submit" disabled={savingHandle} style={{ padding: '4px 10px', fontSize: 11 }}>
                         {savingHandle ? '...' : 'Lock'}
@@ -1046,20 +1047,20 @@ export default function Profile() {
                     </form>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <h1 className="font-display font-bold text-3xl sm:text-4xl uppercase tracking-wide text-white">
+                      <h1 className="font-display font-bold text-3xl sm:text-4xl uppercase tracking-wide text-[color:var(--c-text)]">
                         {activeUser?.username}
                       </h1>
                       {isMe && (
                         !activeUser?.is_username_set ? (
                           <button
                             onClick={() => { setNewHandle(activeUser?.username || ''); setEditingUsername(true); setHandleErr('') }}
-                            className="p-1 rounded text-slate-400 hover:text-[#38BDF8] transition-colors"
+                            className="p-1 rounded text-[color:var(--c-text-mute)] hover:text-[#38BDF8] transition-colors"
                             title="Set permanent handle"
                           >
                             <Pencil size={14} />
                           </button>
                         ) : (
-                          <span className="inline-flex items-center gap-1 font-mono text-[10px] px-2 py-0.5 rounded bg-[#121A2E] border border-[#1C2842] text-slate-400">
+                          <span className="inline-flex items-center gap-1 font-mono text-[10px] px-2 py-0.5 rounded bg-[color:var(--c-panel2)] border border-[color:var(--c-border)] text-[color:var(--c-text-mute)]">
                             <Lock size={10} /> Locked
                           </span>
                         )
@@ -1070,7 +1071,7 @@ export default function Profile() {
                   <RankBadge elo={elo} size="md" />
                 </div>
                 {activeUser?.institute && (
-                  <p className="font-mono text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+                  <p className="font-mono text-xs text-[color:var(--c-text-mute)] mt-1 flex items-center gap-1.5">
                     <Shield size={12} className="text-[#38BDF8]" />
                     {activeUser.institute}
                   </p>
@@ -1078,7 +1079,7 @@ export default function Profile() {
                 {handleErr && <p className="font-mono text-xs text-red-400">{handleErr}</p>}
 
                 {/* Sub-meta tags */}
-                <div className="flex items-center gap-3 font-mono text-xs text-slate-400 flex-wrap">
+                <div className="flex items-center gap-3 font-mono text-xs text-[color:var(--c-text-mute)] flex-wrap">
                   <span className="flex items-center gap-1">
                     <Calendar size={12} className="text-[#38BDF8]" />
                     Joined {joinDateStr}
@@ -1093,12 +1094,12 @@ export default function Profile() {
                 {/* Rank Progress Bar */}
                 <div className="space-y-1 pt-1 max-w-md">
                   <div className="flex items-center justify-between font-mono text-[10px]">
-                    <span className="text-slate-400 uppercase tracking-wider">{currentTier.name}</span>
-                    <span className="font-bold text-[#F5B942]">
+                    <span className="text-[color:var(--c-text-mute)] uppercase tracking-wider">{currentTier.name}</span>
+                    <span className="font-bold text-[color:var(--c-gold)]">
                       {tierProgress.nextName === 'MAX TIER' ? 'MAX TIER REACHED' : `${tierProgress.needed} ELO TO ${tierProgress.nextName}`}
                     </span>
                   </div>
-                  <div className="h-1.5 w-full bg-[#121A2E] rounded-full overflow-hidden border border-[#1C2842]">
+                  <div className="h-1.5 w-full bg-[color:var(--c-panel2)] rounded-full overflow-hidden border border-[color:var(--c-border)]">
                     <div
                       className="h-full transition-all duration-500 rounded-full"
                       style={{
@@ -1113,18 +1114,18 @@ export default function Profile() {
             </div>
 
             {/* Right: Big Elo Display & Single Streak Card */}
-            <div className="flex items-center gap-6 shrink-0 w-full lg:w-auto justify-between lg:justify-end border-t lg:border-t-0 border-[#1C2842] pt-4 lg:pt-0">
+            <div className="flex items-center gap-6 shrink-0 w-full lg:w-auto justify-between lg:justify-end border-t lg:border-t-0 border-[color:var(--c-border)] pt-4 lg:pt-0">
 
               {/* Big ELO Box */}
               <div className="space-y-1">
-                <p className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Rating Dossier</p>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-[color:var(--c-text-mute)]">Rating Dossier</p>
                 <div className="flex items-baseline gap-2">
                   <AnimatedCounter
                     value={elo}
                     className="font-display font-black text-4xl sm:text-5xl tracking-tight"
                     style={{ color: currentTier.col }}
                   />
-                  <span className="font-mono text-xs text-slate-400">ELO</span>
+                  <span className="font-mono text-xs text-[color:var(--c-text-mute)]">ELO</span>
                 </div>
                 {netChange !== 0 && (
                   <div className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded"
@@ -1148,10 +1149,10 @@ export default function Profile() {
                   boxShadow: '0 0 16px rgba(245, 185, 66, 0.1)'
                 }}
               >
-                <Flame size={28} className="text-[#F5B942]" />
+                <Flame size={28} className="text-[color:var(--c-gold)]" />
                 <div>
-                  <p className="font-display font-black text-2xl leading-none text-[#F5B942]">{streak}</p>
-                  <p className="font-mono text-[9px] uppercase tracking-widest text-slate-400 mt-0.5">Day Streak</p>
+                  <p className="font-display font-black text-2xl leading-none text-[color:var(--c-gold)]">{streak}</p>
+                  <p className="font-mono text-[9px] uppercase tracking-widest text-[color:var(--c-text-mute)] mt-0.5">Day Streak</p>
                 </div>
               </div>
 
@@ -1165,57 +1166,57 @@ export default function Profile() {
 
           {/* 1. Rating */}
           <HudPanel className="p-3 sm:p-4 space-y-1 sm:space-y-1.5 transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center justify-between text-slate-400">
+            <div className="flex items-center justify-between text-[color:var(--c-text-mute)]">
               <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider">Rating</span>
               <Trophy size={14} style={{ color: currentTier.col }} />
             </div>
             <p className="font-display font-black text-xl sm:text-3xl" style={{ color: currentTier.col }}>{elo}</p>
-            <p className="font-mono text-[9px] sm:text-[10px] text-slate-400">Peak {peakElo}</p>
+            <p className="font-mono text-[9px] sm:text-[10px] text-[color:var(--c-text-mute)]">Peak {peakElo}</p>
           </HudPanel>
 
           {/* 2. Wins */}
           <HudPanel className="p-3 sm:p-4 space-y-1 sm:space-y-1.5 transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center justify-between text-slate-400">
+            <div className="flex items-center justify-between text-[color:var(--c-text-mute)]">
               <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider">Wins</span>
               <Swords size={14} className="text-[#10b981]" />
             </div>
             <p className="font-display font-black text-xl sm:text-3xl text-[#10b981]">{wins}</p>
-            <p className="font-mono text-[9px] sm:text-[10px] text-slate-400">{wr}% Win Rate</p>
+            <p className="font-mono text-[9px] sm:text-[10px] text-[color:var(--c-text-mute)]">{wr}% Win Rate</p>
           </HudPanel>
 
           {/* 3. Losses */}
           <HudPanel className="p-3 sm:p-4 space-y-1 sm:space-y-1.5 transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center justify-between text-slate-400">
+            <div className="flex items-center justify-between text-[color:var(--c-text-mute)]">
               <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider">Losses</span>
               <Shield size={14} className="text-[#E11D48]" />
             </div>
             <p className="font-display font-black text-xl sm:text-3xl text-[#E11D48]">{losses}</p>
-            <p className="font-mono text-[9px] sm:text-[10px] text-slate-400">{total} Battles</p>
+            <p className="font-mono text-[9px] sm:text-[10px] text-[color:var(--c-text-mute)]">{total} Battles</p>
           </HudPanel>
 
           {/* 4. Win Rate */}
           <HudPanel className="p-3 sm:p-4 space-y-1 sm:space-y-1.5 transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center justify-between text-slate-400">
+            <div className="flex items-center justify-between text-[color:var(--c-text-mute)]">
               <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider">Win Rate</span>
               <Target size={14} className="text-[#38BDF8]" />
             </div>
             <p className="font-display font-black text-xl sm:text-3xl text-[#38BDF8]">{wr}%</p>
-            <p className="font-mono text-[9px] sm:text-[10px] text-slate-400">{wins}W - {losses}L</p>
+            <p className="font-mono text-[9px] sm:text-[10px] text-[color:var(--c-text-mute)]">{wins}W - {losses}L</p>
           </HudPanel>
 
           {/* 5. Streak */}
           <HudPanel className="p-3 sm:p-4 space-y-1 sm:space-y-1.5 transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center justify-between text-slate-400">
+            <div className="flex items-center justify-between text-[color:var(--c-text-mute)]">
               <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider">Streak</span>
-              <Flame size={14} className="text-[#F5B942]" />
+              <Flame size={14} className="text-[color:var(--c-gold)]" />
             </div>
-            <p className="font-display font-black text-xl sm:text-3xl text-[#F5B942]">{streak}d</p>
-            <p className="font-mono text-[9px] sm:text-[10px] text-slate-400">Active Streak</p>
+            <p className="font-display font-black text-xl sm:text-3xl text-[color:var(--c-gold)]">{streak}d</p>
+            <p className="font-mono text-[9px] sm:text-[10px] text-[color:var(--c-text-mute)]">Active Streak</p>
           </HudPanel>
 
           {/* 6. Favorite Topic */}
           <HudPanel className="p-3 sm:p-4 space-y-1 sm:space-y-1.5 transition-transform hover:-translate-y-0.5 min-w-0">
-            <div className="flex items-center justify-between text-slate-400">
+            <div className="flex items-center justify-between text-[color:var(--c-text-mute)]">
               <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider truncate">Fav Topic</span>
               <Zap size={14} className="text-[#38BDF8] shrink-0" />
             </div>
@@ -1224,19 +1225,19 @@ export default function Profile() {
                 {favTopicTitle}
               </p>
             </Tooltip>
-            <p className="font-mono text-[9px] sm:text-[10px] text-slate-400">{favTopicCount} Battles</p>
+            <p className="font-mono text-[9px] sm:text-[10px] text-[color:var(--c-text-mute)]">{favTopicCount} Battles</p>
           </HudPanel>
 
         </div>
 
         {/* ── 3. RATING HISTORY (CHART) ──────────────────────── */}
         <HudPanel className="overflow-hidden">
-          <div className="px-5 py-3 border-b border-[#1C2842] bg-[#0B1120] flex items-center justify-between flex-wrap gap-3">
+          <div className="px-5 py-3 border-b border-[color:var(--c-border)] bg-[color:var(--c-panel)] flex items-center justify-between flex-wrap gap-3">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-widest text-[#38BDF8]">
                 // RATING HISTORY
               </p>
-              <h2 className="font-display font-bold text-lg text-white uppercase tracking-wide">
+              <h2 className="font-display font-bold text-lg text-[color:var(--c-text)] uppercase tracking-wide">
                 ELOWAVE PROGRESSION
               </h2>
             </div>
@@ -1255,16 +1256,16 @@ export default function Profile() {
 
           {/* Left Column: Match History */}
           <HudPanel className="overflow-hidden flex flex-col">
-            <div className="px-5 py-3 border-b border-[#1C2842] bg-[#0B1120] flex items-center justify-between">
+            <div className="px-5 py-3 border-b border-[color:var(--c-border)] bg-[color:var(--c-panel)] flex items-center justify-between">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-widest text-[#38BDF8]">
                   // MATCH HISTORY
                 </p>
-                <h3 className="font-display font-bold text-base text-white uppercase tracking-wide">
+                <h3 className="font-display font-bold text-base text-[color:var(--c-text)] uppercase tracking-wide">
                   RECENT DUELS
                 </h3>
               </div>
-              <span className="font-mono text-[10px] text-slate-400">
+              <span className="font-mono text-[10px] text-[color:var(--c-text-mute)]">
                 {matches.length} Battles
               </span>
             </div>
@@ -1285,7 +1286,7 @@ export default function Profile() {
             ) : (
               <div className="flex-1 flex flex-col min-h-0">
                 {/* Header Row */}
-                <div className="hidden sm:flex items-center gap-3 px-4 py-2 border-b border-[#1C2842] bg-[#05070F] font-mono text-[9px] uppercase tracking-wider text-slate-400">
+                <div className="hidden sm:flex items-center gap-3 px-4 py-2 border-b border-[color:var(--c-border)] bg-[color:var(--c-void)] font-mono text-[9px] uppercase tracking-wider text-[color:var(--c-text-mute)]">
                   <span className="w-24 shrink-0">Result</span>
                   <span className="flex-1 min-w-0">Opponent</span>
                   <span className="hidden md:block flex-1 min-w-0">Topic & Diff</span>
@@ -1311,16 +1312,16 @@ export default function Profile() {
                 <p className="font-mono text-[10px] uppercase tracking-widest text-[#38BDF8]">
                   // COMBAT ACTIVITY
                 </p>
-                <h3 className="font-display font-bold text-base text-white uppercase tracking-wide">
+                <h3 className="font-display font-bold text-base text-[color:var(--c-text)] uppercase tracking-wide">
                   30-DAY COMBAT HEATMAP
                 </h3>
               </div>
 
               <StreakCalendar history={activeDates} matches={matches} />
 
-              <div className="flex items-center justify-between pt-2 border-t border-[#1C2842] font-mono text-[10px] text-slate-400">
-                <span>Active Days: <strong className="text-white">{activeDates.size}</strong></span>
-                <span>Streak: <strong className="text-[#F5B942]">{streak}d</strong></span>
+              <div className="flex items-center justify-between pt-2 border-t border-[color:var(--c-border)] font-mono text-[10px] text-[color:var(--c-text-mute)]">
+                <span>Active Days: <strong className="text-[color:var(--c-text)]">{activeDates.size}</strong></span>
+                <span>Streak: <strong className="text-[color:var(--c-gold)]">{streak}d</strong></span>
               </div>
             </HudPanel>
 
@@ -1330,13 +1331,13 @@ export default function Profile() {
                 <p className="font-mono text-[10px] uppercase tracking-widest text-[#38BDF8]">
                   // TOPIC BREAKDOWN
                 </p>
-                <h3 className="font-display font-bold text-base text-white uppercase tracking-wide">
+                <h3 className="font-display font-bold text-base text-[color:var(--c-text)] uppercase tracking-wide">
                   MASTERY BY CATEGORY
                 </h3>
               </div>
 
               {Object.keys(topicFreq).length === 0 ? (
-                <p className="font-mono text-xs text-slate-400 py-4 text-center">
+                <p className="font-mono text-xs text-[color:var(--c-text-mute)] py-4 text-center">
                   No match data recorded yet.
                 </p>
               ) : (
@@ -1353,18 +1354,18 @@ export default function Profile() {
                         <div key={topKey} className="space-y-1">
                           <div className="flex items-center justify-between font-mono text-xs">
                             <div className="flex items-center gap-1.5">
-                              <span className={`font-bold ${isTop ? 'text-[#F5B942]' : 'text-slate-200'}`}>
+                              <span className={`font-bold ${isTop ? 'text-[color:var(--c-gold)]' : 'text-[color:var(--c-text)]'}`}>
                                 {title}
                               </span>
                               {isTop && (
-                                <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-[#F5B942]/10 border border-[#F5B942]/30 text-[#F5B942]">
+                                <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-[color:var(--c-gold)]/10 border border-[color:var(--c-gold)]/30 text-[color:var(--c-gold)]">
                                   MOST PLAYED
                                 </span>
                               )}
                             </div>
-                            <span className="text-slate-400 text-[10px]">{count} battles</span>
+                            <span className="text-[color:var(--c-text-mute)] text-[10px]">{count} battles</span>
                           </div>
-                          <div className="h-1.5 w-full bg-[#05070F] rounded overflow-hidden border border-[#1C2842]">
+                          <div className="h-1.5 w-full bg-[color:var(--c-void)] rounded overflow-hidden border border-[color:var(--c-border)]">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${pct}%` }}

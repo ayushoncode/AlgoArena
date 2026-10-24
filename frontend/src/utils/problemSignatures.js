@@ -57,6 +57,50 @@ export const CANONICAL_SIGNATURES = {
     params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
     ret: TYPE_INT_ARR_RET,
   },
+  'largest element in an array': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
+  'second largest element in an array': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
+  'check if array is sorted and rotated': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_BOOL,
+  },
+  'left rotate an array by one': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'move zeroes': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'linear search': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'union of two sorted arrays': {
+    params: [{ name: 'nums1', ...TYPE_INT_ARR }, { name: 'nums2', ...TYPE_INT_ARR }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'missing number': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
+  'max consecutive ones': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
+  'longest subarray with given sum k': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'longest subarray with given sum': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
   'two sum ii - input array is sorted': {
     params: [{ name: 'numbers', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
     ret: TYPE_INT_ARR_RET,
@@ -77,6 +121,10 @@ export const CANONICAL_SIGNATURES = {
   'longest palindromic substring': {
     params: [{ name: 's', ...TYPE_STRING }],
     ret: TYPE_STRING,
+  },
+  'longest common subsequence': {
+    params: [{ name: 'text1', ...TYPE_STRING }, { name: 'text2', ...TYPE_STRING }],
+    ret: TYPE_INT,
   },
   'zigzag conversion': {
     params: [{ name: 's', ...TYPE_STRING }, { name: 'numRows', ...TYPE_INT }],
@@ -574,6 +622,16 @@ export const CANONICAL_SIGNATURES = {
     params: [{ name: 's', ...TYPE_STRING }],
     ret: TYPE_BOOL,
   },
+  'populating next right pointers in each node': {
+    params: [{ name: 'root', ...TYPE_TREE }],
+    ret: TYPE_TREE,
+    isTree: true,
+  },
+  'populating next right pointers in each node ii': {
+    params: [{ name: 'root', ...TYPE_TREE }],
+    ret: TYPE_TREE,
+    isTree: true,
+  },
   'word ladder': {
     params: [{ name: 'beginWord', ...TYPE_STRING }, { name: 'endWord', ...TYPE_STRING }, { name: 'wordList', ...TYPE_STR_LIST }],
     ret: TYPE_INT,
@@ -606,6 +664,11 @@ export const CANONICAL_SIGNATURES = {
     ret: TYPE_TREE,
     isTree: true,
   },
+  'serialize and deserialize binary tree': {
+    params: [{ name: 'root', ...TYPE_TREE }],
+    ret: TYPE_TREE,
+    isTree: true,
+  },
   'surrounded regions': {
     params: [{ name: 'board', ...TYPE_CHAR_MATRIX }],
     ret: TYPE_VOID,
@@ -620,6 +683,10 @@ export const CANONICAL_SIGNATURES = {
   },
   'clone graph': {
     params: [{ name: 'node', js: 'Node', py: 'Optional[Node]', java: 'Node', cpp: 'Node*' }],
+    ret: { js: 'Node', py: 'Optional[Node]', java: 'Node', cpp: 'Node*', retJava: 'null', retCpp: 'nullptr' },
+  },
+  'copy list with random pointer': {
+    params: [{ name: 'head', js: 'Node', py: 'Optional[Node]', java: 'Node', cpp: 'Node*' }],
     ret: { js: 'Node', py: 'Optional[Node]', java: 'Node', cpp: 'Node*', retJava: 'null', retCpp: 'nullptr' },
   },
   'gas station': {
@@ -651,8 +718,18 @@ export const CANONICAL_SIGNATURES = {
     ret: TYPE_BOOL,
     isList: true,
   },
+  'linked list cycle detection': {
+    params: [{ name: 'head', ...TYPE_LIST }],
+    ret: TYPE_BOOL,
+    isList: true,
+  },
   'linked list cycle ii': {
     params: [{ name: 'head', ...TYPE_LIST }],
+    ret: TYPE_LIST,
+    isList: true,
+  },
+  'intersection of two linked lists': {
+    params: [{ name: 'headA', ...TYPE_LIST }, { name: 'headB', ...TYPE_LIST }],
     ret: TYPE_LIST,
     isList: true,
   },
@@ -670,6 +747,10 @@ export const CANONICAL_SIGNATURES = {
     params: [{ name: 'head', ...TYPE_LIST }],
     ret: TYPE_LIST,
     isList: true,
+  },
+  'lru cache': {
+    params: [{ name: 'commands', ...TYPE_STR_LIST }, { name: 'args', ...TYPE_INT_MATRIX }],
+    ret: TYPE_INT_ARR_RET,
   },
   'evaluate reverse polish notation': {
     params: [{ name: 'tokens', ...TYPE_STR_ARR }],
@@ -713,6 +794,10 @@ export const CANONICAL_SIGNATURES = {
   },
   'factorial trailing zeroes': {
     params: [{ name: 'n', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'maximum gap': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
     ret: TYPE_INT,
   },
   'dungeon game': {
@@ -978,7 +1063,7 @@ export function buildStarterTemplate(problem, lang = 'javascript') {
   if (!problem) return TEMPLATES[lang] || TEMPLATES.javascript
 
   const cleanTitle = (problem.title || '').trim().toLowerCase()
-  let sig = CANONICAL_SIGNATURES[cleanTitle]
+  let sig = CANONICAL_SIGNATURES[cleanTitle] || (problem.slug ? CANONICAL_SIGNATURES[problem.slug.replace(/-/g, ' ').toLowerCase()] : null)
 
   let params = []
   let ret = null

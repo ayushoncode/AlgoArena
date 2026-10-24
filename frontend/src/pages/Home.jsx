@@ -25,6 +25,7 @@ import { UserAvatar } from '../utils/avatar'
 import { ArenaEmblem, ArenaLogo } from '../components/ArenaLogo'
 
 const HeroScene3D = lazy(() => import('../components/HeroScene3D'))
+import HeroBattleMockup from '../components/HeroBattleMockup'
 import { motion, AnimatePresence, useInView, useAnimation } from 'framer-motion'
 import {
   Zap, Shield, Trophy, Swords, Users, ChevronDown,
@@ -232,8 +233,8 @@ function CodeLine({ line, lineNo }) {
   const isComment = COMMENT_RE.test(line.trim())
   if (isComment) return (
     <div className="flex">
-      <span className="select-none w-7 text-right pr-3 shrink-0" style={{ color: '#243356', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{lineNo}</span>
-      <span style={{ color: '#4A5878', fontFamily: 'var(--font-mono)', fontSize: 11, fontStyle: 'italic' }}>{line}</span>
+      <span className="select-none w-7 text-right pr-3 shrink-0" style={{ color: 'var(--c-border2)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{lineNo}</span>
+      <span style={{ color: 'var(--c-text-mute)', fontFamily: 'var(--font-mono)', fontSize: 11, fontStyle: 'italic' }}>{line}</span>
     </div>
   )
   const parts = []; let last = 0; const allM = []
@@ -242,14 +243,14 @@ function CodeLine({ line, lineNo }) {
   allM.sort((a, b) => a.i - b.i)
   for (const { i, len, type, val } of allM) {
     if (i < last) continue
-    if (i > last) parts.push(<span key={last} style={{ color: '#C8D4EE', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{line.slice(last, i)}</span>)
-    parts.push(<span key={i} style={{ color: type === 'kw' ? '#E11D48' : '#38BDF8', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600 }}>{val}</span>)
+    if (i > last) parts.push(<span key={last} style={{ color: 'var(--c-text)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{line.slice(last, i)}</span>)
+    parts.push(<span key={i} style={{ color: type === 'kw' ? 'var(--c-red)' : 'var(--c-blue)', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600 }}>{val}</span>)
     last = i + len
   }
-  if (last < line.length) parts.push(<span key={last} style={{ color: '#C8D4EE', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{line.slice(last)}</span>)
+  if (last < line.length) parts.push(<span key={last} style={{ color: 'var(--c-text)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{line.slice(last)}</span>)
   return (
     <div className="flex">
-      <span className="select-none w-7 text-right pr-3 shrink-0" style={{ color: '#243356', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{lineNo}</span>
+      <span className="select-none w-7 text-right pr-3 shrink-0" style={{ color: 'var(--c-border2)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{lineNo}</span>
       <span>{parts}</span>
     </div>
   )
@@ -262,19 +263,19 @@ function DuelCodePanel({ typed, showCursor, verdict, label, rating, isYou }) {
     <div
       className="flex flex-col overflow-hidden transition-all duration-300"
       style={{
-        background: '#070D1A',
-        border: `1px solid ${verdict ? verdictColor + '50' : '#1C2842'}`,
+        background: 'var(--c-panel)',
+        border: `1px solid ${verdict ? verdictColor + '50' : 'var(--c-border)'}`,
       }}
     >
       {/* Panel header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b" style={{ background: '#0B1120', borderColor: '#1C2842' }}>
+      <div className="flex items-center justify-between px-3 py-2 border-b" style={{ background: 'var(--c-panel)', borderColor: 'var(--c-border)' }}>
         <div className="flex items-center gap-2">
           {isYou
             ? <span className="dot-live" />
-            : <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#4A5878' }} />
+            : <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--c-text-mute)' }} />
           }
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: isYou ? '#E2E8F4' : '#4A5878' }}>{label}</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: isYou ? '#38BDF8' : '#4A5878' }}>[{rating}]</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: isYou ? 'var(--c-text)' : 'var(--c-text-mute)' }}>{label}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: isYou ? 'var(--c-blue)' : 'var(--c-text-mute)' }}>[{rating}]</span>
         </div>
         {verdict && (
           <span
@@ -295,8 +296,8 @@ function DuelCodePanel({ typed, showCursor, verdict, label, rating, isYou }) {
         {lines.map((line, i) => <CodeLine key={i} line={line} lineNo={i + 1} />)}
         {showCursor && !verdict && (
           <div className="flex">
-            <span className="select-none w-7 text-right pr-3 shrink-0" style={{ color: '#243356', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{lines.length + 1}</span>
-            <span className="cursor-blink inline-block w-2 h-[0.9em] align-middle" style={{ background: isYou ? '#E11D48' : '#4A5878' }} />
+            <span className="select-none w-7 text-right pr-3 shrink-0" style={{ color: 'var(--c-border2)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{lines.length + 1}</span>
+            <span className="cursor-blink inline-block w-2 h-[0.9em] align-middle" style={{ background: isYou ? '#E11D48' : 'var(--c-text-mute)' }} />
           </div>
         )}
       </div>
@@ -335,49 +336,49 @@ function BattleCycle({ onComplete }) {
   const oppProgress = opp.done ? 100 : Math.round((opp.typed.length / OPP_CODE.length) * 100)
 
   return (
-    <div style={{ background: '#070D1A', border: '1px solid #1C2842' }}>
+    <div style={{ background: 'var(--c-panel)', border: '1px solid #1C2842' }}>
       {/* Match bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ background: '#0B1120', borderColor: '#1C2842' }}>
+      <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ background: 'var(--c-panel)', borderColor: 'var(--c-border)' }}>
         <div className="flex items-center gap-2">
           <span className="dot-live" />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: '#E2E8F4' }}>you</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: 'var(--c-text)' }}>you</span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: '#38BDF8' }}>1347</span>
         </div>
         <div className="text-center">
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: '#E2E8F4', fontVariantNumeric: 'tabular-nums' }}>{mm}:{ss}</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#4A5878' }}>Two Sum · arrays · medium</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: 'var(--c-text)', fontVariantNumeric: 'tabular-nums' }}>{mm}:{ss}</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--c-text-mute)' }}>Two Sum · arrays · medium</div>
         </div>
         <div className="flex items-center gap-2 flex-row-reverse">
-          <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#4A5878' }} />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#4A5878' }}>opponent</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: '#4A5878' }}>1389</span>
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--c-text-mute)' }} />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-text-mute)' }}>opponent</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: 'var(--c-text-mute)' }}>1389</span>
         </div>
       </div>
 
       {/* Progress bars */}
-      <div className="px-4 py-2 grid grid-cols-2 gap-3 border-b" style={{ borderColor: '#1C2842', background: '#070D1A' }}>
+      <div className="px-4 py-2 grid grid-cols-2 gap-3 border-b" style={{ borderColor: 'var(--c-border)', background: 'var(--c-panel)' }}>
         <div>
           <div className="flex items-center justify-between mb-1">
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#38BDF8' }}>YOU</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#38BDF8' }}>{youProgress}%</span>
           </div>
-          <div className="h-1 rounded-full" style={{ background: '#1C2842' }}>
+          <div className="h-1 rounded-full" style={{ background: 'var(--c-border)' }}>
             <div className="h-full rounded-full transition-all duration-300" style={{ width: `${youProgress}%`, background: 'linear-gradient(90deg, #E11D48, #38BDF8)' }} />
           </div>
         </div>
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#4A5878' }}>OPP</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#4A5878' }}>{oppProgress}%</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--c-text-mute)' }}>OPP</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--c-text-mute)' }}>{oppProgress}%</span>
           </div>
-          <div className="h-1 rounded-full" style={{ background: '#1C2842' }}>
-            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${oppProgress}%`, background: '#243356' }} />
+          <div className="h-1 rounded-full" style={{ background: 'var(--c-border)' }}>
+            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${oppProgress}%`, background: 'var(--c-border2)' }} />
           </div>
         </div>
       </div>
 
       {/* Status */}
-      <div className="px-4 py-1.5 text-[11px] flex items-center gap-2 border-b" style={{ fontFamily: 'var(--font-mono)', borderColor: '#1C2842', background: '#050A14', color: '#4A5878' }}>
+      <div className="px-4 py-1.5 text-[11px] flex items-center gap-2 border-b" style={{ fontFamily: 'var(--font-mono)', borderColor: 'var(--c-border)', background: 'var(--c-void)', color: 'var(--c-text-mute)' }}>
         {phase === DP.CODING && <><span className="dot-live" style={{ width: 5, height: 5 }} /> 1v1 match in progress · live typing</>}
         {phase === DP.RUNNING && <span style={{ color: '#F5B942' }}>▶ executing in docker sandbox…</span>}
         {phase === DP.ACCEPTED && <span className="verdict-in" style={{ color: '#10b981' }}>✓ 10/10 test cases passed — ACCEPTED</span>}
@@ -389,7 +390,7 @@ function BattleCycle({ onComplete }) {
       </div>
 
       {/* Split panes */}
-      <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 1, background: '#1C2842' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 1, background: 'var(--c-border)' }}>
         <DuelCodePanel
           typed={you.typed}
           showCursor={!you.done}
@@ -595,7 +596,7 @@ function OtpLoginForm({ onSwitchPassword }) {
             {busy ? <><Spinner /> Sending OTP…</> : 'Send 6-Digit Login Code'}
           </button>
           <div className="text-center pt-1">
-            <button type="button" onClick={onSwitchPassword} style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-text-mute)' }} className="hover:text-white transition-colors">
+            <button type="button" onClick={onSwitchPassword} style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-text-mute)' }} className="hover:text-[color:var(--c-text)] transition-colors">
               Sign in with password instead
             </button>
           </div>
@@ -618,8 +619,8 @@ function OtpLoginForm({ onSwitchPassword }) {
             {busy ? <><Spinner /> Verifying…</> : 'Enter the Arena'}
           </button>
           <div className="flex items-center justify-between" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-text-mute)' }}>
-            <button type="button" onClick={() => setStep(1)} className="hover:text-white transition-colors">← Change email</button>
-            <button type="button" disabled={cooldown > 0 || busy} onClick={handleSendOtp} className="hover:text-white transition-colors disabled:opacity-50">
+            <button type="button" onClick={() => setStep(1)} className="hover:text-[color:var(--c-text)] transition-colors">← Change email</button>
+            <button type="button" disabled={cooldown > 0 || busy} onClick={handleSendOtp} className="hover:text-[color:var(--c-text)] transition-colors disabled:opacity-50">
               {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
             </button>
           </div>
@@ -658,7 +659,7 @@ function PasswordLoginForm({ onSwitchOtp, onSwitchRegister, onSwitchForgot }) {
       </button>
       <div className="flex items-center justify-between" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>
         <button type="button" onClick={onSwitchOtp} style={{ color: 'var(--c-blue)' }} className="hover:underline">Fast OTP Sign In</button>
-        <button type="button" onClick={onSwitchRegister} style={{ color: 'var(--c-text-mute)' }} className="hover:text-white">Register →</button>
+        <button type="button" onClick={onSwitchRegister} style={{ color: 'var(--c-text-mute)' }} className="hover:text-[color:var(--c-text)]">Register →</button>
       </div>
     </form>
   )
@@ -724,7 +725,7 @@ function ForgotPasswordForm({ onBackToLogin }) {
             {busy ? <><Spinner /> Sending Code…</> : 'Send Password Reset Code'}
           </button>
           <div className="text-center pt-1">
-            <button type="button" onClick={onBackToLogin} style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-text-mute)' }} className="hover:text-white transition-colors">← Back to Sign In</button>
+            <button type="button" onClick={onBackToLogin} style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-text-mute)' }} className="hover:text-[color:var(--c-text)] transition-colors">← Back to Sign In</button>
           </div>
         </form>
       )}
@@ -748,8 +749,8 @@ function ForgotPasswordForm({ onBackToLogin }) {
             {busy ? <><Spinner /> Updating Password…</> : 'Update Password & Sign In'}
           </button>
           <div className="flex items-center justify-between" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-text-mute)' }}>
-            <button type="button" onClick={() => setStep(1)} className="hover:text-white transition-colors">← Change email</button>
-            <button type="button" disabled={cooldown > 0 || busy} onClick={handleSendResetCode} className="hover:text-white transition-colors disabled:opacity-50">
+            <button type="button" onClick={() => setStep(1)} className="hover:text-[color:var(--c-text)] transition-colors">← Change email</button>
+            <button type="button" disabled={cooldown > 0 || busy} onClick={handleSendResetCode} className="hover:text-[color:var(--c-text)] transition-colors disabled:opacity-50">
               {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
             </button>
           </div>
@@ -842,8 +843,8 @@ function RegisterForm({ onSwitchLogin }) {
             {busy ? <><Spinner /> Creating Account…</> : 'Confirm & Enter Arena'}
           </button>
           <div className="flex items-center justify-between" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-text-mute)' }}>
-            <button type="button" onClick={() => { setStep(1); setSuccess(''); setOtp(''); setDevOtp(null) }} className="hover:text-white transition-colors">← Back</button>
-            <button type="button" disabled={cooldown > 0 || busy} onClick={handleSendOtp} className="hover:text-white transition-colors disabled:opacity-50">
+            <button type="button" onClick={() => { setStep(1); setSuccess(''); setOtp(''); setDevOtp(null) }} className="hover:text-[color:var(--c-text)] transition-colors">← Back</button>
+            <button type="button" disabled={cooldown > 0 || busy} onClick={handleSendOtp} className="hover:text-[color:var(--c-text)] transition-colors disabled:opacity-50">
               {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
             </button>
           </div>
@@ -969,7 +970,7 @@ function HeroSection({ onJoinClick }) {
         style={{
           left: '-10%', top: '20%',
           width: '55vw', height: '70vh',
-          background: 'radial-gradient(ellipse at center, rgba(225,29,72,0.12) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at center, var(--c-red-glow) 0%, transparent 70%)',
           filter: 'blur(60px)',
         }}
       />
@@ -980,7 +981,7 @@ function HeroSection({ onJoinClick }) {
         style={{
           right: '-10%', top: '20%',
           width: '55vw', height: '70vh',
-          background: 'radial-gradient(ellipse at center, rgba(0,194,255,0.09) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at center, var(--c-blue-glow) 0%, transparent 70%)',
           filter: 'blur(60px)',
         }}
       />
@@ -1018,9 +1019,9 @@ function HeroSection({ onJoinClick }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           style={{ fontFamily: 'var(--font-display)', fontWeight: 700, lineHeight: 1.0, letterSpacing: '0.04em', textTransform: 'uppercase' }}
-          className="text-5xl sm:text-7xl lg:text-8xl"
+          className="text-4xl sm:text-7xl lg:text-8xl leading-tight"
         >
-          <span style={{ color: '#E2E8F4' }}>ASSEMBLE.</span>
+          <span style={{ color: 'var(--c-text)' }}>ASSEMBLE.</span>
           <br />
           <span style={{ color: 'var(--c-red)', textShadow: '0 0 40px rgba(225,29,72,0.5)' }}>CODE.</span>{' '}
           <span style={{ color: 'var(--c-blue)', textShadow: '0 0 40px rgba(56,189,248,0.4)' }}>CONQUER.</span>
@@ -1030,7 +1031,7 @@ function HeroSection({ onJoinClick }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.4 }}
-          className="text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed"
+          className="text-base sm:text-xl max-w-2xl mx-auto leading-relaxed px-4"
           style={{ color: 'var(--c-text-dim)' }}
         >
           1v1 real-time coding duels. Same problem. Same second.{' '}
@@ -1039,6 +1040,9 @@ function HeroSection({ onJoinClick }) {
           </span>{' '}
           first takes the Elo.
         </motion.p>
+
+        {/* Dynamic 1v1 Battle Visualization */}
+        <HeroBattleMockup />
 
         {/* CTAs */}
         <motion.div
@@ -1061,7 +1065,7 @@ function HeroSection({ onJoinClick }) {
           <Link
             to="/leaderboard"
             className="inline-flex items-center gap-2 px-8 py-4 text-sm font-semibold transition-all duration-200"
-            style={{ color: 'var(--c-text-dim)', background: 'rgba(18,26,46,0.7)', border: '1px solid var(--c-border)', borderRadius: 2 }}
+            style={{ color: 'var(--c-text-dim)', background: 'var(--c-panel2)', border: '1px solid var(--c-border)', borderRadius: 2 }}
             onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--c-border2)'; e.currentTarget.style.color = 'var(--c-text)' }}
             onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--c-border)'; e.currentTarget.style.color = 'var(--c-text-dim)' }}
           >
@@ -1075,7 +1079,7 @@ function HeroSection({ onJoinClick }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="flex items-center justify-center gap-8 flex-wrap pt-4"
+          className="grid grid-cols-2 sm:flex items-center justify-center gap-4 sm:gap-8 pt-4 w-full"
           style={{ borderTop: '1px solid var(--c-border)', paddingTop: 20 }}
         >
           {[
@@ -1272,14 +1276,14 @@ function MissionBriefingSection() {
             </div>
 
             {/* Code preview */}
-            <div style={{ background: '#050A14', border: '1px solid var(--c-border)', borderRadius: 0 }}>
+            <div className="min-w-0" style={{ background: 'var(--c-void)', border: '1px solid var(--c-border)', borderRadius: 0 }}>
               <div className="flex items-center justify-between px-4 py-2 border-b" style={{ borderColor: 'var(--c-border)' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--c-text-mute)' }}>// engine_{curr.id}.js</span>
                 <span className="flex items-center gap-1.5" style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#10b981' }}>
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500" />verified
                 </span>
               </div>
-              <pre className="p-5 overflow-x-auto" style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#C8D4EE', lineHeight: 1.7 }}>
+              <pre className="p-5 overflow-x-auto" style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--c-text)', lineHeight: 1.7 }}>
                 <code>{curr.code}</code>
               </pre>
             </div>
@@ -1326,7 +1330,7 @@ function RankLadderSection() {
                 whileHover={{ y: -4, boxShadow: `0 12px 40px ${tier.glow}` }}
                 className="p-5 relative overflow-hidden transition-all duration-300"
                 style={{
-                  background: `rgba(5,7,15,0.8)`,
+                  background: `var(--c-panel)`,
                   border: `1px solid ${tier.color}30`,
                   clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)',
                 }}
@@ -1459,8 +1463,8 @@ function LoadoutSection() {
         <SectionReveal delay={0.1}>
           <div style={{ background: 'var(--c-void)', border: '1px solid var(--c-border)' }}>
             {/* Tab bar */}
-            <div className="flex items-center justify-between px-4 py-3 border-b flex-wrap gap-3" style={{ borderColor: 'var(--c-border)', background: 'rgba(5,7,15,0.5)' }}>
-              <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between px-4 py-3 border-b flex-wrap gap-3" style={{ borderColor: 'var(--c-border)', background: 'var(--c-panel)' }}>
+              <div className="flex items-center gap-1 flex-wrap">
                 {Object.entries(LANG_SNIPPETS).map(([id, l]) => (
                   <button
                     key={id}
@@ -1501,7 +1505,7 @@ function LoadoutSection() {
                 exit={{ opacity: 0, x: -8 }}
                 transition={{ duration: 0.2 }}
                 className="p-5 sm:p-6 overflow-x-auto"
-                style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#C8D4EE', lineHeight: 1.7 }}
+                style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--c-text)', lineHeight: 1.7 }}
               >
                 <code>{curr.code}</code>
               </motion.pre>
@@ -1586,7 +1590,7 @@ function HallOfHeroesSection() {
                         className="flex flex-col items-center gap-2 p-4 text-center"
                         style={{
                           transform: `scale(${cfg.scale}) translateY(${cfg.yOffset}px)`,
-                          background: `rgba(5,7,15,0.9)`,
+                          background: `var(--c-panel)`,
                           border: `1px solid ${medColor}40`,
                           minWidth: 120,
                           clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%)',
@@ -1891,7 +1895,7 @@ function FooterSection() {
   return (
     <footer
       style={{
-        background: 'linear-gradient(to bottom, var(--c-panel), rgba(3,4,10,0.98))',
+        background: 'linear-gradient(to bottom, var(--c-panel), var(--c-void))',
         borderTop: '1px solid rgba(255,255,255,0.06)',
         position: 'relative',
         overflow: 'hidden',

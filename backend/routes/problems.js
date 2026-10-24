@@ -45,6 +45,91 @@ router.get('/daily', async (_req, res) => {
   }
 })
 
+// GET /api/problems/striver-sheet — returns Striver A2Z curriculum populated with live DB problem rows
+router.get('/striver-sheet', async (_req, res) => {
+  try {
+    const { rows: allProbs } = await db.query(
+      `SELECT id, title, slug, topic, difficulty, sample_input, sample_output
+       FROM problems ORDER BY created_at ASC`
+    )
+    const probMap = new Map()
+    for (const p of allProbs) {
+      if (p.slug) probMap.set(p.slug, p)
+      probMap.set(p.title.toLowerCase(), p)
+    }
+
+    const CURRICULUM = [
+      {
+        id: 'step-3-arrays',
+        title: 'Step 3: Solve Problems on Arrays',
+        topic: 'arrays',
+        icon: 'Brackets',
+        badge: 'Curriculum Ready',
+        subsections: [
+          {
+            title: 'Easy Problems',
+            problems: [
+              'largest-element-in-an-array',
+              'second-largest-element-in-an-array',
+              'check-if-array-is-sorted-and-rotated',
+              'remove-duplicates-from-sorted-array',
+              'left-rotate-an-array-by-one',
+              'rotate-array',
+              'move-zeroes',
+              'linear-search',
+              'union-of-two-sorted-arrays',
+              'missing-number',
+              'max-consecutive-ones',
+              'longest-subarray-with-given-sum',
+              'single-number'
+            ]
+          },
+          {
+            title: 'Medium Problems',
+            problems: [
+              'two-sum',
+              'sort-colors',
+              'majority-element',
+              'maximum-subarray',
+              'best-time-to-buy-and-sell-stock',
+              'next-permutation',
+              'longest-consecutive-sequence',
+              'set-matrix-zeroes',
+              'rotate-image',
+              'spiral-matrix'
+            ]
+          },
+          {
+            title: 'Hard Problems',
+            problems: [
+              'pascal-s-triangle',
+              '3sum',
+              '4sum',
+              'first-missing-positive',
+              'trapping-rain-water'
+            ]
+          }
+        ]
+      }
+    ]
+
+    const result = CURRICULUM.map(step => ({
+      ...step,
+      subsections: step.subsections.map(sub => ({
+        ...sub,
+        problems: sub.problems
+          .map(slug => probMap.get(slug) || probMap.get(slug.replace(/-/g, ' ')))
+          .filter(Boolean)
+      }))
+    }))
+
+    return res.json(result)
+  } catch (err) {
+    console.error('[GET /problems/striver-sheet]', err)
+    return res.status(500).json({ message: 'internal server error' })
+  }
+})
+
 // GET /api/problems — list problems (filter by topic/difficulty, with fallback)
 router.get('/', authMiddleware, async (req, res) => {
   try {
@@ -85,8 +170,13 @@ router.get('/', authMiddleware, async (req, res) => {
 // POST /api/problems/:id/run — run code against visible sample test cases only (Run button)
 router.post('/:id/run', authMiddleware, async (req, res) => {
   try {
-    const { code, language = 'javascript' } = req.body
-    const problemId = req.params.id
+    const rawId = req.params.id
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}[0-9a-f]{8}$/i.test(rawId) || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId)
+    let problemId = rawId
+    if (!isUuid) {
+      const { rows: prob } = await db.query('SELECT id FROM problems WHERE slug = $1', [rawId])
+      if (prob[0]) problemId = prob[0].id
+    }
 
     if (!code) return res.status(400).json({ message: 'code is required' })
 
@@ -262,14 +352,18 @@ router.post('/:id/run', authMiddleware, async (req, res) => {
 // GET /api/problems/:id — single problem with visible test cases
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.params.id)
     const { rows: [problem] } = await db.query(
-      `SELECT id, title, topic, difficulty, description, min_rating, max_rating, sample_input, sample_output, created_at, slug FROM problems WHERE id = $1`, [req.params.id]
+      isUuid
+        ? `SELECT id, title, topic, difficulty, description, min_rating, max_rating, sample_input, sample_output, created_at, slug FROM problems WHERE id = $1`
+        : `SELECT id, title, topic, difficulty, description, min_rating, max_rating, sample_input, sample_output, created_at, slug FROM problems WHERE slug = $1`,
+      [req.params.id]
     )
     if (!problem) return res.status(404).json({ message: 'problem not found' })
 
     const { rows: tests } = await db.query(
       `SELECT id, input, output FROM test_cases
-       WHERE problem_id = $1 AND is_hidden = false`, [req.params.id]
+       WHERE problem_id = $1 AND is_hidden = false`, [problem.id]
     )
     return res.json({ ...problem, sample_tests: tests })
   } catch (err) {
@@ -281,8 +375,12 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // GET /api/problems/:id/hints — get hints for a problem
 router.get('/:id/hints', authMiddleware, async (req, res) => {
   try {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.params.id)
     const { rows: [problem] } = await db.query(
-      `SELECT hints FROM problems WHERE id = $1`, [req.params.id]
+      isUuid
+        ? `SELECT hints FROM problems WHERE id = $1`
+        : `SELECT hints FROM problems WHERE slug = $1`,
+      [req.params.id]
     )
     if (!problem) return res.status(404).json({ message: 'problem not found' })
     return res.json(problem.hints || [])

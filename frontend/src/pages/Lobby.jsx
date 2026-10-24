@@ -9,7 +9,8 @@ import {
   Swords, Users, Zap, Target, Copy, Check, X, Hash,
   Radio, Shield, ChevronRight, Wifi, WifiOff, Clock,
   Brackets, Type, Link, GitBranch, Network, Layers,
-  Search, ArrowUpDown, Shuffle, Sparkles, Play, CheckCircle2
+  Search, ArrowUpDown, Shuffle, Sparkles, Play, CheckCircle2,
+  GitCommit, Compass, Cpu, Boxes, Flame
 } from 'lucide-react'
 import {
   HudPanel, HudButton, GhostButton, DangerButton, RankBadge,
@@ -17,6 +18,8 @@ import {
   Skeleton, EmptyState, VerdictChip, Tooltip,
 } from '../components/ui'
 import { ArenaLogo } from '../components/ArenaLogo'
+import StriverSheetView from '../components/StriverSheetView'
+import { DEFAULT_STRIVER_CURRICULUM } from '../content/striverCurriculum'
 
 /* ════════════════════════════════════════════════
    DATA — topics + difficulties
@@ -27,15 +30,22 @@ const TOPICS = [
     id: 'arrays',
     label: 'Arrays',
     icon: Brackets,
-    subtopics: ['Two Pointers', 'Sliding Window', 'Prefix Sums'],
-    desc: 'Sequence manipulation & contiguous window algorithms'
+    subtopics: ['Matrix', 'Prefix Sums', 'Subarrays'],
+    desc: 'Sequence manipulation, matrix algebra & contiguous subarrays'
+  },
+  {
+    id: 'two-pointers',
+    label: 'Two Pointers',
+    icon: GitCommit,
+    subtopics: ['Sliding Window', 'Pair Sums', 'Fast-Slow'],
+    desc: 'Dual pointer traversals, window expansion & shrinking'
   },
   {
     id: 'strings',
     label: 'Strings',
     icon: Type,
-    subtopics: ['Anagrams', 'Palindromes', 'Z-Algorithm'],
-    desc: 'Pattern matching, text parsing & substring queries'
+    subtopics: ['Anagrams', 'Palindromes', 'Text Parsing'],
+    desc: 'Pattern matching, text parsing & string transformations'
   },
   {
     id: 'linked-lists',
@@ -45,8 +55,22 @@ const TOPICS = [
     desc: 'Node pointers, fast-slow runners & memory links'
   },
   {
+    id: 'stack',
+    label: 'Stack & Queue',
+    icon: Boxes,
+    subtopics: ['Monotonic Stack', 'Parentheses', 'RPN'],
+    desc: 'LIFO & FIFO structures, monotonic bounds & expressions'
+  },
+  {
+    id: 'binary-search',
+    label: 'Binary Search',
+    icon: Search,
+    subtopics: ['Rotated Arrays', 'Search Space', 'Lower Bound'],
+    desc: 'Logarithmic search space reduction & threshold bounds'
+  },
+  {
     id: 'trees',
-    label: 'Trees',
+    label: 'Trees & BST',
     icon: GitBranch,
     subtopics: ['Traversal', 'LCA', 'Path Sums'],
     desc: 'Hierarchical node branching, BST & depth exploration'
@@ -55,29 +79,50 @@ const TOPICS = [
     id: 'graphs',
     label: 'Graphs',
     icon: Network,
-    subtopics: ['Shortest Path', 'Union-Find', 'Topo Sort'],
+    subtopics: ['BFS/DFS', 'Shortest Path', 'Topo Sort'],
     desc: 'Vertices, edges, traversal & network connectivity'
   },
   {
     id: 'dp',
     label: 'Dynamic Prog.',
     icon: Layers,
-    subtopics: ['Memoization', 'Knapsack', 'LCS'],
+    subtopics: ['1D/2D DP', 'Subsequences', 'Knapsack'],
     desc: 'Subproblem optimal structure & state transitions'
   },
   {
-    id: 'binary-search',
-    label: 'Binary Search',
-    icon: Search,
-    subtopics: ['Rotated Arrays', 'Lower Bound', 'Search Space'],
-    desc: 'Logarithmic search space reduction & threshold bounds'
+    id: 'backtracking',
+    label: 'Backtracking',
+    icon: Compass,
+    subtopics: ['Subsets', 'Permutations', 'N-Queens'],
+    desc: 'Exhaustive state-space search & decision trees'
   },
   {
-    id: 'sorting',
-    label: 'Sorting',
-    icon: ArrowUpDown,
-    subtopics: ['Merge Sort', 'Quick Sort', 'Bucket Sort'],
-    desc: 'Ordering, comparator partitions & distribution sorts'
+    id: 'greedy',
+    label: 'Greedy',
+    icon: Flame,
+    subtopics: ['Gas Station', 'Candy', 'Intervals'],
+    desc: 'Local optimal choices yielding global optima'
+  },
+  {
+    id: 'bit-manipulation',
+    label: 'Bit Manipulation',
+    icon: Cpu,
+    subtopics: ['Bitwise Ops', 'Counting Bits', 'Bit Masking'],
+    desc: 'Low-level binary logic, bitwise flags & XOR arithmetic'
+  },
+  {
+    id: 'math',
+    label: 'Math',
+    icon: Hash,
+    subtopics: ['Primes', 'Powers', 'Combinatorics'],
+    desc: 'Number theory, digit extraction & algebraic manipulation'
+  },
+  {
+    id: 'intervals',
+    label: 'Intervals',
+    icon: Clock,
+    subtopics: ['Merge Overlaps', 'Insert', 'Sweep Line'],
+    desc: 'Range merging, interval scheduling & segment overlaps'
   },
 ]
 
@@ -333,9 +378,11 @@ const TopicCard = memo(function TopicCard({ topic, selected, onClick, indexKey }
                 style={{ color: selected ? 'var(--c-red)' : 'var(--c-text)' }}>
                 {topic.label}
               </span>
-              <span className="font-mono text-[9px] uppercase tracking-wider" style={{ color: 'var(--c-text-mute)' }}>
-                Key [{indexKey}]
-              </span>
+              {indexKey <= 8 && (
+                <span className="font-mono text-[9px] uppercase tracking-wider" style={{ color: 'var(--c-text-mute)' }}>
+                  Key [{indexKey}]
+                </span>
+              )}
             </div>
           </div>
           {selected && (
@@ -371,7 +418,7 @@ const TopicCard = memo(function TopicCard({ topic, selected, onClick, indexKey }
 /* ════════════════════════════════════════════════
    SEARCHING OVERLAY — Radar + Loadout
 ════════════════════════════════════════════════ */
-function SearchingOverlay({ topic, difficulty, rating, onCancel }) {
+function SearchingOverlay({ topic, difficulty, rating, problem = null, onCancel }) {
   const { user } = useAuth()
   const { sec } = useQueueTimer(true)
   const mm = String(Math.floor(sec / 60)).padStart(2, '0')
@@ -427,13 +474,23 @@ function SearchingOverlay({ topic, difficulty, rating, onCancel }) {
         {/* Title */}
         <div className="space-y-2">
           <h2 className="font-display font-black text-3xl sm:text-4xl tracking-tight uppercase" style={{ color: 'var(--c-text)' }}>
-            Searching For A Rival
+            {problem ? 'Targeting Specific Duel' : 'Searching For A Rival'}
           </h2>
           <p className="font-sans text-sm" style={{ color: 'var(--c-text-dim)' }}>
-            Scanning arena for opponents near your{' '}
-            <span style={{ color: userTier.col, fontWeight: 700 }}>{userTier.name} ({rating})</span> Elo
+            {problem ? (
+              <>Locked on Striver problem: <span className="font-bold text-white underline decoration-amber-500">{problem.title}</span></>
+            ) : (
+              <>Scanning arena for opponents near your{' '}
+              <span style={{ color: userTier.col, fontWeight: 700 }}>{userTier.name} ({rating})</span> Elo</>
+            )}
           </p>
           <div className="flex items-center justify-center gap-2 pt-2 font-mono text-xs">
+            {problem && (
+              <span className="px-3 py-1 flex items-center gap-1.5 rounded text-amber-300 font-bold" style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)' }}>
+                <Target size={13} />
+                1v1 Problem Duel
+              </span>
+            )}
             <span className="px-3 py-1 flex items-center gap-1.5 rounded" style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}>
               <Icon size={13} style={{ color: 'var(--c-red)' }} />
               {topicObj.label}
@@ -557,7 +614,7 @@ function MatchFoundOverlay({ matchData, onComplete }) {
         {/* You */}
         <div className="w-full md:w-[380px] animate-clash-left">
           <div className="relative p-6 sm:p-8 flex flex-col items-center text-center space-y-4 shadow-2xl transition-transform"
-            style={{ background: 'linear-gradient(145deg, rgba(14,16,23,0.95) 0%, rgba(9,11,17,0.9) 100%)', border: `2px solid ${youTier.col}`, boxShadow: `0 0 35px ${youTier.col}35`, clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))' }}
+            style={{ background: 'var(--c-panel)', border: `2px solid ${youTier.col}`, boxShadow: `0 0 35px ${youTier.col}35`, clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))' }}
           >
             <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: `linear-gradient(90deg, ${youTier.col}, transparent)` }} />
             <div className="absolute top-3 left-4 px-2.5 py-0.5 font-mono text-[9px] font-black uppercase tracking-wider rounded" style={{ background: youTier.bg, color: youTier.col, border: `1px solid ${youTier.border}` }}>YOU</div>
@@ -565,7 +622,7 @@ function MatchFoundOverlay({ matchData, onComplete }) {
               <UserAvatar username={you.username} seed={you.avatar_seed} style={you.avatar_style} elo={you.rating} size={84} />
             </div>
             <div className="space-y-1 w-full">
-              <h3 className="font-display font-black text-2xl sm:text-3xl text-white truncate px-2 tracking-tight">{you.username}</h3>
+              <h3 className="font-display font-black text-2xl sm:text-3xl text-[color:var(--c-text)] truncate px-2 tracking-tight">{you.username}</h3>
               <div className="flex items-center justify-center gap-2 pt-1">
                 <RankBadge elo={you.rating || 1200} size="sm" />
                 <span className="font-mono text-sm font-black" style={{ color: youTier.col }}>{you.rating} Elo</span>
@@ -592,7 +649,7 @@ function MatchFoundOverlay({ matchData, onComplete }) {
         {/* Opponent */}
         <div className="w-full md:w-[380px] animate-clash-right">
           <div className="relative p-6 sm:p-8 flex flex-col items-center text-center space-y-4 shadow-2xl transition-transform"
-            style={{ background: 'linear-gradient(145deg, rgba(14,16,23,0.95) 0%, rgba(9,11,17,0.9) 100%)', border: `2px solid ${oppTier.col}`, boxShadow: `0 0 35px ${oppTier.col}35`, clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))' }}
+            style={{ background: 'var(--c-panel)', border: `2px solid ${oppTier.col}`, boxShadow: `0 0 35px ${oppTier.col}35`, clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))' }}
           >
             <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: `linear-gradient(90deg, transparent, ${oppTier.col})` }} />
             <div className="absolute top-3 right-4 px-2.5 py-0.5 font-mono text-[9px] font-black uppercase tracking-wider rounded" style={{ background: oppTier.bg, color: oppTier.col, border: `1px solid ${oppTier.border}` }}>RIVAL</div>
@@ -600,7 +657,7 @@ function MatchFoundOverlay({ matchData, onComplete }) {
               <UserAvatar username={opponent.username} seed={opponent.avatar_seed} style={opponent.avatar_style} elo={opponent.rating} size={84} />
             </div>
             <div className="space-y-1 w-full">
-              <h3 className="font-display font-black text-2xl sm:text-3xl text-white truncate px-2 tracking-tight">{opponent.username}</h3>
+              <h3 className="font-display font-black text-2xl sm:text-3xl text-[color:var(--c-text)] truncate px-2 tracking-tight">{opponent.username}</h3>
               <div className="flex items-center justify-center gap-2 pt-1">
                 <RankBadge elo={opponent.rating || 1200} size="sm" />
                 <span className="font-mono text-sm font-black" style={{ color: oppTier.col }}>{opponent.rating} Elo</span>
@@ -757,6 +814,10 @@ export default function Lobby() {
   const [topic, setTopic] = useState(null)
   const [diff, setDiff] = useState('medium')
   const [queuing, setQueuing] = useState(false)
+  const [queuingProblem, setQueuingProblem] = useState(null)
+  const [lobbyTab, setLobbyTab] = useState('random') // 'random' | 'striver'
+  const [striverData, setStriverData] = useState(DEFAULT_STRIVER_CURRICULUM)
+  const [striverLoading, setStriverLoading] = useState(false)
   const [matchFoundData, setMatchFoundData] = useState(null)
   const [customModalOpen, setCustomModalOpen] = useState(false)
   const [dailyProblem, setDailyProblem] = useState(null)
@@ -767,6 +828,11 @@ export default function Lobby() {
 
   const { connected, emit, on, off, socket } = useSocket()
 
+  // Ensure clean state on Lobby mount — leave any lingering queue
+  useEffect(() => {
+    try { emit('leave_queue') } catch {}
+  }, [emit])
+
   // Load preferences from localStorage
   useEffect(() => {
     try {
@@ -775,6 +841,19 @@ export default function Lobby() {
       if (savedTopic && TOPICS.some(t => t.id === savedTopic)) setTopic(savedTopic)
       if (savedDiff && DIFFS.some(d => d.id === savedDiff)) setDiff(savedDiff)
     } catch { }
+  }, [])
+
+  // Fetch Striver Sheet curriculum
+  useEffect(() => {
+    setStriverLoading(true)
+    api.get('/api/problems/striver-sheet')
+      .then(({ data }) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setStriverData(data)
+        }
+      })
+      .catch(err => console.error('[Lobby] Failed to load striver sheet:', err))
+      .finally(() => setStriverLoading(false))
   }, [])
 
   // Topic & Diff selection handlers with localStorage memory
@@ -825,7 +904,7 @@ export default function Lobby() {
   useEffect(() => { if (initialRoomCode) setCustomModalOpen(true) }, [initialRoomCode])
 
   useEffect(() => {
-    function onMatchFound(data) { console.log('[Lobby] match_found →', data?.roomId); setQueuing(false); setMatchFoundData(data) }
+    function onMatchFound(data) { console.log('[Lobby] match_found →', data?.roomId); setQueuing(false); setQueuingProblem(null); setMatchFoundData(data) }
     on('match_found', onMatchFound)
     return () => off('match_found', onMatchFound)
   }, [on, off])
@@ -836,10 +915,18 @@ export default function Lobby() {
 
   // Auto re-join on reconnect
   useEffect(() => {
-    if (connected && queuing && topic && diff) emit('join_queue', { topic, difficulty: diff })
-  }, [connected, queuing, topic, diff, emit])
+    if (connected && queuing) {
+      if (queuingProblem) {
+        emit('join_queue', { topic: queuingProblem.topic || 'arrays', difficulty: queuingProblem.difficulty || 'easy', problemId: queuingProblem.id })
+      } else if (topic && diff) {
+        emit('join_queue', { topic, difficulty: diff })
+      }
+    }
+  }, [connected, queuing, topic, diff, queuingProblem, emit])
 
-  if (loading && !user) {
+  // Show loader only while auth is being restored from localStorage.
+  // The useEffect above (line 898) handles redirect to /login if not authenticated.
+  if (loading) {
     return (
       <PageWrapper heroGlow>
         <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
@@ -854,7 +941,21 @@ export default function Lobby() {
     )
   }
 
-  if (!loading && !isAuthenticated) return null
+  if (!isAuthenticated) {
+    // Navigate fires asynchronously — show loader instead of black screen
+    return (
+      <PageWrapper heroGlow>
+        <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 rounded-full animate-ping" style={{ background: 'var(--c-red)', opacity: 0.6 }} />
+            <p className="font-mono text-sm tracking-wider uppercase" style={{ color: 'var(--c-text-mute)' }}>
+              Redirecting to login…
+            </p>
+          </div>
+        </div>
+      </PageWrapper>
+    )
+  }
 
   const elo = user?.elo_rating ?? 1200
   const userTier = getArenaTier(elo)
@@ -868,15 +969,40 @@ export default function Lobby() {
     desc: (dailyProblem.description || '').slice(0, 140) + '…'
   } : null
 
-
   function startQueue() {
-    if (!topic) return
+    if (!topic || queuing) return
+    setQueuingProblem(null)
     setQueuing(true)
-    if (connected) { emit('join_queue', { topic, difficulty: diff }) }
-    else { socket.once('connect', () => emit('join_queue', { topic, difficulty: diff })) }
+    emit('join_queue', { topic, difficulty: diff })
   }
 
-  function cancelQueue() { emit('leave_queue'); setQueuing(false) }
+  function cancelQueue() {
+    emit('leave_queue')
+    setQueuing(false)
+    setQueuingProblem(null)
+  }
+
+  const handleBattleProblem = useCallback((prob) => {
+    if (queuing) return
+    setQueuingProblem(prob)
+    setTopic(prob.topic || 'arrays')
+    setDiff(prob.difficulty || 'easy')
+    setQueuing(true)
+    emit('join_queue', {
+      topic: prob.topic || 'arrays',
+      difficulty: prob.difficulty || 'easy',
+      problemId: prob.id
+    })
+  }, [queuing, emit])
+
+  const handleBattleRandomFromSheet = useCallback((sheetTopic = 'arrays', sheetDiff = 'easy') => {
+    if (queuing) return
+    setQueuingProblem(null)
+    setTopic(sheetTopic)
+    setDiff(sheetDiff)
+    setQueuing(true)
+    emit('join_queue', { topic: sheetTopic, difficulty: sheetDiff })
+  }, [queuing, emit])
 
   function handleSurpriseMe() {
     const randomTopic = TOPICS[Math.floor(Math.random() * TOPICS.length)].id
@@ -896,7 +1022,7 @@ export default function Lobby() {
             navigate(`/match/${data.roomId}`, { state: { topic: data.topic, difficulty: data.difficulty, players: data.players, problemId: data.problemId } })
           }} />
         ) : queuing ? (
-          <SearchingOverlay topic={topic} difficulty={diff} rating={elo} onCancel={cancelQueue} />
+          <SearchingOverlay topic={topic} difficulty={diff} rating={elo} problem={queuingProblem} onCancel={cancelQueue} />
         ) : null}
       </AnimatePresence>
 
@@ -908,7 +1034,7 @@ export default function Lobby() {
 
       <PageWrapper heroGlow>
 
-        <div style={{ borderBottom: '1px solid var(--c-border)', background: 'rgba(11,17,32,0.85)', backdropFilter: 'blur(16px)' }}>
+        <div style={{ borderBottom: '1px solid var(--c-border)', background: 'var(--c-nav-bg)', backdropFilter: 'blur(16px)' }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
 
             {/* Left — Title */}
@@ -959,8 +1085,54 @@ export default function Lobby() {
         {/* ── MAIN CONTENT ────────────────────────────────── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 pb-24 lg:pb-6 space-y-6">
 
-          {/* STEPPER STRIP */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 p-2 rounded" style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)' }}>
+          {/* ── LOBBY MODE SELECTOR (Quick Arena vs Striver Sheet) ── */}
+          <div className="flex items-center gap-2 p-1.5 rounded-lg border border-[var(--c-border)] bg-[var(--c-panel)] shadow-inner">
+            <button
+              type="button"
+              onClick={() => setLobbyTab('random')}
+              className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md font-display font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 ${
+                lobbyTab === 'random'
+                  ? 'bg-[var(--c-red)] text-white shadow-lg shadow-rose-900/40 ring-1 ring-white/20'
+                  : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)] hover:bg-[var(--c-panel2)]'
+              }`}
+            >
+              <Zap size={15} className={lobbyTab === 'random' ? 'animate-pulse text-amber-300' : ''} />
+              <span>Quick Arena (Random)</span>
+              <span className="hidden sm:inline-block text-[9px] px-2 py-0.5 rounded font-mono bg-black/20 text-white/90">
+                Topic & Diff
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setLobbyTab('striver')}
+              className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md font-display font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 ${
+                lobbyTab === 'striver'
+                  ? 'bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-lg shadow-amber-900/40 ring-1 ring-white/20'
+                  : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)] hover:bg-[var(--c-panel2)]'
+              }`}
+            >
+              <Sparkles size={15} className={lobbyTab === 'striver' ? 'animate-spin text-amber-200' : ''} />
+              <span>Striver A2Z Sheet</span>
+              <span className="hidden sm:inline-block text-[9px] px-2 py-0.5 rounded font-mono bg-amber-400 text-black font-black uppercase tracking-normal">
+                Topic & Question Wise
+              </span>
+            </button>
+          </div>
+
+          {lobbyTab === 'striver' ? (
+            <StriverSheetView
+              striverData={striverData}
+              loading={striverLoading}
+              onBattleProblem={handleBattleProblem}
+              onBattleRandom={handleBattleRandomFromSheet}
+              queuingProblemId={queuingProblem?.id}
+              isQueuing={queuing}
+            />
+          ) : (
+            <>
+              {/* STEPPER STRIP */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 p-2 rounded" style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)' }}>
             {/* Step 1: Select Topic */}
             <div className={`flex items-center gap-2 p-2 rounded transition-colors ${topic ? 'opacity-100' : 'opacity-70'}`}
               style={{ background: topic ? 'rgba(225,29,72,0.12)' : 'transparent', border: `1px solid ${topic ? 'rgba(225,29,72,0.35)' : 'var(--c-border)'}` }}>
@@ -968,7 +1140,7 @@ export default function Lobby() {
                 style={{ background: topic ? 'var(--c-red)' : 'var(--c-panel2)', color: topic ? '#fff' : 'var(--c-text-mute)' }}>
                 1
               </div>
-              <div className="hidden sm:block min-w-0">
+              <div className="min-w-0">
                 <p className="font-mono text-[10px] uppercase font-bold tracking-wider" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)', background: 'transparent' }}>Step 1</p>
                 <p className="font-display font-semibold text-xs truncate" style={{ color: 'var(--c-text)', background: 'transparent' }}>Select Topic</p>
               </div>
@@ -981,7 +1153,7 @@ export default function Lobby() {
                 style={{ background: diffObj.col, color: diffObj.id === 'easy' ? '#000' : '#fff' }}>
                 2
               </div>
-              <div className="hidden sm:block min-w-0">
+              <div className="min-w-0">
                 <p className="font-mono text-[10px] uppercase font-bold tracking-wider" style={{ color: diffObj.col, background: 'transparent' }}>Step 2</p>
                 <p className="font-display font-semibold text-xs truncate" style={{ color: 'var(--c-text)', background: 'transparent' }}>Choose Difficulty</p>
               </div>
@@ -994,7 +1166,7 @@ export default function Lobby() {
                 style={{ background: topic ? 'var(--c-red)' : 'var(--c-panel2)', color: topic ? '#fff' : 'var(--c-text-mute)' }}>
                 3
               </div>
-              <div className="hidden sm:block min-w-0">
+              <div className="min-w-0">
                 <p className="font-mono text-[10px] uppercase font-bold tracking-wider" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)', background: 'transparent' }}>Step 3</p>
                 <p className="font-display font-semibold text-xs truncate" style={{ color: 'var(--c-text)', background: 'transparent' }}>Deploy Match</p>
               </div>
@@ -1017,8 +1189,8 @@ export default function Lobby() {
                   <h3 className="font-display font-bold text-lg sm:text-xl" style={{ color: 'var(--c-text)' }}>
                     {dailyObj.title}
                   </h3>
-                  <p className="font-sans text-xs max-w-3xl leading-relaxed" style={{ color: 'var(--c-text-dim)' }}>
-                    {dailyObj.desc}
+                  <p className="font-sans text-xs max-w-3xl leading-relaxed line-clamp-2" style={{ color: 'var(--c-text-dim)' }}>
+                    {dailyObj.desc.replace(/[*#`_]/g, '').replace(/\n/g, ' ').substring(0, 160)}...
                   </p>
                 </div>
 
@@ -1105,7 +1277,7 @@ export default function Lobby() {
                     whileTap={{ scale: 0.98 }}
                     className="relative text-left p-4 transition-all duration-200 outline-none cursor-pointer flex flex-col justify-between"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(56,189,248,0.1) 0%, rgba(14,16,23,0.95) 100%)',
+                      background: 'linear-gradient(135deg, rgba(56,189,248,0.1) 0%, var(--c-panel) 100%)',
                       border: '1px dashed var(--c-blue)',
                       clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))'
                     }}
@@ -1301,29 +1473,53 @@ export default function Lobby() {
             </div>
 
           </div>
+          </>
+        )}
 
         </div>
 
         {/* MOBILE STICKY BOTTOM DEPLOY BAR */}
-        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 flex items-center gap-3 backdrop-blur-md"
-          style={{ background: 'rgba(11,17,32,0.95)', borderTop: '1px solid var(--c-border)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
-          <div className="flex-1 min-w-0">
-            <p className="font-mono text-[10px] uppercase font-bold truncate" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)' }}>
-              {selectedTopicObj ? selectedTopicObj.label : 'Select Topic'} • {diffObj.label}
-            </p>
-            <p className="font-mono text-[10px]" style={{ color: 'var(--c-text-mute)' }}>
-              Elo swing: +18 / −18
-            </p>
+        {lobbyTab === 'random' ? (
+          <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 flex items-center gap-3 backdrop-blur-md"
+            style={{ background: 'var(--c-nav-bg)', borderTop: '1px solid var(--c-border)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
+            <div className="flex-1 min-w-0">
+              <p className="font-mono text-[10px] uppercase font-bold truncate" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)' }}>
+                {selectedTopicObj ? selectedTopicObj.label : 'Select Topic'} • {diffObj.label}
+              </p>
+              <p className="font-mono text-[10px]" style={{ color: 'var(--c-text-mute)' }}>
+                Elo swing: +18 / −18
+              </p>
+            </div>
+            <HudButton
+              onClick={startQueue}
+              disabled={!topic}
+              className="px-5 py-3 text-xs font-bold whitespace-nowrap flex items-center gap-1.5"
+            >
+              <Swords size={14} />
+              {topic ? 'Deploy' : 'Pick Topic'}
+            </HudButton>
           </div>
-          <HudButton
-            onClick={startQueue}
-            disabled={!topic}
-            className="px-5 py-3 text-xs font-bold whitespace-nowrap flex items-center gap-1.5"
-          >
-            <Swords size={14} />
-            {topic ? 'Deploy' : 'Pick Topic'}
-          </HudButton>
-        </div>
+        ) : (
+          <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 flex items-center justify-between gap-3 backdrop-blur-md"
+            style={{ background: 'var(--c-nav-bg)', borderTop: '1px solid var(--c-border)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
+            <div className="flex-1 min-w-0">
+              <p className="font-mono text-[10px] uppercase font-bold truncate text-amber-400">
+                Striver A2Z Curriculum
+              </p>
+              <p className="font-mono text-[10px] text-[var(--c-text-mute)]">
+                Tap '1v1 Battle' on any problem
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleBattleRandomFromSheet('arrays', 'easy')}
+              className="px-4 py-2 text-xs font-bold font-display uppercase tracking-wider text-white bg-gradient-to-r from-amber-500 to-rose-600 rounded flex items-center gap-1.5 shadow-md shadow-rose-950/40"
+            >
+              <Shuffle size={13} />
+              Random
+            </button>
+          </div>
+        )}
 
       </PageWrapper>
     </>

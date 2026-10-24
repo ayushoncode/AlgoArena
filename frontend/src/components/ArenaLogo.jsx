@@ -79,7 +79,7 @@ export function ArenaEmblem({ size = 32, glow = false, className = '', style = {
 
 /**
  * ArenaLogo — Full Brand Logo Component
- * Renders Emblem + "ALGO" (White) + "ARENA" (Crimson) + optional tagline
+ * Renders Emblem + "ALGO" (Red) + "ARENA" (Blue) + optional tagline
  */
 export function ArenaLogo({
   size = 'md',        // 'sm' | 'md' | 'lg' | 'xl' | number
@@ -90,15 +90,15 @@ export function ArenaLogo({
   style = {},
 }) {
   const emblemSizes = { sm: 22, md: 30, lg: 42, xl: 60 }
-  const fontSizes   = {
-    sm: { main: 15, tagline: 8  },
-    md: { main: 20, tagline: 9  },
+  const fontSizes = {
+    sm: { main: 15, tagline: 8 },
+    md: { main: 20, tagline: 9 },
     lg: { main: 28, tagline: 11 },
     xl: { main: 42, tagline: 14 },
   }
 
   const emblemSize = typeof size === 'number' ? size : (emblemSizes[size] ?? 30)
-  const fonts      = typeof size === 'number'
+  const fonts = typeof size === 'number'
     ? { main: Math.round(size * 0.65), tagline: Math.max(8, Math.round(size * 0.28)) }
     : (fontSizes[size] ?? fontSizes.md)
 
@@ -122,8 +122,8 @@ export function ArenaLogo({
             alignItems: 'center',
           }}
         >
-          <span style={{ color: '#F1F5F9' }}>ALGO</span>
-          <span style={{ color: '#E11D48' }}>ARENA</span>
+          <span style={{ color: 'var(--c-red)' }}>ALGO</span>
+          <span style={{ color: 'var(--c-blue)' }}>ARENA</span>
         </div>
 
         {/* Tagline */}
@@ -133,7 +133,7 @@ export function ArenaLogo({
               fontFamily: 'var(--font-mono, monospace)',
               fontSize: fonts.tagline,
               fontWeight: 500,
-              color: '#475569',
+              color: 'var(--c-text-mute)',
               letterSpacing: '0.28em',
               textTransform: 'uppercase',
               marginTop: 4,

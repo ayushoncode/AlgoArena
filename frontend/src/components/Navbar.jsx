@@ -3,7 +3,8 @@ import { useAuth } from '../hooks/useAuth'
 import { useState, useRef, useEffect } from 'react'
 import { UserAvatar, getTier } from '../utils/avatar'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, ChevronDown, LogOut, User, Home, Trophy, Users, FileText } from 'lucide-react'
+import { Menu, X, ChevronDown, LogOut, User, Home, Trophy, Users, FileText, Sun, Moon } from 'lucide-react'
+import { useTheme } from '../context/ThemeContext'
 
 import { ArenaLogo } from './ArenaLogo'
 
@@ -12,6 +13,7 @@ export default function Navbar() {
   const { pathname } = useLocation()
   if (pathname.startsWith("/match")) return null
   const { user, logout, isAuthenticated, loading } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const [dropOpen, setDropOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const dropRef = useRef(null)
@@ -58,10 +60,10 @@ export default function Navbar() {
       <nav
         className="fixed top-0 inset-x-0 z-50"
         style={{
-          background: 'rgba(5, 7, 15, 0.92)',
+          background: 'var(--c-nav-bg)',
           backdropFilter: 'blur(14px)',
           WebkitBackdropFilter: 'blur(14px)',
-          borderBottom: '1px solid #1C2842',
+          borderBottom: '1px solid var(--c-border)',
           height: '3.5rem',
         }}
       >
@@ -91,11 +93,11 @@ export default function Navbar() {
                     letterSpacing: '0.1em',
                     textTransform: 'uppercase',
                     textDecoration: 'none',
-                    color: active ? '#E11D48' : '#8B9ABB',
-                    borderBottom: `2px solid ${active ? '#E11D48' : 'transparent'}`,
+                    color: active ? 'var(--c-red)' : 'var(--c-text-dim)',
+                    borderBottom: `2px solid ${active ? 'var(--c-red)' : 'transparent'}`,
                   }}
-                  onMouseOver={e => { if (!active) e.currentTarget.style.color = '#E2E8F4' }}
-                  onMouseOut={e => { if (!active) e.currentTarget.style.color = '#8B9ABB' }}
+                  onMouseOver={e => { if (!active) e.currentTarget.style.color = 'var(--c-text)' }}
+                  onMouseOut={e => { if (!active) e.currentTarget.style.color = 'var(--c-text-dim)' }}
                 >
                   {icon}
                   {label}
@@ -106,8 +108,18 @@ export default function Navbar() {
 
           {/* Desktop right — auth */}
           <div className="hidden sm:flex items-center gap-2.5">
+            <button
+              onClick={toggleTheme}
+              className="p-2 transition-colors flex items-center justify-center rounded-md"
+              style={{ color: 'var(--c-text-dim)' }}
+              onMouseOver={e => { e.currentTarget.style.color = 'var(--c-text)' }}
+              onMouseOut={e => { e.currentTarget.style.color = 'var(--c-text-dim)' }}
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
             {loading ? (
-              <div className="w-24 h-7 rounded" style={{ background: '#1C2842' }} />
+              <div className="w-24 h-7 rounded" style={{ background: 'var(--c-border)' }} />
             ) : isAuthenticated ? (
               /* User dropdown */
               <div className="relative" ref={dropRef}>
@@ -116,19 +128,19 @@ export default function Navbar() {
                   onClick={() => setDropOpen(o => !o)}
                   className="flex items-center gap-2.5 px-3 py-1.5 transition-all"
                   style={{
-                    background: dropOpen ? 'rgba(225,29,72,0.08)' : 'transparent',
-                    border: `1px solid ${dropOpen ? '#E11D48' : '#1C2842'}`,
+                    background: dropOpen ? 'var(--c-red-glow)' : 'transparent',
+                    border: `1px solid ${dropOpen ? 'var(--c-red)' : 'var(--c-border)'}`,
                     borderRadius: 0,
                   }}
-                  onMouseOver={e => { if (!dropOpen) e.currentTarget.style.borderColor = '#243356' }}
-                  onMouseOut={e => { if (!dropOpen) e.currentTarget.style.borderColor = '#1C2842' }}
+                  onMouseOver={e => { if (!dropOpen) e.currentTarget.style.borderColor = 'var(--c-border2)' }}
+                  onMouseOut={e => { if (!dropOpen) e.currentTarget.style.borderColor = 'var(--c-border)' }}
                 >
                   <UserAvatar username={user.username} seed={user.avatar_seed} style={user.avatar_style} elo={user.elo_rating} size={22} isMe={true} />
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#E2E8F4' }}>{user.username}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-text)' }}>{user.username}</span>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, padding: '1px 6px', background: userTier?.bg, color: userTier?.col, border: `1px solid ${userTier?.col}40`, borderRadius: 0 }}>
                     {user.elo_rating ?? 1200}
                   </span>
-                  <ChevronDown size={12} style={{ color: '#4A5878', transform: dropOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.15s' }} />
+                  <ChevronDown size={12} style={{ color: 'var(--c-text-mute)', transform: dropOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.15s' }} />
                 </button>
 
                 <AnimatePresence>
@@ -139,12 +151,12 @@ export default function Navbar() {
                       exit={{ opacity: 0, y: -6 }}
                       transition={{ duration: 0.15 }}
                       className="absolute right-0 mt-1.5 w-52"
-                      style={{ background: '#0B1120', border: '1px solid #1C2842', boxShadow: '0 12px 40px rgba(0,0,0,0.6)', zIndex: 100 }}
+                      style={{ background: 'var(--c-panel)', border: '1px solid #1C2842', boxShadow: '0 12px 40px rgba(0,0,0,0.6)', zIndex: 100 }}
                     >
                       {/* User header */}
                       <div className="px-4 py-3" style={{ borderBottom: '1px solid #1C2842' }}>
-                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: '#E2E8F4' }}>{user.username}</p>
-                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, marginTop: 2, color: '#4A5878' }}>
+                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: 'var(--c-text)' }}>{user.username}</p>
+                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, marginTop: 2, color: 'var(--c-text-mute)' }}>
                           {user.elo_rating ?? 1200} elo · {user.wins ?? 0}W {user.losses ?? 0}L
                         </p>
                       </div>
@@ -159,10 +171,10 @@ export default function Navbar() {
                           onClick={() => { navigate(item.path); setDropOpen(false) }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
                           style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
-                          onMouseOver={e => { e.currentTarget.style.background = '#1C2842'; e.currentTarget.style.color = '#E2E8F4' }}
-                          onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B9ABB' }}
+                          onMouseOver={e => { e.currentTarget.style.background = 'var(--c-border)'; e.currentTarget.style.color = 'var(--c-text)' }}
+                          onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--c-text-dim)' }}
                         >
-                          <span style={{ color: '#4A5878' }}>{item.icon}</span>
+                          <span style={{ color: 'var(--c-text-mute)' }}>{item.icon}</span>
                           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'inherit' }}>{item.label}</span>
                         </button>
                       ))}
@@ -172,9 +184,9 @@ export default function Navbar() {
                           id="nav-logout"
                           onClick={handleLogout}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
-                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#8B9ABB' }}
-                          onMouseOver={e => { e.currentTarget.style.background = 'rgba(225,29,72,0.08)'; e.currentTarget.style.color = '#E11D48' }}
-                          onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B9ABB' }}
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--c-text-dim)' }}
+                          onMouseOver={e => { e.currentTarget.style.background = 'var(--c-red-glow)'; e.currentTarget.style.color = 'var(--c-red)' }}
+                          onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--c-text-dim)' }}
                         >
                           <LogOut size={11} />
                           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>Sign Out</span>
@@ -191,12 +203,12 @@ export default function Navbar() {
                   onClick={() => goAuth('login')}
                   style={{
                     fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600,
-                    padding: '6px 16px', color: '#8B9ABB',
+                    padding: '6px 16px', color: 'var(--c-text-dim)',
                     background: 'transparent', border: '1px solid #1C2842', borderRadius: 0, cursor: 'pointer',
                     transition: 'all 0.15s',
                   }}
-                  onMouseOver={e => { e.currentTarget.style.borderColor = '#E11D48'; e.currentTarget.style.color = '#E11D48' }}
-                  onMouseOut={e => { e.currentTarget.style.borderColor = '#1C2842'; e.currentTarget.style.color = '#8B9ABB' }}
+                  onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--c-red)'; e.currentTarget.style.color = 'var(--c-red)' }}
+                  onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--c-border)'; e.currentTarget.style.color = 'var(--c-text-dim)' }}
                 >
                   Sign In
                 </button>
@@ -206,12 +218,12 @@ export default function Navbar() {
                   style={{
                     fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
                     padding: '6px 18px', letterSpacing: '0.05em', textTransform: 'uppercase',
-                    color: '#fff', background: '#E11D48', border: 'none',
+                    color: '#fff', background: 'var(--c-red)', border: 'none',
                     clipPath: 'polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%)',
                     cursor: 'pointer', transition: 'all 0.15s',
                   }}
                   onMouseOver={e => { e.currentTarget.style.background = '#F43F5E' }}
-                  onMouseOut={e => { e.currentTarget.style.background = '#E11D48' }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'var(--c-red)' }}
                 >
                   Join the Roster
                 </button>
@@ -219,15 +231,25 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile hamburger */}
-          <button
-            className="sm:hidden p-2 transition-colors"
-            onClick={() => setMobileOpen(o => !o)}
-            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-            style={{ color: '#8B9ABB', background: 'transparent', border: 'none', cursor: 'pointer' }}
-          >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+          {/* Mobile controls (Theme + Hamburger) */}
+          <div className="flex sm:hidden items-center gap-1">
+            <button
+              onClick={toggleTheme}
+              className="p-2 transition-colors flex items-center justify-center rounded-md"
+              style={{ color: 'var(--c-text-dim)', background: 'transparent', border: 'none' }}
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button
+              className="p-2 transition-colors"
+              onClick={() => setMobileOpen(o => !o)}
+              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              style={{ color: 'var(--c-text-dim)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+            >
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -240,7 +262,7 @@ export default function Navbar() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
             className="fixed top-14 inset-x-0 z-40 sm:hidden"
-            style={{ background: 'rgba(5,7,15,0.97)', backdropFilter: 'blur(16px)', borderBottom: '1px solid #1C2842' }}
+            style={{ background: 'var(--c-nav-bg)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--c-border)' }}
           >
             <div className="px-5 py-5 space-y-1">
               {NAV_LINKS.map(({ label, href, icon }) => (
@@ -250,7 +272,7 @@ export default function Navbar() {
                   className="flex items-center gap-2 py-3 px-4 w-full transition-colors"
                   style={{
                     fontFamily: 'var(--font-display)', fontSize: 16, letterSpacing: '0.08em', textTransform: 'uppercase',
-                    color: pathname === href ? '#E11D48' : '#8B9ABB', textDecoration: 'none',
+                    color: pathname === href ? 'var(--c-red)' : 'var(--c-text-dim)', textDecoration: 'none',
                     borderBottom: '1px solid #1C2842',
                   }}
                 >
@@ -261,11 +283,11 @@ export default function Navbar() {
               {!loading && !isAuthenticated && (
                 <div className="flex flex-col gap-3 pt-4">
                   <button onClick={() => { goAuth('login'); setMobileOpen(false) }}
-                    style={{ fontFamily: 'var(--font-mono)', fontSize: 13, padding: '12px', color: '#8B9ABB', background: 'transparent', border: '1px solid #1C2842', cursor: 'pointer', width: '100%' }}>
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: 13, padding: '12px', color: 'var(--c-text-dim)', background: 'transparent', border: '1px solid #1C2842', cursor: 'pointer', width: '100%' }}>
                     Sign In
                   </button>
                   <button onClick={() => { goAuth('register'); setMobileOpen(false) }}
-                    style={{ fontFamily: 'var(--font-display)', fontSize: 14, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '12px', color: '#fff', background: '#E11D48', border: 'none', cursor: 'pointer', width: '100%' }}>
+                    style={{ fontFamily: 'var(--font-display)', fontSize: 14, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '12px', color: '#fff', background: 'var(--c-red)', border: 'none', cursor: 'pointer', width: '100%' }}>
                     Join the Roster
                   </button>
                 </div>
@@ -274,11 +296,11 @@ export default function Navbar() {
               {!loading && isAuthenticated && (
                 <div className="space-y-1 pt-2">
                   <button onClick={() => { navigate('/profile'); setMobileOpen(false) }}
-                    style={{ fontFamily: 'var(--font-mono)', fontSize: 12, padding: '12px 16px', color: '#8B9ABB', background: 'transparent', border: '1px solid #1C2842', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: 12, padding: '12px 16px', color: 'var(--c-text-dim)', background: 'transparent', border: '1px solid #1C2842', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     Profile
                   </button>
                   <button onClick={handleLogout}
-                    style={{ fontFamily: 'var(--font-mono)', fontSize: 12, padding: '12px 16px', color: '#E11D48', background: 'rgba(225,29,72,0.05)', border: '1px solid rgba(225,29,72,0.2)', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: 12, padding: '12px 16px', color: 'var(--c-red)', background: 'rgba(225,29,72,0.05)', border: '1px solid rgba(225,29,72,0.2)', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
                     Sign Out
                   </button>
                 </div>

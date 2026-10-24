@@ -10,6 +10,12 @@
 // Load env vars first — before any other import reads process.env
 require('dotenv').config()
 
+const dns = require('dns')
+try {
+  dns.setDefaultResultOrder('ipv4first')
+  dns.setServers(['8.8.8.8', '1.1.1.1'])
+} catch {}
+
 const express  = require('express')
 const http     = require('http')
 const { Server } = require('socket.io')
