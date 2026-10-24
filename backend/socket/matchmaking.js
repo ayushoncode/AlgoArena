@@ -89,6 +89,10 @@ async function executeMatch(io, entryA, entryB, topic, difficulty, forcedProblem
   const socketA = io.sockets.sockets.get(entryA.socketId)
   const socketB = io.sockets.sockets.get(entryB.socketId)
 
+  // Purge both players completely from ALL queue buckets so neither is left lingering
+  removeFromQueues(entryA.socketId, entryA.userId)
+  removeFromQueues(entryB.socketId, entryB.userId)
+
   if (socketA) socketA.join(roomId)
   if (socketB) socketB.join(roomId)
 
@@ -357,4 +361,4 @@ function queueStats() {
   return stats
 }
 
-module.exports = { registerMatchmaking, queueStats }
+module.exports = { registerMatchmaking, queueStats, removeFromQueues }

@@ -12,6 +12,20 @@ const { evaluateSubmission } = require('../services/judge')
 // Map<roomId, { dbMatchId, problemId, topic, difficulty, players, isCustom, submissions, evaluating, isResolved, winnerId, matchEndPayload, startedAt, disconnectTimers }>
 const activeMatches = new Map()
 
+/** Purge players from matchmaking queue when match ends so neither is matched again automatically */
+function purgeMatchPlayersFromQueues(match) {
+  try {
+    const { removeFromQueues } = require('./matchmaking')
+    if (match?.players) {
+      for (const p of match.players) {
+        if (p?.userId) removeFromQueues(null, p.userId)
+      }
+    }
+  } catch (err) {
+    console.warn('[Match] purgeMatchPlayersFromQueues error:', err.message)
+  }
+}
+
 /* ── Create match row in DB ──────────────────────────────────── */
 async function createMatchRow({ playerOneId, playerTwoId, topic, difficulty }) {
   try {
@@ -371,6 +385,7 @@ function registerMatch(io) {
       }
 
       match.matchEndPayload = payload
+      purgeMatchPlayersFromQueues(match)
 
       // Emit to room and directly to resigning socket
       io.to(roomId).emit('match_end', payload)
@@ -583,6 +598,7 @@ function registerMatch(io) {
           }
 
           match.matchEndPayload = payload
+          purgeMatchPlayersFromQueues(match)
           io.to(roomId).emit('match_end', payload)
           console.log(`[Match] ENDED winner=${username}(+${resolved.winnerDelta}) loser=${loserInfo?.username ?? '?'}(${resolved.loserDelta}) room=${roomId} custom=${isCustom}`)
 
@@ -689,6 +705,7 @@ function registerMatch(io) {
           }
 
           match.matchEndPayload = payload
+          purgeMatchPlayersFromQueues(match)
           io.to(roomId).emit('match_end', payload)
           console.log(`[Match] FORFEIT ENDED winner=${opponent.username}(+${resolved.winnerDelta}) loser=${username}(${resolved.loserDelta}) room=${roomId}`)
 

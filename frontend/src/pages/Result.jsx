@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { useSocket } from '../hooks/useSocket'
 import { UserAvatar } from '../utils/avatar'
 import { motion } from 'framer-motion'
 import {
@@ -47,8 +48,12 @@ export default function Result() {
   const { state } = useLocation()
   const navigate = useNavigate()
   const { user, refreshUser } = useAuth()
+  const { emit } = useSocket()
 
   useEffect(() => { refreshUser() }, [refreshUser])
+  useEffect(() => {
+    try { emit('leave_queue') } catch {}
+  }, [emit])
 
   const winner = state?.winner
   const loser = state?.loser

@@ -828,6 +828,11 @@ export default function Lobby() {
 
   const { connected, emit, on, off, socket } = useSocket()
 
+  // Ensure clean state on Lobby mount — leave any lingering queue
+  useEffect(() => {
+    try { emit('leave_queue') } catch {}
+  }, [emit])
+
   // Load preferences from localStorage
   useEffect(() => {
     try {
