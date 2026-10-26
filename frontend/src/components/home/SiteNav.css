@@ -1,0 +1,310 @@
+/* ═══════════════════════════════════════════════════════════
+   AlgoArena: Shared Editorial Site Navigation Bar
+   Reused across LandingPage, WhoWeAre, and Platform Views
+   ════════════════════════════════════════════════════════════ */
+
+.site-nav {
+  position: relative;
+  width: 100%;
+  height: 72px;
+  background: transparent;
+  color: var(--ink, #ffffff);
+  z-index: 100;
+  transition: background 180ms ease, border-color 180ms ease;
+  box-sizing: border-box;
+}
+
+.site-nav.is-sticky {
+  position: sticky;
+  top: 0;
+  border-bottom: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08));
+}
+
+.site-nav.is-sticky::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 15, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.site-nav.is-sticky.is-scrolled {
+  border-bottom-color: var(--hair-muted, rgba(196, 214, 232, 0.16));
+}
+
+.site-nav-container {
+  max-width: var(--page-max-w, 1240px);
+  margin: 0 auto;
+  height: 100%;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Brand Lockup ────────────────────────────────────────── */
+.site-nav-brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink, #ffffff);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.site-nav-emblem {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.site-nav-wordmark {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--nav, #fbfdff);
+  text-transform: uppercase;
+  white-space: nowrap;
+  display: inline-block;
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ── Nav Links and Actions Panel ────────────────────────── */
+.site-nav-panel {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+
+.site-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.site-nav-link {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sub, #a2a9b8);
+  text-decoration: none;
+  transition: color 140ms ease;
+  position: relative;
+  padding: 12px 6px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.site-nav-link:hover {
+  color: var(--ink, #ffffff);
+}
+
+.site-nav-link.is-active {
+  color: var(--feat, #e2ebf5);
+}
+
+.site-nav-link.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 6px;
+  right: 6px;
+  height: 1.5px;
+  background: var(--hair, rgba(196, 214, 232, 0.72));
+}
+
+/* ── Actions: Sign In & Pill Button ─────────────────────── */
+.site-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.site-nav-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: 10px 8px;
+  min-height: 44px;
+  box-sizing: border-box;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--nav, #fbfdff);
+  cursor: pointer;
+  transition: opacity 140ms ease;
+}
+
+.site-nav-login:hover {
+  opacity: 0.85;
+}
+
+.site-nav-arrow {
+  width: 10px;
+  height: 9px;
+  fill: none;
+  stroke: var(--nav, #fbfdff);
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  transition: transform 140ms ease;
+}
+
+.site-nav-login:hover .site-nav-arrow {
+  transform: translateX(2px);
+}
+
+.site-nav-pill {
+  border: 1px solid var(--hair, rgba(196, 214, 232, 0.72));
+  border-radius: 999px;
+  background: transparent;
+  padding: 10px 20px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--feat, #e2ebf5);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.site-nav-pill:hover {
+  background: rgba(196, 214, 232, 0.08);
+  border-color: var(--nav, #fbfdff);
+}
+
+/* ── Mobile Burger and Drawer ───────────────────────────── */
+.site-nav-burger {
+  display: none;
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--nav, #fbfdff);
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.site-nav-burger svg {
+  width: 22px;
+  height: 14px;
+  display: block;
+}
+
+.site-nav-burger .b-line {
+  fill: none;
+  stroke: var(--nav, #fbfdff);
+  stroke-width: 1.5;
+  stroke-linecap: square;
+  transition: transform 180ms ease, opacity 180ms ease;
+  transform-origin: center;
+}
+
+.site-nav-scrim {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .site-nav-burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 10000;
+  }
+
+  .site-nav-burger .b-top {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  .site-nav-burger .b-mid {
+    opacity: 0;
+  }
+
+  .site-nav-burger .b-bot {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  .site-nav-scrim.is-open {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 15, 0.85);
+    z-index: 9998;
+  }
+
+  .site-nav-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(300px, 85vw);
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg-1, #060d1c) !important;
+    border-left: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.16));
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 88px 28px 32px 28px;
+    gap: 32px;
+    z-index: 9999;
+    box-shadow: -16px 0 40px rgba(2, 6, 15, 0.9);
+    visibility: hidden;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: transform 220ms ease, opacity 220ms ease, visibility 220ms ease;
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+
+  .site-nav-panel.is-open {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .site-nav-links {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    width: 100%;
+  }
+
+  .site-nav-link {
+    font-size: 15px;
+    width: 100%;
+  }
+
+  .site-nav-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    width: 100%;
+    border-top: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08));
+    padding-top: 24px;
+  }
+
+  .site-nav-pill {
+    width: 100%;
+    text-align: center;
+  }
+}

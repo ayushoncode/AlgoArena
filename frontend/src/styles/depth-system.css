@@ -1,0 +1,638 @@
+/* ═══════════════════════════════════════════════════════════
+   AlgoArena 3D Scroll-Driven Depth Step System
+   Premium, calm, tonal 3D entrances and recession.
+   Native CSS scroll-driven view() timeline + zero-overhead JS fallback.
+   ════════════════════════════════════════════════════════════ */
+
+:root {
+  --depth-perspective: 1400px;
+  --depth-perspective-origin: 50% 40%;
+  --depth-enter-rx: 10deg;
+  --depth-enter-ty: 56px;
+  --depth-enter-tz: -140px;
+  --depth-enter-opacity: 0;
+  --depth-exit-scale: 0.965;
+  --depth-exit-tz: -90px;
+  --depth-exit-rx: -3deg;
+  --depth-exit-opacity-to: 0.55;
+  --depth-visual-tz: -60px;
+  --depth-lite-ty: 24px;
+}
+
+/* ── 1. The Stage (Perspective context on non-sticky wrapper) ─ */
+.depth-stage {
+  position: relative;
+  width: 100%;
+  perspective: var(--depth-perspective);
+  perspective-origin: var(--depth-perspective-origin);
+  transform-style: preserve-3d;
+}
+
+/* ── 2. The Depth Layers ────────────────────────────────────── */
+.depth-exit-layer {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  will-change: auto;
+}
+
+.depth-enter-layer {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  will-change: auto;
+}
+
+/* Inner depth visual panel: arrives slightly deeper than headings */
+.depth-visual-panel {
+  transform-style: preserve-3d;
+}
+
+/* Active will-change applied dynamically only near viewport */
+.depth-stage.is-near-viewport .depth-exit-layer,
+.depth-stage.is-near-viewport .depth-enter-layer {
+  will-change: transform, opacity;
+}
+
+/* Settled state: strictly none for 100% crisp, subpixel-free typography */
+.depth-stage.is-settled .depth-exit-layer,
+.depth-stage.is-settled .depth-enter-layer,
+.depth-enter-layer.is-settled,
+.depth-exit-layer.is-settled {
+  transform: none !important;
+  opacity: 1 !important;
+  will-change: auto !important;
+}
+
+/* ── 3. Native CSS Scroll-Driven Animations (Chrome / Edge / Safari 18+) ─ */
+@supports (animation-timeline: view()) {
+  @keyframes depthStepEnter {
+    0% {
+      opacity: var(--depth-enter-opacity);
+      transform: translateY(var(--depth-enter-ty))
+                 translateZ(var(--depth-enter-tz))
+                 rotateX(var(--depth-enter-rx));
+    }
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes depthStepExit {
+    0% {
+      opacity: 1;
+      transform: none;
+    }
+    100% {
+      opacity: var(--depth-exit-opacity-to);
+      transform: scale(var(--depth-exit-scale))
+                 translateZ(var(--depth-exit-tz))
+                 rotateX(var(--depth-exit-rx));
+    }
+  }
+
+  @keyframes depthVisualPanelEnter {
+    0% {
+      transform: translateZ(var(--depth-visual-tz));
+    }
+    100% {
+      transform: translateZ(0);
+    }
+  }
+
+  @keyframes depthHairlineDraw {
+    0% {
+      transform: scaleX(0);
+      transform-origin: left center;
+    }
+    100% {
+      transform: scaleX(1);
+      transform-origin: left center;
+    }
+  }
+
+  @keyframes duelPanelTiltEnter {
+    0% {
+      transform: rotateX(14deg) translateZ(var(--depth-visual-tz, -60px));
+    }
+    100% {
+      transform: rotateX(0deg) translateZ(0);
+    }
+  }
+
+  /* S3: Plate stack separation keyframes ending at resting 3D tilt */
+  @keyframes tierPlateStack0 {
+    0% { transform: rotateX(16deg) rotateY(-8deg) translateZ(28px); opacity: 0; }
+    100% { transform: rotateX(8deg) rotateY(-4deg) translateZ(-6px); opacity: 1; }
+  }
+  @keyframes tierPlateStack1 {
+    0% { transform: rotateX(16deg) rotateY(0deg) translateZ(18px); opacity: 0; }
+    100% { transform: rotateX(8deg) rotateY(0deg) translateZ(-2px); opacity: 1; }
+  }
+  @keyframes tierPlateStack2 {
+    0% { transform: rotateX(16deg) rotateY(8deg) translateZ(10px); opacity: 0; }
+    100% { transform: rotateX(8deg) rotateY(4deg) translateZ(-6px); opacity: 1; }
+  }
+  @keyframes tierPlateStack3 {
+    0% { transform: rotateX(14deg) rotateY(-8deg) translateZ(2px); opacity: 0; }
+    100% { transform: rotateX(8deg) rotateY(-4deg) translateZ(-6px); opacity: 1; }
+  }
+  @keyframes tierPlateStack4 {
+    0% { transform: rotateX(14deg) rotateY(0deg) translateZ(-6px); opacity: 0; }
+    100% { transform: rotateX(8deg) rotateY(0deg) translateZ(-2px); opacity: 1; }
+  }
+  @keyframes tierPlateStack5 {
+    0% { transform: rotateX(14deg) rotateY(8deg) translateZ(-14px); opacity: 0; }
+    100% { transform: rotateX(8deg) rotateY(4deg) translateZ(-6px); opacity: 1; }
+  }
+
+  /* S4 & S5: Staggered row entrance keyframe */
+  @keyframes staggerRowEnter {
+    0% {
+      opacity: 0;
+      transform: translateY(14px) translateZ(-24px);
+    }
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* S6: Hall of Heroes plinth rise keyframes (3rd rises first, then 2nd, then 1st highest) */
+  @keyframes plinthRank3Rise {
+    0% {
+      opacity: 0;
+      transform: translateY(28px) translateZ(-20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) translateZ(0);
+    }
+  }
+
+  @keyframes plinthRank2Rise {
+    0% {
+      opacity: 0;
+      transform: translateY(38px) translateZ(-30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) translateZ(0);
+    }
+  }
+
+  @keyframes plinthRank1Rise {
+    0% {
+      opacity: 0;
+      transform: translateY(48px) translateZ(-40px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) translateZ(0);
+    }
+  }
+
+  /* S8: Final CTA WebGL / 3D Emblem scroll rotation */
+  @keyframes finalCtaEmblemRotate {
+    0% {
+      opacity: 0;
+      transform: rotateY(-35deg) rotateX(12deg) translateZ(-50px) scale(0.88);
+    }
+    100% {
+      opacity: 1;
+      transform: rotateY(0deg) rotateX(0deg) translateZ(0) scale(1);
+    }
+  }
+
+  /* When motion is active and not forced into fallback mode */
+  html:not(.motion-fallback):not(.motion-off) .depth-enter-layer.anim-enter {
+    animation-name: depthStepEnter;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 38%;
+  }
+
+  html:not(.motion-fallback):not(.motion-off) .depth-exit-layer.anim-exit {
+    animation-name: depthStepExit;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: exit 40% exit 100%;
+  }
+
+  html:not(.motion-fallback):not(.motion-off) .depth-visual-panel.anim-enter {
+    animation-name: depthVisualPanelEnter;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 45%;
+  }
+
+  html:not(.motion-fallback):not(.motion-off) .duel-panel-3d.depth-visual-panel.anim-enter {
+    animation-name: duelPanelTiltEnter;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 42%;
+  }
+
+  html:not(.motion-fallback):not(.motion-off) .depth-hairline-draw {
+    animation-name: depthHairlineDraw;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 10% entry 40%;
+  }
+
+  /* S3: Plate stack depth animations */
+  html:not(.motion-fallback):not(.motion-off) .tier-plates-grid .tier-showcase-card:nth-child(1) {
+    animation: tierPlateStack0 both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 42%;
+  }
+  html:not(.motion-fallback):not(.motion-off) .tier-plates-grid .tier-showcase-card:nth-child(2) {
+    animation: tierPlateStack1 both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 42%;
+  }
+  html:not(.motion-fallback):not(.motion-off) .tier-plates-grid .tier-showcase-card:nth-child(3) {
+    animation: tierPlateStack2 both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 42%;
+  }
+  html:not(.motion-fallback):not(.motion-off) .tier-plates-grid .tier-showcase-card:nth-child(4) {
+    animation: tierPlateStack3 both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 42%;
+  }
+  html:not(.motion-fallback):not(.motion-off) .tier-plates-grid .tier-showcase-card:nth-child(5) {
+    animation: tierPlateStack4 both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 42%;
+  }
+  html:not(.motion-fallback):not(.motion-off) .tier-plates-grid .tier-showcase-card:nth-child(6) {
+    animation: tierPlateStack5 both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 42%;
+  }
+
+  /* S4 & S5: Staggered row entrances */
+  html:not(.motion-fallback):not(.motion-off) .stagger-row {
+    animation-name: staggerRowEnter;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 5% entry 38%;
+  }
+
+  /* Capped stagger offsets: 0ms, 60ms, 120ms, 180ms, 240ms max */
+  html:not(.motion-fallback):not(.motion-off) .stagger-row:nth-child(1) { animation-delay: 0ms; }
+  html:not(.motion-fallback):not(.motion-off) .stagger-row:nth-child(2) { animation-delay: 60ms; }
+  html:not(.motion-fallback):not(.motion-off) .stagger-row:nth-child(3) { animation-delay: 120ms; }
+  html:not(.motion-fallback):not(.motion-off) .stagger-row:nth-child(4) { animation-delay: 180ms; }
+  html:not(.motion-fallback):not(.motion-off) .stagger-row:nth-child(n+5) { animation-delay: 240ms; }
+
+  /* S6: Plinth rise cascade for Hall of Heroes (3rd, then 2nd, then 1st) */
+  html:not(.motion-fallback):not(.motion-off) .leader-row.row-rank-3 {
+    animation-name: plinthRank3Rise;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 5% entry 38%;
+  }
+
+  html:not(.motion-fallback):not(.motion-off) .leader-row.row-rank-2 {
+    animation-name: plinthRank2Rise;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 8% entry 42%;
+  }
+
+  html:not(.motion-fallback):not(.motion-off) .leader-row.row-rank-1 {
+    animation-name: plinthRank1Rise;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 10% entry 45%;
+  }
+
+  /* S8: Final CTA Emblem scroll rotation */
+  html:not(.motion-fallback):not(.motion-off) .final-cta-emblem-wrap {
+    animation-name: finalCtaEmblemRotate;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 45%;
+  }
+}
+
+/* ── 4. Fallback Path (Firefox, older WebKit, or ?motion=fallback) ── */
+/* Driven by CSS custom properties --p-enter (0..1) and --p-exit (0..1) */
+
+html.motion-fallback:not(.motion-off) .depth-enter-layer.anim-enter:not(.is-settled) {
+  opacity: var(--p-enter, 1);
+  transform: translateY(calc((1 - var(--p-enter, 1)) * var(--depth-enter-ty)))
+             translateZ(calc((1 - var(--p-enter, 1)) * var(--depth-enter-tz)))
+             rotateX(calc((1 - var(--p-enter, 1)) * var(--depth-enter-rx)));
+}
+
+html.motion-fallback:not(.motion-off) .depth-exit-layer.anim-exit:not(.is-settled) {
+  opacity: calc(1 - var(--p-exit, 0) * (1 - var(--depth-exit-opacity-to)));
+  transform: scale(calc(1 - var(--p-exit, 0) * (1 - var(--depth-exit-scale))))
+             translateZ(calc(var(--p-exit, 0) * var(--depth-exit-tz)))
+             rotateX(calc(var(--p-exit, 0) * var(--depth-exit-rx)));
+}
+
+html.motion-fallback:not(.motion-off) .depth-visual-panel.anim-enter:not(.is-settled) {
+  transform: translateZ(calc((1 - var(--p-enter, 1)) * var(--depth-visual-tz)));
+}
+
+html.motion-fallback:not(.motion-off) .duel-panel-3d.depth-visual-panel.anim-enter:not(.is-settled) {
+  transform: rotateX(calc((1 - var(--p-enter, 1)) * 14deg))
+             translateZ(calc((1 - var(--p-enter, 1)) * var(--depth-visual-tz, -60px)));
+}
+
+html.motion-fallback:not(.motion-off) .depth-hairline-draw:not(.is-settled) {
+  transform: scaleX(var(--p-hairline, 1));
+  transform-origin: left center;
+}
+
+@supports not (animation-timeline: view()) {
+  html:not(.motion-off) .depth-enter-layer.anim-enter:not(.is-settled) {
+    opacity: var(--p-enter, 1);
+    transform: translateY(calc((1 - var(--p-enter, 1)) * var(--depth-enter-ty)))
+               translateZ(calc((1 - var(--p-enter, 1)) * var(--depth-enter-tz)))
+               rotateX(calc((1 - var(--p-enter, 1)) * var(--depth-enter-rx)));
+  }
+
+  html:not(.motion-off) .depth-exit-layer.anim-exit:not(.is-settled) {
+    opacity: calc(1 - var(--p-exit, 0) * (1 - var(--depth-exit-opacity-to)));
+    transform: scale(calc(1 - var(--p-exit, 0) * (1 - var(--depth-exit-scale))))
+               translateZ(calc(var(--p-exit, 0) * var(--depth-exit-tz)))
+               rotateX(calc(var(--p-exit, 0) * var(--depth-exit-rx)));
+  }
+
+  html:not(.motion-off) .depth-visual-panel.anim-enter:not(.is-settled) {
+    transform: translateZ(calc((1 - var(--p-enter, 1)) * var(--depth-visual-tz)));
+  }
+
+  html:not(.motion-off) .duel-panel-3d.depth-visual-panel.anim-enter:not(.is-settled) {
+    transform: rotateX(calc((1 - var(--p-enter, 1)) * 14deg))
+               translateZ(calc((1 - var(--p-enter, 1)) * var(--depth-visual-tz, -60px)));
+  }
+
+  html:not(.motion-off) .depth-hairline-draw:not(.is-settled) {
+    transform: scaleX(var(--p-hairline, 1));
+    transform-origin: left center;
+  }
+
+  /* S3 plate stack fallback */
+  html:not(.motion-off) .tier-plates-grid .tier-showcase-card:nth-child(1):not(.is-settled) {
+    transform: translateZ(calc((1 - var(--p-enter, 1)) * 16px));
+  }
+  html:not(.motion-off) .tier-plates-grid .tier-showcase-card:nth-child(2):not(.is-settled) {
+    transform: translateZ(calc((1 - var(--p-enter, 1)) * 10px));
+  }
+  html:not(.motion-off) .tier-plates-grid .tier-showcase-card:nth-child(3):not(.is-settled) {
+    transform: translateZ(calc((1 - var(--p-enter, 1)) * 4px));
+  }
+  html:not(.motion-off) .tier-plates-grid .tier-showcase-card:nth-child(4):not(.is-settled) {
+    transform: translateZ(calc((1 - var(--p-enter, 1)) * -2px));
+  }
+  html:not(.motion-off) .tier-plates-grid .tier-showcase-card:nth-child(5):not(.is-settled) {
+    transform: translateZ(calc((1 - var(--p-enter, 1)) * -8px));
+  }
+  html:not(.motion-off) .tier-plates-grid .tier-showcase-card:nth-child(6):not(.is-settled) {
+    transform: translateZ(calc((1 - var(--p-enter, 1)) * -14px));
+  }
+
+  /* S4 & S5 staggered rows fallback */
+  html:not(.motion-off) .stagger-row:not(.is-settled) {
+    opacity: var(--p-enter, 1);
+    transform: translateY(calc((1 - var(--p-enter, 1)) * 14px))
+               translateZ(calc((1 - var(--p-enter, 1)) * -24px));
+  }
+
+  /* S6 plinths fallback */
+  html:not(.motion-off) .leader-row.row-rank-1:not(.is-settled) {
+    opacity: var(--p-enter, 1);
+    transform: translateY(calc((1 - var(--p-enter, 1)) * 48px)) translateZ(calc((1 - var(--p-enter, 1)) * -40px));
+  }
+  html:not(.motion-off) .leader-row.row-rank-2:not(.is-settled) {
+    opacity: var(--p-enter, 1);
+    transform: translateY(calc((1 - var(--p-enter, 1)) * 38px)) translateZ(calc((1 - var(--p-enter, 1)) * -30px));
+  }
+  html:not(.motion-off) .leader-row.row-rank-3:not(.is-settled) {
+    opacity: var(--p-enter, 1);
+    transform: translateY(calc((1 - var(--p-enter, 1)) * 28px)) translateZ(calc((1 - var(--p-enter, 1)) * -20px));
+  }
+
+  /* S8 emblem fallback */
+  html:not(.motion-off) .final-cta-emblem-wrap:not(.is-settled) {
+    opacity: var(--p-enter, 1);
+    transform: rotateY(calc((1 - var(--p-enter, 1)) * -35deg)) translateZ(calc((1 - var(--p-enter, 1)) * -50px));
+  }
+}
+
+/* Heading layer sits flat at translateZ(0) */
+.depth-heading-layer {
+  transform: translateZ(0);
+}
+
+.surface-hairline-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--hair-subtle, rgba(196, 214, 232, 0.16));
+  z-index: 3;
+}
+
+.is-settled .duel-panel-3d,
+.duel-panel-3d.is-settled,
+.is-settled .stagger-row,
+.stagger-row.is-settled,
+.is-settled .depth-visual-panel,
+.depth-visual-panel.is-settled,
+.is-settled .leader-row,
+.leader-row.is-settled,
+.is-settled .faq-accordion-item,
+.faq-accordion-item.is-settled,
+.is-settled .final-cta-emblem-wrap,
+.final-cta-emblem-wrap.is-settled {
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+.is-settled .tier-showcase-card,
+.tier-showcase-card.is-settled {
+  opacity: 1 !important;
+}
+
+/* ── S2: Pinned stage panels depth crossfade & rotateY (+/- 8deg) ── */
+.how-panel-perspective {
+  perspective: 1200px;
+  width: 100%;
+  transform-style: preserve-3d;
+}
+
+.how-inspect-card {
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+}
+
+.how-inspect-card.stage-rot-neg {
+  transform: rotateY(-8deg) rotateX(3deg);
+}
+
+.how-inspect-card.stage-rot-pos {
+  transform: rotateY(8deg) rotateX(3deg);
+}
+
+/* ── Hero Viewport Stage (Desktop locked artboard + Mobile flex) ── */
+.hero-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hero-stage > .depth-exit-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform-style: preserve-3d;
+}
+
+.hero-stage .hero,
+.hero-stage .foot {
+  pointer-events: auto;
+}
+
+@media (max-width: 1199px) {
+  .hero-stage {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    order: 2;
+  }
+
+  .hero-stage > .depth-exit-layer {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+}
+
+/* ── 5. Lite Mode (Mobile < 900px, low concurrency < 4 cores) ─ */
+@media (max-width: 899px) {
+  .depth-stage {
+    perspective: none !important;
+  }
+
+  .depth-enter-layer.anim-enter {
+    transform: translateY(calc((1 - var(--p-enter, 1)) * var(--depth-lite-ty))) !important;
+    opacity: var(--p-enter, 1) !important;
+  }
+
+  /* No exit recession on mobile */
+  .depth-exit-layer.anim-exit {
+    transform: none !important;
+    opacity: 1 !important;
+  }
+
+  .tier-showcase-card,
+  .tier-showcase-card:hover {
+    transform: none !important;
+  }
+}
+
+html.motion-lite .depth-stage {
+  perspective: none !important;
+}
+
+html.motion-lite .depth-enter-layer.anim-enter {
+  transform: translateY(calc((1 - var(--p-enter, 1)) * var(--depth-lite-ty))) !important;
+  opacity: var(--p-enter, 1) !important;
+}
+
+html.motion-lite .depth-exit-layer.anim-exit {
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+html.motion-lite .tier-showcase-card,
+html.motion-lite .tier-showcase-card:hover {
+  transform: none !important;
+}
+
+/* ── 6. Reduced Motion & Motion Off ──────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .depth-stage,
+  .depth-exit-layer,
+  .depth-enter-layer,
+  .depth-visual-panel,
+  .depth-hairline-draw,
+  .tier-showcase-card,
+  .tier-showcase-card:hover {
+    perspective: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    animation: none !important;
+    will-change: auto !important;
+  }
+}
+
+html.motion-off .depth-stage,
+html.motion-off .depth-exit-layer,
+html.motion-off .depth-enter-layer,
+html.motion-off .depth-visual-panel,
+html.motion-off .depth-hairline-draw,
+html.motion-off .tier-showcase-card,
+html.motion-off .tier-showcase-card:hover {
+  perspective: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+/* ── 7. Motion Debugger Overlay (?motion=debug) ──────────────── */
+html.motion-debug .depth-stage {
+  outline: 1px dashed rgba(59, 130, 246, 0.45);
+}
+
+html.motion-debug .depth-enter-layer {
+  outline: 1px dashed rgba(16, 185, 129, 0.45);
+}
+
+html.motion-debug .depth-exit-layer {
+  outline: 1px dashed rgba(245, 158, 11, 0.35);
+}
+
+.depth-debug-pill {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: rgba(2, 6, 15, 0.85);
+  border: 1px solid rgba(196, 214, 232, 0.2);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  color: var(--ink, #ffffff);
+  z-index: 1000;
+  pointer-events: none;
+  display: flex;
+  gap: 8px;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(8px);
+}

@@ -60,8 +60,13 @@ router.get('/leaderboard', async (req, res) => {
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const { rows } = await db.query(
-      `SELECT id, username, email, elo_rating, wins, losses, is_username_set, avatar_seed, avatar_style, institute, institute_locked, created_at
-       FROM users WHERE id = $1`,
+      `WITH ranked_users AS (
+         SELECT id, username, email, elo_rating, wins, losses, is_username_set, avatar_seed, avatar_style, institute, institute_locked,
+                display_name, bio, website, github, linkedin, location, created_at,
+                RANK() OVER (ORDER BY elo_rating DESC, id ASC) AS rank
+         FROM users
+       )
+       SELECT * FROM ranked_users WHERE id = $1`,
       [req.user.id]
     )
     if (!rows[0]) return res.status(404).json({ message: 'user not found' })
@@ -320,6 +325,91 @@ router.patch('/me/avatar', authMiddleware, async (req, res) => {
   }
 })
 
+// PATCH /api/users/me/profile — update profile details (display_name, bio, website, github, linkedin, location, institute)
+router.patch('/me/profile', authMiddleware, async (req, res) => {
+  try {
+    const { display_name, bio, website, github, linkedin, location, institute } = req.body
+
+    const cleanDisplayName = display_name !== undefined ? String(display_name).trim().slice(0, 100) : undefined
+    const cleanBio = bio !== undefined ? String(bio).trim().slice(0, 500) : undefined
+    const cleanWebsite = website !== undefined ? String(website).trim().slice(0, 255) : undefined
+    const cleanGithub = github !== undefined ? String(github).trim().replace(/^https?:\/\/(www\.)?github\.com\//, '').replace(/\/$/, '').slice(0, 100) : undefined
+    const cleanLinkedin = linkedin !== undefined ? String(linkedin).trim().replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, '').replace(/\/$/, '').slice(0, 100) : undefined
+    const cleanLocation = location !== undefined ? String(location).trim().slice(0, 100) : undefined
+    const cleanInstitute = institute !== undefined ? String(institute).trim().slice(0, 255) : undefined
+
+    const updates = []
+    const params = []
+    let pIdx = 1
+
+    if (cleanDisplayName !== undefined) {
+      updates.push(`display_name = $${pIdx++}`)
+      params.push(cleanDisplayName)
+    }
+    if (cleanBio !== undefined) {
+      updates.push(`bio = $${pIdx++}`)
+      params.push(cleanBio)
+    }
+    if (cleanWebsite !== undefined) {
+      updates.push(`website = $${pIdx++}`)
+      params.push(cleanWebsite)
+    }
+    if (cleanGithub !== undefined) {
+      updates.push(`github = $${pIdx++}`)
+      params.push(cleanGithub)
+    }
+    if (cleanLinkedin !== undefined) {
+      updates.push(`linkedin = $${pIdx++}`)
+      params.push(cleanLinkedin)
+    }
+    if (cleanLocation !== undefined) {
+      updates.push(`location = $${pIdx++}`)
+      params.push(cleanLocation)
+    }
+    if (cleanInstitute !== undefined) {
+      const checkInst = await db.query(
+        `SELECT institute, institute_locked FROM users WHERE id = $1`,
+        [req.user.id]
+      )
+      if (!checkInst.rows[0]?.institute_locked && !checkInst.rows[0]?.institute) {
+        updates.push(`institute = $${pIdx++}`)
+        params.push(cleanInstitute)
+        updates.push(`institute_locked = TRUE`)
+      }
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ message: 'No profile fields provided to update' })
+    }
+
+    params.push(req.user.id)
+    await db.query(
+      `UPDATE users
+       SET ${updates.join(', ')}
+       WHERE id = $${pIdx}`,
+      params
+    )
+
+    const updatedUser = await db.query(
+      `WITH ranked_users AS (
+         SELECT id, username, email, elo_rating, wins, losses, is_username_set,
+                avatar_seed, avatar_style, institute, institute_locked,
+                display_name, bio, website, github, linkedin, location, created_at,
+                RANK() OVER (ORDER BY elo_rating DESC, id ASC) AS rank
+         FROM users
+       )
+       SELECT * FROM ranked_users WHERE id = $1`,
+      [req.user.id]
+    )
+
+    if (!updatedUser.rows[0]) return res.status(404).json({ message: 'User not found' })
+    return res.status(200).json({ message: 'Profile updated successfully', user: updatedUser.rows[0] })
+  } catch (err) {
+    console.error('[PATCH /users/me/profile]', err)
+    return res.status(500).json({ message: 'Failed to update profile' })
+  }
+})
+
 // GET /api/users/search?q=username — public username autocomplete (top 8 matches with true global rank)
 router.get('/search', async (req, res) => {
   try {
@@ -353,6 +443,7 @@ router.get('/:username/profile', async (req, res) => {
       `WITH ranked_users AS (
          SELECT u.id, u.username, u.elo_rating, u.wins, u.losses, u.created_at, u.is_username_set,
                 u.avatar_seed, u.avatar_style, u.institute,
+                u.display_name, u.bio, u.website, u.github, u.linkedin, u.location,
                 RANK() OVER (ORDER BY u.elo_rating DESC, u.id ASC) AS rank
          FROM users u
        )

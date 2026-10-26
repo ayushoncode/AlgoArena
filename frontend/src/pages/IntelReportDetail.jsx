@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useSearchParams } from "react-router-dom"
 import { motion } from "framer-motion"
 import {
   FileText, ArrowLeft, Building, Calendar, MapPin, DollarSign,
@@ -15,6 +15,7 @@ import {
   PageWrapper, HudPanel, HudButton, GhostButton, RankBadge,
   Skeleton, Modal, ToastContainer
 } from "../components/ui/index.jsx"
+import { IntelReportDetailV2 } from "./Intel/IntelReportDetailV2.jsx"
 
 /* Company Monogram Avatar */
 function CompanyMonogram({ name }) {
@@ -161,6 +162,61 @@ export default function IntelReportDetail() {
     }
   }
 
+  const [searchParams] = useSearchParams()
+  const isLegacy = searchParams.get('ui') === 'legacy' || import.meta.env.VITE_INTEL_UI === 'legacy'
+
+  const viewProps = {
+    id,
+    report,
+    loading,
+    error,
+    toasts,
+    dismissToast,
+    showReportModal,
+    setShowReportModal,
+    reportReason,
+    setReportReason,
+    submittingReport,
+    handleToggleHelpful,
+    handleToggleBookmark,
+    handleShare,
+    handleSendReport,
+    handleDeleteReport,
+    navigate,
+    user,
+  }
+
+  if (isLegacy) {
+    return <LegacyIntelReportDetailView {...viewProps} />
+  }
+
+  return <IntelReportDetailV2 {...viewProps} />
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LEGACY INTEL REPORT DETAIL VIEW (RENDERED WHEN ?ui=legacy)
+   Keeps old JSX completely intact and untouched.
+   ═══════════════════════════════════════════════════════════════ */
+function LegacyIntelReportDetailView({
+  id,
+  report,
+  loading,
+  error,
+  toasts,
+  dismissToast,
+  showReportModal,
+  setShowReportModal,
+  reportReason,
+  setReportReason,
+  submittingReport,
+  handleToggleHelpful,
+  handleToggleBookmark,
+  handleShare,
+  handleSendReport,
+  handleDeleteReport,
+  navigate,
+  user,
+}) {
   if (loading) {
     return (
       <PageWrapper heroGlow className="pt-20 sm:pt-24 pb-20">
