@@ -1,8 +1,80 @@
-<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <polygon points="60,5 106,30 106,90 60,115 14,90 14,30" fill="rgba(8,12,28,0.95)" />
-  <path d="M60 5 L14 30 L14 90 L60 115" stroke="#E11D48" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-  <path d="M60 5 L106 30 L106 90 L60 115" stroke="#00C2FF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-  <path d="M60 28 L36 88" stroke="#E11D48" stroke-width="9" stroke-linecap="round" />
-  <path d="M60 28 L84 88" stroke="#00C2FF" stroke-width="9" stroke-linecap="round" />
-  <line x1="41" y1="68" x2="79" y2="68" stroke="#F5B942" stroke-width="8" stroke-linecap="round" />
+<svg viewBox="0 0 160 160" width="160" height="160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="aa-glow-gold" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="aa-glow-cyan" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <linearGradient id="aa-gold-rim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff5db" />
+      <stop offset="35%" stop-color="#ffd696" />
+      <stop offset="70%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#78350f" />
+    </linearGradient>
+    <linearGradient id="aa-gold-wall" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d97706" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#1e1b18" stop-opacity="0.95" />
+    </linearGradient>
+    <linearGradient id="aa-cyan-rim" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e0f2fe" />
+      <stop offset="35%" stop-color="#8cc4ff" />
+      <stop offset="70%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+    <linearGradient id="aa-cyan-wall" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#091428" stop-opacity="0.95" />
+    </linearGradient>
+    <linearGradient id="aa-chrome-left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="40%" stop-color="#e2e8f0" />
+      <stop offset="80%" stop-color="#64748b" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="aa-chrome-right" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="40%" stop-color="#cbd5e1" />
+      <stop offset="80%" stop-color="#475569" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="aa-slash-beam" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffd696" />
+      <stop offset="45%" stop-color="#ffffff" />
+      <stop offset="75%" stop-color="#8cc4ff" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Left Side Bevel & Rim -->
+  <polygon points="80,18 24,50 24,114 80,146 80,134 36,107 36,57 80,31" fill="url(#aa-gold-wall)" />
+  <path d="M80 18 L24 50 L24 114 L80 146" stroke="url(#aa-gold-rim)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Right Side Bevel & Rim -->
+  <polygon points="80,18 136,50 136,114 80,146 80,134 124,107 124,57 80,31" fill="url(#aa-cyan-wall)" />
+  <path d="M80 18 L136 50 L136 114 L80 146" stroke="url(#aa-cyan-rim)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Inner Dark Core Trench -->
+  <polygon points="80,31 124,57 124,107 80,134 36,107 36,57" fill="#020610" opacity="0.95" />
+
+  <!-- Central "A" Monolith -->
+  <polygon points="80,42 80,56 54,112 42,112" fill="url(#aa-chrome-left)" />
+  <line x1="80" y1="42" x2="42" y2="112" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+  <polygon points="80,42 80,56 106,112 118,112" fill="url(#aa-chrome-right)" />
+  <line x1="80" y1="42" x2="118" y2="112" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" />
+  <polygon points="80,40 73,54 80,59 87,54" fill="#ffffff" />
+  <polygon points="80,62 67,90 93,90" fill="#020610" />
+
+  <!-- Slash -->
+  <polygon points="38,98 84,72 128,64 92,84 56,104" fill="url(#aa-slash-beam)" filter="url(#aa-glow-cyan)" />
+  <line x1="36" y1="100" x2="132" y2="62" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />
+  <circle cx="132" cy="62" r="3" fill="#ffffff" filter="url(#aa-glow-cyan)" />
 </svg>

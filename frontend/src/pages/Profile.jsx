@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useStreak } from '../hooks/useStreak'
 import api from '../utils/api'
@@ -16,6 +16,8 @@ import {
   PageWrapper, Skeleton, EmptyState, Tooltip, getArenaTier, ARENA_TIERS,
   AnimatedCounter, DiffChip, VerdictChip
 } from '../components/ui'
+import ProfileV2View from './Profile/ProfileV2View'
+import '../styles/profile-v2.css'
 
 /* ════════════════════════════════════════════════
    TIER PROGRESS COMPUTATION
@@ -729,6 +731,9 @@ export default function Profile() {
   const { user, isAuthenticated, loading: authLoading, refreshUser } = useAuth()
   const { streak: myStreak, history: myHistory } = useStreak(user?.id)
   const navigate = useNavigate()
+  const location = useLocation()
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
+  const isLegacy = searchParams.get('ui') === 'legacy' || import.meta.env.VITE_PROFILE_UI === 'legacy'
 
   const [profileUser, setProfileUser] = useState(null)
   const [matches, setMatches] = useState([])
@@ -808,46 +813,7 @@ export default function Profile() {
     return () => { unmounted = true }
   }, [routeUsername, isOwnProfileRoute, isAuthenticated, authLoading])
 
-  if ((authLoading && isOwnProfileRoute) || dataLoading) {
-    return (
-      <PageWrapper heroGlow>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
-          <Skeleton height={180} />
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} height={80} />)}
-          </div>
-          <Skeleton height={280} />
-        </div>
-      </PageWrapper>
-    )
-  }
-
-  if (notFound) {
-    return (
-      <PageWrapper heroGlow>
-        <div className="max-w-md mx-auto py-20 px-4 text-center">
-          <EmptyState
-            icon={Shield}
-            title="Warrior Not Found"
-            subtitle={`No arena competitor exists with handle "@${routeUsername}".`}
-            action={
-              <div className="flex gap-3 justify-center mt-4">
-                <HudButton onClick={() => navigate('/lobby')}>
-                  Go To Lobby
-                </HudButton>
-                <GhostButton onClick={() => navigate('/leaderboard')}>
-                  View Leaderboard
-                </GhostButton>
-              </div>
-            }
-          />
-        </div>
-      </PageWrapper>
-    )
-  }
-
   const activeUser = profileUser || (isMe ? user : null)
-  if (!activeUser) return null
 
   const elo = activeUser?.elo_rating ?? 1200
   const wins = activeUser?.wins ?? 0
@@ -984,7 +950,149 @@ export default function Profile() {
     return data
   }
 
+  async function handleSaveProfile(profileData) {
+    const { data } = await api.patch('/api/users/me/profile', profileData)
+    if (data?.user) {
+      localStorage.setItem('aa_user', JSON.stringify(data.user))
+      refreshUser(data.user)
+      setProfileUser(data.user)
+    }
+    return data
+  }
+
   const joinDateStr = new Date(activeUser?.created_at ?? Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+
+  const viewProps = {
+    authLoading,
+    dataLoading,
+    isOwnProfileRoute,
+    notFound,
+    routeUsername,
+    navigate,
+    activeUser,
+    isMe,
+    elo,
+    wins,
+    losses,
+    wr,
+    total,
+    streak,
+    currentTier,
+    tierProgress,
+    joinDateStr,
+    editingUsername,
+    setEditingUsername,
+    newHandle,
+    setNewHandle,
+    handleErr,
+    setHandleErr,
+    savingHandle,
+    handleSaveUsername,
+    showAvatarModal,
+    setShowAvatarModal,
+    handleSaveAvatar,
+    handleSaveProfile,
+    peakElo,
+    startElo,
+    netChange,
+    favTopicTitle,
+    favTopicCount,
+    chartData,
+    matches,
+    activeDates,
+    topicFreq,
+    eloHistory,
+  }
+
+  if (isLegacy) {
+    return <LegacyProfileView {...viewProps} />
+  }
+
+  return <ProfileV2View {...viewProps} />
+}
+
+/* ════════════════════════════════════════════════
+   LEGACY PROFILE VIEW (RENDERED WHEN ?ui=legacy)
+   Keeps old JSX completely intact and untouched.
+════════════════════════════════════════════════ */
+function LegacyProfileView({
+  authLoading,
+  dataLoading,
+  isOwnProfileRoute,
+  notFound,
+  routeUsername,
+  navigate,
+  activeUser,
+  isMe,
+  elo,
+  wins,
+  losses,
+  wr,
+  total,
+  streak,
+  currentTier,
+  tierProgress,
+  joinDateStr,
+  editingUsername,
+  setEditingUsername,
+  newHandle,
+  setNewHandle,
+  handleErr,
+  setHandleErr,
+  savingHandle,
+  handleSaveUsername,
+  showAvatarModal,
+  setShowAvatarModal,
+  handleSaveAvatar,
+  peakElo,
+  startElo,
+  netChange,
+  favTopicTitle,
+  favTopicCount,
+  chartData,
+  matches,
+  activeDates,
+  topicFreq,
+}) {
+  if ((authLoading && isOwnProfileRoute) || dataLoading) {
+    return (
+      <PageWrapper heroGlow>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
+          <Skeleton height={180} />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} height={80} />)}
+          </div>
+          <Skeleton height={280} />
+        </div>
+      </PageWrapper>
+    )
+  }
+
+  if (notFound) {
+    return (
+      <PageWrapper heroGlow>
+        <div className="max-w-md mx-auto py-20 px-4 text-center">
+          <EmptyState
+            icon={Shield}
+            title="Warrior Not Found"
+            subtitle={`No arena competitor exists with handle "@${routeUsername}".`}
+            action={
+              <div className="flex gap-3 justify-center mt-4">
+                <HudButton onClick={() => navigate('/lobby')}>
+                  Go To Lobby
+                </HudButton>
+                <GhostButton onClick={() => navigate('/leaderboard')}>
+                  View Leaderboard
+                </GhostButton>
+              </div>
+            }
+          />
+        </div>
+      </PageWrapper>
+    )
+  }
+
+  if (!activeUser) return null
 
   return (
     <PageWrapper heroGlow>
@@ -1405,3 +1513,5 @@ export default function Profile() {
     </PageWrapper>
   )
 }
+
+

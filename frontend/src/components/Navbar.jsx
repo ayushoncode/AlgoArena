@@ -2,6 +2,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useState, useRef, useEffect } from 'react'
 import { UserAvatar, getTier } from '../utils/avatar'
+import { getEloTier } from '../utils/tierHelper'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, ChevronDown, LogOut, User, Home, Trophy, Users, FileText, Sun, Moon } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
@@ -18,7 +19,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const dropRef = useRef(null)
 
-  const userTier = user ? getTier(user.elo_rating ?? 1200) : null
+  const userTier = user ? getEloTier(user.elo_rating ?? 1200) : null
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -60,66 +61,77 @@ export default function Navbar() {
       <nav
         className="fixed top-0 inset-x-0 z-50"
         style={{
-          background: 'var(--c-nav-bg)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          borderBottom: '1px solid var(--c-border)',
-          height: '3.5rem',
+          background: 'rgba(2, 6, 15, 0.92)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderBottom: '1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08))',
+          height: '72px',
         }}
       >
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 h-full flex items-center justify-between">
+        <div className="max-w-[1240px] mx-auto px-6 h-full flex items-center justify-between">
 
           {/* Logo + wordmark */}
           <Link
             to="/"
-            className="flex items-center transition-opacity hover:opacity-90"
+            className="flex items-center gap-2.5 transition-opacity hover:opacity-90"
             style={{ textDecoration: 'none' }}
           >
-            <ArenaLogo size={26} />
+            <ArenaLogo size={24} />
           </Link>
 
           {/* Desktop center nav */}
-          <div className="hidden sm:flex items-center gap-1">
-            {NAV_LINKS.map(({ label, href, icon }) => {
+          <div className="hidden sm:flex items-center gap-7">
+            {NAV_LINKS.map(({ label, href }) => {
               const active = pathname === href
               return (
                 <Link
                   key={href}
                   to={href}
-                  className="flex items-center gap-1.5 px-4 py-2 transition-all duration-150"
+                  className="relative flex items-center transition-colors duration-150"
                   style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 13,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
+                    fontFamily: 'var(--font-sans, sans-serif)',
+                    fontSize: '13px',
+                    fontWeight: 500,
                     textDecoration: 'none',
-                    color: active ? 'var(--c-red)' : 'var(--c-text-dim)',
-                    borderBottom: `2px solid ${active ? 'var(--c-red)' : 'transparent'}`,
+                    color: active ? 'var(--feat, #e2ebf5)' : 'var(--sub, #a2a9b8)',
+                    minHeight: '44px',
                   }}
-                  onMouseOver={e => { if (!active) e.currentTarget.style.color = 'var(--c-text)' }}
-                  onMouseOut={e => { if (!active) e.currentTarget.style.color = 'var(--c-text-dim)' }}
+                  onMouseOver={e => { if (!active) e.currentTarget.style.color = 'var(--ink, #ffffff)' }}
+                  onMouseOut={e => { if (!active) e.currentTarget.style.color = 'var(--sub, #a2a9b8)' }}
                 >
-                  {icon}
                   {label}
+                  {active && (
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        position: 'absolute',
+                        bottom: '8px',
+                        left: 0,
+                        right: 0,
+                        height: '1.5px',
+                        background: 'var(--hair, rgba(196, 214, 232, 0.72))',
+                      }}
+                    />
+                  )}
                 </Link>
               )
             })}
           </div>
 
           {/* Desktop right — auth */}
-          <div className="hidden sm:flex items-center gap-2.5">
+          <div className="hidden sm:flex items-center gap-3">
             <button
               onClick={toggleTheme}
-              className="p-2 transition-colors flex items-center justify-center rounded-md"
-              style={{ color: 'var(--c-text-dim)' }}
-              onMouseOver={e => { e.currentTarget.style.color = 'var(--c-text)' }}
-              onMouseOut={e => { e.currentTarget.style.color = 'var(--c-text-dim)' }}
+              className="p-2 transition-colors flex items-center justify-center rounded"
+              style={{ color: 'var(--sub, #a2a9b8)' }}
+              onMouseOver={e => { e.currentTarget.style.color = 'var(--ink, #ffffff)' }}
+              onMouseOut={e => { e.currentTarget.style.color = 'var(--sub, #a2a9b8)' }}
               aria-label="Toggle theme"
             >
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
             </button>
             {loading ? (
-              <div className="w-24 h-7 rounded" style={{ background: 'var(--c-border)' }} />
+              <div className="w-24 h-7 rounded" style={{ background: 'var(--hair-muted, rgba(196, 214, 232, 0.16))' }} />
             ) : isAuthenticated ? (
               /* User dropdown */
               <div className="relative" ref={dropRef}>
@@ -128,19 +140,33 @@ export default function Navbar() {
                   onClick={() => setDropOpen(o => !o)}
                   className="flex items-center gap-2.5 px-3 py-1.5 transition-all"
                   style={{
-                    background: dropOpen ? 'var(--c-red-glow)' : 'transparent',
-                    border: `1px solid ${dropOpen ? 'var(--c-red)' : 'var(--c-border)'}`,
-                    borderRadius: 0,
+                    background: dropOpen ? 'var(--bg-2, #0a1428)' : 'var(--bg-1, #060d1c)',
+                    border: `1px solid ${dropOpen ? 'var(--hair, rgba(196, 214, 232, 0.4))' : 'var(--hair-muted, rgba(196, 214, 232, 0.16))'}`,
+                    borderRadius: '4px',
+                    minHeight: '36px',
+                    cursor: 'pointer',
                   }}
-                  onMouseOver={e => { if (!dropOpen) e.currentTarget.style.borderColor = 'var(--c-border2)' }}
-                  onMouseOut={e => { if (!dropOpen) e.currentTarget.style.borderColor = 'var(--c-border)' }}
+                  onMouseOver={e => { if (!dropOpen) e.currentTarget.style.borderColor = 'var(--hair, rgba(196, 214, 232, 0.3))' }}
+                  onMouseOut={e => { if (!dropOpen) e.currentTarget.style.borderColor = 'var(--hair-muted, rgba(196, 214, 232, 0.16))' }}
                 >
                   <UserAvatar username={user.username} seed={user.avatar_seed} style={user.avatar_style} elo={user.elo_rating} size={22} isMe={true} />
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-text)' }}>{user.username}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, padding: '1px 6px', background: userTier?.bg, color: userTier?.col, border: `1px solid ${userTier?.col}40`, borderRadius: 0 }}>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', fontWeight: 600, color: 'var(--ink, #ffffff)' }}>{user.username}</span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '1px 6px',
+                      background: userTier?.bg || 'rgba(148, 163, 184, 0.12)',
+                      color: userTier?.color || '#94a3b8',
+                      border: `1px solid ${userTier?.border || 'rgba(148, 163, 184, 0.3)'}`,
+                      borderRadius: '3px',
+                    }}
+                    title={`Rating: ${user.elo_rating ?? 1200} · ${userTier?.name || 'Novice'}`}
+                  >
                     {user.elo_rating ?? 1200}
                   </span>
-                  <ChevronDown size={12} style={{ color: 'var(--c-text-mute)', transform: dropOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.15s' }} />
+                  <ChevronDown size={12} style={{ color: 'var(--sub, #a2a9b8)', transform: dropOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.15s' }} />
                 </button>
 
                 <AnimatePresence>
@@ -151,45 +177,65 @@ export default function Navbar() {
                       exit={{ opacity: 0, y: -6 }}
                       transition={{ duration: 0.15 }}
                       className="absolute right-0 mt-1.5 w-52"
-                      style={{ background: 'var(--c-panel)', border: '1px solid #1C2842', boxShadow: '0 12px 40px rgba(0,0,0,0.6)', zIndex: 100 }}
+                      style={{
+                        background: 'var(--bg-1, #060d1c)',
+                        border: '1px solid var(--hair-muted, rgba(196, 214, 232, 0.18))',
+                        boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        zIndex: 100,
+                      }}
                     >
                       {/* User header */}
-                      <div className="px-4 py-3" style={{ borderBottom: '1px solid #1C2842' }}>
-                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: 'var(--c-text)' }}>{user.username}</p>
-                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, marginTop: 2, color: 'var(--c-text-mute)' }}>
-                          {user.elo_rating ?? 1200} elo · {user.wins ?? 0}W {user.losses ?? 0}L
+                      <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08))' }}>
+                        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', fontWeight: 700, color: 'var(--ink, #ffffff)' }}>{user.username}</p>
+                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', marginTop: 2, color: 'var(--sub, #a2a9b8)' }}>
+                          <span style={{ color: userTier?.color, fontWeight: 700 }}>{userTier?.name || 'Novice'}</span> · {user.elo_rating ?? 1200} elo · {user.wins ?? 0}W {user.losses ?? 0}L
                         </p>
                       </div>
 
                       {[
-                        { id: 'dd-profile', label: 'Profile', icon: <User size={11} />, path: '/profile' },
-                        { id: 'dd-lobby', label: 'Lobby', icon: <Home size={11} />, path: '/lobby' },
+                        { id: 'dd-profile', label: 'Profile', path: '/profile' },
+                        { id: 'dd-lobby', label: 'Lobby', path: '/lobby' },
                       ].map(item => (
                         <button
                           key={item.id}
                           id={item.id}
                           onClick={() => { navigate(item.path); setDropOpen(false) }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
-                          style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
-                          onMouseOver={e => { e.currentTarget.style.background = 'var(--c-border)'; e.currentTarget.style.color = 'var(--c-text)' }}
-                          onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--c-text-dim)' }}
+                          className="w-full flex items-center px-4 py-2.5 text-left transition-colors"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontFamily: 'var(--font-sans)',
+                            fontSize: '12px',
+                            color: 'var(--sub, #a2a9b8)',
+                          }}
+                          onMouseOver={e => { e.currentTarget.style.background = 'rgba(196, 214, 232, 0.06)'; e.currentTarget.style.color = 'var(--ink, #ffffff)' }}
+                          onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--sub, #a2a9b8)' }}
                         >
-                          <span style={{ color: 'var(--c-text-mute)' }}>{item.icon}</span>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'inherit' }}>{item.label}</span>
+                          {item.label}
                         </button>
                       ))}
 
-                      <div style={{ borderTop: '1px solid #1C2842' }}>
+                      <div style={{ borderTop: '1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08))' }}>
                         <button
                           id="nav-logout"
                           onClick={handleLogout}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
-                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--c-text-dim)' }}
-                          onMouseOver={e => { e.currentTarget.style.background = 'var(--c-red-glow)'; e.currentTarget.style.color = 'var(--c-red)' }}
-                          onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--c-text-dim)' }}
+                          className="w-full flex items-center px-4 py-2.5 text-left transition-colors"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#fb7185',
+                            fontFamily: 'var(--font-sans)',
+                            fontSize: '12px',
+                            fontWeight: 500,
+                          }}
+                          onMouseOver={e => { e.currentTarget.style.background = 'rgba(244, 63, 94, 0.1)' }}
+                          onMouseOut={e => { e.currentTarget.style.background = 'transparent' }}
                         >
-                          <LogOut size={11} />
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>Sign Out</span>
+                          Sign Out
                         </button>
                       </div>
                     </motion.div>
@@ -197,35 +243,34 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   id="nav-signin"
                   onClick={() => goAuth('login')}
                   style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600,
-                    padding: '6px 16px', color: 'var(--c-text-dim)',
-                    background: 'transparent', border: '1px solid #1C2842', borderRadius: 0, cursor: 'pointer',
-                    transition: 'all 0.15s',
+                    fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 500,
+                    padding: '8px 14px', color: 'var(--sub, #a2a9b8)',
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    transition: 'color 0.15s',
                   }}
-                  onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--c-red)'; e.currentTarget.style.color = 'var(--c-red)' }}
-                  onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--c-border)'; e.currentTarget.style.color = 'var(--c-text-dim)' }}
+                  onMouseOver={e => { e.currentTarget.style.color = 'var(--ink, #ffffff)' }}
+                  onMouseOut={e => { e.currentTarget.style.color = 'var(--sub, #a2a9b8)' }}
                 >
-                  Sign In
+                  Sign in →
                 </button>
                 <button
                   id="nav-register"
                   onClick={() => goAuth('register')}
                   style={{
-                    fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
-                    padding: '6px 18px', letterSpacing: '0.05em', textTransform: 'uppercase',
-                    color: '#fff', background: 'var(--c-red)', border: 'none',
-                    clipPath: 'polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%)',
+                    fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600,
+                    padding: '8px 18px', color: '#02060f', background: '#ffffff',
+                    border: '1px solid #ffffff', borderRadius: '999px',
                     cursor: 'pointer', transition: 'all 0.15s',
                   }}
-                  onMouseOver={e => { e.currentTarget.style.background = '#F43F5E' }}
-                  onMouseOut={e => { e.currentTarget.style.background = 'var(--c-red)' }}
+                  onMouseOver={e => { e.currentTarget.style.background = '#e2ebf5' }}
+                  onMouseOut={e => { e.currentTarget.style.background = '#ffffff' }}
                 >
-                  Join the Roster
+                  Join The Roster
                 </button>
               </div>
             )}
@@ -265,42 +310,72 @@ export default function Navbar() {
             style={{ background: 'var(--c-nav-bg)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--c-border)' }}
           >
             <div className="px-5 py-5 space-y-1">
-              {NAV_LINKS.map(({ label, href, icon }) => (
+              {NAV_LINKS.map(({ label, href }) => (
                 <Link
                   key={href}
                   to={href}
-                  className="flex items-center gap-2 py-3 px-4 w-full transition-colors"
+                  className="flex items-center py-3 px-4 w-full transition-colors"
                   style={{
-                    fontFamily: 'var(--font-display)', fontSize: 16, letterSpacing: '0.08em', textTransform: 'uppercase',
-                    color: pathname === href ? 'var(--c-red)' : 'var(--c-text-dim)', textDecoration: 'none',
-                    borderBottom: '1px solid #1C2842',
+                    fontFamily: 'var(--font-sans, sans-serif)',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: pathname === href ? 'var(--ink, #ffffff)' : 'var(--sub, #a2a9b8)',
+                    textDecoration: 'none',
+                    borderBottom: '1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08))',
                   }}
                 >
-                  {icon} {label}
+                  {label}
                 </Link>
               ))}
 
               {!loading && !isAuthenticated && (
                 <div className="flex flex-col gap-3 pt-4">
-                  <button onClick={() => { goAuth('login'); setMobileOpen(false) }}
-                    style={{ fontFamily: 'var(--font-mono)', fontSize: 13, padding: '12px', color: 'var(--c-text-dim)', background: 'transparent', border: '1px solid #1C2842', cursor: 'pointer', width: '100%' }}>
+                  <button
+                    onClick={() => { goAuth('login'); setMobileOpen(false) }}
+                    style={{
+                      fontFamily: 'var(--font-sans)', fontSize: '13px', padding: '12px',
+                      color: 'var(--sub, #a2a9b8)', background: 'transparent',
+                      border: '1px solid var(--hair-muted, rgba(196, 214, 232, 0.16))',
+                      borderRadius: '4px', cursor: 'pointer', width: '100%',
+                    }}
+                  >
                     Sign In
                   </button>
-                  <button onClick={() => { goAuth('register'); setMobileOpen(false) }}
-                    style={{ fontFamily: 'var(--font-display)', fontSize: 14, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '12px', color: '#fff', background: 'var(--c-red)', border: 'none', cursor: 'pointer', width: '100%' }}>
-                    Join the Roster
+                  <button
+                    onClick={() => { goAuth('register'); setMobileOpen(false) }}
+                    style={{
+                      fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600,
+                      padding: '12px', color: '#02060f', background: '#ffffff',
+                      border: 'none', borderRadius: '4px', cursor: 'pointer', width: '100%',
+                    }}
+                  >
+                    Join The Roster
                   </button>
                 </div>
               )}
 
               {!loading && isAuthenticated && (
                 <div className="space-y-1 pt-2">
-                  <button onClick={() => { navigate('/profile'); setMobileOpen(false) }}
-                    style={{ fontFamily: 'var(--font-mono)', fontSize: 12, padding: '12px 16px', color: 'var(--c-text-dim)', background: 'transparent', border: '1px solid #1C2842', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                  <button
+                    onClick={() => { navigate('/profile'); setMobileOpen(false) }}
+                    style={{
+                      fontFamily: 'var(--font-sans)', fontSize: '13px', padding: '12px 16px',
+                      color: 'var(--sub, #a2a9b8)', background: 'transparent',
+                      border: '1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08))',
+                      borderRadius: '4px', cursor: 'pointer', width: '100%', textAlign: 'left',
+                    }}
+                  >
                     Profile
                   </button>
-                  <button onClick={handleLogout}
-                    style={{ fontFamily: 'var(--font-mono)', fontSize: 12, padding: '12px 16px', color: 'var(--c-red)', background: 'rgba(225,29,72,0.05)', border: '1px solid rgba(225,29,72,0.2)', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 500,
+                      padding: '12px 16px', color: '#fb7185', background: 'rgba(244, 63, 94, 0.08)',
+                      border: '1px solid rgba(244, 63, 94, 0.2)', borderRadius: '4px',
+                      cursor: 'pointer', width: '100%', textAlign: 'left',
+                    }}
+                  >
                     Sign Out
                   </button>
                 </div>
