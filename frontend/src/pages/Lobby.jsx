@@ -20,6 +20,10 @@ import {
 import { ArenaLogo } from '../components/ArenaLogo'
 import StriverSheetView from '../components/StriverSheetView'
 import { DEFAULT_STRIVER_CURRICULUM } from '../content/striverCurriculum'
+import LobbyViewV2 from './Lobby/LobbyViewV2'
+import SearchingOverlayV2 from './Lobby/SearchingOverlayV2'
+import MatchFoundOverlayV2 from './Lobby/MatchFoundOverlayV2'
+import PrivateMatchModalV2 from './Lobby/PrivateMatchModalV2'
 
 /* ════════════════════════════════════════════════
    DATA — topics + difficulties
@@ -820,11 +824,13 @@ export default function Lobby() {
   const [striverLoading, setStriverLoading] = useState(false)
   const [matchFoundData, setMatchFoundData] = useState(null)
   const [customModalOpen, setCustomModalOpen] = useState(false)
+  const [customModalTab, setCustomModalTab] = useState('create')
   const [dailyProblem, setDailyProblem] = useState(null)
 
   const desktopSearchRef = useRef(null)
   const mobileSearchRef = useRef(null)
   const initialRoomCode = searchParams.get('room')
+  const isLegacyUI = searchParams.get('ui') === 'legacy' || import.meta.env.VITE_LOBBY_UI === 'legacy'
 
   const { connected, emit, on, off, socket } = useSocket()
 
@@ -1016,23 +1022,45 @@ export default function Lobby() {
       {/* Overlays */}
       <AnimatePresence>
         {matchFoundData ? (
-          <MatchFoundOverlay matchData={matchFoundData} onComplete={() => {
-            const data = matchFoundData
-            setMatchFoundData(null)
-            navigate(`/match/${data.roomId}`, { state: { topic: data.topic, difficulty: data.difficulty, players: data.players, problemId: data.problemId } })
-          }} />
+          isLegacyUI ? (
+            <MatchFoundOverlay matchData={matchFoundData} onComplete={() => {
+              const data = matchFoundData
+              setMatchFoundData(null)
+              navigate(`/match/${data.roomId}`, { state: { topic: data.topic, difficulty: data.difficulty, players: data.players, problemId: data.problemId } })
+            }} />
+          ) : (
+            <MatchFoundOverlayV2 matchData={matchFoundData} onComplete={() => {
+              const data = matchFoundData
+              setMatchFoundData(null)
+              navigate(`/match/${data.roomId}`, { state: { topic: data.topic, difficulty: data.difficulty, players: data.players, problemId: data.problemId } })
+            }} />
+          )
         ) : queuing ? (
-          <SearchingOverlay topic={topic} difficulty={diff} rating={elo} problem={queuingProblem} onCancel={cancelQueue} />
+          isLegacyUI ? (
+            <SearchingOverlay topic={topic} difficulty={diff} rating={elo} problem={queuingProblem} onCancel={cancelQueue} />
+          ) : (
+            <SearchingOverlayV2 topic={topic} difficulty={diff} rating={elo} problem={queuingProblem} onCancel={cancelQueue} />
+          )
         ) : null}
       </AnimatePresence>
 
-      <PrivateMatchModal
-        isOpen={customModalOpen}
-        onClose={() => setCustomModalOpen(false)}
-        topic={topic} diff={diff} emit={emit} on={on} off={off} initialRoomCode={initialRoomCode}
-      />
+      {isLegacyUI ? (
+        <PrivateMatchModal
+          isOpen={customModalOpen}
+          onClose={() => setCustomModalOpen(false)}
+          topic={topic} diff={diff} emit={emit} on={on} off={off} initialRoomCode={initialRoomCode}
+        />
+      ) : (
+        <PrivateMatchModalV2
+          isOpen={customModalOpen}
+          onClose={() => setCustomModalOpen(false)}
+          topic={topic} diff={diff} emit={emit} on={on} off={off} initialRoomCode={initialRoomCode}
+          initialTab={customModalTab}
+        />
+      )}
 
-      <PageWrapper heroGlow>
+      {isLegacyUI ? (
+        <PageWrapper heroGlow>
 
         <div style={{ borderBottom: '1px solid var(--c-border)', background: 'var(--c-nav-bg)', backdropFilter: 'blur(16px)' }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
@@ -1591,7 +1619,46 @@ export default function Lobby() {
           </div>
         )}
 
-      </PageWrapper>
+        </PageWrapper>
+      ) : (
+        <LobbyViewV2
+          user={user}
+          connected={connected}
+          live={live}
+          topics={TOPICS}
+          topic={topic}
+          diff={diff}
+          selectedTopicObj={selectedTopicObj}
+          diffObj={diffObj}
+          onSelectTopic={handleSelectTopic}
+          onSelectDiff={handleSelectDiff}
+          onStartQueue={startQueue}
+          onCancelQueue={cancelQueue}
+          onSurpriseMe={handleSurpriseMe}
+          dailyProblem={dailyProblem}
+          dailyObj={dailyObj}
+          isDailySelected={isDailySelected}
+          queuing={queuing}
+          matchFoundData={matchFoundData}
+          onMatchComplete={() => {
+            const data = matchFoundData
+            setMatchFoundData(null)
+            navigate(`/match/${data.roomId}`, { state: { topic: data.topic, difficulty: data.difficulty, players: data.players, problemId: data.problemId } })
+          }}
+          onOpenCustomModal={(tab) => {
+            setCustomModalTab(tab || 'create')
+            setCustomModalOpen(true)
+          }}
+          desktopSearchRef={desktopSearchRef}
+          lobbyTab={lobbyTab}
+          setLobbyTab={setLobbyTab}
+          striverData={striverData}
+          striverLoading={striverLoading}
+          onBattleProblem={handleBattleProblem}
+          onBattleRandomFromSheet={handleBattleRandomFromSheet}
+          queuingProblem={queuingProblem}
+        />
+      )}
     </>
   )
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useSearchParams } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   ArrowLeft, ArrowRight, Plus, Trash2, Check, AlertTriangle,
@@ -232,7 +232,67 @@ export default function ShareExperienceWizard() {
     }
   }
 
-  /* ─────────── Render ─────────── */
+  const [searchParams] = useSearchParams()
+  const isLegacy = searchParams.get('ui') === 'legacy' || import.meta.env.VITE_INTEL_UI === 'legacy'
+
+  const viewProps = {
+    id,
+    isEditMode,
+    step,
+    setStep,
+    submitting,
+    nda,
+    setNda,
+    errors,
+    toasts,
+    dismissToast,
+    form,
+    set,
+    validate,
+    next,
+    prev,
+    addRound,
+    removeRound,
+    updateRound,
+    handleSubmit,
+    navigate,
+    user,
+  }
+
+  if (isLegacy) {
+    return <LegacyShareExperienceWizardView {...viewProps} />
+  }
+
+  return <LegacyShareExperienceWizardView {...viewProps} />
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LEGACY SHARE EXPERIENCE WIZARD VIEW (RENDERED WHEN ?ui=legacy)
+   Keeps old JSX completely intact and untouched.
+   ═══════════════════════════════════════════════════════════════ */
+function LegacyShareExperienceWizardView({
+  id,
+  isEditMode,
+  step,
+  setStep,
+  submitting,
+  nda,
+  setNda,
+  errors,
+  toasts,
+  dismissToast,
+  form,
+  set,
+  validate,
+  next,
+  prev,
+  addRound,
+  removeRound,
+  updateRound,
+  handleSubmit,
+  navigate,
+  user,
+}) {
   return (
     <PageWrapper heroGlow className="pt-20 sm:pt-24 pb-24">
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

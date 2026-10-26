@@ -14,6 +14,8 @@ import {
   PageWrapper, HudPanel, HudButton, GhostButton, StatBadge,
   RankBadge, SkeletonCard, EmptyState, Tooltip
 } from "../components/ui/index.jsx"
+import IntelReportsListV2 from "./Intel/IntelReportsListV2"
+import "../styles/intel-v2.css"
 
 /* Helper for Monogram Company Avatar */
 function CompanyMonogram({ name }) {
@@ -231,6 +233,101 @@ export default function IntelReports() {
   }
   const cfg = VIEW_CFG[viewMode]
 
+  const isLegacy = searchParams.get('ui') === 'legacy' || import.meta.env.VITE_INTEL_UI === 'legacy'
+
+  const viewProps = {
+    viewMode,
+    track,
+    handleTrackChange,
+    meta,
+    searchQuery,
+    setSearchQuery,
+    companySearch,
+    setCompanySearch,
+    showCompanySuggestions,
+    setShowCompanySuggestions,
+    companySuggestions,
+    outcomeFilter,
+    setOutcomeFilter,
+    difficultyFilter,
+    setDifficultyFilter,
+    yearFilter,
+    setYearFilter,
+    roundFilter,
+    setRoundFilter,
+    topicFilter,
+    setTopicFilter,
+    sourceFilter,
+    setSourceFilter,
+    sortOrder,
+    setSortOrder,
+    page,
+    setPage,
+    reports,
+    pagination,
+    loading,
+    error,
+    handleToggleHelpful,
+    handleToggleBookmark,
+    handleClearFilters,
+    hasActiveFilters,
+    cfg,
+    navigate,
+    user,
+    fetchReports,
+  }
+
+  if (isLegacy) {
+    return <LegacyIntelReportsView {...viewProps} />
+  }
+
+  return <IntelReportsListV2 {...viewProps} />
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LEGACY INTEL REPORTS VIEW (RENDERED WHEN ?ui=legacy)
+   Keeps old JSX completely intact and untouched.
+   ═══════════════════════════════════════════════════════════════ */
+function LegacyIntelReportsView({
+  viewMode,
+  track,
+  handleTrackChange,
+  meta,
+  searchQuery,
+  setSearchQuery,
+  companySearch,
+  setCompanySearch,
+  showCompanySuggestions,
+  setShowCompanySuggestions,
+  companySuggestions,
+  outcomeFilter,
+  setOutcomeFilter,
+  difficultyFilter,
+  setDifficultyFilter,
+  yearFilter,
+  setYearFilter,
+  roundFilter,
+  setRoundFilter,
+  topicFilter,
+  setTopicFilter,
+  sourceFilter,
+  setSourceFilter,
+  sortOrder,
+  setSortOrder,
+  page,
+  setPage,
+  reports,
+  pagination,
+  loading,
+  error,
+  handleToggleHelpful,
+  handleToggleBookmark,
+  handleClearFilters,
+  hasActiveFilters,
+  cfg,
+  navigate,
+  user,
+}) {
   return (
     <PageWrapper heroGlow className="pt-20 sm:pt-24 pb-20">
       

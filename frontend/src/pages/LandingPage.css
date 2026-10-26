@@ -1,0 +1,1749 @@
+/* ═══════════════════════════════════════════════════════════
+   AlgoArena: Immersive Full-Viewport Dark Hero Landing Page
+   Scoped CSS under .nx-landing
+   Scale system, Sora variable font, locked desktop composition
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Route-scoped HTML & Body modifications ─────────────── */
+html.is-landing {
+  background: #02060f !important;
+  overflow-x: clip !important;
+  overflow-y: auto !important;
+  min-height: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+  font-family: 'Sora Variable', 'Sora', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-display: block;
+}
+
+html.is-landing body {
+  background: #02060f !important;
+  overflow-x: clip !important;
+  overflow-y: visible !important;
+  min-height: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+  font-family: 'Sora Variable', 'Sora', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-display: block;
+}
+
+html.is-landing #root,
+html.is-landing > body > #root {
+  overflow: visible !important;
+  overflow-x: clip !important;
+  overflow-y: visible !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* Hide global App Navbar and reset main padding when on landing route */
+html.is-landing > body > #root > nav,
+html.is-landing nav.fixed,
+html.is-landing .arena-navbar {
+  display: none !important;
+}
+
+html.is-landing > body > #root > main,
+html.is-landing main:not(.hero) {
+  padding-top: 0 !important;
+  min-height: 100vh !important;
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+/* ── 3. TOKENS (:root, scoped) ──────────────────────────── */
+:root {
+  --ink: #ffffff;
+  --sub: #a2a9b8;
+  --nav: #fbfdff;
+  --foot: #f4f8fd;
+  --hair: rgba(196, 214, 232, .72);
+  --chev: rgba(214, 232, 250, .90);
+  --navdim: #e8ecf0;
+  --feat: #e2ebf5;
+  --veil: 6, 10, 18;
+
+  /* 4. SCALE SYSTEM (Desktop artboard 1536x1024) */
+  --cover: max(calc(100vw / 1536), calc(100vh / 1024));
+  --fit: calc(100vh / 910);
+  --u: min(var(--cover), var(--fit));
+  --blur: calc(var(--u) * 26);
+  --glow: calc(var(--u) * 34);
+  --hairline: max(1px, calc(var(--u) * 1.6));
+
+  /* Entrance animation tokens */
+  --ent-line: cubic-bezier(.16, 1, .3, 1);
+  --ent-soft: cubic-bezier(.25, .8, .35, 1);
+  --rise: 9px;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --cover: max(calc(100vw / 1536), calc(100dvh / 1024));
+    --fit: calc(100dvh / 910);
+    --u: min(var(--cover), var(--fit));
+    --blur: calc(var(--u) * 26);
+    --glow: calc(var(--u) * 34);
+    --hairline: max(1px, calc(var(--u) * 1.6));
+  }
+}
+
+/* ── Reset & Baseline ───────────────────────────────────── */
+.nx-landing {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+  font-family: 'Sora Variable', 'Sora', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-display: block;
+  background: #02060f;
+  color: var(--ink);
+}
+
+@supports (height: 100dvh) {
+  .nx-landing {
+    height: 100dvh;
+  }
+}
+
+.nx-landing a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.nx-landing li {
+  list-style: none;
+}
+
+.nx-landing button {
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  outline: none;
+}
+
+.nx-landing a:focus-visible,
+.nx-landing button:focus-visible {
+  outline: 2px solid #9fe0ff;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ── 5. BACKGROUND LAYERS ───────────────────────────────── */
+.nx-landing .art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    /* Soft white-gold bloom in the centre */
+    radial-gradient(circle 380px at 50% 48%, rgba(255, 250, 240, 0.28) 0%, rgba(255, 226, 178, 0.12) 35%, rgba(10, 26, 58, 0) 70%),
+    /* Warm gold wash near upper-left corner */
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(255, 214, 150, 0.20) 0%, rgba(255, 214, 150, 0.05) 40%, rgba(2, 6, 15, 0) 70%),
+    /* Warm gold wash near upper-right corner */
+    radial-gradient(ellipse 60% 50% at 100% 0%, rgba(255, 214, 150, 0.20) 0%, rgba(255, 214, 150, 0.05) 40%, rgba(2, 6, 15, 0) 70%),
+    /* Cool blue wash near lower-left corner */
+    radial-gradient(ellipse 65% 55% at 0% 100%, rgba(140, 196, 255, 0.22) 0%, rgba(140, 196, 255, 0.06) 45%, rgba(2, 6, 15, 0) 75%),
+    /* Cool blue wash near lower-right corner */
+    radial-gradient(ellipse 65% 55% at 100% 100%, rgba(140, 196, 255, 0.22) 0%, rgba(140, 196, 255, 0.06) 45%, rgba(2, 6, 15, 0) 75%),
+    /* Clear deep navy volumetric field (#02060f to #0a1a3a, no grey/brown) */
+    radial-gradient(ellipse 130% 90% at 50% 55%, #0a1a3a 0%, #050e24 45%, #02060f 85%),
+    #02060f;
+  user-select: none;
+}
+
+.nx-landing .art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.nx-landing .veil {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 50%, rgba(2, 6, 15, .55) 0%, rgba(2, 6, 15, .25) 50%, rgba(2, 6, 15, 0) 80%),
+    linear-gradient(180deg, rgba(2, 6, 15, .45) 0%, transparent 20%, transparent 80%, rgba(2, 6, 15, .60) 100%);
+}
+
+.nx-landing .bar {
+  position: absolute;
+  z-index: 20;
+}
+
+.nx-landing .hero {
+  position: absolute;
+  z-index: 2;
+}
+
+.nx-landing .foot {
+  position: absolute;
+  z-index: 5;
+}
+
+/* ── 6. COMPONENT SKIN (all layouts) ────────────────────── */
+.nx-landing .brand svg,
+.nx-landing .brand img,
+.nx-landing .brand .brand-emblem-img,
+.nx-landing .brand .brand-emblem-3d,
+.nx-landing .brand .aa-emblem-3d-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nx-landing .caret,
+.nx-landing .navarrow {
+  fill: none;
+  stroke: var(--nav);
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+.nx-landing .pill {
+  border: var(--hairline) solid var(--hair);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.nx-landing .chev {
+  fill: none;
+  stroke: var(--chev);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nx-landing .cta .arrow {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+.nx-landing .rule {
+  display: block;
+  background: linear-gradient(180deg, rgba(186, 200, 214, .70) 0%, rgba(206, 220, 232, .92) 52%, rgba(182, 198, 212, .68) 100%);
+}
+
+/* CTA GLASS (reproduce exactly) */
+.nx-landing .cta {
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(6, 12, 22, 0) 45%, rgba(6, 12, 22, .12) 78%, rgba(6, 12, 22, .28) 100%),
+    linear-gradient(90deg, rgba(255, 226, 178, .17) 0%, rgba(255, 236, 208, .07) 22%, rgba(176, 206, 238, .03) 55%, rgba(150, 196, 244, .09) 100%),
+    linear-gradient(90deg, rgba(255, 255, 255, .24) 0%, rgba(255, 255, 255, .17) 12%, rgba(255, 255, 255, .11) 26%, rgba(255, 255, 255, .07) 42%, rgba(255, 255, 255, .05) 60%, rgba(255, 255, 255, .04) 80%, rgba(255, 255, 255, .04) 100%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(.45);
+  backdrop-filter: blur(var(--blur)) saturate(.45);
+  box-shadow:
+    0 calc(var(--u) * -2) calc(var(--u) * 20) rgba(255, 224, 176, .20),
+    0 0 var(--glow) rgba(168, 204, 252, .16),
+    inset 0 var(--hairline) 0 0 rgba(255, 251, 242, .45);
+  position: relative;
+  cursor: pointer;
+}
+
+.nx-landing .cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--hairline);
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, .95) 0%, rgba(255, 252, 246, .20) 45%, rgba(255, 252, 246, 0) 78%),
+    linear-gradient(90deg, rgba(255, 228, 182, .95) 0%, rgba(250, 236, 210, .70) 12%, rgba(226, 230, 234, .03) 32%, rgba(214, 226, 240, .02) 62%, rgba(200, 228, 250, .70) 90%, rgba(186, 224, 247, .95) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* WEIGHTS AND COLOURS by id (all layouts) */
+.nx-landing #word {
+  font-variation-settings: 'wght' 531;
+  color: var(--ink);
+}
+
+.nx-landing #about,
+.nx-landing #product,
+.nx-landing #solutions,
+.nx-landing #login {
+  font-variation-settings: 'wght' 506;
+  color: var(--nav);
+}
+
+.nx-landing #contact {
+  font-variation-settings: 'wght' 581;
+  color: var(--navdim);
+}
+
+.nx-landing #h1a,
+.nx-landing #h1b {
+  font-variation-settings: 'wght' 424;
+  color: var(--ink);
+}
+
+.nx-landing #sub1,
+.nx-landing #sub2 {
+  font-variation-settings: 'wght' 446;
+  color: var(--sub);
+}
+
+.nx-landing #cta {
+  font-variation-settings: 'wght' 497;
+  color: var(--ink);
+}
+
+.nx-landing #f1,
+.nx-landing #f2,
+.nx-landing #f3,
+.nx-landing #f4 {
+  font-variation-settings: 'wght' 534;
+  color: var(--feat);
+}
+
+.nx-landing #foot1a,
+.nx-landing #foot1b,
+.nx-landing #foot2 {
+  font-variation-settings: 'wght' 521;
+  color: var(--foot);
+}
+
+/* ── 7. ENTRANCE SEQUENCE (pure CSS, once, ~2.1s) ───────── */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes en-wipe {
+    from {
+      clip-path: inset(-.78em 0 calc(100% + .78em) 0);
+      translate: 0 var(--rise);
+    }
+    to {
+      clip-path: inset(-.78em 0 -.78em 0);
+      translate: 0 0;
+    }
+  }
+
+  @keyframes en-lift {
+    from {
+      opacity: 0;
+      translate: 0 var(--rise);
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @keyframes en-settle {
+    from {
+      opacity: 0;
+      translate: 0 calc(var(--rise) * .7);
+      scale: .99;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+      scale: 1;
+    }
+  }
+
+  @keyframes en-draw {
+    from {
+      scale: 1 0;
+    }
+    to {
+      scale: 1 1;
+    }
+  }
+
+  html:not(.is-entered) .nx-landing .brand {
+    animation: en-lift .60s var(--ent-soft) .12s backwards;
+  }
+  html:not(.is-entered) .nx-landing #about {
+    animation: en-lift .55s var(--ent-soft) .20s backwards;
+  }
+  html:not(.is-entered) .nx-landing #product {
+    animation: en-lift .55s var(--ent-soft) .25s backwards;
+  }
+  html:not(.is-entered) .nx-landing #solutions {
+    animation: en-lift .55s var(--ent-soft) .30s backwards;
+  }
+  html:not(.is-entered) .nx-landing .login {
+    animation: en-lift .55s var(--ent-soft) .35s backwards;
+  }
+  html:not(.is-entered) .nx-landing .pill {
+    animation: en-settle .60s var(--ent-soft) .40s backwards;
+  }
+  html:not(.is-entered) .nx-landing .burger {
+    animation: en-lift .60s var(--ent-soft) .40s backwards;
+  }
+  html:not(.is-entered) .nx-landing #h1a {
+    animation: en-wipe .95s var(--ent-line) .34s backwards;
+  }
+  html:not(.is-entered) .nx-landing #h1b {
+    animation: en-wipe .95s var(--ent-line) .44s backwards;
+  }
+  html:not(.is-entered) .nx-landing #sub1 {
+    animation: en-lift .70s var(--ent-soft) .74s backwards;
+  }
+  html:not(.is-entered) .nx-landing #sub2 {
+    animation: en-lift .70s var(--ent-soft) .80s backwards;
+  }
+  html:not(.is-entered) .nx-landing .cta {
+    animation: en-lift .80s var(--ent-line) .94s backwards;
+  }
+  html:not(.is-entered) .nx-landing .feats li:nth-child(1) {
+    animation: en-lift .60s var(--ent-soft) 1.08s backwards;
+  }
+  html:not(.is-entered) .nx-landing .feats li:nth-child(2) {
+    animation: en-lift .60s var(--ent-soft) 1.15s backwards;
+  }
+  html:not(.is-entered) .nx-landing .feats li:nth-child(3) {
+    animation: en-lift .60s var(--ent-soft) 1.22s backwards;
+  }
+  html:not(.is-entered) .nx-landing .feats li:nth-child(4) {
+    animation: en-lift .60s var(--ent-soft) 1.29s backwards;
+  }
+  html:not(.is-entered) .nx-landing .rule {
+    transform-origin: top;
+    animation: en-draw .55s var(--ent-line) 1.34s backwards;
+  }
+  html:not(.is-entered) .nx-landing #foot1a {
+    animation: en-lift .60s var(--ent-soft) 1.42s backwards;
+  }
+  html:not(.is-entered) .nx-landing #foot1b {
+    animation: en-lift .60s var(--ent-soft) 1.45s backwards;
+  }
+  html:not(.is-entered) .nx-landing #foot2 {
+    animation: en-lift .60s var(--ent-soft) 1.48s backwards;
+  }
+}
+
+/* ── 8. ARCHITECTURE A: LOCKED COMPOSITION (desktop) ─────── */
+@media (min-width: 1200px) and (min-height: 560px) and (min-aspect-ratio: 100/95) {
+  .nx-landing .bar,
+  .nx-landing .hero,
+  .nx-landing .foot {
+    left: 50%;
+    width: calc(var(--u) * 1536);
+    transform: translateX(-50%);
+  }
+  .nx-landing .bar {
+    top: 0;
+    height: calc(var(--u) * 120);
+  }
+  .nx-landing .foot {
+    bottom: 0;
+    height: calc(var(--u) * 140);
+  }
+  .nx-landing .hero {
+    top: 50%;
+    height: calc(var(--u) * 1024);
+    transform: translate(-50%, -50%);
+  }
+  .nx-landing .navtoggle,
+  .nx-landing .burger,
+  .nx-landing .scrim {
+    display: none;
+  }
+  .nx-landing .navpanel {
+    display: contents;
+  }
+  .nx-landing .bar > *,
+  .nx-landing .foot > *,
+  .nx-landing .hero > *,
+  .nx-landing .pill {
+    position: absolute;
+  }
+  .nx-landing .menu,
+  .nx-landing .menu a {
+    position: static;
+  }
+  .nx-landing .title,
+  .nx-landing .sub {
+    position: absolute;
+    inset: 0;
+    font-weight: inherit;
+    margin: 0;
+    padding: 0;
+  }
+  .nx-landing .bar span,
+  .nx-landing .foot span,
+  .nx-landing .title span,
+  .nx-landing .sub span {
+    position: absolute;
+    line-height: 0;
+    white-space: nowrap;
+  }
+
+  /* BRAND WORDMARK & LOGO */
+  .nx-landing .brand {
+    left: calc(var(--u) * 221);
+    top: calc(var(--u) * 51);
+    display: flex;
+    align-items: center;
+    gap: calc(var(--u) * 8);
+  }
+  .nx-landing .brand svg,
+  .nx-landing .brand img,
+  .nx-landing .brand .brand-emblem-img,
+  .nx-landing .brand .brand-emblem-3d,
+  .nx-landing .brand .aa-emblem-3d-wrap {
+    width: calc(var(--u) * 26) !important;
+    height: calc(var(--u) * 26) !important;
+    flex-shrink: 0;
+  }
+  .nx-landing .brand #word {
+    position: static;
+    line-height: 1;
+    font-size: calc(var(--u) * 21);
+    letter-spacing: calc(var(--u) * 3.6);
+  }
+
+  /* NAV LINKS: at least 64 units after wordmark,
+     and equal 44-unit gaps between Lobby, Leaderboard, Who We Are */
+  .nx-landing #about {
+    font-size: calc(var(--u) * 13.5);
+    letter-spacing: calc(var(--u) * -0.5);
+    left: calc(var(--u) * 492);
+    top: calc(var(--u) * 65.66);
+  }
+  .nx-landing #product {
+    font-size: calc(var(--u) * 13.5);
+    letter-spacing: calc(var(--u) * -0.167);
+    left: calc(var(--u) * 576.1);
+    top: calc(var(--u) * 65.66);
+  }
+  .nx-landing #solutions {
+    font-size: calc(var(--u) * 13.5);
+    letter-spacing: calc(var(--u) * -0.5);
+    left: calc(var(--u) * 706.3);
+    top: calc(var(--u) * 65.66);
+  }
+
+  /* SIGN IN ARROW GROUP: right edge ends exactly 40 units before Join The Roster (1191.5 - 40 = 1151.5) */
+  .nx-landing .login {
+    position: absolute;
+    right: calc(100% - var(--u) * 1151.5);
+    top: calc(var(--u) * 43.5);
+    height: calc(var(--u) * 44);
+    display: flex;
+    align-items: center;
+    gap: calc(var(--u) * 10);
+    cursor: pointer;
+  }
+  .nx-landing .login #login {
+    position: static;
+    line-height: 1;
+    font-size: calc(var(--u) * 13.5);
+    letter-spacing: calc(var(--u) * -0.227);
+  }
+  .nx-landing .login .navarrow {
+    position: static;
+    width: calc(var(--u) * 10);
+    height: calc(var(--u) * 9);
+    stroke-width: 1.2;
+    flex-shrink: 0;
+  }
+
+  /* ROSTER PILL */
+  .nx-landing .pill {
+    left: calc(var(--u) * 1191.5);
+    top: calc(var(--u) * 43.5);
+    width: calc(var(--u) * 144);
+    height: calc(var(--u) * 44);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nx-landing #contact {
+    font-size: calc(var(--u) * 13.5);
+    letter-spacing: calc(var(--u) * 0.25);
+    left: 0;
+    right: 0;
+    text-align: center;
+    top: calc(var(--u) * 21.66);
+    margin-left: calc(var(--u) * -0.5);
+  }
+
+  /* HEADLINE & SUBHEAD */
+  .nx-landing #h1a {
+    font-size: calc(var(--u) * 46.8);
+    letter-spacing: calc(var(--u) * 0.532);
+    left: 0;
+    right: 0;
+    text-align: center;
+    top: calc(var(--u) * 285.222);
+    margin-left: calc(var(--u) * -1);
+  }
+  .nx-landing #h1b {
+    font-size: calc(var(--u) * 46.8);
+    letter-spacing: calc(var(--u) * -0.398);
+    left: 0;
+    right: 0;
+    text-align: center;
+    top: calc(var(--u) * 335.222);
+    margin-left: calc(var(--u) * -3);
+  }
+  .nx-landing #sub1 {
+    font-size: calc(var(--u) * 20.6);
+    letter-spacing: calc(var(--u) * 0.367);
+    left: 0;
+    right: 0;
+    text-align: center;
+    top: calc(var(--u) * 408.115);
+    margin-left: calc(var(--u) * -0.5);
+  }
+  .nx-landing #sub2 {
+    font-size: calc(var(--u) * 19.1);
+    letter-spacing: calc(var(--u) * -0.632);
+    left: 0;
+    right: 0;
+    text-align: center;
+    top: calc(var(--u) * 432.153);
+    margin-left: calc(var(--u) * -2);
+  }
+
+  /* CTA: Centred on page axis without using transform/translate,
+     label & arrow centred on button's middle */
+  .nx-landing .cta {
+    position: absolute;
+    left: calc(50% - var(--u) * 139.8);
+    top: calc(var(--u) * 555.2);
+    width: calc(var(--u) * 279.6);
+    height: calc(var(--u) * 46.6);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--u) * 12);
+  }
+  .nx-landing #cta {
+    position: static;
+    line-height: 1;
+    font-size: calc(var(--u) * 22);
+    letter-spacing: calc(var(--u) * -0.312);
+    white-space: nowrap;
+  }
+  .nx-landing .cta .arrow {
+    position: static;
+    width: calc(var(--u) * 16);
+    height: calc(var(--u) * 11);
+    flex-shrink: 0;
+  }
+
+  /* FEATURES: Centred flex row with equal 56-unit gaps,
+     same vertical top, no hand-staggered absolute offsets */
+  .nx-landing .feats {
+    position: absolute;
+    left: 0;
+    right: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--u) * 56);
+    top: calc(var(--u) * 718);
+    margin: 0;
+    padding: 0;
+  }
+  .nx-landing .feats li {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: calc(var(--u) * 10);
+    margin: 0;
+    padding: 0;
+    width: auto;
+    height: auto;
+  }
+  .nx-landing .feats .chev {
+    width: calc(var(--u) * 11);
+    height: calc(var(--u) * 20);
+    flex-shrink: 0;
+  }
+  .nx-landing .feats span {
+    position: static;
+    line-height: 1;
+    white-space: nowrap;
+    font-size: calc(var(--u) * 14.6);
+    letter-spacing: calc(var(--u) * -0.06);
+  }
+
+  /* VERTICAL RULE: Centred on page axis, ends at least 24 units above #foot1.
+     Hidden on viewports with height <= 760px */
+  .nx-landing .rule {
+    position: absolute;
+    left: calc(50% - var(--u) * 0.5);
+    top: calc(var(--u) * 750);
+    width: calc(var(--u) * 1);
+    height: calc(var(--u) * 26);
+  }
+
+  /* FOOTER */
+  .nx-landing .foot {
+    bottom: 0;
+    height: calc(var(--u) * 140);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: calc(var(--u) * 42);
+    gap: calc(var(--u) * 4.5);
+  }
+  .nx-landing .foot span {
+    position: static;
+    display: block;
+    line-height: 1.25;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .nx-landing #foot1a,
+  .nx-landing #foot1b {
+    font-size: calc(var(--u) * 16.3);
+    letter-spacing: calc(var(--u) * -0.256);
+  }
+  .nx-landing #foot2 {
+    font-size: calc(var(--u) * 16.3);
+    letter-spacing: calc(var(--u) * -0.667);
+  }
+}
+
+/* Hide vertical rule on desktop viewports with height <= 760px */
+@media (max-height: 760px) {
+  .nx-landing .rule {
+    display: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   9. ARCHITECTURE B: FLOW (tablet to phone)
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 1199px), (max-height: 559px), (max-aspect-ratio: 100/95) {
+  :root {
+    --c: min(calc(100vw / 430), calc(100vh / 860));
+  }
+
+  body,
+  .nx-landing {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100vh;
+    padding: calc(env(safe-area-inset-top) + calc(var(--c) * 24)) calc(var(--c) * 22) calc(env(safe-area-inset-bottom) + calc(var(--c) * 22));
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .nx-landing .bar,
+  .nx-landing .hero,
+  .nx-landing .foot {
+    position: static;
+    width: 100%;
+    transform: none;
+    left: auto;
+    top: auto;
+    right: auto;
+    bottom: auto;
+  }
+
+  /* BAR & BURGER */
+  .nx-landing .bar {
+    order: 1;
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--c) * 16);
+    height: auto;
+    flex-shrink: 0;
+  }
+  .nx-landing .brand {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--c) * 8);
+    min-height: 44px;
+    left: auto;
+    top: auto;
+    position: static;
+  }
+  .nx-landing .brand svg,
+  .nx-landing .brand img,
+  .nx-landing .brand .brand-emblem-img,
+  .nx-landing .brand .brand-emblem-3d,
+  .nx-landing .brand .aa-emblem-3d-wrap {
+    width: calc(var(--c) * 26) !important;
+    height: calc(var(--c) * 26) !important;
+    flex-shrink: 0;
+  }
+  .nx-landing #word {
+    font-size: calc(var(--c) * 19);
+    letter-spacing: .06em;
+    position: static;
+    line-height: 1;
+  }
+
+  /* BURGER: Pure CSS checkbox driven */
+  .nx-landing .navtoggle {
+    display: block;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    margin: 0;
+    pointer-events: none;
+  }
+  .nx-landing .burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--c) * 42);
+    height: calc(var(--c) * 30);
+    border-radius: 999px;
+    cursor: pointer;
+    border: var(--hairline) solid var(--hair);
+    background: rgba(255, 255, 255, .03);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(.45);
+    backdrop-filter: blur(var(--blur)) saturate(.45);
+    user-select: none;
+    outline: none;
+    position: relative;
+    z-index: 10;
+  }
+  .nx-landing .burger svg {
+    width: calc(var(--c) * 19);
+    height: auto;
+    fill: none;
+    stroke: var(--nav);
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    pointer-events: none;
+  }
+  .nx-landing .burger svg path {
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform .24s ease, opacity .18s ease;
+  }
+  .nx-landing .burger:focus-visible,
+  .nx-landing .navtoggle:focus-visible ~ .burger {
+    outline: 2px solid #9fe0ff;
+    outline-offset: 3px;
+  }
+  .nx-landing .navtoggle:checked ~ .burger .b1 {
+    transform: translateY(6px) rotate(45deg);
+  }
+  .nx-landing .navtoggle:checked ~ .burger .b2 {
+    opacity: 0;
+  }
+  .nx-landing .navtoggle:checked ~ .burger .b3 {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+  .nx-landing .scrim {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    cursor: pointer;
+  }
+  .nx-landing .navtoggle:checked ~ .scrim {
+    display: block;
+  }
+
+  /* PANEL */
+  .nx-landing .navpanel {
+    position: absolute;
+    top: calc(100% + calc(var(--c) * 12));
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--c) * 2);
+    width: min(calc(var(--c) * 268), 78vw);
+    padding: calc(var(--c) * 12);
+    border-radius: calc(var(--c) * 20);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, .045) 100%),
+      linear-gradient(90deg, rgba(255, 226, 178, .06) 0%, rgba(150, 196, 244, .06) 100%),
+      linear-gradient(180deg, rgba(6, 12, 22, .60) 0%, rgba(6, 12, 22, .70) 100%);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(.45);
+    backdrop-filter: blur(var(--blur)) saturate(.45);
+    box-shadow: 0 calc(var(--c) * 14) calc(var(--c) * 38) rgba(2, 6, 14, .45);
+    opacity: 0;
+    transform: translateY(calc(var(--c) * -8)) scale(.985);
+    transform-origin: 100% 0;
+    pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
+    z-index: 10;
+  }
+  .nx-landing .navtoggle:checked ~ .navpanel {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  .nx-landing .navpanel .menu {
+    display: flex;
+    flex-direction: column;
+  }
+  .nx-landing .navpanel .menu a,
+  .nx-landing .navpanel .login {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--c) * 8);
+    padding: calc(var(--c) * 10) calc(var(--c) * 12);
+    border-radius: calc(var(--c) * 12);
+    font-size: calc(var(--c) * 16);
+    color: var(--nav);
+    transition: background .15s ease;
+    position: static;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+    height: auto;
+  }
+  .nx-landing .navpanel .menu a:hover,
+  .nx-landing .navpanel .login:hover {
+    background: rgba(255, 255, 255, .07);
+  }
+  .nx-landing .navpanel #about,
+  .nx-landing .navpanel #product,
+  .nx-landing .navpanel #solutions,
+  .nx-landing .navpanel #login {
+    position: static;
+    line-height: 1;
+    font-size: inherit;
+    letter-spacing: normal;
+    left: auto;
+    top: auto;
+  }
+  .nx-landing .navpanel .navarrow {
+    margin-left: auto;
+    height: auto;
+    width: calc(var(--c) * 11);
+    stroke-width: 1.2;
+    position: static;
+    flex-shrink: 0;
+  }
+  .nx-landing .navpanel .pill {
+    margin-top: calc(var(--c) * 8);
+    text-align: center;
+    white-space: nowrap;
+    padding: calc(var(--c) * 11) calc(var(--c) * 16);
+    font-size: calc(var(--c) * 15);
+    position: static;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+  }
+  .nx-landing .navpanel .pill #contact {
+    position: static;
+    line-height: 1;
+    font-size: inherit;
+    letter-spacing: normal;
+  }
+
+  /* HERO (flow) */
+  .nx-landing .hero {
+    order: 2;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: calc(var(--c) * 20);
+    height: auto;
+    position: relative;
+    padding: calc(var(--c) * 8) 0;
+    box-sizing: border-box;
+  }
+  .nx-landing .title {
+    font-size: calc(var(--c) * 33);
+    line-height: 1.12;
+    max-width: 15ch;
+    position: static;
+    margin: 0;
+  }
+  .nx-landing .title span {
+    position: static;
+    display: inline;
+    line-height: inherit;
+    white-space: normal;
+  }
+  .nx-landing .sub {
+    color: var(--sub);
+    font-size: calc(var(--c) * 17);
+    line-height: 1.32;
+    max-width: 26ch;
+    position: static;
+    margin: 0;
+  }
+  .nx-landing .sub span {
+    position: static;
+    display: inline;
+    line-height: inherit;
+    white-space: normal;
+  }
+  .nx-landing .cta {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--c) * 12);
+    padding: calc(var(--c) * 16) calc(var(--c) * 26);
+    font-size: calc(var(--c) * 18);
+    width: auto;
+    height: auto;
+    left: auto;
+    top: auto;
+    min-height: 44px;
+    flex-shrink: 0;
+  }
+  .nx-landing .cta #cta {
+    position: static;
+    line-height: 1;
+    font-size: inherit;
+    white-space: nowrap;
+  }
+  .nx-landing .cta .arrow {
+    width: calc(var(--c) * 16);
+    height: calc(var(--c) * 11);
+    position: static;
+    flex-shrink: 0;
+  }
+  .nx-landing .feats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: calc(var(--c) * 15) calc(var(--c) * 13);
+    width: 100%;
+    max-width: calc(var(--c) * 400);
+    margin-top: calc(var(--c) * 6);
+    position: static;
+    top: auto;
+    left: auto;
+    flex-shrink: 0;
+  }
+  .nx-landing .feats li {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--c) * 9);
+    font-size: calc(var(--c) * 14);
+    position: static;
+    width: auto;
+    height: auto;
+  }
+  .nx-landing .feats .chev {
+    width: calc(var(--c) * 9);
+    height: calc(var(--c) * 16);
+    flex: none;
+    position: static;
+  }
+  .nx-landing .feats span {
+    position: static;
+    line-height: 1;
+    font-size: inherit;
+    letter-spacing: -0.01em;
+  }
+  .nx-landing .rule {
+    width: 1px;
+    height: calc(var(--c) * 33);
+    margin: calc(var(--c) * 19) auto 0;
+    position: static;
+    top: auto;
+    left: auto;
+    flex-shrink: 0;
+  }
+  .nx-landing .foot {
+    order: 3;
+    text-align: center;
+    color: var(--foot);
+    font-size: calc(var(--c) * 13);
+    line-height: 1.55;
+    position: relative;
+    height: auto;
+    flex-shrink: 0;
+  }
+  .nx-landing .foot span {
+    display: block;
+    position: static;
+    line-height: inherit;
+    white-space: normal;
+  }
+}
+
+/* ── B1 PHONE (@media (max-width:599px),(max-height:429px)) ── */
+@media (max-width: 599px), (max-height: 429px) {
+  :root {
+    --c: min(calc(100vw / 360), calc(100vh / 770), 1px);
+    --rise: 6px;
+  }
+
+  body,
+  .nx-landing {
+    padding: calc(env(safe-area-inset-top) + calc(var(--c) * 28)) calc(var(--c) * 26) calc(env(safe-area-inset-bottom) + calc(var(--c) * 26));
+  }
+  .nx-landing .brand svg,
+  .nx-landing .brand img,
+  .nx-landing .brand .brand-emblem-img,
+  .nx-landing .brand .brand-emblem-3d,
+  .nx-landing .brand .aa-emblem-3d-wrap {
+    width: calc(var(--c) * 28) !important;
+    height: calc(var(--c) * 28) !important;
+    flex-shrink: 0;
+  }
+  .nx-landing #word {
+    font-size: calc(var(--c) * 19);
+  }
+  .nx-landing .burger {
+    width: calc(var(--c) * 46);
+    height: calc(var(--c) * 33);
+    position: relative;
+  }
+  .nx-landing .burger::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: max(44px, 100%);
+    height: max(44px, 100%);
+    pointer-events: none;
+  }
+  .nx-landing .burger svg {
+    width: calc(var(--c) * 21);
+  }
+  .nx-landing .navpanel {
+    width: min(calc(var(--c) * 300), 82vw);
+    padding: calc(var(--c) * 15);
+    border-radius: calc(var(--c) * 22);
+  }
+  .nx-landing .navpanel .menu a,
+  .nx-landing .navpanel .login {
+    font-size: calc(var(--c) * 16);
+    padding: calc(var(--c) * 13) calc(var(--c) * 14);
+    border-radius: calc(var(--c) * 13);
+    min-height: max(44px, calc(var(--c) * 44));
+  }
+  .nx-landing .navpanel .pill {
+    font-size: calc(var(--c) * 16);
+    padding: calc(var(--c) * 13) calc(var(--c) * 18);
+    margin-top: calc(var(--c) * 9);
+    min-height: max(44px, calc(var(--c) * 44));
+  }
+
+  /* Phone veil (re-aimed) */
+  .nx-landing .veil {
+    background:
+      radial-gradient(130% 44% at 50% 45%, rgba(var(--veil), .50) 0%, rgba(var(--veil), .26) 55%, rgba(var(--veil), 0) 100%),
+      linear-gradient(180deg, rgba(var(--veil), .34) 0%, rgba(var(--veil), 0) 20%, rgba(var(--veil), 0) 60%, rgba(var(--veil), .36) 100%);
+  }
+
+  .nx-landing .hero {
+    gap: calc(var(--c) * 20);
+  }
+  .nx-landing .title {
+    font-size: calc(var(--c) * 32);
+    line-height: 1.2;
+    letter-spacing: -.002em;
+    max-width: none;
+    text-wrap: balance;
+  }
+  .nx-landing .title span {
+    display: block;
+  }
+  .nx-landing .sub {
+    font-size: calc(var(--c) * 16);
+    line-height: 1.45;
+    max-width: none;
+    text-wrap: balance;
+  }
+  .nx-landing .sub span {
+    display: block;
+  }
+  .nx-landing .cta {
+    font-size: calc(var(--c) * 16.5);
+    padding: calc(var(--c) * 15) calc(var(--c) * 28);
+    gap: calc(var(--c) * 12);
+    min-height: 44px;
+  }
+  .nx-landing .cta .arrow {
+    width: calc(var(--c) * 17);
+    height: calc(var(--c) * 12);
+  }
+  .nx-landing .feats {
+    grid-template-columns: repeat(2, max-content);
+    justify-content: center;
+    width: auto;
+    max-width: none;
+    gap: calc(var(--c) * 16);
+    margin-top: calc(var(--c) * 20);
+  }
+  .nx-landing .feats li {
+    font-size: calc(var(--c) * 13);
+    gap: calc(var(--c) * 10);
+  }
+  .nx-landing .feats .chev {
+    width: calc(var(--c) * 10);
+    height: calc(var(--c) * 18);
+  }
+  .nx-landing .rule {
+    height: calc(var(--c) * 30);
+    margin: calc(var(--c) * 20) auto 0;
+  }
+  .nx-landing .foot {
+    font-size: calc(var(--c) * 13.5);
+    line-height: 1.65;
+    text-wrap: balance;
+  }
+}
+
+/* ── LANDSCAPE PHONES (@media (max-height:429px) and (min-aspect-ratio:1/1)) ── */
+@media (max-height: 429px) and (min-aspect-ratio: 1/1) {
+  :root {
+    --c: min(calc(100vw / 760), calc(100vh / 430));
+  }
+
+  body,
+  .nx-landing {
+    padding: calc(env(safe-area-inset-top) + calc(var(--c) * 14)) calc(var(--c) * 20) calc(env(safe-area-inset-bottom) + calc(var(--c) * 14));
+  }
+
+  .nx-landing .hero {
+    gap: calc(var(--c) * 10);
+  }
+  .nx-landing .title {
+    font-size: calc(var(--c) * 28);
+    line-height: 1.15;
+    max-width: 32ch;
+  }
+  .nx-landing .title span {
+    display: inline;
+  }
+  .nx-landing .title #h1a {
+    margin-right: 0.45em;
+  }
+  .nx-landing .sub {
+    font-size: calc(var(--c) * 15);
+    max-width: 44ch;
+  }
+  .nx-landing .sub span {
+    display: inline;
+  }
+  .nx-landing .sub #sub1 {
+    margin-right: 0.35em;
+  }
+  .nx-landing .cta {
+    font-size: calc(var(--c) * 15);
+    padding: calc(var(--c) * 10) calc(var(--c) * 22);
+    min-height: 44px;
+  }
+  .nx-landing .feats {
+    grid-template-columns: repeat(4, max-content);
+    justify-content: center;
+    max-width: none;
+    gap: calc(var(--c) * 20);
+    margin-top: calc(var(--c) * 2);
+  }
+  .nx-landing .feats li {
+    font-size: calc(var(--c) * 13);
+  }
+  .nx-landing .rule {
+    display: none !important;
+  }
+  .nx-landing .foot {
+    font-size: calc(var(--c) * 12.5);
+    line-height: 1.35;
+  }
+}
+
+/* ── B2 TABLET (@media (min-width:600px) and (min-height:430px) and (max-width:1199px)) ── */
+@media (min-width: 600px) and (min-height: 430px) and (max-width: 1199px) {
+  :root {
+    --c: min(calc(100vw / 860), calc(100vh / 1120));
+  }
+
+  body,
+  .nx-landing {
+    padding: calc(env(safe-area-inset-top) + calc(var(--c) * 40)) calc(var(--c) * 44) calc(env(safe-area-inset-bottom) + calc(var(--c) * 36));
+  }
+  .nx-landing .brand svg {
+    width: calc(var(--c) * 34);
+  }
+  .nx-landing #word {
+    font-size: calc(var(--c) * 30);
+  }
+  .nx-landing .burger {
+    width: calc(var(--c) * 60);
+    height: calc(var(--c) * 44);
+  }
+  .nx-landing .burger svg {
+    width: calc(var(--c) * 27);
+    stroke-width: 1.2;
+  }
+  .nx-landing .navpanel {
+    width: min(calc(var(--c) * 330), 56vw);
+    padding: calc(var(--c) * 16);
+    border-radius: calc(var(--c) * 26);
+    gap: calc(var(--c) * 4);
+  }
+  .nx-landing .navpanel .menu a,
+  .nx-landing .navpanel .login {
+    font-size: calc(var(--c) * 20);
+    padding: calc(var(--c) * 13) calc(var(--c) * 15);
+    border-radius: calc(var(--c) * 15);
+    gap: calc(var(--c) * 10);
+    min-height: max(44px, calc(var(--c) * 44));
+  }
+  .nx-landing .navpanel .navarrow {
+    width: calc(var(--c) * 14);
+  }
+  .nx-landing .navpanel .pill {
+    margin-top: calc(var(--c) * 10);
+    padding: calc(var(--c) * 14) calc(var(--c) * 20);
+    font-size: calc(var(--c) * 19);
+    min-height: max(44px, calc(var(--c) * 44));
+  }
+  .nx-landing .hero {
+    gap: calc(var(--c) * 26);
+  }
+  .nx-landing .title {
+    font-size: calc(var(--c) * 46);
+    line-height: 1.15;
+    max-width: none;
+  }
+  .nx-landing .title span {
+    display: block;
+  }
+  .nx-landing .sub {
+    font-size: calc(var(--c) * 21);
+    line-height: 1.34;
+    max-width: none;
+  }
+  .nx-landing .sub span {
+    display: block;
+  }
+  .nx-landing .cta {
+    gap: calc(var(--c) * 14);
+    padding: calc(var(--c) * 18) calc(var(--c) * 34);
+    font-size: calc(var(--c) * 21);
+    min-height: 44px;
+  }
+  .nx-landing .cta .arrow {
+    width: calc(var(--c) * 20);
+    height: calc(var(--c) * 14);
+  }
+  .nx-landing .feats {
+    grid-template-columns: repeat(2, max-content);
+    justify-content: center;
+    gap: calc(var(--c) * 22) calc(var(--c) * 54);
+    max-width: none;
+    margin-top: calc(var(--c) * 12);
+  }
+  .nx-landing .feats li {
+    gap: calc(var(--c) * 12);
+    font-size: calc(var(--c) * 16);
+  }
+  .nx-landing .feats .chev {
+    width: calc(var(--c) * 12);
+    height: calc(var(--c) * 21);
+  }
+  .nx-landing .rule {
+    height: calc(var(--c) * 46);
+    margin: calc(var(--c) * 30) auto 0;
+  }
+  .nx-landing .foot {
+    font-size: calc(var(--c) * 16);
+  }
+}
+
+/* Landscape tablets (@media (min-aspect-ratio:1/1) inside B2) */
+@media (min-width: 600px) and (min-height: 430px) and (max-width: 1199px) and (min-aspect-ratio: 1/1) {
+  :root {
+    --c: min(calc(100vw / 1040), calc(100vh / 780));
+  }
+  .nx-landing .feats {
+    grid-template-columns: repeat(4, max-content);
+    gap: calc(var(--c) * 40);
+  }
+}
+
+/* Hide rule in flow layout whenever viewport height <= 580px to prevent any collision */
+@media (max-width: 1199px) and (max-height: 580px) {
+  .nx-landing .rule {
+    display: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   10. DYNAMIC VIEWPORT OVERRIDE
+   ════════════════════════════════════════════════════════════ */
+@supports (height: 100dvh) {
+  @media (max-width: 1199px), (max-height: 559px), (max-aspect-ratio: 100/95) {
+    :root {
+      --c: min(calc(100vw / 430), calc(100dvh / 860));
+    }
+    body,
+    .nx-landing {
+      height: 100dvh;
+    }
+    @media (max-width: 599px), (max-height: 429px) {
+      :root {
+        --c: min(calc(100vw / 360), calc(100dvh / 770), 1px);
+      }
+    }
+    @media (max-height: 429px) and (min-aspect-ratio: 1/1) {
+      :root {
+        --c: min(calc(100vw / 760), calc(100dvh / 430));
+      }
+    }
+    @media (min-width: 600px) and (min-height: 430px) {
+      :root {
+        --c: min(calc(100vw / 860), calc(100dvh / 1120));
+      }
+      @media (min-aspect-ratio: 1/1) {
+        :root {
+          --c: min(calc(100vw / 1040), calc(100dvh / 780));
+        }
+      }
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   14. AUTH DIALOG MODAL (Phase D)
+   ════════════════════════════════════════════════════════════ */
+.nx-auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(2, 6, 15, 0.76);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.nx-auth-dialog {
+  position: relative;
+  width: min(440px, 94vw);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px 28px;
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, .045) 100%),
+    linear-gradient(90deg, rgba(255, 226, 178, .06) 0%, rgba(150, 196, 244, .06) 100%),
+    linear-gradient(180deg, rgba(6, 12, 22, .88) 0%, rgba(6, 12, 22, .96) 100%);
+  -webkit-backdrop-filter: blur(28px) saturate(.45);
+  backdrop-filter: blur(28px) saturate(.45);
+  border: 1px solid rgba(196, 214, 232, 0.22);
+  box-shadow: 0 24px 64px rgba(2, 6, 14, .85), inset 0 1px 0 rgba(255, 255, 255, .15);
+  color: var(--ink, #ffffff);
+  transform: translateY(0);
+  animation: nx-auth-enter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes nx-auth-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nx-auth-dialog::-webkit-scrollbar {
+  width: 5px;
+}
+.nx-auth-dialog::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 3px;
+}
+.nx-auth-dialog::-webkit-scrollbar-thumb {
+  background: rgba(196, 214, 232, 0.2);
+  border-radius: 3px;
+}
+.nx-auth-dialog::-webkit-scrollbar-thumb:hover {
+  background: rgba(196, 214, 232, 0.35);
+}
+
+.nx-auth-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.nx-auth-title {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.nx-auth-subtitle {
+  font-size: 10px;
+  color: var(--sub, #a2a9b8);
+  margin: 4px 0 0;
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.nx-auth-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -10px -10px 0 0;
+  background: transparent;
+  border: none;
+  color: var(--sub, #a2a9b8);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.nx-auth-close:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nx-auth-close:focus-visible {
+  outline: 2px solid rgba(140, 196, 255, 0.6);
+}
+
+.nx-auth-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  background: rgba(2, 6, 15, 0.55);
+  border: 1px solid rgba(196, 214, 232, 0.15);
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.nx-auth-tab {
+  flex: 1;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sub, #a2a9b8);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  min-height: 36px;
+}
+
+.nx-auth-tab:hover {
+  color: #ffffff;
+}
+
+.nx-auth-tab.is-active {
+  color: #ffffff;
+  background: rgba(140, 196, 255, 0.12);
+  border-color: rgba(140, 196, 255, 0.35);
+  box-shadow: 0 0 12px rgba(140, 196, 255, 0.15);
+}
+
+.nx-auth-dialog .input-field {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(196, 214, 232, 0.22);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 16px; /* 16px prevents iOS Safari auto-zoom */
+  line-height: 1.4;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.nx-auth-dialog .input-field::placeholder {
+  color: var(--sub, #a2a9b8);
+  opacity: 0.6;
+}
+
+.nx-auth-dialog .input-field:focus {
+  border-color: rgba(140, 196, 255, 0.75);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 2px rgba(140, 196, 255, 0.2);
+}
+
+.nx-auth-dialog .otp-digit {
+  width: 44px;
+  height: 52px;
+  text-align: center;
+  font-family: var(--font-mono, monospace);
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(196, 214, 232, 0.25);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nx-auth-dialog .otp-digit:focus {
+  border-color: rgba(255, 214, 150, 0.85);
+  box-shadow: 0 0 0 2px rgba(255, 214, 150, 0.25);
+}
+
+.nx-auth-dialog .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .14) 0%, rgba(255, 255, 255, .05) 100%),
+    rgba(14, 26, 48, .92);
+  border: 1px solid rgba(196, 214, 232, 0.35);
+  box-shadow: 0 4px 16px rgba(2, 6, 14, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  min-height: 44px;
+}
+
+.nx-auth-dialog .btn-primary:hover:not(:disabled) {
+  border-color: rgba(140, 196, 255, 0.7);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .22) 0%, rgba(255, 255, 255, .08) 100%),
+    rgba(20, 36, 68, .98);
+  box-shadow: 0 6px 24px rgba(140, 196, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.nx-auth-dialog .btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.nx-auth-footer {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(196, 214, 232, 0.12);
+  text-align: center;
+  font-family: var(--font-mono, monospace);
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  color: var(--sub, #a2a9b8);
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   10b. STICKY NAV (Active after hero scrolls past)
+   ════════════════════════════════════════════════════════════ */
+.nx-landing .bar.is-sticky {
+  position: fixed !important;
+  top: 0 !important;
+  z-index: 100 !important;
+  transition: opacity 150ms ease;
+}
+
+.nx-landing .bar.is-sticky::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(2, 6, 15, 0.90);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(196, 214, 232, 0.16);
+  z-index: -1;
+  pointer-events: none;
+}
+
+@media (min-width: 1200px) and (min-height: 560px) and (min-aspect-ratio: 100/95) {
+  .nx-landing .bar.is-sticky {
+    left: 50% !important;
+    width: calc(var(--u) * 1536) !important;
+    transform: translateX(-50%) !important;
+    height: calc(var(--u) * 120) !important;
+  }
+
+  .nx-landing .bar.is-sticky::before {
+    height: calc(var(--u) * 105);
+  }
+}
+
+@media (max-width: 1199px), (max-height: 559px), (max-aspect-ratio: 100/95) {
+  .nx-landing .bar.is-sticky {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    transform: none !important;
+    background: rgba(2, 6, 15, 0.90);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(196, 214, 232, 0.16);
+    padding: calc(env(safe-area-inset-top) + calc(var(--c) * 14)) calc(var(--c) * 22) calc(var(--c) * 14) !important;
+    box-sizing: border-box;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   11. REDUCED MOTION
+   ════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
