@@ -1,0 +1,439 @@
+/* ═══════════════════════════════════════════════════════════
+   AlgoArena Mascot Guide - Phase A Styles
+   Tokens: --bg-2, --hair, --gold, --blue from home-tokens.css
+   All layout: fixed, pointer-events:none on wrapper.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Wrapper: fixed bottom-right, never blocks clicks ─────── */
+.mascot-root {
+  position: fixed;
+  right: max(20px, env(safe-area-inset-right, 0px));
+  bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  z-index: 400;
+  /* below nav (500+), below auth dialog (600+) */
+  pointer-events: none;
+  /* HARD RULE: wrapper passes all clicks through */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  /* Reserve space to prevent layout shift */
+  width: 64px;
+  min-height: 64px;
+}
+
+@media (max-width: 600px) {
+  .mascot-root {
+    width: 48px;
+    min-height: 48px;
+    right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: max(64px, calc(env(safe-area-inset-bottom, 0px) + 52px));
+  }
+}
+
+/* ── Float animation (disabled in reduced-motion / low-power) ── */
+@keyframes mascot-float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.mascot-button-wrap {
+  pointer-events: auto;
+  /* this element receives clicks */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mascot-button-wrap:not(.mascot-no-float) {
+  animation: mascot-float 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot-button-wrap {
+    animation: none !important;
+  }
+}
+
+/* ── Mascot button ────────────────────────────────────────── */
+.mascot-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  /* 44px minimum hit area on mobile */
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mascot-btn:focus-visible {
+  /* Site focus ring pattern */
+  outline: 1.5px solid var(--blue, #8cc4ff);
+  outline-offset: 3px;
+}
+
+/* ── Tip bubble ───────────────────────────────────────────── */
+.mascot-bubble-wrap {
+  pointer-events: auto;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+}
+
+.mascot-bubble {
+  background: var(--bg-2, #0a1428);
+  border: 1px solid var(--hair, rgba(196, 214, 232, 0.72));
+  border-radius: 6px;
+  padding: 12px 14px 10px;
+  max-width: 260px;
+  min-width: 180px;
+  position: relative;
+
+  /* 160ms fade + 6px translate */
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.mascot-bubble.mascot-bubble-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 600px) {
+  .mascot-bubble {
+    max-width: 220px;
+  }
+}
+
+.mascot-bubble-text {
+  font-family: 'Sora Variable', 'Sora', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink, #ffffff);
+  /* max 2 lines ~90 chars */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-right: 24px;
+  /* room for close btn */
+}
+
+/* ── Bubble close button ─────────────────────────────────── */
+.mascot-bubble-close {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--sub, #a2a9b8);
+  pointer-events: auto;
+  padding: 0;
+  outline: none;
+}
+
+.mascot-bubble-close:focus-visible {
+  outline: 1px solid var(--blue, #8cc4ff);
+  outline-offset: 2px;
+}
+
+.mascot-bubble-close:hover {
+  color: var(--ink, #ffffff);
+}
+
+/* ── Bubble action button ─────────────────────────────────── */
+.mascot-bubble-action {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  font-family: 'Sora Variable', 'Sora', system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  color: var(--blue, #8cc4ff);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.mascot-bubble-action:focus-visible {
+  outline: 1px solid var(--blue, #8cc4ff);
+  outline-offset: 2px;
+}
+
+/* ── Mascot menu popover ─────────────────────────────────── */
+.mascot-menu {
+  pointer-events: auto;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: var(--bg-2, #0a1428);
+  border: 1px solid var(--hair, rgba(196, 214, 232, 0.72));
+  border-radius: 6px;
+  overflow: hidden;
+  min-width: 200px;
+
+  opacity: 0;
+  transform: translateY(6px) scale(0.97);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+  pointer-events: none;
+}
+
+.mascot-menu.mascot-menu-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.mascot-menu-row {
+  display: block;
+  width: 100%;
+  padding: 11px 16px;
+  font-family: 'Sora Variable', 'Sora', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: var(--ink, #ffffff);
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  border-bottom: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08));
+  transition: background 120ms ease;
+}
+
+.mascot-menu-row:last-child {
+  border-bottom: none;
+}
+
+.mascot-menu-row:hover {
+  background: rgba(140, 196, 255, 0.07);
+}
+
+.mascot-menu-row:focus-visible {
+  outline: 1px solid var(--blue, #8cc4ff);
+  outline-offset: -2px;
+  background: rgba(140, 196, 255, 0.07);
+}
+
+/* Destructive row (Hide the guide, Don't show tips) */
+.mascot-menu-row.mascot-menu-row-dim {
+  color: var(--sub, #a2a9b8);
+}
+
+.mascot-menu-row.mascot-menu-row-dim:hover {
+  color: var(--ink, #ffffff);
+}
+
+/* ── Hidden toggle (footer) ───────────────────────────────── */
+.mascot-toggle-btn {
+  font-family: 'Sora Variable', 'Sora', system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  color: var(--sub, #a2a9b8);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  outline: none;
+}
+
+.mascot-toggle-btn:focus-visible {
+  outline: 1px solid var(--blue, #8cc4ff);
+  outline-offset: 2px;
+}
+
+/* ── Reduced-motion overrides ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+
+  .mascot-bubble,
+  .mascot-menu {
+    transition: none !important;
+  }
+
+  .mascot-bubble.mascot-bubble-visible,
+  .mascot-menu.mascot-menu-open {
+    opacity: 1;
+    transform: none !important;
+  }
+}
+
+/* ── Section outline for tour ────────────────────────────── */
+.mascot-tour-outline {
+  outline: 1px solid var(--blue, #8cc4ff);
+  outline-offset: 4px;
+  transition: outline 120ms ease;
+}
+
+/* Tour counter mono text */
+.mascot-tour-counter {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--sub, #a2a9b8);
+  margin-top: 6px;
+  display: block;
+}
+
+/* ── Debug badge ──────────────────────────────────────────── */
+.mascot-debug-badge {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  background: rgba(255, 214, 150, 0.12);
+  border: 1px solid rgba(255, 214, 150, 0.4);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: rgba(255, 214, 150, 0.9);
+  pointer-events: none;
+  z-index: 9999;
+  max-width: 240px;
+  line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Phase B2 — Travelling Mascot
+   ════════════════════════════════════════════════════════════ */
+
+/* When travelling, mascot-root switches anchor from bottom-right
+   to top-left so translate3d drives the full position. */
+.mascot-root.mascot-travelling {
+  right: auto;
+  bottom: auto;
+  left: 0;
+  top: 0;
+  width: 0;
+  min-height: 0;
+}
+
+/* Tilt the face shell during travel; 0deg on arrival */
+.mascot-root.mascot-travelling .mascot-button-wrap {
+  transform-origin: bottom center;
+  transform: rotate(var(--mascot-travel-tilt, 0deg));
+  transition: transform 200ms ease;
+}
+
+@keyframes mascot-hop-arrive {
+  0% {
+    transform: rotate(0deg) translateY(0);
+  }
+
+  30% {
+    transform: rotate(0deg) translateY(-8px) scale(1.04);
+  }
+
+  60% {
+    transform: rotate(0deg) translateY(3px) scale(0.97);
+  }
+
+  80% {
+    transform: rotate(0deg) translateY(-2px) scale(1.01);
+  }
+
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+}
+
+@keyframes mascot-peek-arrive {
+  0% {
+    opacity: 0.3;
+    transform: translateY(12px) scale(0.9);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes mascot-settle-arrive {
+  0% {
+    opacity: 0;
+    transform: scale(0.88) translateY(6px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.mascot-root.mascot-arriving-hop .mascot-button-wrap {
+  animation: mascot-hop-arrive 500ms cubic-bezier(.22, .8, .26, 1) both;
+}
+
+.mascot-root.mascot-arriving-peek .mascot-button-wrap {
+  animation: mascot-peek-arrive 340ms ease both;
+}
+
+.mascot-root.mascot-arriving-settle .mascot-button-wrap {
+  animation: mascot-settle-arrive 300ms ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot-root.mascot-travelling {
+    transition: none !important;
+  }
+
+  .mascot-root.mascot-arriving-hop .mascot-button-wrap,
+  .mascot-root.mascot-arriving-peek .mascot-button-wrap,
+  .mascot-root.mascot-arriving-settle .mascot-button-wrap {
+    animation: none !important;
+  }
+}
+
+/* Below breakpoint: revert to corner */
+@media (max-width: 900px) {
+  .mascot-root.mascot-travelling {
+    right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: max(64px, calc(env(safe-area-inset-bottom, 0px) + 52px));
+    left: auto;
+    top: auto;
+    width: 48px;
+    min-height: 48px;
+  }
+
+  .mascot-root.mascot-travelling .mascot-button-wrap {
+    transform: none !important;
+    animation: none !important;
+  }
+}
+
+/* Bubble / menu left-side mirroring */
+.mascot-root.mascot-on-left .mascot-bubble-wrap {
+  left: 0;
+  right: auto;
+}
+
+.mascot-root.mascot-on-left .mascot-menu {
+  left: 0;
+  right: auto;
+}

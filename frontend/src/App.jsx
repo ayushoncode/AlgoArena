@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './hooks/useAuth'
@@ -20,9 +20,15 @@ import ShareExperienceWizard from './pages/ShareExperienceWizard'
 import { useSocket } from './hooks/useSocket'
 import { getActiveMatch, setActiveMatch } from './utils/activeMatch'
 import { ThemeProvider } from './context/ThemeContext'
+import MascotProvider from './components/mascot/MascotProvider.jsx'
 
 import { Shield, ChevronRight } from 'lucide-react'
 import { PageWrapper, HudPanel } from './components/ui/index.jsx'
+
+// Dev-only preview route -- lazy, tree-shaken in production builds
+const DevMascot = import.meta.env.DEV
+  ? React.lazy(() => import('./pages/DevMascot.jsx'))
+  : null
 
 /**
  * ScrollToTop — Scrolls window to top whenever pathname changes.
@@ -171,6 +177,8 @@ function AppLayout() {
       <ActiveMatchGuard />
       <UsernameOnboardingModal />
       <InstituteOnboardingModal />
+      {/* Mascot guide -- one mount line, lazy-loaded after first paint */}
+      <MascotProvider />
       {!isMatchPage && !isEditorialPage && <Navbar />}
       {/* Remove pt-14 padding and use h-screen on match pages only */}
       <main className={isMatchPage ? "h-screen w-screen overflow-hidden" : isEditorialPage ? "min-h-screen w-full relative" : "pt-14 min-h-screen"}>
@@ -193,6 +201,8 @@ function AppLayout() {
 
           <Route path="/match/:roomId" element={<Match />} />
           <Route path="/result" element={<Result />} />
+          {/* Dev-only preview routes (not built in production) */}
+          {DevMascot && <Route path="/dev/mascot" element={<React.Suspense fallback={null}><DevMascot /></React.Suspense>} />}
         </Routes>
       </main>
     </>
