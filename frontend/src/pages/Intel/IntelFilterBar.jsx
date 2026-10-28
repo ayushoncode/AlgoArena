@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { IconSearch, IconClose, IconFilter } from '../../components/icons/index.jsx'
 
 /**
- * IntelFilterBar — Sticky hairline filter bar with ruled selects and mobile sheet
+ * IntelFilterBar: Sticky hairline filter bar with ruled selects and mobile sheet
  * ─────────────────────────────────────────────────────────────────────────────
  * Provides keyword and company autocomplete search, outcome, difficulty, year,
  * round type, topic, source (intern track), and sort controls.

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 
 /**
- * IntelInsightsStrip — Plain ruled summary computed purely from loaded list
+ * IntelInsightsStrip: Plain ruled summary computed purely from loaded list
  * ──────────────────────────────────────────────────────────────────────────
  * Shows "Most reported companies" and "Most asked topics".
  * Hidden if reports list is small (< 4). Zero network requests.

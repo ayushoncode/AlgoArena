@@ -5,7 +5,7 @@ import IntelInsightsStrip from './IntelInsightsStrip'
 import { IconPlus, IconChevronLeft, IconChevronRight } from '../../components/icons/index.jsx'
 
 /**
- * IntelReportsListV2 — Presentational List View for Intel Reports
+ * IntelReportsListV2: Presentational List View for Intel Reports
  * ─────────────────────────────────────────────────────────────
  * Renders the calm, trustworthy reference library layout:
  * - Clean editorial header with actions
@@ -265,7 +265,12 @@ export default function IntelReportsListV2({
               <IntelReportRow
                 key={exp.id}
                 report={exp}
+                viewMode={viewMode}
                 onClick={() => navigate(`/experiences/${exp.id}`)}
+                onEdit={(e) => {
+                  e.stopPropagation()
+                  navigate(`/experiences/${exp.id}/edit`)
+                }}
                 onToggleHelpful={handleToggleHelpful}
                 onToggleBookmark={handleToggleBookmark}
               />

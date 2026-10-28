@@ -1,7 +1,7 @@
 import React from 'react'
 
 /**
- * IntelMonogram — Square company monogram drawn with CSS hairline
+ * IntelMonogram: Square company monogram drawn with CSS hairline
  * ───────────────────────────────────────────────────────────────
  * Renders 1-2 clean uppercase characters in mono.
  * No external company logos or images.
