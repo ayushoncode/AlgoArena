@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useLocation, useNavigate } from 'react-router-dom'
+import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Editor from '@monaco-editor/react'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../context/ThemeContext'
@@ -10,6 +10,9 @@ import LeetCodeProblemView from '../components/LeetCodeProblemView'
 import { buildStarterTemplate, TEMPLATES } from '../utils/problemSignatures'
 import { Flag, Play, ChevronUp, Clock, AlertTriangle, Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { RankBadge, DiffChip, VerdictChip, getArenaTier } from '../components/ui'
+import BattleRoomV2 from './Match/BattleRoomV2'
+import EditorToolbarV2 from './Match/EditorToolbarV2'
+import RunConsoleV2 from './Match/RunConsoleV2'
 
 import { ArenaLogo } from '../components/ArenaLogo'
 import { setActiveMatch, clearActiveMatch } from '../utils/activeMatch'
@@ -39,6 +42,7 @@ function useMatchTimer(startedAt) {
    MONACO EDITOR THEME
 ════════════════════════════════════════════════ */
 function defineTheme(monaco) {
+  // Legacy theme definition kept for ?ui=legacy
   monaco.editor.defineTheme('algoarena', {
     base: 'vs-dark',
     inherit: true,
@@ -64,6 +68,64 @@ function defineTheme(monaco) {
       'editorGutter.background': '#0B1120',
       'scrollbarSlider.background': '#1B254080',
       'scrollbarSlider.hoverBackground': '#243356AA',
+    },
+  })
+
+  // AlgoArena V2 Dark Theme
+  monaco.editor.defineTheme('algoarena-v2-dark', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '4a5878', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '8cc4ff' },
+      { token: 'string', foreground: '86efac' },
+      { token: 'number', foreground: 'ffd696' },
+      { token: 'function', foreground: 'e2e8f4' },
+      { token: 'type', foreground: '94a3b8' },
+      { token: 'variable', foreground: 'e2e8f4' },
+      { token: 'delimiter', foreground: '64748b' },
+      { token: 'operator', foreground: '8cc4ff' },
+    ],
+    colors: {
+      'editor.background': '#060d1c',
+      'editor.foreground': '#e2e8f4',
+      'editorLineNumber.foreground': '#4a5878',
+      'editorLineNumber.activeForeground': '#38bdf8',
+      'editor.selectionBackground': '#38bdf81f',
+      'editor.lineHighlightBackground': '#38bdf80d',
+      'editorCursor.foreground': '#e2e8f4',
+      'editorGutter.background': '#060d1c',
+      'scrollbarSlider.background': '#1e293b66',
+      'scrollbarSlider.hoverBackground': '#33415599',
+    },
+  })
+
+  // AlgoArena V2 Light Theme
+  monaco.editor.defineTheme('algoarena-v2-light', {
+    base: 'vs',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '64748b', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '0284c7' },
+      { token: 'string', foreground: '15803d' },
+      { token: 'number', foreground: 'b45309' },
+      { token: 'function', foreground: '0a1428' },
+      { token: 'type', foreground: '475569' },
+      { token: 'variable', foreground: '0a1428' },
+      { token: 'delimiter', foreground: '94a3b8' },
+      { token: 'operator', foreground: '0284c7' },
+    ],
+    colors: {
+      'editor.background': '#ffffff',
+      'editor.foreground': '#0a1428',
+      'editorLineNumber.foreground': '#94a3b8',
+      'editorLineNumber.activeForeground': '#0284c7',
+      'editor.selectionBackground': '#0284c725',
+      'editor.lineHighlightBackground': '#0284c70a',
+      'editorCursor.foreground': '#0a1428',
+      'editorGutter.background': '#ffffff',
+      'scrollbarSlider.background': '#e2e8f0aa',
+      'scrollbarSlider.hoverBackground': '#cbd5e1cc',
     },
   })
 }
@@ -274,7 +336,7 @@ function ResultsDrawer({ runResult, submitResult, submitting, submitProgress, on
 ════════════════════════════════════════════════ */
 function PlayerHeader({ player, isMe, verdict, progress }) {
   if (!player) return null
-  const playerColor = isMe ? 'var(--c-red)' : 'var(--c-blue)'
+  const playerColor = isMe ? '#e2e8f4' : 'var(--info, #38bdf8)'
   return (
     <div className="flex items-center justify-between px-4 py-2"
       style={{ background: 'var(--c-panel2)', borderBottom: '1px solid var(--c-border)' }}>
@@ -283,10 +345,10 @@ function PlayerHeader({ player, isMe, verdict, progress }) {
         <span className="font-mono text-[11px] font-bold" style={{ color: playerColor }}>
           {player?.username ?? '—'}
         </span>
-        <span className="font-mono text-[10px]" style={{ color: 'var(--c-text-mute)' }}>{player?.rating ?? 1200}</span>
+        <span className="font-mono text-[10px]" style={{ color: 'var(--c-gold, #ffd696)' }}>{player?.rating ?? 1200}</span>
         {isMe && (
-          <span className="font-mono text-[9px] px-1.5 py-0.5"
-            style={{ background: 'rgba(225,29,72,0.1)', color: 'var(--c-red)', border: '1px solid rgba(225,29,72,0.2)' }}>You</span>
+          <span className="font-mono text-[9px] px-1.5 py-0.5 rounded-sm"
+            style={{ background: 'transparent', color: '#e2e8f4', border: '1px solid var(--c-border, rgba(255,255,255,0.16))' }}>You</span>
         )}
       </div>
       {verdict && <VerdictChip verdict={verdict} size="xs" label={verdict === 'PENDING' && progress ? `Judging ${progress.testIndex}/${progress.totalTests}` : undefined} />}
@@ -503,7 +565,7 @@ export default function Match() {
   const { roomId } = useParams()
   const { state } = useLocation()
   const { user } = useAuth()
-  const { emit, on, off } = useSocket()
+  const { connected, emit, on, off } = useSocket()
   const navigate = useNavigate()
 
   // Panel widths — draggable
@@ -808,6 +870,152 @@ export default function Match() {
       topic: matchState?.topic,
       difficulty: matchState?.difficulty,
     })
+  }
+
+  function handleConfirmResign() {
+    setShowResignModal(false)
+    if (roomId) localStorage.removeItem(`aa_start_${roomId}`)
+    clearActiveMatch(roomId)
+    emit('resign_match', { roomId })
+    setTimeout(() => {
+      navigate('/result', {
+        state: {
+          roomId,
+          isForfeit: true,
+          forfeitUser: user?.username,
+          isCustom: roomId?.includes('custom'),
+          topic: matchState?.topic || 'arrays',
+          difficulty: matchState?.difficulty || 'medium',
+          winner: { username: opp?.username || 'Opponent', delta: roomId?.includes('custom') ? 0 : 18 },
+          loser: { username: user?.username, delta: roomId?.includes('custom') ? 0 : -18 },
+        }
+      })
+    }, 200)
+  }
+
+  function handleOpponentDrag(e) {
+    const dragging = { active: true, startX: e.clientX, startW: oppPanel.width }
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    const onMove = (ev) => {
+      if (!dragging.active) return
+      const delta = dragging.startX - ev.clientX
+      oppPanel.setWidth(Math.min(360, Math.max(120, dragging.startW + delta)))
+    }
+    const onUp = () => {
+      dragging.active = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
+  const [searchParams] = useSearchParams()
+  const isLegacy = searchParams.get('ui') === 'legacy' || import.meta.env.VITE_BATTLE_UI === 'legacy'
+
+  if (!isLegacy) {
+    return (
+      <BattleRoomV2
+        topic={matchState?.topic}
+        difficulty={matchState?.difficulty}
+        roomId={roomId}
+        timerDisplay={timerDisplay}
+        remaining={remaining}
+        me={me}
+        opp={opp}
+        user={user}
+        connected={connected}
+        showResignModal={showResignModal}
+        onCloseResign={() => setShowResignModal(false)}
+        onConfirmResign={handleConfirmResign}
+        onOpenResign={() => setShowResignModal(true)}
+        problemId={matchState?.problemId}
+        probPanelWidth={probPanel.width}
+        probCollapsed={probCollapsed}
+        onToggleCollapse={() => setProbCollapsed(c => !c)}
+        onProblemLoaded={handleProblemLoaded}
+        onMouseDownProb={probPanel.onMouseDown}
+        onResetProbWidth={() => probPanel.setWidth(320)}
+        oppVerdict={oppVerdict}
+        oppProgress={oppProgress}
+        oppDisconnectState={oppDisconnectState}
+        oppPanelWidth={oppPanel.width}
+        onMouseDownOpp={handleOpponentDrag}
+        onResetOppWidth={() => oppPanel.setWidth(180)}
+        mobileTab={mobileTab}
+        setMobileTab={setMobileTab}
+      >
+        <div className="flex flex-col flex-1 h-full min-w-0">
+          <EditorToolbarV2
+            player={me ?? { username: user?.username, rating: user?.elo_rating }}
+            user={user}
+            verdict={myVerdict}
+            progress={submitProgress}
+            langs={LANGS}
+            lang={lang}
+            onLangChange={handleLangChange}
+            running={running}
+            submitting={submitting}
+            onRun={handleRun}
+            onSubmit={handleSubmit}
+          />
+
+          {/* Monaco */}
+          <div className="flex-1 min-h-0">
+            <Editor
+              height="100%"
+              language={lang}
+              value={code}
+              onChange={v => {
+                const val = v ?? ''
+                setUserHasTyped(true)
+                setCodeMap(prev => ({ ...prev, [lang]: val }))
+                const lineCount = val.split('\n').length
+                const charCount = val.length
+                emit('code_change', { roomId, lineCount, charCount, isTyping: true })
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+                typingTimeoutRef.current = setTimeout(() => {
+                  emit('code_change', { roomId, lineCount, charCount, isTyping: false })
+                }, 1200)
+              }}
+              theme={theme === 'dark' ? 'algoarena-v2-dark' : 'algoarena-v2-light'}
+              beforeMount={defineTheme}
+              onMount={e => {
+                editorRef.current = e
+                window.__monacoMountCount = (window.__monacoMountCount || 0) + 1
+              }}
+              options={{
+                fontSize: 13,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontLigatures: false,
+                lineNumbers: 'on',
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                renderLineHighlight: 'line',
+                padding: { top: 16 },
+                tabSize: 2,
+                wordWrap: 'on',
+                smoothScrolling: true,
+                cursorBlinking: 'phase',
+                renderWhitespace: 'none',
+              }}
+            />
+          </div>
+
+          {/* Results Console V2 */}
+          <RunConsoleV2
+            runResult={runResult}
+            submitResult={submitResult}
+            submitting={submitting}
+            submitProgress={submitProgress}
+            onClose={() => { setRunResult(null); setSubmitResult(null) }}
+          />
+        </div>
+      </BattleRoomV2>
+    )
   }
 
   const problem = matchState
