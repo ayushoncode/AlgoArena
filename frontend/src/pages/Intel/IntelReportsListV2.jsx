@@ -55,6 +55,20 @@ export default function IntelReportsListV2({
   const isMine = viewMode === 'mine'
   const isSaved = viewMode === 'saved'
 
+  const internTabRef = React.useRef(null)
+  const sdeTabRef = React.useRef(null)
+  const [indicatorStyle, setIndicatorStyle] = React.useState({ left: 0, width: 0 })
+
+  React.useLayoutEffect(() => {
+    const activeBtn = track === 'intern' ? internTabRef.current : sdeTabRef.current
+    if (activeBtn) {
+      setIndicatorStyle({
+        left: activeBtn.offsetLeft,
+        width: activeBtn.offsetWidth,
+      })
+    }
+  }, [track, meta?.counts?.intern, meta?.counts?.sde])
+
   // Header Title & Description based on viewMode
   const headerOverline = isMine ? 'Your submissions' : isSaved ? 'Saved bookmarks' : 'Intel reports'
   const headerTitle = isMine ? 'My reports' : isSaved ? 'Saved reports' : 'Interview reports'
@@ -118,6 +132,7 @@ export default function IntelReportsListV2({
         {viewMode === 'all' && (
           <div className="intel-track-rail" role="tablist" aria-label="Interview Track">
             <button
+              ref={internTabRef}
               type="button"
               role="tab"
               aria-selected={track === 'intern'}
@@ -131,6 +146,7 @@ export default function IntelReportsListV2({
             </button>
 
             <button
+              ref={sdeTabRef}
               type="button"
               role="tab"
               aria-selected={track === 'sde'}
@@ -147,8 +163,8 @@ export default function IntelReportsListV2({
             <div
               className="intel-track-indicator"
               style={{
-                width: track === 'intern' ? '88px' : '76px',
-                transform: track === 'intern' ? 'translateX(0px)' : 'translateX(88px)',
+                width: indicatorStyle.width ? `${indicatorStyle.width}px` : (track === 'intern' ? '96px' : '84px'),
+                transform: `translateX(${indicatorStyle.left}px)`,
               }}
               aria-hidden="true"
             />

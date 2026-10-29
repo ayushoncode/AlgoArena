@@ -291,6 +291,13 @@ async function run() {
       await applySelect(diffSelect, 'medium', 'difficulty=medium');
     }
 
+    // Expand "More filters" if present
+    const moreBtn = page.locator('button:has-text("More filters"), [data-testid="more-filters"]').first();
+    if (await moreBtn.isVisible()) {
+      await moreBtn.click();
+      await page.waitForTimeout(200);
+    }
+
     // 3. Year: 2025
     const yearSelect = page.locator('select').filter({ has: page.locator('option[value="2025"]') }).first();
     if (await yearSelect.isVisible()) {
@@ -316,13 +323,23 @@ async function run() {
     }
 
     // 7. Sort: helpful
+    const sortBtnHelpful = page.locator('button:has-text("Most helpful"), [data-sort="helpful"]').first();
     const sortSelect = page.locator('select').filter({ has: page.locator('option[value="helpful"]') }).first();
-    if (await sortSelect.isVisible()) {
-      await applySelect(sortSelect, 'helpful', 'sort=helpful');
-    }
+    if (await sortBtnHelpful.isVisible()) {
+      await Promise.all([
+        page.waitForResponse(r => r.url().includes('/api/experiences') && r.url().includes('sort=helpful')),
+        sortBtnHelpful.click(),
+      ]);
+      await page.waitForTimeout(200);
 
-    // Reset sort back to latest
-    if (await sortSelect.isVisible()) {
+      const sortBtnLatest = page.locator('button:has-text("Latest"), [data-sort="latest"]').first();
+      await Promise.all([
+        page.waitForResponse(r => r.url().includes('/api/experiences') && r.url().includes('sort=latest')),
+        sortBtnLatest.click(),
+      ]);
+      await page.waitForTimeout(200);
+    } else if (await sortSelect.isVisible()) {
+      await applySelect(sortSelect, 'helpful', 'sort=helpful');
       await applySelect(sortSelect, 'latest', 'sort=latest');
     }
 
@@ -358,7 +375,14 @@ async function run() {
       await page.waitForTimeout(300);
     }
 
-    const companyInput = page.locator('input[placeholder*="Filter company"], input[placeholder*="Company"]').first();
+    let companyInput = page.locator('input[placeholder*="Filter company"], input[placeholder*="Company"]').first();
+    if (!await companyInput.isVisible()) {
+      const moreBtn = page.locator('button:has-text("More filters"), [data-testid="more-filters"]').first();
+      if (await moreBtn.isVisible()) {
+        await moreBtn.click();
+        await page.waitForTimeout(200);
+      }
+    }
     if (await companyInput.isVisible()) {
       await Promise.all([
         page.waitForResponse(r => r.url().includes('/api/experiences') && r.url().includes('company=GE')),

@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react'
 import IntelOutcomeMark from './IntelOutcomeMark'
 import IntelMonogram from './IntelMonogram'
+import IntelDifficultyText from './IntelDifficultyText'
+import IntelStatusBadge from './IntelStatusBadge'
 import { UserAvatar } from '../../utils/avatar'
 import { IconThumbsUp, IconBookmark } from '../../components/icons/index.jsx'
 
@@ -98,14 +100,8 @@ export default function IntelReportRow({
           <IntelMonogram name={company} />
           <span className="intel-company-name">{company || 'Company'}</span>
           {role_title && <span className="intel-role-title">{role_title}</span>}
-          {status === 'pending' && (
-            <span className="intel-pending-badge">Pending review</span>
-          )}
-          {status === 'rejected' && (
-            <span className="intel-pending-badge">Rejected</span>
-          )}
-          {status === 'approved' && viewMode === 'mine' && (
-            <span className="intel-pending-badge">Approved</span>
+          {(status === 'pending' || status === 'rejected' || (status === 'approved' && viewMode === 'mine')) && (
+            <IntelStatusBadge status={status} reason={report.rejection_reason} />
           )}
         </div>
 
@@ -125,9 +121,7 @@ export default function IntelReportRow({
         {difficulty && (
           <>
             <span className="intel-meta-sep" aria-hidden="true">•</span>
-            <span className="intel-meta-item" style={{ textTransform: 'uppercase' }}>
-              {difficulty}
-            </span>
+            <IntelDifficultyText difficulty={difficulty} />
           </>
         )}
 

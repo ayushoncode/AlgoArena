@@ -29,7 +29,10 @@ export function shouldShowMascot(route, appState = {}) {
   // 2. User explicitly hid the mascot
   if (appState.mascotHidden) return false
 
-  // 3. Blocked route patterns (match room, result, wizard forms)
+  // 3. User is authenticated / logged in -> hide mascot everywhere
+  if (appState.isAuthenticated) return false
+
+  // 4. Blocked route patterns (match room, result, wizard forms)
   for (const pattern of BLOCKED_ROUTES) {
     if (pattern.test(route)) return false
   }

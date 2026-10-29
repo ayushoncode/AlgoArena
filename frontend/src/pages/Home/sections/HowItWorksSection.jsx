@@ -76,7 +76,7 @@ export default function HowItWorksSection() {
   const stage = s2HowItWorks.stages[activeStage]
 
   return (
-    <section className="home-section" id="how-it-runs">
+    <section className="home-section" id="how-it-runs" data-mascot-section="howItRuns">
       <div className="depth-hairline-draw surface-hairline-top" aria-hidden="true" />
       
       {/* Editorial Section Header wrapped in DepthSection */}

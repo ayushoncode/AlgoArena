@@ -3,6 +3,7 @@ import LobbyHeader from './LobbyHeader'
 import TopicGrid from './TopicGrid'
 import DifficultySegment from './DifficultySegment'
 import MatchSummaryRail from './MatchSummaryRail'
+import QuickArenaThreeCol from './QuickArenaThreeCol'
 import StriverSheetView from '../../components/StriverSheetView'
 import { IconSwords, IconCheck, IconClose, IconCode, IconShield, IconTrophy, IconPlay } from '../../components/icons'
 import striver3dAvatar from '../../assets/striver-3d.png'
@@ -77,6 +78,11 @@ export default function LobbyViewV2({
     : 'Complete the featured algorithm problem to earn arena rating points.'
 
   const swings = SWINGS[diff] || SWINGS.medium
+
+  const isLegacyQuickArena = typeof window !== 'undefined' && (
+    window.location.search.includes('ui=legacy') ||
+    window.location.search.includes('ui=2col')
+  )
 
   return (
     <div className="lobby-v2">
@@ -295,119 +301,54 @@ export default function LobbyViewV2({
               isQueuing={queuing}
             />
           </div>
-        ) : (
-          /* 2-COLUMN MAIN GRID (8 columns left, 4 columns right rail) */
+        ) : isLegacyQuickArena ? (
+          /* 2-COLUMN MAIN GRID (8 columns left, 4 columns right rail) - Legacy Fallback */
           <div className="lobby-v2-grid">
-            
             {/* LEFT CONTENT COLUMN */}
             <div className="lobby-v2-content-col">
+              {/* Topic Selection Grid (9 primary cells) */}
+              <TopicGrid
+                topics={topics}
+                selectedTopicId={topic}
+                onSelectTopic={onSelectTopic}
+                onSurpriseMe={onSurpriseMe}
+              />
 
-            
-            {/* Topic Selection Grid (9 primary cells) */}
-            <TopicGrid
-              topics={topics}
-              selectedTopicId={topic}
-              onSelectTopic={onSelectTopic}
-              onSurpriseMe={onSurpriseMe}
-            />
-
-            {/* Difficulty Segment (Easy, Medium, Hard) */}
-            <DifficultySegment
-              selectedDiff={diff}
-              onSelectDiff={onSelectDiff}
-            />
-
-            {/* BELOW SECTION: Featured Daily Arena Challenge Banner */}
-            <div className="lobby-v2-daily-section">
-              <div className={`lobby-v2-daily-card ${isDailySelected ? 'is-selected' : ''}`}>
-                <div className="lobby-v2-daily-header">
-                  <div className="lobby-v2-daily-badge-group">
-                    <span className="lobby-v2-daily-pill-live">
-                      <span className="lobby-v2-daily-live-dot" />
-                      <span>Daily Quest</span>
-                    </span>
-                    <span className="lobby-v2-daily-pill-meta">
-                      {dailyObj ? `${dailyObj.topic} · ${dailyObj.difficulty}` : 'General · Medium'}
-                    </span>
-                  </div>
-
-                  <span className="lobby-v2-daily-reset-hint">
-                    Resets daily · 00:00 UTC
-                  </span>
-                </div>
-
-                <div className="lobby-v2-daily-body">
-                  <div className="lobby-v2-daily-info">
-                    <h3 className="lobby-v2-daily-title">
-                      {dailyObj ? dailyObj.title : "Today's algorithmic problem"}
-                    </h3>
-
-                    <p
-                      className="lobby-v2-daily-desc"
-                      title={dailyProblem?.description || ''}
-                    >
-                      {dailyPreviewText}
-                    </p>
-
-                    <div className="lobby-v2-daily-perks">
-                      <span className="lobby-v2-daily-perk">
-                        <IconTrophy size={13} className="lobby-v2-daily-perk-icon-gold" />
-                        <span>Ranked Duel Rating Stake</span>
-                      </span>
-                      <span className="lobby-v2-daily-perk">
-                        <IconSwords size={13} className="lobby-v2-daily-perk-icon-blue" />
-                        <span>Synchronous 1v1 Clash</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="lobby-v2-daily-actions">
-                    <button
-                      type="button"
-                      className={`lobby-v2-daily-btn ${isDailySelected ? 'is-active' : ''}`}
-                      onClick={() => {
-                        if (isDailySelected) {
-                          onSelectTopic(null)
-                        } else if (dailyObj) {
-                          onSelectTopic(dailyObj.topic)
-                          onSelectDiff(dailyObj.difficulty)
-                        }
-                      }}
-                    >
-                      {isDailySelected ? (
-                        <>
-                          <IconCheck size={14} />
-                          <span>Daily Selected (Click to Deselect)</span>
-                        </>
-                      ) : (
-                        <>
-                          <IconPlay size={13} />
-                          <span>Play Daily Challenge</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
+              {/* Difficulty Segment (Easy, Medium, Hard) */}
+              <DifficultySegment
+                selectedDiff={diff}
+                onSelectDiff={onSelectDiff}
+              />
             </div>
 
+            {/* RIGHT SUMMARY RAIL (Sticky) */}
+            <MatchSummaryRail
+              selectedTopicObj={selectedTopicObj}
+              selectedTopicId={topic}
+              diff={diff}
+              diffObj={diffObj}
+              onStartQueue={onStartQueue}
+              queuing={queuing}
+            />
           </div>
-
-          {/* RIGHT SUMMARY RAIL (Sticky) */}
-          <MatchSummaryRail
-            selectedTopicObj={selectedTopicObj}
-            selectedTopicId={topic}
+        ) : (
+          /* 3-COLUMN PRESENTATIONAL GRID (1 Topic, 2 Difficulty, 3 Match summary) */
+          <QuickArenaThreeCol
+            topics={topics}
+            topic={topic}
             diff={diff}
+            selectedTopicObj={selectedTopicObj}
             diffObj={diffObj}
+            onSelectTopic={onSelectTopic}
+            onSelectDiff={onSelectDiff}
             onStartQueue={onStartQueue}
+            onSurpriseMe={onSurpriseMe}
             queuing={queuing}
           />
+        )}
 
-        </div>
-      )}
-
-        {/* Mobile Sticky Quick Match Action Bar (Visible only on mobile/tablet when on Quick Arena) */}
-        {lobbyTab !== 'striver' && lobbyTab !== 'custom' && (
+        {/* Mobile Sticky Quick Match Action Bar (Only for legacy 2-column fallback on mobile) */}
+        {isLegacyQuickArena && lobbyTab !== 'striver' && lobbyTab !== 'custom' && (
           <aside className="lobby-v2-mobile-bottom-bar" aria-label="Mobile Quick Match Actions">
             <div className="lobby-v2-mobile-summary">
               <span className="lobby-v2-mobile-summary-topic">
@@ -429,7 +370,7 @@ export default function LobbyViewV2({
               disabled={!topic || queuing}
             >
               <IconSwords size={13} />
-              <span>{queuing ? 'Searching…' : (topic ? 'Find Match' : 'Choose Topic')}</span>
+              <span>{queuing ? 'Searching...' : (topic ? 'Find Match' : 'Choose Topic')}</span>
             </button>
           </aside>
         )}

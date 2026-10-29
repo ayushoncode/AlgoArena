@@ -15,6 +15,7 @@ import { UserAvatar } from '../../utils/avatar'
 import { RankBadge, ToastContainer } from '../../components/ui/index.jsx'
 import IntelMonogram from './IntelMonogram.jsx'
 import IntelOutcomeMark from './IntelOutcomeMark.jsx'
+import IntelDifficultyText from './IntelDifficultyText.jsx'
 import { IntelTimelineNode } from './IntelTimelineNode.jsx'
 
 export function IntelReportDetailV2({
@@ -174,14 +175,12 @@ export function IntelReportDetailV2({
                 </div>
               </div>
 
-              {/* Status Chips */}
+              {/* Status & Outcome */}
               <div className="intel-detail-chips">
-                <div className="intel-pill font-mono text-xs">
-                  <IntelOutcomeMark outcome={report.outcome} />
-                </div>
-                <div className="intel-pill font-mono text-xs uppercase">
-                  {report.difficulty}
-                </div>
+                <IntelOutcomeMark outcome={report.outcome} />
+                {report.difficulty && (
+                  <IntelDifficultyText difficulty={report.difficulty} />
+                )}
               </div>
             </div>
 
@@ -299,7 +298,7 @@ export function IntelReportDetailV2({
                 <button
                   type="button"
                   onClick={() => setShowReportModal(true)}
-                  className="intel-action-icon-btn"
+                  className="intel-action-icon-btn intel-action-destructive"
                   title="Report inappropriate content"
                   aria-label="Report inappropriate content"
                 >
@@ -321,7 +320,7 @@ export function IntelReportDetailV2({
                     <button
                       type="button"
                       onClick={handleDeleteReport}
-                      className="intel-action-icon-btn"
+                      className="intel-action-icon-btn intel-action-destructive"
                       title="Delete report"
                       aria-label="Delete report"
                     >
@@ -464,7 +463,7 @@ export function IntelReportDetailV2({
                 type="button"
                 disabled={submittingReport || !reportReason.trim()}
                 onClick={handleSendReport}
-                className="intel-btn-primary"
+                className="intel-btn-primary intel-btn-destructive-confirm"
               >
                 {submittingReport ? 'SUBMITTING...' : 'SUBMIT REPORT'}
               </button>

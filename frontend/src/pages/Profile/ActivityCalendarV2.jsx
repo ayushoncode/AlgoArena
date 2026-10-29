@@ -1,5 +1,15 @@
 import React, { useState, useMemo } from 'react'
 
+function toLocalDateKey(dt) {
+  if (!dt) return null
+  const d = new Date(dt)
+  if (isNaN(d.getTime())) return null
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export default function ActivityCalendarV2({
   activeDates = new Set(),
   matches = [],
@@ -7,7 +17,7 @@ export default function ActivityCalendarV2({
 }) {
   const [hoveredDay, setHoveredDay] = useState(null)
 
-  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), [])
+  const todayStr = useMemo(() => toLocalDateKey(new Date()), [])
 
   // Aggregate match count per date (YYYY-MM-DD)
   const dateCounts = useMemo(() => {
@@ -15,27 +25,22 @@ export default function ActivityCalendarV2({
 
     if (activeDates instanceof Set) {
       activeDates.forEach(d => {
-        if (typeof d === 'string') {
-          map.set(d.slice(0, 10), 1)
-        }
+        const k = typeof d === 'string' && d.length === 10 ? d : toLocalDateKey(d)
+        if (k) map.set(k, 1)
       })
     } else if (Array.isArray(activeDates)) {
       activeDates.forEach(d => {
-        const k = typeof d === 'string' ? d.slice(0, 10) : new Date(d).toISOString().slice(0, 10)
-        map.set(k, (map.get(k) || 0) + 1)
+        const k = typeof d === 'string' && d.length === 10 ? d : toLocalDateKey(d)
+        if (k) map.set(k, (map.get(k) || 0) + 1)
       })
     }
 
     if (Array.isArray(matches)) {
       matches.forEach(m => {
         const dt = m.ended_at || m.started_at || m.date
-        if (dt) {
-          try {
-            const k = new Date(dt).toISOString().slice(0, 10)
-            map.set(k, (map.get(k) || 0) + 1)
-          } catch {
-            // ignore invalid date
-          }
+        const k = toLocalDateKey(dt)
+        if (k) {
+          map.set(k, (map.get(k) || 0) + 1)
         }
       })
     }
@@ -52,7 +57,7 @@ export default function ActivityCalendarV2({
     for (let i = 29; i >= 0; i--) {
       const d = new Date()
       d.setDate(d.getDate() - i)
-      const dateStr = d.toISOString().slice(0, 10)
+      const dateStr = toLocalDateKey(d)
       const count = dateCounts.get(dateStr) || 0
       if (count > 0) active++
 

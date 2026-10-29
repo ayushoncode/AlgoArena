@@ -15,7 +15,19 @@ export function ArenaEmblem({
   className = '',
   style = {},
 }) {
+  const reactId = React.useId()
+  const uid = 'ae_' + reactId.replace(/[^a-zA-Z0-9_-]/g, '')
   const pixelSize = typeof size === 'number' ? `${size}px` : size
+
+  const glowGold = `${uid}_glow_gold`
+  const glowCyan = `${uid}_glow_cyan`
+  const goldRim = `${uid}_gold_rim`
+  const goldWall = `${uid}_gold_wall`
+  const cyanRim = `${uid}_cyan_rim`
+  const cyanWall = `${uid}_cyan_wall`
+  const chromeLeft = `${uid}_chrome_left`
+  const chromeRight = `${uid}_chrome_right`
+  const slashBeam = `${uid}_slash_beam`
 
   return (
     <div
@@ -47,14 +59,14 @@ export function ArenaEmblem({
       >
         <defs>
           {/* Dual Glow Filters */}
-          <filter id="aa-glow-gold" x="-30%" y="-30%" width="160%" height="160%">
+          <filter id={glowGold} x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur stdDeviation="3.5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <filter id="aa-glow-cyan" x="-30%" y="-30%" width="160%" height="160%">
+          <filter id={glowCyan} x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur stdDeviation="3.5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
@@ -63,37 +75,37 @@ export function ArenaEmblem({
           </filter>
 
           {/* Gold Lighting Gradients */}
-          <linearGradient id="aa-gold-rim" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={goldRim} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#fff5db" />
             <stop offset="35%" stopColor="#ffd696" />
             <stop offset="70%" stopColor="#f59e0b" />
             <stop offset="100%" stopColor="#78350f" />
           </linearGradient>
-          <linearGradient id="aa-gold-wall" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={goldWall} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#d97706" stopOpacity="0.9" />
             <stop offset="100%" stopColor="#1e1b18" stopOpacity="0.95" />
           </linearGradient>
 
           {/* Cyan Lighting Gradients */}
-          <linearGradient id="aa-cyan-rim" x1="100%" y1="0%" x2="0%" y2="100%">
+          <linearGradient id={cyanRim} x1="100%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#e0f2fe" />
             <stop offset="35%" stopColor="#8cc4ff" />
             <stop offset="70%" stopColor="#38bdf8" />
             <stop offset="100%" stopColor="#0369a1" />
           </linearGradient>
-          <linearGradient id="aa-cyan-wall" x1="100%" y1="0%" x2="0%" y2="100%">
+          <linearGradient id={cyanWall} x1="100%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#0284c7" stopOpacity="0.9" />
             <stop offset="100%" stopColor="#091428" stopOpacity="0.95" />
           </linearGradient>
 
           {/* Titanium Monolith Gradients */}
-          <linearGradient id="aa-chrome-left" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={chromeLeft} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#ffffff" />
             <stop offset="40%" stopColor="#e2e8f0" />
             <stop offset="80%" stopColor="#64748b" />
             <stop offset="100%" stopColor="#1e293b" />
           </linearGradient>
-          <linearGradient id="aa-chrome-right" x1="100%" y1="0%" x2="0%" y2="100%">
+          <linearGradient id={chromeRight} x1="100%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#ffffff" />
             <stop offset="40%" stopColor="#cbd5e1" />
             <stop offset="80%" stopColor="#475569" />
@@ -101,7 +113,7 @@ export function ArenaEmblem({
           </linearGradient>
 
           {/* Kinetic Slash Energy Beam */}
-          <linearGradient id="aa-slash-beam" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={slashBeam} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#ffd696" stopOpacity="0.95" />
             <stop offset="45%" stopColor="#ffffff" />
             <stop offset="75%" stopColor="#8cc4ff" />
@@ -112,27 +124,27 @@ export function ArenaEmblem({
         {/* Ambient Subtle Outer Glow lines */}
         <path
           d="M80 18 L136 50 L136 114 L80 146 L24 114 L24 50 Z"
-          stroke="url(#aa-gold-rim)"
+          stroke={`url(#${goldRim})`}
           strokeWidth="2"
           opacity="0.3"
-          filter="url(#aa-glow-gold)"
+          filter={`url(#${glowGold})`}
         />
         <path
           d="M80 18 L136 50 L136 114 L80 146"
-          stroke="url(#aa-cyan-rim)"
+          stroke={`url(#${cyanRim})`}
           strokeWidth="3"
           opacity="0.45"
-          filter="url(#aa-glow-cyan)"
+          filter={`url(#${glowCyan})`}
         />
 
         {/* 1. Outer 3D Hex Bevel Wall — Left Side (Gold) */}
         <polygon
           points="80,18 24,50 24,114 80,146 80,134 36,107 36,57 80,31"
-          fill="url(#aa-gold-wall)"
+          fill={`url(#${goldWall})`}
         />
         <path
           d="M80 18 L24 50 L24 114 L80 146"
-          stroke="url(#aa-gold-rim)"
+          stroke={`url(#${goldRim})`}
           strokeWidth="4.5"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -141,11 +153,11 @@ export function ArenaEmblem({
         {/* 2. Outer 3D Hex Bevel Wall — Right Side (Cyan) */}
         <polygon
           points="80,18 136,50 136,114 80,146 80,134 124,107 124,57 80,31"
-          fill="url(#aa-cyan-wall)"
+          fill={`url(#${cyanWall})`}
         />
         <path
           d="M80 18 L136 50 L136 114 L80 146"
-          stroke="url(#aa-cyan-rim)"
+          stroke={`url(#${cyanRim})`}
           strokeWidth="4.5"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -162,7 +174,7 @@ export function ArenaEmblem({
         {/* Left Pillar (Lit with white-gold chrome) */}
         <polygon
           points="80,42 80,56 54,112 42,112"
-          fill="url(#aa-chrome-left)"
+          fill={`url(#${chromeLeft})`}
         />
         <line
           x1="80"
@@ -177,7 +189,7 @@ export function ArenaEmblem({
         {/* Right Pillar (Lit with white-cyan chrome) */}
         <polygon
           points="80,42 80,56 106,112 118,112"
-          fill="url(#aa-chrome-right)"
+          fill={`url(#${chromeRight})`}
         />
         <line
           x1="80"
@@ -205,8 +217,8 @@ export function ArenaEmblem({
         {/* 5. Iconic Kinetic 3D Slash (Light Beam cutting through) */}
         <polygon
           points="38,98 84,72 128,64 92,84 56,104"
-          fill="url(#aa-slash-beam)"
-          filter="url(#aa-glow-cyan)"
+          fill={`url(#${slashBeam})`}
+          filter={`url(#${glowCyan})`}
         />
         <line
           x1="36"
@@ -222,7 +234,7 @@ export function ArenaEmblem({
           cy="62"
           r="3"
           fill="#ffffff"
-          filter="url(#aa-glow-cyan)"
+          filter={`url(#${glowCyan})`}
         />
       </svg>
     </div>

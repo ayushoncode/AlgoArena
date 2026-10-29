@@ -66,6 +66,8 @@ export default function MascotFace({
 
   return (
     <svg
+      className={`mascot-face expr-${expression}`}
+      data-expression={expression}
       aria-hidden="true"
       focusable="false"
       width={size}
