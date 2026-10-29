@@ -1,7 +1,7 @@
 import React from 'react'
 
 /**
- * IntelOutcomeMark — Plain ink outcome indicator
+ * IntelOutcomeMark: Plain ink outcome indicator
  * ───────────────────────────────────────────────
  * Renders outcome with a small custom mark and ink fill:
  * - Selected: solid mark + plain text
