@@ -1,143 +1,167 @@
 import React, { useState, useMemo } from 'react'
 
+function toLocalDateKey(dt) {
+  if (!dt) return null
+  const d = new Date(dt)
+  if (isNaN(d.getTime())) return null
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export default function ActivityHeatmapYear({
   matches = [],
+  eloHistory = [],
   activeDates = new Set(),
   streak = 0,
 }) {
   const [hoveredCell, setHoveredCell] = useState(null)
   const [selectedYear, setSelectedYear] = useState('current')
 
-  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), [])
-
-  // Aggregate matches by date YYYY-MM-DD
+  // Aggregate matches strictly by local date YYYY-MM-DD from actual matches/duels
   const dateCounts = useMemo(() => {
     const map = new Map()
 
-    if (activeDates instanceof Set) {
-      activeDates.forEach(d => {
-        if (typeof d === 'string') {
-          map.set(d.slice(0, 10), 1)
+    // 1. Primary: Count all completed duel matches from eloHistory
+    if (Array.isArray(eloHistory) && eloHistory.length > 0) {
+      eloHistory.forEach(e => {
+        const dt = e.date || e.created_at
+        const k = toLocalDateKey(dt)
+        if (k) {
+          map.set(k, (map.get(k) || 0) + 1)
         }
-      })
-    } else if (Array.isArray(activeDates)) {
-      activeDates.forEach(d => {
-        const k = typeof d === 'string' ? d.slice(0, 10) : new Date(d).toISOString().slice(0, 10)
-        map.set(k, (map.get(k) || 0) + 1)
       })
     }
 
-    if (Array.isArray(matches)) {
+    // 2. Also incorporate matches
+    if (Array.isArray(matches) && matches.length > 0) {
       matches.forEach(m => {
         const dt = m.ended_at || m.started_at || m.date
-        if (dt) {
-          try {
-            const k = new Date(dt).toISOString().slice(0, 10)
-            map.set(k, (map.get(k) || 0) + 1)
-          } catch {
-            // ignore
-          }
+        const k = toLocalDateKey(dt)
+        if (k && !map.has(k)) {
+          map.set(k, (map.get(k) || 0) + 1)
+        }
+      })
+    }
+
+    // 3. Incorporate activeDates fallback
+    if (activeDates) {
+      const datesIterable = activeDates instanceof Set ? activeDates : Array.isArray(activeDates) ? activeDates : []
+      datesIterable.forEach(d => {
+        const k = typeof d === 'string' && d.length === 10 ? d : toLocalDateKey(d)
+        if (k && !map.has(k)) {
+          map.set(k, 1)
         }
       })
     }
 
     return map
-  }, [activeDates, matches])
+  }, [eloHistory, matches, activeDates])
 
-  // Build 52-week calendar grid (past 364 days ending today)
-  const { weeks, monthLabels, totalSubmissions, activeDaysCount, maxStreak } = useMemo(() => {
+  // Build 12-month calendar grouped with month spacing (LeetCode style)
+  const { months, totalSubmissions, activeDaysCount, maxStreak } = useMemo(() => {
     const today = new Date()
-    // Align today's day of week (0 = Sun, 6 = Sat)
-    const todayDayOfWeek = today.getDay()
-    
-    // We want 52 full weeks (364 days) + remaining days up to today
-    const totalDays = 52 * 7 + (todayDayOfWeek + 1)
-    const startDate = new Date(today)
-    startDate.setDate(today.getDate() - (totalDays - 1))
-
-    const allDays = []
-    let submissions = 0
+    const todayDateStr = toLocalDateKey(today)
+    let totalSubs = 0
     let activeDays = 0
 
-    const curr = new Date(startDate)
-    for (let i = 0; i < totalDays; i++) {
-      const dateStr = curr.toISOString().slice(0, 10)
-      const count = dateCounts.get(dateStr) || 0
-      if (count > 0) {
-        submissions += count
-        activeDays++
+    const monthList = []
+
+    // 12 months ending with the current month
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
+      const year = d.getFullYear()
+      const month = d.getMonth()
+      const monthName = d.toLocaleDateString('en-US', { month: 'short' })
+      const daysInMonth = new Date(year, month + 1, 0).getDate()
+      const firstDayOfWeek = new Date(year, month, 1).getDay() // 0 = Sun
+
+      const isCurrentMonth = (year === today.getFullYear() && month === today.getMonth())
+
+      const weeks = []
+      let currentWeek = []
+
+      // Leading empty placeholders in week 0
+      for (let r = 0; r < firstDayOfWeek; r++) {
+        currentWeek.push({ isEmpty: true })
       }
 
-      allDays.push({
-        date: dateStr,
-        count,
-        isToday: dateStr === todayStr,
-        dayOfWeek: curr.getDay(),
-        month: curr.getMonth(),
-        year: curr.getFullYear(),
-        formatted: curr.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+        const isFuture = isCurrentMonth && dayNum > today.getDate()
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`
+        const count = isFuture ? 0 : (dateCounts.get(dateStr) || 0)
+        const dateObj = new Date(year, month, dayNum)
+
+        if (!isFuture && count > 0) {
+          totalSubs += count
+          activeDays++
+        }
+
+        currentWeek.push({
+          isEmpty: false,
+          isFuture,
+          dayNum,
+          date: dateStr,
+          count,
+          dayOfWeek: dateObj.getDay(),
+          isToday: dateStr === todayDateStr,
+          formatted: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        })
+
+        if (currentWeek.length === 7) {
+          weeks.push(currentWeek)
+          currentWeek = []
+        }
+      }
+
+      if (currentWeek.length > 0) {
+        while (currentWeek.length < 7) {
+          currentWeek.push({ isEmpty: true })
+        }
+        weeks.push(currentWeek)
+      }
+
+      monthList.push({
+        name: monthName,
+        year,
+        month,
+        weeks,
       })
-
-      curr.setDate(curr.getDate() + 1)
     }
 
-    // Compute max streak across all days
+    // Calculate max streak across all chronological days
     let maxS = 0
-    let currentS = 0
-    allDays.forEach(d => {
-      if (d.count > 0) {
-        currentS++
-        if (currentS > maxS) maxS = currentS
-      } else {
-        currentS = 0
-      }
-    })
-    maxS = Math.max(maxS, streak || 0)
-
-    // Group allDays into columns of weeks (7 days per week)
-    const weekCols = []
-    let currentWeek = []
-
-    allDays.forEach(d => {
-      currentWeek.push(d)
-      if (currentWeek.length === 7) {
-        weekCols.push(currentWeek)
-        currentWeek = []
-      }
-    })
-    if (currentWeek.length > 0) {
-      weekCols.push(currentWeek)
-    }
-
-    // Determine month label positions across week columns
-    const months = []
-    let lastMonth = -1
-
-    weekCols.forEach((col, colIdx) => {
-      // Look at the middle day of the week
-      const midDay = col[Math.floor(col.length / 2)] || col[0]
-      if (midDay && midDay.month !== lastMonth) {
-        lastMonth = midDay.month
-        const monthName = new Date(midDay.year, midDay.month, 1).toLocaleDateString('en-US', { month: 'short' })
-        months.push({ colIndex: colIdx, name: monthName })
-      }
+    let curS = 0
+    monthList.forEach(m => {
+      m.weeks.forEach(w => {
+        w.forEach(cell => {
+          if (!cell.isEmpty && !cell.isFuture) {
+            if (cell.count > 0) {
+              curS++
+              if (curS > maxS) maxS = curS
+            } else {
+              curS = 0
+            }
+          }
+        })
+      })
     })
 
     return {
-      weeks: weekCols,
-      monthLabels: months,
-      totalSubmissions: submissions,
+      months: monthList,
+      totalSubmissions: totalSubs,
       activeDaysCount: activeDays,
-      maxStreak: maxS,
+      maxStreak: Math.max(maxS, streak || 0),
     }
-  }, [dateCounts, todayStr, streak])
+  }, [dateCounts, streak])
 
-  // Get vibrant green color palette matching LeetCode / Screenshot 1
+  // Get vibrant green color palette matching LeetCode
   const getCellColor = (count) => {
-    if (count <= 0) return '#1b222c' // dark slate
+    if (count <= 0) return '#23272f' // clean subtle dark slate, no border
     if (count === 1) return '#0e4429' // dark green
-    if (count === 2) return '#006d32' // medium emerald
-    if (count === 3) return '#26a641' // bright green
+    if (count <= 4) return '#006d32' // emerald
+    if (count <= 9) return '#26a641' // bright green
     return '#39d353' // vibrant neon green
   }
 
@@ -183,47 +207,51 @@ export default function ActivityHeatmapYear({
         </div>
       </div>
 
-      {/* 2. Heatmap Matrix Grid with Tooltip */}
+      {/* 2. Month-by-Month Grouped Matrix Grid with Spacing */}
       <div className="big-heatmap-scroll-area">
         <div className="big-heatmap-content">
-          <div className="big-heatmap-grid">
-            {weeks.map((week, wIdx) => (
-              <div key={`w-${wIdx}`} className="heatmap-week-column">
-                {week.map(day => {
-                  const bg = getCellColor(day.count)
-                  const isHovered = hoveredCell?.date === day.date
+          <div className="big-heatmap-months-strip">
+            {months.map(m => (
+              <div key={`${m.name}-${m.year}`} className="heatmap-month-block">
+                <div className="heatmap-month-grid">
+                  {m.weeks.map((week, wIdx) => (
+                    <div key={`w-${wIdx}`} className="heatmap-week-column">
+                      {week.map((cell, rIdx) => {
+                        if (cell.isEmpty || cell.isFuture) {
+                          return (
+                            <div
+                              key={`empty-${rIdx}`}
+                              className="heatmap-day-cell is-empty"
+                              aria-hidden="true"
+                            />
+                          )
+                        }
 
-                  return (
-                    <div
-                      key={day.date}
-                      className={`heatmap-day-cell ${day.isToday ? 'is-today-cell' : ''} ${isHovered ? 'is-hovered' : ''}`}
-                      style={{ backgroundColor: bg }}
-                      tabIndex={0}
-                      role="gridcell"
-                      aria-label={`${day.formatted}: ${day.count} matches`}
-                      onMouseEnter={() => setHoveredCell(day)}
-                      onMouseLeave={() => setHoveredCell(null)}
-                      onFocus={() => setHoveredCell(day)}
-                      onBlur={() => setHoveredCell(null)}
-                    />
-                  )
-                })}
+                        const bg = getCellColor(cell.count)
+                        const isHovered = hoveredCell?.date === cell.date
+
+                        return (
+                          <div
+                            key={cell.date}
+                            className={`heatmap-day-cell ${cell.isToday ? 'is-today-cell' : ''} ${isHovered ? 'is-hovered' : ''}`}
+                            style={{ backgroundColor: bg }}
+                            tabIndex={0}
+                            role="gridcell"
+                            aria-label={`${cell.formatted}: ${cell.count} ${cell.count === 1 ? 'match' : 'matches'}`}
+                            onMouseEnter={() => setHoveredCell(cell)}
+                            onMouseLeave={() => setHoveredCell(null)}
+                            onFocus={() => setHoveredCell(cell)}
+                            onBlur={() => setHoveredCell(null)}
+                          />
+                        )
+                      })}
+                    </div>
+                  ))}
+                </div>
+                <div className="heatmap-month-caption">
+                  <span className="heatmap-month-text">{m.name}</span>
+                </div>
               </div>
-            ))}
-          </div>
-
-          {/* Month labels under corresponding columns */}
-          <div className="big-heatmap-months">
-            {monthLabels.map(m => (
-              <span
-                key={`${m.name}-${m.colIndex}`}
-                className="heatmap-month-label"
-                style={{
-                  gridColumnStart: m.colIndex + 1,
-                }}
-              >
-                {m.name}
-              </span>
             ))}
           </div>
 

@@ -46,7 +46,7 @@ export default function SandboxSection() {
   }
 
   return (
-    <section className="home-section" id="sandbox">
+    <section className="home-section" id="sandbox" data-mascot-section="sandbox">
       <div className="depth-hairline-draw surface-hairline-top" aria-hidden="true" />
       <DepthSection id="s4-sandbox" enter={true} exit={true}>
         <div className="section-container">

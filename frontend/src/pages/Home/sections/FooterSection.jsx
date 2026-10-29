@@ -55,6 +55,7 @@ export default function FooterSection() {
               <ul className="footer-links-list">
                 <li><Link to="/terms">Terms of Service</Link></li>
                 <li><Link to="/privacy">Privacy Policy</Link></li>
+                <li id="mascot-footer-slot" data-mascot="toggle" />
               </ul>
             </div>
 

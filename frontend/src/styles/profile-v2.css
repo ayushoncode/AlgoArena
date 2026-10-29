@@ -692,11 +692,154 @@
   border-color: rgba(196, 214, 232, 0.2);
 }
 
+.profile-v2 .chart-zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.profile-v2 .chart-zoom-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(196, 214, 232, 0.12);
+  color: var(--sub, #a2a9b8);
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 120ms ease;
+  user-select: none;
+}
+
+.profile-v2 .chart-zoom-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: rgba(196, 214, 232, 0.25);
+}
+
+.profile-v2 .chart-zoom-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.profile-v2 .chart-reset-zoom-btn {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #f59e0b;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 120ms ease;
+  white-space: nowrap;
+}
+
+.profile-v2 .chart-reset-zoom-btn:hover {
+  background: rgba(245, 158, 11, 0.28);
+  border-color: #f59e0b;
+  color: #ffffff;
+}
+
 .profile-v2 .chart-summary-line {
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
   font-size: 12px;
   color: var(--sub, #a2a9b8);
   letter-spacing: 0.02em;
+}
+
+.profile-v2 .chart-tier-ladder {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08));
+}
+
+.profile-v2 .tier-ladder-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  color: var(--sub, #a2a9b8);
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(196, 214, 232, 0.06);
+  transition: all 120ms ease;
+  position: relative;
+}
+
+.profile-v2 .tier-ladder-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(196, 214, 232, 0.14);
+}
+
+.profile-v2 .tier-ladder-item.is-active-tier {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(196, 214, 232, 0.28);
+  color: #ffffff;
+}
+
+.profile-v2 .tier-ladder-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.profile-v2 .tier-ladder-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.profile-v2 .tier-ladder-name {
+  font-weight: 600;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-v2 .tier-ladder-range {
+  font-size: 10px;
+  color: var(--sub, #a2a9b8);
+  opacity: 0.8;
+  padding-left: 11px;
+}
+
+.profile-v2 .tier-ladder-current-tag {
+  font-size: 8px;
+  font-weight: 700;
+  color: #060d1c;
+  padding: 1px 3px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  margin-left: auto;
+}
+
+@media (max-width: 900px) {
+  .profile-v2 .chart-tier-ladder {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 540px) {
+  .profile-v2 .chart-tier-ladder {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .profile-v2 .chart-plot-surface {
@@ -1739,57 +1882,74 @@
 
 .profile-v2 .big-heatmap-scroll-area {
   overflow-x: auto;
-  padding-bottom: 6px;
+  padding: 4px 18px 8px 4px;
 }
 
 .profile-v2 .big-heatmap-content {
-  min-width: 740px;
+  width: 100%;
   position: relative;
+  box-sizing: border-box;
 }
 
-.profile-v2 .big-heatmap-grid {
-  display: grid;
-  grid-template-columns: repeat(53, 1fr);
-  gap: 3px;
+.profile-v2 .big-heatmap-months-strip {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  padding-right: 14px;
+}
+
+.profile-v2 .heatmap-month-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-v2 .heatmap-month-grid {
+  display: flex;
+  gap: 2px;
 }
 
 .profile-v2 .heatmap-week-column {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
 .profile-v2 .heatmap-day-cell {
+  width: 9px;
+  height: 9px;
   aspect-ratio: 1;
   border-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: none;
   cursor: pointer;
   transition: transform 120ms ease, outline 120ms ease;
+  background-color: #23272f;
+}
+
+.profile-v2 .heatmap-day-cell.is-empty {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .profile-v2 .heatmap-day-cell:hover,
 .profile-v2 .heatmap-day-cell:focus-visible {
   transform: scale(1.35);
   z-index: 5;
-  outline: 1px solid #ffffff;
+  outline: 1.5px solid #ffffff;
 }
 
 .profile-v2 .heatmap-day-cell.is-today-cell {
-  outline: 1px solid #f59e0b;
+  outline: 1.5px solid #f59e0b;
   outline-offset: 1px;
 }
 
-.profile-v2 .big-heatmap-months {
-  display: grid;
-  grid-template-columns: repeat(53, 1fr);
-  margin-top: 8px;
+.profile-v2 .heatmap-month-caption {
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--sub, #a2a9b8);
-}
-
-.profile-v2 .heatmap-month-label {
-  text-align: left;
+  text-align: center;
 }
 
 .profile-v2 .big-heatmap-tooltip {
@@ -2427,7 +2587,11 @@
   width: 100%;
 }
 
-/* Mid Row: Key Numbers + Topics Breakdown */
+/* Mid Row: Full Width Key Numbers Stats (Image 5 full width) */
+.profile-v2 .main-col-stats-row {
+  width: 100%;
+}
+
 .profile-v2 .main-col-mid-grid {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
@@ -2439,6 +2603,129 @@
   .profile-v2 .main-col-mid-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ── LEETCODE-STYLE SKILLS CARD (Photo 4) ─────────────────────────── */
+.profile-v2 .sidebar-skills-card {
+  background-color: var(--bg-1, #060d1c);
+  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.12));
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transition: border-color 140ms ease;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-v2 .sidebar-skills-card:hover {
+  border-color: rgba(196, 214, 232, 0.22);
+}
+
+.profile-v2 .skills-card-header {
+  margin: 0;
+}
+
+.profile-v2 .skills-card-title {
+  font-family: var(--font-sans, 'Sora Variable', sans-serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink, #ffffff);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.profile-v2 .skills-empty-text {
+  font-size: 13px;
+  color: var(--sub, #a2a9b8);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.profile-v2 .skills-tier-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-v2 .skills-tier-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-v2 .skills-tier-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-v2 .skills-tier-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.profile-v2 .skills-tier-label {
+  font-family: var(--font-sans, 'Sora Variable', sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #ffffff);
+}
+
+.profile-v2 .skills-pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.profile-v2 .skill-pill {
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 9999px;
+  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+  transition: background-color 120ms ease;
+}
+
+.profile-v2 .skill-pill:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.profile-v2 .skill-pill-name {
+  font-family: var(--font-sans, 'Sora Variable', sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.profile-v2 .skill-pill-count {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.profile-v2 .skill-expand-btn {
+  background: none;
+  border: none;
+  padding: 4px 0 0 0;
+  color: var(--sub, #a2a9b8);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  width: 100%;
+  transition: color 120ms ease;
+  font-family: var(--font-sans, 'Sora Variable', sans-serif);
+}
+
+.profile-v2 .skill-expand-btn:hover {
+  color: var(--ink, #ffffff);
 }
 
 /* ── EDIT PROFILE MODAL ─────────────────────────────────────── */

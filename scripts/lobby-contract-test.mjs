@@ -274,45 +274,67 @@ async function run() {
   await page.keyboard.press('1'); // Arrays
   await page.waitForTimeout(200);
 
-  const roomModalBtn = page.locator('button:has-text("Create Or Join Room")').first();
-  if (await roomModalBtn.count() > 0) {
-    await roomModalBtn.click();
-    await page.waitForTimeout(600);
-
-    // Look for create room button inside modal
-    const genCodeBtn = page.locator('button:has-text("Generate Room Code")').first();
-    if (await genCodeBtn.count() > 0) {
-      await genCodeBtn.click();
-      await page.waitForTimeout(1000);
-    }
-
-    // Cancel room
-    const cancelRoomBtn = page.locator('button:has-text("Cancel Room")').first();
-    if (await cancelRoomBtn.count() > 0) {
-      await cancelRoomBtn.click();
-      await page.waitForTimeout(500);
-    }
-
-    console.log('[FLOW 9] Join Room with code "TEST99"');
-    const joinTab = page.locator('button:has-text("Join Code")').first();
-    if (await joinTab.count() > 0) {
-      await joinTab.click();
-      await page.waitForTimeout(300);
-    }
-
-    const codeInput = page.locator('input[placeholder*="ARENA-8K2Y" i]').first();
-    if (await codeInput.count() > 0) {
-      await codeInput.fill('TEST99');
-      const submitJoin = page.locator('button:has-text("Join Arena Room")').first();
-      if (await submitJoin.count() > 0) {
-        await submitJoin.click();
-        await page.waitForTimeout(500);
+  if (mode === 'v2') {
+    const privateTab = page.locator('.lobby-v2-mode-tab').filter({ hasText: /Private/i }).first();
+    if (await privateTab.count() > 0) {
+      await privateTab.click();
+      await page.waitForTimeout(400);
+      const hostBtn = page.locator('button:has-text("Create Room & Generate Code")').first();
+      if (await hostBtn.count() > 0) {
+        await hostBtn.click();
+        await page.waitForTimeout(600);
       }
     }
+  } else {
+    const roomModalBtn = page.locator('button:has-text("Create Or Join Room")').first();
+    if (await roomModalBtn.count() > 0) {
+      await roomModalBtn.click();
+      await page.waitForTimeout(600);
+    }
+  }
 
-    // Close modal via Escape
-    await page.keyboard.press('Escape');
+  // Look for create room button inside modal
+  const genCodeBtn = page.locator('button:has-text("Generate Room Code")').first();
+  if (await genCodeBtn.count() > 0) {
+    await genCodeBtn.click();
+    await page.waitForTimeout(1000);
+  }
+
+  // Cancel room
+  const cancelRoomBtn = page.locator('button:has-text("Cancel Room")').first();
+  if (await cancelRoomBtn.count() > 0) {
+    await cancelRoomBtn.click();
+    await page.waitForTimeout(500);
+  }
+
+  console.log('[FLOW 9] Join Room with code "TEST99"');
+  const joinTab = page.locator('button:has-text("Join Code")').first();
+  if (await joinTab.count() > 0) {
+    await joinTab.click();
     await page.waitForTimeout(300);
+  }
+
+  const codeInput = page.locator('input[placeholder*="ARENA-8K2Y" i]').first();
+  if (await codeInput.count() > 0) {
+    await codeInput.fill('TEST99');
+    const submitJoin = page.locator('button:has-text("Enter Room"), button:has-text("Join Arena Room")').first();
+    if (await submitJoin.count() > 0) {
+      await submitJoin.click();
+      await page.waitForTimeout(500);
+    }
+  }
+
+  // Close modal via Escape
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+
+  if (mode === 'v2') {
+    // Switch back to Quick Arena tab
+    const quickTab = page.locator('.lobby-v2-mode-tab').filter({ hasText: /Quick Arena/i }).first();
+    if (await quickTab.count() > 0) {
+      await quickTab.click();
+      await page.waitForTimeout(300);
+    }
   }
 
   console.log('[FLOW 10] Search player with "/"');

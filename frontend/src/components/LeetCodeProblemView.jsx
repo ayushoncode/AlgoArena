@@ -317,6 +317,7 @@ function parseBlockIntoExample(block, ex) {
 /**
  * Authentic LeetCode-grade Problem Description View
  */
+export { parseLeetCodeDescription, renderInline }
 export default function LeetCodeProblemView({ problem, difficulty, topic }) {
   const [showTopics, setShowTopics] = useState(false)
 

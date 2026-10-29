@@ -139,7 +139,13 @@ export default function DuelSection() {
   const clockFormatted = `00:${seconds < 10 ? '0' : ''}${seconds}.${tenths}`
 
   return (
-    <section ref={sectionRef} className="home-section surface-bg-1" id="duel">
+    <section
+      ref={sectionRef}
+      className="home-section surface-bg-1"
+      id="duel"
+      data-mascot-section="duel"
+      data-mascot-typing={isPlaying && timeSec > 0 && timeSec < 13 ? 'true' : undefined}
+    >
       <div className="depth-hairline-draw surface-hairline-top" aria-hidden="true" />
       <DepthSection id="s1-duel" enter={true} exit={true}>
         <div className="section-container">

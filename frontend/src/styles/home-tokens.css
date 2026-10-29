@@ -43,6 +43,16 @@
   --blue: #8cc4ff;
   --blue-glow: rgba(140, 196, 255, 0.15);
 
+  /* Semantic feedback tokens (Dark theme) */
+  --ok: #5DD39E;
+  --ok-tint: rgba(93, 211, 158, 0.12);
+  --bad: #FF6B7A;
+  --bad-tint: rgba(255, 107, 122, 0.12);
+  --warn: #F0B35A;
+  --warn-tint: rgba(240, 179, 90, 0.12);
+  --info: #8CC4FF;
+  --info-tint: rgba(140, 196, 255, 0.12);
+
   /* Verdict states (small and rare inside replay demos) */
   --verdict-accepted: #22c55e;
   --verdict-tle: #eab308;
@@ -55,6 +65,35 @@
   /* Grid & Spacing */
   --section-pad-y: clamp(96px, 14vw, 200px);
   --page-max-w: 1240px;
+}
+
+[data-theme="light"] {
+  /* Tonal surface steps (Light theme) */
+  --bg-0: #f8fafc;
+  --bg-1: #ffffff;
+  --bg-2: #f1f5f9;
+
+  /* Editorial type colors (Light theme) */
+  --ink: #0f172a;
+  --sub: #475569;
+  --nav: #0f172a;
+  --foot: #1e293b;
+  --feat: #334155;
+
+  /* Precise hairlines (Light theme) */
+  --hair: rgba(15, 23, 42, 0.28);
+  --hair-muted: rgba(15, 23, 42, 0.12);
+  --hair-subtle: rgba(15, 23, 42, 0.06);
+
+  /* Semantic feedback tokens (Light theme) */
+  --ok: #0F7A4B;
+  --ok-tint: rgba(15, 122, 75, 0.12);
+  --bad: #C0243A;
+  --bad-tint: rgba(192, 36, 58, 0.12);
+  --warn: #8A5A00;
+  --warn-tint: rgba(138, 90, 0, 0.12);
+  --info: #1D5FA8;
+  --info-tint: rgba(29, 95, 168, 0.12);
 }
 
 /* Skeleton loader primitives with zero layout shift */

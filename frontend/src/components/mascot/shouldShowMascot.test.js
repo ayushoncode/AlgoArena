@@ -5,8 +5,13 @@
  * No DOM, no React, no async.
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { shouldShowMascot } from './shouldShowMascot.js'
+
+const expect = (actual) => ({
+  toBe: (expected) => assert.strictEqual(actual, expected),
+})
 
 describe('shouldShowMascot', () => {
   // ── Blocked routes ────────────────────────────────────────────────────────
@@ -26,33 +31,43 @@ describe('shouldShowMascot', () => {
     expect(shouldShowMascot('/experiences/123/edit', {})).toBe(false)
   })
 
-  // ── Allowed routes ────────────────────────────────────────────────────────
-  it('shows on /', () => {
+  // ── Allowed route (Home only, logged out only) ───────────────────────────
+  it('shows on / when logged out', () => {
     expect(shouldShowMascot('/', {})).toBe(true)
+    expect(shouldShowMascot('/', { isAuthenticated: false })).toBe(true)
   })
 
-  it('shows on /lobby', () => {
-    expect(shouldShowMascot('/lobby', {})).toBe(true)
+  it('hides on / when authenticated (logged in)', () => {
+    expect(shouldShowMascot('/', { isAuthenticated: true })).toBe(false)
   })
 
-  it('shows on /leaderboard', () => {
-    expect(shouldShowMascot('/leaderboard', {})).toBe(true)
+  // ── Inner pages default to hidden (mascot stays on home only) ─────────────
+  it('hides on /lobby', () => {
+    expect(shouldShowMascot('/lobby', {})).toBe(false)
   })
 
-  it('shows on /profile', () => {
-    expect(shouldShowMascot('/profile', {})).toBe(true)
+  it('hides on /leaderboard', () => {
+    expect(shouldShowMascot('/leaderboard', {})).toBe(false)
   })
 
-  it('shows on /profile/:username', () => {
-    expect(shouldShowMascot('/profile/alice', {})).toBe(true)
+  it('hides on /profile', () => {
+    expect(shouldShowMascot('/profile', {})).toBe(false)
   })
 
-  it('shows on /experiences (list)', () => {
-    expect(shouldShowMascot('/experiences', {})).toBe(true)
+  it('hides on /profile/:username', () => {
+    expect(shouldShowMascot('/profile/alice', {})).toBe(false)
   })
 
-  it('shows on /experiences/:id (detail, not edit)', () => {
-    expect(shouldShowMascot('/experiences/123', {})).toBe(true)
+  it('hides on /experiences (list)', () => {
+    expect(shouldShowMascot('/experiences', {})).toBe(false)
+  })
+
+  it('hides on /experiences/:id (detail)', () => {
+    expect(shouldShowMascot('/experiences/123', {})).toBe(false)
+  })
+
+  it('hides on /who-we-are', () => {
+    expect(shouldShowMascot('/who-we-are', {})).toBe(false)
   })
 
   // ── App state guards ──────────────────────────────────────────────────────
@@ -83,10 +98,5 @@ describe('shouldShowMascot', () => {
   // ── Unknown route defaults to hidden ─────────────────────────────────────
   it('hides on /unknown-route', () => {
     expect(shouldShowMascot('/unknown-route', {})).toBe(false)
-  })
-
-  it('hides on /who-we-are if not in allow-list', () => {
-    // /who-we-are IS in the allow-list per spec
-    expect(shouldShowMascot('/who-we-are', {})).toBe(true)
   })
 })

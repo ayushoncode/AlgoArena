@@ -906,7 +906,7 @@ export default function Lobby() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [topic, customModalOpen, queuing, matchFoundData, handleSelectTopic])
 
-  useEffect(() => { if (!loading && !isAuthenticated) navigate('/?auth=login') }, [loading, isAuthenticated, navigate])
+  useEffect(() => { if (!loading && !isAuthenticated) navigate('/', { replace: true }) }, [loading, isAuthenticated, navigate])
   useEffect(() => { if (initialRoomCode) setCustomModalOpen(true) }, [initialRoomCode])
 
   useEffect(() => {
@@ -918,6 +918,22 @@ export default function Lobby() {
   useEffect(() => {
     api.get('/api/problems/daily').then(({ data }) => setDailyProblem(data)).catch(() => { })
   }, [])
+
+  // Auto-select and start queue if directed from /daily page
+  useEffect(() => {
+    const dailyParam = searchParams.get('daily')
+    if (dailyParam && dailyProblem) {
+      handleSelectTopic(dailyProblem.topic)
+      handleSelectDiff(dailyProblem.difficulty)
+      if (dailyParam === 'queue' || dailyParam === 'start') {
+        setTimeout(() => {
+          setQueuingProblem(null)
+          setQueuing(true)
+          emit('join_queue', { topic: dailyProblem.topic, difficulty: dailyProblem.difficulty, problemId: dailyProblem.id })
+        }, 100)
+      }
+    }
+  }, [searchParams, dailyProblem, handleSelectTopic, handleSelectDiff, emit])
 
   // Auto re-join on reconnect
   useEffect(() => {
@@ -1200,74 +1216,6 @@ export default function Lobby() {
               </div>
             </div>
           </div>
-
-          {/* FEATURED DAILY CHALLENGE BANNER */}
-          {dailyObj ? (
-            <HudPanel accentTopLeft="var(--c-gold)" accentBotRight="var(--c-gold)" glow glowColor="rgba(245,185,66,0.15)" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
-                      style={{ background: 'rgba(245,185,66,0.15)', color: 'var(--c-gold)', border: '1px solid rgba(245,185,66,0.3)' }}>
-                      Daily Challenge
-                    </span>
-                    <span className="font-mono text-xs uppercase" style={{ color: 'var(--c-text-mute)' }}>Topic: {dailyObj.topic}</span>
-                    <DiffChip difficulty={dailyObj.difficulty} />
-                  </div>
-                  <h3 className="font-display font-bold text-lg sm:text-xl" style={{ color: 'var(--c-text)' }}>
-                    {dailyObj.title}
-                  </h3>
-                  <p className="font-sans text-xs max-w-3xl leading-relaxed line-clamp-2" style={{ color: 'var(--c-text-dim)' }}>
-                    {dailyObj.desc.replace(/[*#`_]/g, '').replace(/\n/g, ' ').substring(0, 160)}...
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isDailySelected) {
-                        handleSelectTopic(null)
-                      } else {
-                        handleSelectTopic(dailyObj.topic)
-                        handleSelectDiff(dailyObj.difficulty)
-                      }
-                    }}
-                    className="px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider rounded transition-all flex items-center gap-2 cursor-pointer"
-                    style={{
-                      background: isDailySelected ? 'rgba(245,185,66,0.2)' : 'var(--c-gold)',
-                      color: isDailySelected ? 'var(--c-gold)' : '#000',
-                      border: `1px solid var(--c-gold)`,
-                      boxShadow: '0 0 15px rgba(245,185,66,0.3)'
-                    }}
-                  >
-                    {isDailySelected ? (
-                      <>
-                        <CheckCircle2 size={15} /> Daily Selected (Click to Deselect)
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={15} /> Take Daily Challenge
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </HudPanel>
-          ) : (
-            <HudPanel accentTopLeft="var(--c-border)" accentBotRight="var(--c-border)" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-2 flex-1 w-full">
-                  <Skeleton height={20} width={120} />
-                  <Skeleton height={28} width="60%" />
-                  <Skeleton height={14} width="90%" />
-                </div>
-                <div className="flex items-center gap-3">
-                  <Skeleton height={40} width={180} />
-                </div>
-              </div>
-            </HudPanel>
-          )}
 
           {/* TWO COLUMN CONTENT: TOPIC & DIFF GRID vs STICKY DEPLOY LOADOUT */}
           <div className="grid lg:grid-cols-[1fr_340px] gap-6 items-start">

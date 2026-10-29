@@ -9,10 +9,12 @@ import {
   IconClose,
   IconClock,
   IconLock,
+  IconShield,
 } from '../../components/icons/index.jsx'
 import { ToastContainer } from '../../components/ui/index.jsx'
 import IntelMonogram from './IntelMonogram.jsx'
 import IntelOutcomeMark from './IntelOutcomeMark.jsx'
+import IntelDifficultyText from './IntelDifficultyText.jsx'
 import { IntelTimelineNode } from './IntelTimelineNode.jsx'
 
 const STEPS = [
@@ -92,6 +94,12 @@ export function ShareExperienceWizardV2({
             {STEPS.map((s) => {
               const done = s.id < step
               const active = s.id === step
+
+              let hasErrors = false
+              if (s.id === 1 && (errors.company || errors.roleTitle)) hasErrors = true
+              if (s.id === 2 && (errors.rounds || Object.keys(errors).some(k => k.startsWith('round_')))) hasErrors = true
+              if (s.id === 3 && errors.overallExperience) hasErrors = true
+
               return (
                 <button
                   key={s.id}
@@ -105,6 +113,7 @@ export function ShareExperienceWizardV2({
                     {done ? <IconCheck size={12} /> : `0${s.id}`}
                   </span>
                   <span>{s.label}</span>
+                  {hasErrors && <span className="intel-step-error-dot" aria-label="Step has errors" />}
                 </button>
               )
             })}
@@ -130,12 +139,7 @@ export function ShareExperienceWizardV2({
                         key={t}
                         type="button"
                         onClick={() => set('track', t)}
-                        className={`intel-btn-primary ${form.track === t ? 'is-active' : ''}`}
-                        style={{
-                          justifyContent: 'center',
-                          backgroundColor: form.track === t ? 'var(--bg-2)' : 'var(--bg-0)',
-                          borderColor: form.track === t ? 'var(--hair)' : 'var(--hair-muted)',
-                        }}
+                        className={`intel-segmented-btn ${form.track === t ? 'is-selected' : ''}`}
                       >
                         {t === 'intern' ? 'Internship' : 'Full-Time SDE'}
                       </button>
@@ -155,12 +159,12 @@ export function ShareExperienceWizardV2({
                       value={form.company}
                       onChange={(e) => set('company', e.target.value)}
                       placeholder="Google, Amazon, Flipkart..."
-                      className="intel-form-input"
+                      className={`intel-form-input ${errors.company ? 'has-error' : ''}`}
                       aria-invalid={Boolean(errors.company)}
                       aria-describedby={errors.company ? 'err-company' : undefined}
                     />
                     {errors.company && (
-                      <p id="err-company" className="intel-form-error">
+                      <p id="err-company" className="intel-form-error" role="alert">
                         <IconClose size={12} />
                         <span>{errors.company}</span>
                       </p>
@@ -177,12 +181,12 @@ export function ShareExperienceWizardV2({
                       value={form.roleTitle}
                       onChange={(e) => set('roleTitle', e.target.value)}
                       placeholder="SWE Intern, SDE-1..."
-                      className="intel-form-input"
+                      className={`intel-form-input ${errors.roleTitle ? 'has-error' : ''}`}
                       aria-invalid={Boolean(errors.roleTitle)}
                       aria-describedby={errors.roleTitle ? 'err-roleTitle' : undefined}
                     />
                     {errors.roleTitle && (
-                      <p id="err-roleTitle" className="intel-form-error">
+                      <p id="err-roleTitle" className="intel-form-error" role="alert">
                         <IconClose size={12} />
                         <span>{errors.roleTitle}</span>
                       </p>
@@ -296,15 +300,7 @@ export function ShareExperienceWizardV2({
                           key={d}
                           type="button"
                           onClick={() => set('difficulty', d)}
-                          className={`intel-btn-primary ${form.difficulty === d ? 'is-active' : ''}`}
-                          style={{
-                            justifyContent: 'center',
-                            textTransform: 'uppercase',
-                            fontSize: 11,
-                            fontFamily: 'var(--font-mono)',
-                            backgroundColor: form.difficulty === d ? 'var(--bg-2)' : 'var(--bg-0)',
-                            borderColor: form.difficulty === d ? 'var(--hair)' : 'var(--hair-muted)',
-                          }}
+                          className={`intel-segmented-btn uppercase font-mono text-xs ${form.difficulty === d ? `is-selected is-selected-${d}` : ''}`}
                         >
                           {d}
                         </button>
@@ -375,18 +371,20 @@ export function ShareExperienceWizardV2({
                     value={form.overallExperience}
                     onChange={(e) => set('overallExperience', e.target.value)}
                     placeholder="How did it go overall? What was the vibe, the difficulty, the process? Was the interviewer helpful or cold? Anything surprising?"
-                    className="intel-form-textarea"
+                    className={`intel-form-textarea ${errors.overallExperience ? 'has-error' : ''}`}
                     aria-invalid={Boolean(errors.overallExperience)}
                     aria-describedby={errors.overallExperience ? 'err-overallExp' : undefined}
                   />
                   <div className="flex justify-between items-center">
                     {errors.overallExperience ? (
-                      <p id="err-overallExp" className="intel-form-error">
-                        <IconClose size={12} />
+                      <p id="err-overallExp" className="intel-form-error" role="alert">
+                        <IconClose size={12} aria-hidden="true" />
                         <span>{errors.overallExperience}</span>
                       </p>
                     ) : <div />}
-                    <span className="intel-char-count">{form.overallExperience.length} / 3000</span>
+                    <span className={`intel-char-count ${form.overallExperience.length > 3000 ? 'intel-char-over' : form.overallExperience.length >= 2700 ? 'intel-char-warn' : ''}`}>
+                      {form.overallExperience.length} / 3000
+                    </span>
                   </div>
                 </div>
 
@@ -406,7 +404,7 @@ export function ShareExperienceWizardV2({
 
                 {/* Anonymous Toggle */}
                 <div
-                  className="intel-nda-box cursor-pointer"
+                  className="intel-anon-box cursor-pointer"
                   onClick={() => set('isAnonymous', !form.isAnonymous)}
                   role="checkbox"
                   aria-checked={Boolean(form.isAnonymous)}
@@ -420,11 +418,11 @@ export function ShareExperienceWizardV2({
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="intel-nda-title flex items-center gap-1.5">
+                      <p className="intel-anon-title flex items-center gap-1.5">
                         <IconLock size={13} />
                         <span>Post anonymously</span>
                       </p>
-                      <p className="intel-nda-copy mt-0.5">
+                      <p className="intel-anon-copy mt-0.5">
                         Your name and avatar will be hidden for readers.
                       </p>
                     </div>
@@ -463,8 +461,11 @@ export function ShareExperienceWizardV2({
                         {form.roleTitle || 'Role Title'}
                       </p>
                     </div>
-                    <div className="intel-pill font-mono text-xs">
+                    <div className="flex items-center gap-2">
                       <IntelOutcomeMark outcome={form.outcome} />
+                      {form.difficulty && (
+                        <IntelDifficultyText difficulty={form.difficulty} />
+                      )}
                     </div>
                   </div>
 
@@ -491,7 +492,10 @@ export function ShareExperienceWizardV2({
 
                 {/* NDA Safety Copy Box */}
                 <div className="intel-nda-box">
-                  <h3 className="intel-nda-title">NDA & Community Safety Guidelines</h3>
+                  <h3 className="intel-nda-title">
+                    <IconShield size={16} aria-hidden="true" />
+                    <span>NDA & Community Safety Guidelines</span>
+                  </h3>
                   <p className="intel-nda-copy">
                     Do not share confidential or NDA-protected material, interviewers' names or personal contact details. Describe the type of question, not proprietary content.
                   </p>
@@ -625,14 +629,12 @@ function RoundBuilderCard({ round, index, onUpdate, onRemove, error }) {
                   key={rt.value}
                   type="button"
                   onClick={() => onUpdate('type', rt.value)}
-                  className={`intel-btn-primary text-left ${round.type === rt.value ? 'is-active' : ''}`}
+                  className={`intel-segmented-btn text-left ${round.type === rt.value ? 'is-selected' : ''}`}
                   style={{
                     flexDirection: 'column',
                     alignItems: 'flex-start',
                     padding: '10px 12px',
                     height: 'auto',
-                    backgroundColor: round.type === rt.value ? 'var(--bg-2)' : 'var(--bg-0)',
-                    borderColor: round.type === rt.value ? 'var(--hair)' : 'var(--hair-muted)',
                   }}
                 >
                   <span className="font-mono text-xs font-semibold uppercase">{rt.label}</span>
@@ -641,7 +643,7 @@ function RoundBuilderCard({ round, index, onUpdate, onRemove, error }) {
               ))}
             </div>
             {error && (
-              <p className="intel-form-error mt-1">
+              <p className="intel-form-error mt-1" role="alert">
                 <IconClose size={12} />
                 <span>{error}</span>
               </p>
@@ -683,20 +685,20 @@ function RoundBuilderCard({ round, index, onUpdate, onRemove, error }) {
             <label className="intel-form-label">Did you clear this round?</label>
             <div className="flex items-center gap-2">
               {[
-                { val: true,  label: 'Yes, cleared' },
-                { val: false, label: 'No, dropped' },
-                { val: null,  label: 'Not sure' },
+                { val: true,  label: 'Yes, cleared', stateClass: 'is-selected-ok' },
+                { val: false, label: 'No, dropped',  stateClass: 'is-selected-bad' },
+                { val: null,  label: 'Not sure',     stateClass: 'is-selected' },
               ].map((opt) => (
                 <button
                   key={String(opt.val)}
                   type="button"
                   onClick={() => onUpdate('cleared', opt.val)}
-                  className={`intel-btn-primary ${round.cleared === opt.val ? 'is-active' : ''}`}
+                  className={`intel-segmented-btn ${round.cleared === opt.val ? `is-selected ${opt.stateClass}` : ''}`}
                   style={{
                     fontSize: 11,
                     fontFamily: 'var(--font-mono)',
-                    backgroundColor: round.cleared === opt.val ? 'var(--bg-2)' : 'var(--bg-0)',
-                    borderColor: round.cleared === opt.val ? 'var(--hair)' : 'var(--hair-muted)',
+                    padding: '6px 12px',
+                    minHeight: 36,
                   }}
                 >
                   {opt.label}

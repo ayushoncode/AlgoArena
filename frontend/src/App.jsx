@@ -3,8 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './hooks/useAuth'
 import Navbar from './components/Navbar'
-import UsernameOnboardingModal from './components/UsernameOnboardingModal'
-import InstituteOnboardingModal from './components/InstituteOnboardingModal'
+import OnboardingModal from './components/OnboardingModal'
 import Home from './pages/Home'
 import Lobby from './pages/Lobby'
 import Match from './pages/Match'
@@ -14,6 +13,8 @@ import Leaderboard from './pages/Leaderboard'
 import WhoWeAre from './pages/WhoWeAre'
 import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
+import DailyChallengePage from './pages/DailyChallengePage'
+import AuthPage from './pages/AuthPage'
 import IntelReports from './pages/IntelReports'
 import IntelReportDetail from './pages/IntelReportDetail'
 import ShareExperienceWizard from './pages/ShareExperienceWizard'
@@ -41,6 +42,62 @@ function ScrollToTop() {
     if (pathname === '/' && search.includes('auth=')) return
     window.scrollTo(0, 0)
   }, [pathname, search])
+
+  return null
+}
+
+/**
+ * PageTitleSync — Synchronizes browser document.title with the active section/route.
+ * Ensures the browser tab title always accurately reflects the current page.
+ */
+function PageTitleSync() {
+  const { pathname } = useLocation()
+  const { isAuthenticated, user } = useAuth()
+
+  useEffect(() => {
+    if (pathname === '/') {
+      document.title = isAuthenticated
+        ? 'Lobby | AlgoArena'
+        : 'AlgoArena | Real-Time 1v1 Coding Duels'
+    } else if (pathname === '/lobby') {
+      document.title = 'Lobby | AlgoArena'
+    } else if (pathname === '/leaderboard') {
+      document.title = 'Leaderboard | AlgoArena'
+    } else if (pathname === '/daily') {
+      document.title = 'Daily Problem | AlgoArena'
+    } else if (pathname === '/experiences') {
+      document.title = 'Intel Reports | AlgoArena'
+    } else if (pathname === '/experiences/mine') {
+      document.title = 'My Reports | AlgoArena'
+    } else if (pathname === '/experiences/saved') {
+      document.title = 'Saved Reports | AlgoArena'
+    } else if (pathname === '/experiences/new') {
+      document.title = 'Share Experience | AlgoArena'
+    } else if (pathname.startsWith('/experiences/') && pathname.endsWith('/edit')) {
+      document.title = 'Edit Experience | AlgoArena'
+    } else if (pathname.startsWith('/experiences/')) {
+      document.title = 'Interview Report | AlgoArena'
+    } else if (pathname === '/profile') {
+      document.title = user?.username ? `${user.username} | AlgoArena` : 'Profile | AlgoArena'
+    } else if (pathname.startsWith('/profile/')) {
+      const username = pathname.replace('/profile/', '').split('/')[0]
+      document.title = username ? `${username} | AlgoArena` : 'Profile | AlgoArena'
+    } else if (pathname === '/who-we-are') {
+      document.title = 'Who We Are | AlgoArena'
+    } else if (pathname === '/terms') {
+      document.title = 'Terms of Service | AlgoArena'
+    } else if (pathname === '/privacy') {
+      document.title = 'Privacy Policy | AlgoArena'
+    } else if (pathname === '/login') {
+      document.title = 'Sign In | AlgoArena'
+    } else if (pathname === '/signup' || pathname === '/register') {
+      document.title = 'Join the Roster | AlgoArena'
+    } else if (pathname.startsWith('/match/')) {
+      document.title = 'Match Arena | AlgoArena'
+    } else if (pathname === '/result') {
+      document.title = 'Match Result | AlgoArena'
+    }
+  }, [pathname, isAuthenticated, user?.username])
 
   return null
 }
@@ -168,15 +225,16 @@ function AppLayout() {
   const { pathname } = useLocation()
   const { isAuthenticated } = useAuth()
   const isMatchPage = pathname.startsWith('/match')
+  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/register'
   const isLandingPage = pathname === '/' && !isAuthenticated
-  const isEditorialPage = isLandingPage || pathname === '/who-we-are' || (pathname === '/leaderboard' && !isAuthenticated)
+  const isEditorialPage = isLandingPage || pathname === '/who-we-are' || (pathname === '/leaderboard' && !isAuthenticated) || isAuthPage
 
   return (
     <>
       <ScrollToTop />
+      <PageTitleSync />
       <ActiveMatchGuard />
-      <UsernameOnboardingModal />
-      <InstituteOnboardingModal />
+      <OnboardingModal />
       {/* Mascot guide -- one mount line, lazy-loaded after first paint */}
       <MascotProvider />
       {!isMatchPage && !isEditorialPage && <Navbar />}
@@ -184,10 +242,14 @@ function AppLayout() {
       <main className={isMatchPage ? "h-screen w-screen overflow-hidden" : isEditorialPage ? "min-h-screen w-full relative" : "pt-14 min-h-screen"}>
         <Routes>
           <Route path="/" element={<RootRoute />} />
+          <Route path="/login" element={<AuthPage initialMode="login" />} />
+          <Route path="/signup" element={<AuthPage initialMode="register" />} />
+          <Route path="/register" element={<AuthPage initialMode="register" />} />
           <Route path="/lobby" element={<Lobby />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:username" element={<Profile />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/daily" element={<DailyChallengePage />} />
           <Route path="/who-we-are" element={<WhoWeAre />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />

@@ -18,54 +18,56 @@ export const SECTION_TIPS = [
   {
     id: 'hero',
     sectionId: 'section-hero',
+    selector: '[data-mascot-section="hero"], #section-hero, .hero-screen, main.hero',
     text: 'Same problem, same time, two players. First to pass every test wins.',
     condition: undefined,
   },
   {
     id: 'duel',
     sectionId: 'section-duel',
+    selector: '[data-mascot-section="duel"], #duel, #section-duel',
     text: 'This is a demo duel. Press Play to watch both sides solve it.',
     condition: undefined,
   },
   {
     id: 'howItRuns',
     sectionId: 'section-how-it-works',
+    selector: '[data-mascot-section="howItRuns"], [data-mascot-section="how-it-works"], #how-it-runs, #section-how-it-works',
     text: 'Scroll slowly. Each stage shows one part of a match.',
     condition: undefined,
   },
   {
     id: 'ratings',
     sectionId: 'section-ratings',
-    text: 'Try the calculator. Change the rival rating and watch the points change.',
+    selector: '[data-mascot-section="ratings"], #ratings, #section-ratings',
+    text: 'Six rank tiers from Novice to Grandmaster. Elo updates immediately.',
     condition: undefined,
   },
   {
     id: 'sandbox',
     sectionId: 'section-sandbox',
+    selector: '[data-mascot-section="sandbox"], #sandbox, #section-sandbox',
     text: 'Pick a language tab. The same solution is shown in four languages.',
-    condition: undefined,
-  },
-  {
-    id: 'topics',
-    sectionId: 'section-topics',
-    text: 'Pick a topic to open the Lobby with it selected.',
     condition: undefined,
   },
   {
     id: 'heroes',
     sectionId: 'section-leaderboard',
+    selector: '[data-mascot-section="heroes"], [data-mascot-section="leaderboard"], #leaderboard-preview, #section-leaderboard',
     text: 'These are real players, ranked by Elo.',
     condition: undefined,
   },
   {
     id: 'questions',
     sectionId: 'section-faq',
+    selector: '[data-mascot-section="questions"], [data-mascot-section="faq"], #faq, #section-faq',
     text: 'Open any question for the short answer.',
     condition: undefined,
   },
   {
     id: 'finalCall',
     sectionId: 'section-final-cta',
+    selector: '[data-mascot-section="finalCall"], [data-mascot-section="final-cta"], #enter-arena, #section-final-cta',
     text: 'Ready to play? Create an account and start a match from the Lobby.',
     condition: 'loggedOut',
   },
@@ -125,38 +127,42 @@ export const EVENT_TIPS = {
 export const TOUR_STOPS = [
   {
     stopIndex: 1,
-    total: 6,
+    total: 5,
+    id: 'duel',
     sectionId: 'section-duel',
+    selector: '#duel, [data-mascot-section="duel"]',
     text: 'This is the live duel area. Both players solve the same problem at the same time.',
   },
   {
     stopIndex: 2,
-    total: 6,
+    total: 5,
+    id: 'howItRuns',
     sectionId: 'section-how-it-works',
+    selector: '#how-it-runs, [data-mascot-section="howItRuns"], [data-mascot-section="how-it-works"]',
     text: 'Each stage here shows one part of how a match runs, from start to verdict.',
   },
   {
     stopIndex: 3,
-    total: 6,
+    total: 5,
+    id: 'ratings',
     sectionId: 'section-ratings',
-    text: 'Elo adjusts after every match. The calculator shows the exact point change.',
+    selector: '#ratings, [data-mascot-section="ratings"]',
+    text: 'Elo adjusts after every match. Six rank tiers calibrate from Novice to Grandmaster.',
   },
   {
     stopIndex: 4,
-    total: 6,
+    total: 5,
+    id: 'sandbox',
     sectionId: 'section-sandbox',
+    selector: '#sandbox, [data-mascot-section="sandbox"]',
     text: 'The sandbox shows the same solution in multiple languages. Pick one to compare.',
   },
   {
     stopIndex: 5,
-    total: 6,
-    sectionId: 'section-topics',
-    text: 'Topics filter your Lobby queue. Pick one before searching for a match.',
-  },
-  {
-    stopIndex: 6,
-    total: 6,
+    total: 5,
+    id: 'heroes',
     sectionId: 'section-leaderboard',
+    selector: '#leaderboard-preview, [data-mascot-section="heroes"], [data-mascot-section="leaderboard"]',
     text: 'The leaderboard shows ranked players. Click a name to see their match record.',
   },
 ]
@@ -174,16 +180,11 @@ export const BUBBLE_AUTO_DISMISS_MOBILE_MS = 5000
 export const IDLE_SLEEPY_THRESHOLD_MS = 25000
 
 // ── Route allow-list ──────────────────────────────────────────────────────────
-// The mascot is only shown on these routes.
+// The mascot is only shown on the home page when logged out.
 // All other routes default to hidden.
 // Match/battle/editor/queue/wizard/auth-dialog handled by shouldShowMascot().
 export const ALLOWED_ROUTES = new Set([
   '/',
-  '/lobby',
-  '/leaderboard',
-  '/profile',
-  '/who-we-are',
-  '/experiences',
 ])
 
 // Routes where the mascot is never shown, regardless of state.

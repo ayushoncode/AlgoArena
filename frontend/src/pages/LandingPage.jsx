@@ -133,23 +133,20 @@ export default function LandingPage({ onOpenAuth }) {
     if (onOpenAuth) onOpenAuth(mode)
   }, [onOpenAuth])
 
-  // Section 14: Support ?auth=login and ?auth=register deep links on mount
+  // Clean up any legacy ?auth query params on landing page so visitor stays on home
   useEffect(() => {
     const params = new URLSearchParams(location.search)
-    const param = params.get('auth')
-    if (param === 'login') {
-      openAuth('otp', loginRef.current || ctaRef.current)
-    } else if (param === 'register') {
-      openAuth('register', joinRef.current || ctaRef.current)
+    if (params.has('auth')) {
+      window.history.replaceState({}, '', '/')
     }
-  }, [location.search, openAuth])
+  }, [location.search])
 
   const handleCtaClick = () => {
     closeMenu()
     if (isAuthenticated) {
       navigate('/lobby')
     } else {
-      openAuth('register', ctaRef.current)
+      navigate('/signup')
     }
   }
 
@@ -158,7 +155,7 @@ export default function LandingPage({ onOpenAuth }) {
     if (isAuthenticated) {
       navigate('/lobby')
     } else {
-      openAuth('otp', loginRef.current)
+      navigate('/login')
     }
   }
 
@@ -167,14 +164,14 @@ export default function LandingPage({ onOpenAuth }) {
     if (isAuthenticated) {
       navigate('/lobby')
     } else {
-      openAuth('register', joinRef.current)
+      navigate('/signup')
     }
   }
 
   return (
     <div className="home-scroll-root">
       {/* ── First Screen: Pinned 100dvh Hero Section ── */}
-      <section ref={heroSectionRef} className="nx-landing hero-screen">
+      <section ref={heroSectionRef} className="nx-landing hero-screen" id="section-hero" data-mascot-section="hero">
         {/* 1) Canvas artwork layer */}
         <canvas ref={canvasRef} className="art" aria-hidden="true"></canvas>
 

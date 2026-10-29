@@ -23,13 +23,13 @@ export default function FinalCtaSection({ onOpenAuth }) {
   const handleCtaClick = () => {
     if (isAuthenticated) {
       navigate('/lobby')
-    } else if (onOpenAuth) {
-      onOpenAuth('register')
+    } else {
+      navigate('/signup')
     }
   }
 
   return (
-    <section className="home-section final-cta-section" id="enter-arena">
+    <section className="home-section final-cta-section" id="enter-arena" data-mascot-section="finalCall">
       <div className="depth-hairline-draw surface-hairline-top" aria-hidden="true" />
       <DepthSection id="s8-final-cta" enter={true} exit={false}>
         <div className="section-container">

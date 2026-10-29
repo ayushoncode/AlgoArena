@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { UserAvatar } from '../../utils/avatar'
 import { getTierForRating } from '../../lib/tiers'
+import ProfileSkillsCard from './ProfileSkillsCard'
 
 export default function ProfileSidebar({
   activeUser,
@@ -15,6 +16,9 @@ export default function ProfileSidebar({
   handleErr,
   savingHandle,
   handleSaveUsername,
+  topicFreq = {},
+  matches = [],
+  eloHistory = [],
 }) {
   const [copied, setCopied] = useState(false)
   const [showShareMenu, setShowShareMenu] = useState(false)
@@ -164,9 +168,9 @@ export default function ProfileSidebar({
           </p>
         )}
 
-        {/* Action Buttons: Edit Profile + Share Profile */}
+        {/* Action Buttons: Edit Profile (when isMe) or Share Profile (when !isMe) */}
         <div className="sidebar-actions-row" style={{ marginTop: bio ? 12 : 16 }}>
-          {isMe ? (
+          {isMe && (
             <button
               type="button"
               className="btn-edit-profile"
@@ -174,31 +178,39 @@ export default function ProfileSidebar({
             >
               Edit Profile
             </button>
-          ) : (
-            <button
-              type="button"
-              className="btn-edit-profile"
-              onClick={() => setShowShareMenu(prev => !prev)}
-            >
-              Share Profile
-            </button>
           )}
 
-          <div className="share-menu-anchor" ref={shareMenuRef}>
-            <button
-              type="button"
-              className={`btn-share-icon ${showShareMenu ? 'active' : ''}`}
-              onClick={() => setShowShareMenu(prev => !prev)}
-              title="Share profile"
-              aria-label="Share profile"
-              aria-expanded={showShareMenu}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                <polyline points="16 6 12 2 8 6" />
-                <line x1="12" y1="2" x2="12" y2="15" />
-              </svg>
-            </button>
+          <div
+            className="share-menu-anchor"
+            ref={shareMenuRef}
+            style={!isMe ? { width: '100%' } : undefined}
+          >
+            {isMe ? (
+              <button
+                type="button"
+                className={`btn-share-icon ${showShareMenu ? 'active' : ''}`}
+                onClick={() => setShowShareMenu((prev) => !prev)}
+                title="Share profile"
+                aria-label="Share profile"
+                aria-expanded={showShareMenu}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                  <polyline points="16 6 12 2 8 6" />
+                  <line x1="12" y1="2" x2="12" y2="15" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn-edit-profile"
+                onClick={() => setShowShareMenu((prev) => !prev)}
+                aria-expanded={showShareMenu}
+                style={{ width: '100%' }}
+              >
+                Share Profile
+              </button>
+            )}
 
             {/* Share Popover Options */}
             {showShareMenu && (
@@ -414,6 +426,9 @@ export default function ProfileSidebar({
           </>
         )}
       </div>
+
+      {/* LeetCode-style Skills Card */}
+      <ProfileSkillsCard topicFreq={topicFreq} matches={matches} eloHistory={eloHistory} />
     </aside>
   )
 }
