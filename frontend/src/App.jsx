@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './hooks/useAuth'
 import Navbar from './components/Navbar'
@@ -8,6 +8,9 @@ import Home from './pages/Home'
 import Lobby from './pages/Lobby'
 import Match from './pages/Match'
 import Result from './pages/Result'
+// Phase C/D v2 components — imported lazily so the flag is tree-shaken when unused
+// import MatchV2 from './pages/MatchV2'   // placeholder — added in Phase C
+// import ResultV2 from './pages/ResultV2' // placeholder — added in Phase B
 import Profile from './pages/Profile'
 import Leaderboard from './pages/Leaderboard'
 import WhoWeAre from './pages/WhoWeAre'
@@ -221,6 +224,31 @@ function ActiveMatchGuard() {
   return null
 }
 
+/**
+ * UI flag helpers — ?ui=legacy renders the original (legacy) battle room / result screens.
+ * When Phase C/D presentational v2 components exist, swap the import above and these
+ * wrappers will automatically serve v2 by default.
+ *
+ * Usage: /match/abc123?ui=legacy  or  /result?ui=legacy
+ */
+function MatchRoute() {
+  // Legacy flag: ?ui=legacy keeps the original component.
+  // Phase C: replace `null` with `<MatchV2 />` below.
+  const [params] = useSearchParams()
+  const isLegacy = params.get('ui') === 'legacy'
+  // When MatchV2 exists: return isLegacy ? <Match /> : <MatchV2 />
+  return <Match />
+}
+
+function ResultRoute() {
+  // Legacy flag: ?ui=legacy keeps the original component.
+  // Phase B: replace `null` with `<ResultV2 />` below.
+  const [params] = useSearchParams()
+  const isLegacy = params.get('ui') === 'legacy'
+  // When ResultV2 exists: return isLegacy ? <Result /> : <ResultV2 />
+  return <Result />
+}
+
 function AppLayout() {
   const { pathname } = useLocation()
   const { isAuthenticated } = useAuth()
@@ -261,8 +289,8 @@ function AppLayout() {
           <Route path="/experiences/:id" element={<RequireAuthGate><IntelReportDetail /></RequireAuthGate>} />
           <Route path="/experiences/:id/edit" element={<RequireAuthGate><ShareExperienceWizard /></RequireAuthGate>} />
 
-          <Route path="/match/:roomId" element={<Match />} />
-          <Route path="/result" element={<Result />} />
+          <Route path="/match/:roomId" element={<MatchRoute />} />
+          <Route path="/result" element={<ResultRoute />} />
           {/* Dev-only preview routes (not built in production) */}
           {DevMascot && <Route path="/dev/mascot" element={<React.Suspense fallback={null}><DevMascot /></React.Suspense>} />}
         </Routes>
