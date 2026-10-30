@@ -17,6 +17,9 @@ import {
   AnimatedCounter, DiffChip, VerdictChip
 } from '../components/ui'
 import ProfileV2View from './Profile/ProfileV2View'
+import { usePremium } from '../hooks/usePremium'
+import { usePremiumBadges } from '../hooks/usePremiumBadges'
+import PremiumBadge from '../components/PremiumBadge'
 import '../styles/profile-v2.css'
 
 /* ════════════════════════════════════════════════
@@ -759,6 +762,9 @@ export default function Profile() {
 
   const isOwnProfileRoute = !routeUsername
   const isMe = isOwnProfileRoute || (user?.username && routeUsername?.toLowerCase() === user.username.toLowerCase())
+  const { isPremium } = usePremium()
+  const badges = usePremiumBadges(isMe ? [] : [routeUsername], isMe ? [] : [profileUser?.id])
+  const hasBadge = isMe ? isPremium : Boolean(badges[routeUsername?.toLowerCase()] || badges[profileUser?.id])
 
   // Redirect if visiting private /profile when unauthenticated
   useEffect(() => {
@@ -1168,6 +1174,7 @@ function LegacyProfileView({
                       <h1 className="font-display font-bold text-3xl sm:text-4xl uppercase tracking-wide text-[color:var(--c-text)]">
                         {activeUser?.username}
                       </h1>
+                      {hasBadge && <PremiumBadge size="sm" showLabel className="ml-1" />}
                       {isMe && (
                         !activeUser?.is_username_set ? (
                           <button

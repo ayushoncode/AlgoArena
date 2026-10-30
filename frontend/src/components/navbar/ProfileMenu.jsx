@@ -10,8 +10,11 @@ import {
   IconLogOut,
   IconSun,
   IconMoon,
-  IconClose
+  IconClose,
+  IconHexagonBadge
 } from '../icons'
+import { usePremium } from '../../hooks/usePremium'
+import PremiumBadge from '../PremiumBadge'
 
 /**
  * ProfileMenu — Redesigned AlgoArena account menu
@@ -21,6 +24,7 @@ import {
 export default function ProfileMenu({ isOpen, onClose, user, triggerRef, logout }) {
   const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
+  const { isPremium, status: subStatus, isPremiumEnabled } = usePremium()
   const menuRef = useRef(null)
   const [imgErr, setImgErr] = useState(false)
 
@@ -196,7 +200,10 @@ export default function ProfileMenu({ isOpen, onClose, user, triggerRef, logout 
           )}
         </div>
         <div className="nav-v2-header-info">
-          <span className="nav-v2-header-username">{username}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="nav-v2-header-username">{username}</span>
+            {isPremium && <PremiumBadge size="xs" showLabel={false} />}
+          </div>
           <div className="nav-v2-header-stats">
             <span className="nav-v2-tier-name" style={{ color: tier.color }}>
               {tier.name}
@@ -218,6 +225,68 @@ export default function ProfileMenu({ isOpen, onClose, user, triggerRef, logout 
 
       {/* Ruled list of items */}
       <div className="nav-v2-menu-list">
+        {isPremium ? (
+          <div
+            className="nav-v2-premium-menu-box"
+            style={{
+              padding: '10px 14px',
+              margin: '4px 10px 8px',
+              background: 'rgba(255, 214, 150, 0.06)',
+              border: '1px solid rgba(255, 214, 150, 0.24)',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <PremiumBadge size="xs" showLabel={true} />
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--sub, #a2a9b8)', marginTop: '2px', fontFamily: 'var(--font-mono, monospace)' }}>
+                {subStatus?.until ? (() => {
+                  try {
+                    const d = new Date(subStatus.until)
+                    const f = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+                    return subStatus.cancelAtPeriodEnd ? `Cancels ${f}` : `Renews ${f}`
+                  } catch {
+                    return 'Active subscription'
+                  }
+                })() : 'Active subscription'}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleNavigate('/account/billing')}
+              className="px-2.5 py-1 text-xs font-medium rounded"
+              style={{
+                background: 'var(--bg-2, #0d1527)',
+                border: '1px solid var(--hair, rgba(196, 214, 232, 0.2))',
+                color: 'var(--ink, #ffffff)',
+                cursor: 'pointer'
+              }}
+            >
+              Manage
+            </button>
+          </div>
+        ) : isPremiumEnabled && isMobile ? (
+          <button
+            type="button"
+            id="dd-get-premium"
+            className="nav-v2-menu-item"
+            role="menuitem"
+            onClick={() => handleNavigate('/premium')}
+            style={{ color: 'var(--gold, #ffd696)' }}
+          >
+            <span className="nav-v2-menu-item-icon" style={{ color: 'var(--gold, #ffd696)' }}>
+              <IconHexagonBadge size={18} />
+            </span>
+            <span className="nav-v2-menu-item-label font-medium" style={{ color: 'var(--gold, #ffd696)' }}>
+              Get Premium
+            </span>
+          </button>
+        ) : null}
+
         <button
           type="button"
           id="dd-profile"

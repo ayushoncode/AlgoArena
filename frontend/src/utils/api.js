@@ -29,6 +29,13 @@ api.interceptors.response.use(
       localStorage.removeItem('aa_user')
       window.dispatchEvent(new Event('auth-logout'))
     }
+    if (error?.response?.status === 403 && error?.response?.data?.code === 'PREMIUM_REQUIRED') {
+      if (!error?.config?.skipGatedModal) {
+        window.dispatchEvent(new CustomEvent('premium-gated-error', {
+          detail: { feature: error.response.data.feature || 'sheet' }
+        }))
+      }
+    }
     const msg = error?.response?.data?.message || error.message || 'Unknown error'
     console.error('[API Error]', msg)
     return Promise.reject(new Error(msg))

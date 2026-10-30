@@ -145,8 +145,11 @@ async function evaluateJavaScript(code, testCases, onProgress) {
 
     // Break early if fatal error or timeout to prevent hanging the server
     if (errorMsg) {
-      if (errorMsg.includes('timed out')) overallVerdict = 'TIME_LIMIT_EXCEEDED'
-      else overallVerdict = 'RUNTIME_ERROR'
+      if (errorMsg.includes('timed out') || errorMsg.includes('Time Limit Exceeded') || overallVerdict === 'TIME_LIMIT_EXCEEDED') {
+        overallVerdict = 'TIME_LIMIT_EXCEEDED'
+      } else {
+        overallVerdict = 'RUNTIME_ERROR'
+      }
       break
     } else if (!passed && overallVerdict === 'ACCEPTED') {
       overallVerdict = 'WRONG_ANSWER'

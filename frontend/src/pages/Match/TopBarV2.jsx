@@ -1,6 +1,9 @@
 import React, { useEffect, useRef } from 'react'
 import { ArenaLogo } from '../../components/ArenaLogo'
 import { getEloTier } from '../../utils/tierHelper'
+import { usePremium } from '../../hooks/usePremium'
+import { usePremiumBadges } from '../../hooks/usePremiumBadges'
+import PremiumBadge from '../../components/PremiumBadge'
 
 function FlagIcon({ size = 12 }) {
   return (
@@ -66,6 +69,10 @@ export default function TopBarV2({
   user,
   onOpenResign,
 }) {
+  const { isPremium: isMePremium } = usePremium()
+  const oppBadges = usePremiumBadges(opp?.username ? [opp.username] : [], opp?.id ? [opp.id] : [])
+  const isOppPremium = Boolean(opp?.username && (oppBadges[opp.username.toLowerCase()] || oppBadges[opp.id]))
+
   const diffCfg = formatDifficulty(difficulty)
   const formattedTopic = formatTopic(topic)
 
@@ -139,7 +146,10 @@ export default function TopBarV2({
           return (
             <div className="battle-v2__players-summary hidden lg:flex">
               <div className="battle-v2__player-you">
-                <span>{me?.username ?? user?.username ?? 'You'}</span>
+                <span className="flex items-center gap-1">
+                  <span>{me?.username ?? user?.username ?? 'You'}</span>
+                  {isMePremium && <PremiumBadge size="xs" showLabel={false} />}
+                </span>
                 <span className="battle-v2__you-tag">You</span>
                 <span
                   className="battle-v2__tier-badge"
@@ -170,7 +180,10 @@ export default function TopBarV2({
                   <oppTier.Mark size={11} />
                   <span>{oppRating}</span>
                 </span>
-                <span>{opp?.username ?? 'Opponent'}</span>
+                <span className="flex items-center gap-1">
+                  <span>{opp?.username ?? 'Opponent'}</span>
+                  {isOppPremium && <PremiumBadge size="xs" showLabel={false} />}
+                </span>
               </div>
             </div>
           )

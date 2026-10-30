@@ -2,6 +2,9 @@ import React from 'react'
 import { UserAvatar } from '../../utils/avatar'
 import { IconLock } from '../../components/icons'
 import { getTierForRating, getTierProgress } from '../../lib/tiers'
+import { usePremium } from '../../hooks/usePremium'
+import { usePremiumBadges } from '../../hooks/usePremiumBadges'
+import PremiumBadge from '../../components/PremiumBadge'
 
 export default function PlayerHeader({
   activeUser,
@@ -19,6 +22,9 @@ export default function PlayerHeader({
   handleSaveUsername,
 }) {
   const username = activeUser?.username || 'Warrior'
+  const { isPremium } = usePremium()
+  const badges = usePremiumBadges(isMe ? [] : [username], isMe ? [] : [activeUser?.id])
+  const hasBadge = isMe ? isPremium : Boolean(badges[username?.toLowerCase()] || badges[activeUser?.id])
   const totalMatches = activeUser?.total_matches ?? matches.length ?? (activeUser?.wins || 0) + (activeUser?.losses || 0)
 
   // Canonical tier calculation
@@ -109,9 +115,12 @@ export default function PlayerHeader({
                 </button>
               </form>
             ) : (
-              <h1 className="profile-h1">
-                {username}
-              </h1>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <h1 className="profile-h1" style={{ margin: 0 }}>
+                  {username}
+                </h1>
+                {hasBadge && <PremiumBadge size="sm" showLabel className="ml-1" />}
+              </div>
             )}
 
             {isMe && !activeUser?.is_username_set && !editingUsername && (
