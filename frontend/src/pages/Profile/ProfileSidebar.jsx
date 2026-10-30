@@ -2,6 +2,10 @@ import React, { useState, useRef, useEffect } from 'react'
 import { UserAvatar } from '../../utils/avatar'
 import { getTierForRating } from '../../lib/tiers'
 import ProfileSkillsCard from './ProfileSkillsCard'
+import { usePremium } from '../../hooks/usePremium'
+import { usePremiumBadges } from '../../hooks/usePremiumBadges'
+import PremiumBadge from '../../components/PremiumBadge'
+import { IconHexagonBadge } from '../../components/icons'
 
 export default function ProfileSidebar({
   activeUser,
@@ -25,6 +29,13 @@ export default function ProfileSidebar({
   const shareMenuRef = useRef(null)
   const username = activeUser?.username || 'Warrior'
   const canonicalTier = getTierForRating(elo)
+
+  const { isPremium, status: subStatus } = usePremium()
+  const badges = usePremiumBadges(isMe ? [] : [username], isMe ? [] : [activeUser?.id])
+  const isPremiumUser = isMe ? isPremium : Boolean(badges[username?.toLowerCase()] || badges[activeUser?.id])
+  const launchSlotNum = isMe
+    ? (subStatus?.launchSlot ? subStatus?.slotNumber : null)
+    : (badges[`slot:${username?.toLowerCase()}`] || badges[`slot:${activeUser?.id}`] || null)
 
   // Display Name: from DB display_name or name or username
   const displayName = activeUser?.display_name || activeUser?.name || username
@@ -120,7 +131,7 @@ export default function ProfileSidebar({
       <div className="sidebar-user-card">
         {/* Top: Avatar + Display Name + Handle + Rank */}
         <div className="sidebar-avatar-header">
-          <div className="sidebar-avatar-wrap">
+          <div className="sidebar-avatar-wrap relative">
             <UserAvatar
               username={username}
               seed={activeUser?.avatar_seed}
@@ -129,6 +140,19 @@ export default function ProfileSidebar({
               size={80}
               isMe={isMe}
             />
+            {isPremiumUser && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: '-4px',
+                  borderRadius: '16px',
+                  border: '2px solid var(--gold, #ffd696)',
+                  pointerEvents: 'none',
+                  boxShadow: '0 0 14px rgba(255, 214, 150, 0.35)'
+                }}
+                title="Premium Member"
+              />
+            )}
             {isMe && (
               <button
                 type="button"
@@ -143,7 +167,10 @@ export default function ProfileSidebar({
           </div>
 
           <div className="sidebar-names">
-            <h1 className="sidebar-display-name">{displayName}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <h1 className="sidebar-display-name" style={{ margin: 0 }}>{displayName}</h1>
+              {isPremiumUser && <PremiumBadge size="sm" showLabel={true} />}
+            </div>
 
             {/* Permanent AlgoArena ID Handle */}
             <span className="sidebar-handle">@{username}</span>
@@ -158,6 +185,30 @@ export default function ProfileSidebar({
                 #{activeUser?.rank ? Number(activeUser.rank).toLocaleString() : '-'}
               </span>
             </div>
+
+            {/* Premium Membership Status Pill */}
+            {isPremiumUser && (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  marginTop: '8px',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  background: 'rgba(255, 214, 150, 0.08)',
+                  border: '1px solid rgba(255, 214, 150, 0.32)',
+                  color: 'var(--gold, #ffd696)',
+                  fontSize: '11px',
+                  fontFamily: 'var(--font-mono, monospace)',
+                  letterSpacing: '0.03em',
+                  width: 'fit-content'
+                }}
+              >
+                <IconHexagonBadge size={13} />
+                <span>{launchSlotNum ? `Launch Member #${launchSlotNum}` : 'Premium Subscriber'}</span>
+              </div>
+            )}
           </div>
         </div>
 

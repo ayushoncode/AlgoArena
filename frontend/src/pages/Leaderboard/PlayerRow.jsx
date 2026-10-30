@@ -2,6 +2,7 @@ import React from 'react'
 import { UserAvatar } from '../../utils/avatar'
 import { getEloTier } from '../../utils/tierHelper'
 import { IconShield } from '../../components/icons'
+import PremiumBadge from '../../components/PremiumBadge'
 import './Leaderboard.css'
 
 export default function PlayerRow({
@@ -9,6 +10,7 @@ export default function PlayerRow({
   actualRank,
   isMe,
   isPodium = false,
+  isPremium = false,
   rowRef,
   onSelect,
 }) {
@@ -57,6 +59,7 @@ export default function PlayerRow({
           <div className="lb-player-meta-stack">
             <div className="lb-player-name-line">
               <span className="lb-player-username">{player.username}</span>
+              {isPremium && <PremiumBadge size="xs" showLabel={false} className="ml-1" />}
               {isMe && <span className="lb-you-tag">You</span>}
             </div>
             {player.institute && (

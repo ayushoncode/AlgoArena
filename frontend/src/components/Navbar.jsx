@@ -8,6 +8,7 @@ import ProfileMenu from './navbar/ProfileMenu'
 import StreakButton from './navbar/StreakButton'
 import MobileMenuSheet from './navbar/MobileMenuSheet'
 import { getStreakData } from './navbar/navData'
+import { usePremium } from '../hooks/usePremium'
 import './navbar/navbar-v2.css'
 
 /**
@@ -38,6 +39,7 @@ export default function Navbar() {
 
 function NavbarV2({ navigate, pathname }) {
   const { user, logout, isAuthenticated, loading } = useAuth()
+  const { isPremium, isPremiumEnabled } = usePremium()
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -115,6 +117,7 @@ function NavbarV2({ navigate, pathname }) {
   const NAV_LINKS = [
     { label: 'Lobby', href: '/lobby' },
     { label: 'Leaderboard', href: '/leaderboard' },
+    ...(isPremiumEnabled && !isAuthenticated ? [{ label: 'Premium', href: '/premium' }] : []),
     ...(isAuthenticated ? [{ label: 'Intel Reports', href: '/experiences' }] : []),
     ...(!isAuthenticated ? [{ label: 'Who We Are', href: '/who-we-are' }] : []),
   ]
@@ -202,6 +205,43 @@ function NavbarV2({ navigate, pathname }) {
                   onClick={handleToggleMenu}
                   buttonRef={avatarBtnRef}
                 />
+
+                {isPremiumEnabled && !isPremium && (
+                  <Link
+                    to="/premium"
+                    id="nav-premium-btn"
+                    className="nav-v2-premium-btn"
+                    style={{
+                      height: '32px',
+                      padding: '0 13px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontFamily: 'var(--font-sans, "Sora Variable", sans-serif)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      letterSpacing: '0.03em',
+                      color: 'var(--gold, #ffd696)',
+                      border: '1px solid rgba(255, 214, 150, 0.45)',
+                      borderRadius: '16px',
+                      background: 'rgba(255, 214, 150, 0.05)',
+                      textDecoration: 'none',
+                      transition: 'background 0.15s, border-color 0.15s',
+                      flexShrink: 0,
+                      boxSizing: 'border-box'
+                    }}
+                    onMouseOver={e => {
+                      e.currentTarget.style.background = 'rgba(255, 214, 150, 0.14)'
+                      e.currentTarget.style.borderColor = 'var(--gold, #ffd696)'
+                    }}
+                    onMouseOut={e => {
+                      e.currentTarget.style.background = 'rgba(255, 214, 150, 0.05)'
+                      e.currentTarget.style.borderColor = 'rgba(255, 214, 150, 0.45)'
+                    }}
+                  >
+                    Premium
+                  </Link>
+                )}
 
                 {!isMobile && (
                   <ProfileMenu

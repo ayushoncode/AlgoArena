@@ -434,6 +434,15 @@ export const DEFAULT_STRIVER_CURRICULUM = [
             sample_output: '2'
           },
           {
+            id: '12ca331e-bccf-48e1-a2da-d9357c752daf',
+            title: 'Floor and Ceil in Sorted Array',
+            slug: 'floor-and-ceil-in-sorted-array',
+            topic: 'binary-search',
+            difficulty: 'easy',
+            sample_input: '[3, 4, 7, 8, 8, 10], 5',
+            sample_output: '[4, 7]'
+          },
+          {
             id: 'a7d2695f-6502-4c10-8a39-606903340f5e',
             title: 'Find First and Last Position of Element in Sorted Array',
             slug: 'find-first-and-last-position-of-element-in-sorted-array',
@@ -441,6 +450,182 @@ export const DEFAULT_STRIVER_CURRICULUM = [
             difficulty: 'medium',
             sample_input: '[5, 7, 7, 8, 8, 10], 8',
             sample_output: '[3,4]'
+          },
+          {
+            id: '7f152ae3-eda3-4666-be5f-65bc72124189',
+            title: 'Count Occurrences in Sorted Array',
+            slug: 'count-occurrences-in-sorted-array',
+            topic: 'binary-search',
+            difficulty: 'easy',
+            sample_input: '[1, 1, 2, 2, 2, 2, 3], 2',
+            sample_output: '4'
+          },
+          {
+            id: '60dc6df5-ced4-4be8-a120-28fa46df89d4',
+            title: 'Search in Rotated Sorted Array',
+            slug: 'search-in-rotated-sorted-array',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[4,5,6,7,0,1,2], 0',
+            sample_output: '4'
+          },
+          {
+            id: '8872422f-69e8-4a93-a85d-ba95ed219233',
+            title: 'Search in Rotated Sorted Array II',
+            slug: 'search-in-rotated-sorted-array-ii',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[2,5,6,0,0,1,2], 0',
+            sample_output: 'true'
+          },
+          {
+            id: '77dc09df-8c95-40cc-b38b-a8dc86f94565',
+            title: 'Find Minimum in Rotated Sorted Array',
+            slug: 'find-minimum-in-rotated-sorted-array',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[3,4,5,1,2]',
+            sample_output: '1'
+          },
+          {
+            id: '9c15151f-b62d-4a29-92c8-ad45e6e1f794',
+            title: 'Find Kth Rotation',
+            slug: 'find-kth-rotation',
+            topic: 'binary-search',
+            difficulty: 'easy',
+            sample_input: '[4, 5, 6, 7, 0, 1, 2, 3]',
+            sample_output: '4'
+          },
+          {
+            id: 'a2934792-41de-4a8b-b700-402072a24010',
+            title: 'Single Element in a Sorted Array',
+            slug: 'single-element-in-a-sorted-array',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[1,1,2,3,3,4,4,8,8]',
+            sample_output: '2'
+          },
+          {
+            id: '201dc0e2-7f11-4513-bc0d-9d121c107197',
+            title: 'Find Peak Element',
+            slug: 'find-peak-element',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[1,2,3,1]',
+            sample_output: '2'
+          }
+        ]
+      },
+      {
+        title: 'Find Answers by BS in Search Space',
+        problems: [
+          {
+            id: '660ee0ea-222a-436f-8012-09bbbb969966',
+            title: 'Sqrt(x)',
+            slug: 'sqrt-x',
+            topic: 'binary-search',
+            difficulty: 'easy',
+            sample_input: '4',
+            sample_output: '2'
+          },
+          {
+            id: 'd345026e-4500-4453-beb2-32a22deea6be',
+            title: 'Find Nth Root of M',
+            slug: 'nth-root-of-an-integer',
+            topic: 'binary-search',
+            difficulty: 'easy',
+            sample_input: '3, 27',
+            sample_output: '3'
+          },
+          {
+            id: '8d26041b-a1ad-427d-9c05-108d849f9f37',
+            title: 'Koko Eating Bananas',
+            slug: 'koko-eating-bananas',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[3,6,7,11], 8',
+            sample_output: '4'
+          },
+          {
+            id: '07744848-d500-407c-8daa-78c180417340',
+            title: 'Minimum Number of Days to Make m Bouquets',
+            slug: 'minimum-number-of-days-to-make-m-bouquets',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[1,10,3,10,2], 3, 1',
+            sample_output: '3'
+          },
+          {
+            id: 'e243be8a-b62b-4fdd-a7ee-8e670d58767d',
+            title: 'Find the Smallest Divisor Given a Threshold',
+            slug: 'find-the-smallest-divisor-given-a-threshold',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[1,2,5,9], 6',
+            sample_output: '5'
+          },
+          {
+            id: '0b885224-8eb4-4cb3-a114-f68be342f2d7',
+            title: 'Capacity To Ship Packages Within D Days',
+            slug: 'capacity-to-ship-packages-within-d-days',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[1,2,3,4,5,6,7,8,9,10], 5',
+            sample_output: '15'
+          },
+          {
+            id: '8d0c432b-19bb-483b-afed-b304c9fae554',
+            title: 'Kth Missing Positive Number',
+            slug: 'kth-missing-positive-number',
+            topic: 'binary-search',
+            difficulty: 'easy',
+            sample_input: '[2,3,4,7,11], 5',
+            sample_output: '9'
+          },
+          {
+            id: '4c481cea-cc17-406b-9532-29ee18b5daec',
+            title: 'Aggressive Cows',
+            slug: 'aggressive-cows',
+            topic: 'binary-search',
+            difficulty: 'hard',
+            sample_input: '[0, 3, 4, 7, 10, 9], 4',
+            sample_output: '3'
+          },
+          {
+            id: 'e8637d4a-92c6-437a-80de-46585bc4957f',
+            title: 'Book Allocation Problem',
+            slug: 'book-allocation-problem',
+            topic: 'binary-search',
+            difficulty: 'hard',
+            sample_input: '[12, 34, 67, 90], 2',
+            sample_output: '113'
+          },
+          {
+            id: 'c95cf200-32d0-4197-8a99-727ff5d44669',
+            title: 'Split Array Largest Sum',
+            slug: 'split-array-largest-sum',
+            topic: 'binary-search',
+            difficulty: 'hard',
+            sample_input: '[7,2,5,10,8], 2',
+            sample_output: '18'
+          },
+          {
+            id: '2b0222fc-29f0-44b7-a671-b51c50880de2',
+            title: "Painter's Partition Problem",
+            slug: 'painter-s-partition-problem',
+            topic: 'binary-search',
+            difficulty: 'hard',
+            sample_input: '[10, 20, 30, 40], 2',
+            sample_output: '60'
+          },
+          {
+            id: 'a93c4c21-135a-4361-b485-f892892412f5',
+            title: 'Kth Element of Two Sorted Arrays',
+            slug: 'kth-element-of-two-sorted-arrays',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[2, 3, 6, 7, 9], [1, 4, 8, 10], 5',
+            sample_output: '6'
           }
         ]
       }

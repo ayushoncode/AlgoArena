@@ -203,6 +203,15 @@ export function IconLock({ size = 20, className = '' }) {
   )
 }
 
+export function IconHexagonBadge({ size = 14, className = '' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="square" strokeLinejoin="miter" className={className} aria-hidden="true">
+      <polygon points="8,1.5 14,4.9 14,11.1 8,14.5 2,11.1 2,4.9" />
+      <line x1="5.5" y1="8" x2="10.5" y2="8" strokeWidth="1.2" />
+    </svg>
+  )
+}
+
 export function IconBookmark({ size = 20, filled = false, className = '' }) {
   return (
     <svg width={size} height={size} className={className} {...baseSvgProps} fill={filled ? 'currentColor' : 'none'}>

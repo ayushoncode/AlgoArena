@@ -14,8 +14,11 @@ import {
   IconBookmark,
   IconSun,
   IconMoon,
-  IconLogOut
+  IconLogOut,
+  IconHexagonBadge
 } from '../icons'
+import { usePremium } from '../../hooks/usePremium'
+import PremiumBadge from '../PremiumBadge'
 import './navbar-v2.css'
 
 /**
@@ -41,6 +44,7 @@ export default function MobileMenuSheet({
   triggerRef
 }) {
   const { theme, toggleTheme } = useTheme()
+  const { isPremium, isPremiumEnabled } = usePremium()
   const sheetRef = useRef(null)
   const closeBtnRef = useRef(null)
   const [imgErr, setImgErr] = useState(false)
@@ -172,9 +176,12 @@ export default function MobileMenuSheet({
               )}
             </div>
             <div className="nav-v2-m-user-meta">
-              <span className="nav-v2-m-username" title={username}>
-                {username}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className="nav-v2-m-username" title={username}>
+                  {username}
+                </span>
+                {isPremium && <PremiumBadge size="xs" showLabel={false} />}
+              </div>
               <div className="nav-v2-m-stats-line">
                 <span className="nav-v2-tier-name" style={{ color: tier.color }}>
                   {tier.name}
@@ -184,13 +191,29 @@ export default function MobileMenuSheet({
                   {rating}
                 </span>
               </div>
-              <Link
-                to="/profile"
-                className="nav-v2-m-profile-link"
-                onClick={onClose}
-              >
-                View profile
-              </Link>
+              {isPremiumEnabled && !isPremium ? (
+                <div
+                  onClick={() => handleNav('/premium')}
+                  style={{
+                    color: 'var(--gold, #ffd696)',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    marginTop: '3px',
+                    lineHeight: '1.3'
+                  }}
+                >
+                  Access all features with our Premium subscription!
+                </div>
+              ) : (
+                <Link
+                  to="/profile"
+                  className="nav-v2-m-profile-link"
+                  onClick={onClose}
+                >
+                  View profile
+                </Link>
+              )}
             </div>
           </div>
         ) : (
@@ -214,6 +237,44 @@ export default function MobileMenuSheet({
       <div className="nav-v2-m-sheet-body">
         {/* Main Nav Section */}
         <div className="nav-v2-m-nav-group" role="navigation" aria-label="Main navigation">
+          {isPremiumEnabled && (
+            <button
+              type="button"
+              className={`nav-v2-m-row ${pathname === '/premium' ? 'is-active' : ''}`}
+              onClick={() => handleNav('/premium')}
+              aria-current={pathname === '/premium' ? 'page' : undefined}
+              style={{
+                color: 'var(--gold, #ffd696)',
+                background: 'rgba(255, 214, 150, 0.05)',
+                border: '1px solid rgba(255, 214, 150, 0.25)',
+                borderRadius: '8px',
+                margin: '4px 8px 8px 8px',
+                padding: '10px 12px'
+              }}
+            >
+              <span className="nav-v2-m-row-icon" style={{ color: 'var(--gold, #ffd696)' }}>
+                <IconHexagonBadge size={18} />
+              </span>
+              <span className="nav-v2-m-row-label" style={{ color: 'var(--gold, #ffd696)', fontWeight: 600 }}>
+                {isPremium ? 'Premium Membership' : 'AlgoArena Premium'}
+              </span>
+              <span
+                style={{
+                  marginLeft: 'auto',
+                  fontSize: '11px',
+                  fontFamily: 'var(--font-mono, monospace)',
+                  color: isPremium ? 'var(--gold, #ffd696)' : '#080d1a',
+                  background: isPremium ? 'transparent' : 'var(--gold, #ffd696)',
+                  padding: isPremium ? '0' : '2px 8px',
+                  borderRadius: '4px',
+                  fontWeight: 600
+                }}
+              >
+                {isPremium ? 'Active' : 'Upgrade'}
+              </span>
+            </button>
+          )}
+
           <button
             type="button"
             className={`nav-v2-m-row ${pathname === '/lobby' ? 'is-active' : ''}`}

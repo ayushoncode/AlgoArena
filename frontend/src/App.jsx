@@ -16,6 +16,8 @@ import Leaderboard from './pages/Leaderboard'
 import WhoWeAre from './pages/WhoWeAre'
 import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
+import RefundPolicy from './pages/RefundPolicy'
+import BillingPage from './pages/Account/BillingPage'
 import DailyChallengePage from './pages/DailyChallengePage'
 import AuthPage from './pages/AuthPage'
 import IntelReports from './pages/IntelReports'
@@ -24,7 +26,9 @@ import ShareExperienceWizard from './pages/ShareExperienceWizard'
 import { useSocket } from './hooks/useSocket'
 import { getActiveMatch, setActiveMatch } from './utils/activeMatch'
 import { ThemeProvider } from './context/ThemeContext'
+import { PremiumProvider } from './context/PremiumContext'
 import MascotProvider from './components/mascot/MascotProvider.jsx'
+import PremiumPage from './pages/Premium/PremiumPage'
 
 import { Shield, ChevronRight } from 'lucide-react'
 import { PageWrapper, HudPanel } from './components/ui/index.jsx'
@@ -87,10 +91,16 @@ function PageTitleSync() {
       document.title = username ? `${username} | AlgoArena` : 'Profile | AlgoArena'
     } else if (pathname === '/who-we-are') {
       document.title = 'Who We Are | AlgoArena'
+    } else if (pathname === '/premium') {
+      document.title = 'Premium | AlgoArena'
+    } else if (pathname === '/account/billing') {
+      document.title = 'Billing & Subscription | AlgoArena'
     } else if (pathname === '/terms') {
       document.title = 'Terms of Service | AlgoArena'
     } else if (pathname === '/privacy') {
       document.title = 'Privacy Policy | AlgoArena'
+    } else if (pathname === '/refund-policy') {
+      document.title = 'Refund and Cancellation Policy | AlgoArena'
     } else if (pathname === '/login') {
       document.title = 'Sign In | AlgoArena'
     } else if (pathname === '/signup' || pathname === '/register') {
@@ -279,8 +289,11 @@ function AppLayout() {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/daily" element={<DailyChallengePage />} />
           <Route path="/who-we-are" element={<WhoWeAre />} />
+          <Route path="/premium" element={<PremiumPage />} />
+          <Route path="/account/billing" element={<BillingPage />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
           {/* Intel Reports Routes (Gated) */}
           <Route path="/experiences" element={<RequireAuthGate><IntelReports /></RequireAuthGate>} />
           <Route path="/experiences/mine" element={<RequireAuthGate><IntelReports /></RequireAuthGate>} />
@@ -304,7 +317,9 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <AppLayout />
+          <PremiumProvider>
+            <AppLayout />
+          </PremiumProvider>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
