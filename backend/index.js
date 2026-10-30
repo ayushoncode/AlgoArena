@@ -27,6 +27,7 @@ const userRoutes    = require('./routes/users')
 const problemRoutes = require('./routes/problems')
 const matchRoutes   = require('./routes/matches')
 const experienceRoutes = require('./routes/experiences')
+const premiumRoutes = require('./routes/premium')
 const { registerMatchmaking, queueStats } = require('./socket/matchmaking')
 const { registerMatch, handleVerdict }  = require('./socket/match')
 const { registerCustomRoom }  = require('./socket/customRoom')
@@ -76,7 +77,12 @@ app.use(cors({
   origin:      allowedOrigin,
   credentials: true,
 }))
-app.use(express.json({ limit: '50kb' }))  // prevent enormous request bodies
+app.use(express.json({
+  limit: '50kb',
+  verify: (req, _res, buf) => {
+    req.rawBody = buf
+  }
+}))  // prevent enormous request bodies and capture raw buffer for webhooks
 app.use(express.urlencoded({ extended: false }))
 
 // ── Request logger (dev only) ─────────────────────────────────────────────────
@@ -93,6 +99,7 @@ app.use('/api/users',    userRoutes)
 app.use('/api/problems', problemRoutes)
 app.use('/api/matches',  matchRoutes)
 app.use('/api/experiences', experienceRoutes)
+app.use('/api/premium',  premiumRoutes)
 
 // ── Health check — useful for Render uptime pings ────────────────────────────
 app.get('/health', (_req, res) => {

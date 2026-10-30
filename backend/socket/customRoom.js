@@ -27,7 +27,20 @@ function registerCustomRoom(io) {
     const { id: userId, username, elo_rating } = socket.user
 
     /* ── create_custom_room ───────────────────────────────── */
-    socket.on('create_custom_room', async ({ topic, difficulty }) => {
+    socket.on('create_custom_room', async ({ topic, difficulty, problemId = null }) => {
+      // Premium guard: sheet-based room creation requires active Premium when gating is enabled
+      if (problemId && process.env.PREMIUM_GATING_ENABLED === 'true') {
+        const { getSubscriptionStatus } = require('../services/premium')
+        const status = await getSubscriptionStatus(userId)
+        if (!status || !status.active) {
+          return socket.emit('premium_required', {
+            code: 'PREMIUM_REQUIRED',
+            feature: 'sheet_1v1',
+            message: 'Premium membership required for sheet-based matches.'
+          })
+        }
+      }
+
       const code = generateRoomCode()
       const roomId = `room:custom_${code}`
 

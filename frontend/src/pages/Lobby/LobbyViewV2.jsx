@@ -1,10 +1,13 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import LobbyHeader from './LobbyHeader'
 import TopicGrid from './TopicGrid'
 import DifficultySegment from './DifficultySegment'
 import MatchSummaryRail from './MatchSummaryRail'
+import QuickArenaThreeCol from './QuickArenaThreeCol'
 import StriverSheetView from '../../components/StriverSheetView'
-import { IconSwords, IconCheck, IconClose, IconCode, IconShield, IconTrophy, IconPlay } from '../../components/icons'
+import { IconSwords, IconCheck, IconClose, IconCode, IconShield, IconTrophy, IconPlay, IconLock } from '../../components/icons'
+import { usePremium } from '../../hooks/usePremium'
 import striver3dAvatar from '../../assets/striver-3d.png'
 import './Lobby.css'
 
@@ -72,11 +75,17 @@ export default function LobbyViewV2({
   // Search Ref
   desktopSearchRef,
 }) {
+  const { isPremium, isPremiumEnabled, openLockedModal } = usePremium()
   const dailyPreviewText = dailyProblem?.description
     ? cleanPreview(dailyProblem.description)
     : 'Complete the featured algorithm problem to earn arena rating points.'
 
   const swings = SWINGS[diff] || SWINGS.medium
+
+  const isLegacyQuickArena = typeof window !== 'undefined' && (
+    window.location.search.includes('ui=legacy') ||
+    window.location.search.includes('ui=2col')
+  )
 
   return (
     <div className="lobby-v2">
@@ -116,7 +125,14 @@ export default function LobbyViewV2({
             </div>
             <IconCode size={14} />
             <span><span className="hidden sm:inline">Striver A2Z Sheet</span><span className="sm:hidden">Striver</span></span>
-            <span className="lobby-v2-mode-pill">Curriculum</span>
+            {isPremiumEnabled && !isPremium ? (
+              <span className="lobby-v2-mode-pill flex items-center gap-1" style={{ color: 'var(--gold, #ffd696)', borderColor: 'rgba(255, 214, 150, 0.4)' }}>
+                <IconLock size={10} />
+                <span>Premium</span>
+              </span>
+            ) : (
+              <span className="lobby-v2-mode-pill">Curriculum</span>
+            )}
           </button>
 
           <button
@@ -286,6 +302,99 @@ export default function LobbyViewV2({
           </div>
         ) : lobbyTab === 'striver' ? (
           <div className="lobby-v2-striver-wrap">
+            {isPremiumEnabled && !isPremium && (
+              <div
+                style={{
+                  background: 'var(--bg-1, #080d1a)',
+                  border: '1px solid rgba(255, 214, 150, 0.35)',
+                  borderRadius: '10px',
+                  padding: '16px 20px',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '16px',
+                  flexWrap: 'wrap'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div
+                    style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: '8px',
+                      background: 'rgba(255, 214, 150, 0.1)',
+                      border: '1px solid rgba(255, 214, 150, 0.3)',
+                      color: 'var(--gold, #ffd696)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}
+                  >
+                    <IconLock size={20} />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontFamily: 'var(--font-display, Sora, sans-serif)', fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>
+                        Striver A2Z Sheet Curriculum
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono, monospace)',
+                          fontSize: '10.5px',
+                          textTransform: 'uppercase',
+                          color: 'var(--gold, #ffd696)',
+                          background: 'rgba(255, 214, 150, 0.1)',
+                          padding: '2px 7px',
+                          borderRadius: '4px',
+                          border: '1px solid rgba(255, 214, 150, 0.25)',
+                          letterSpacing: '0.04em'
+                        }}
+                      >
+                        Preview Mode
+                      </span>
+                    </div>
+                    <p style={{ margin: '3px 0 0', fontSize: '12.5px', color: 'var(--sub, #a2a9b8)', lineHeight: '1.4' }}>
+                      Browse the full topic breakdown freely. AlgoArena Premium is required to launch 1v1 duels on sheet questions.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '16px', fontWeight: 700, color: 'var(--gold, #ffd696)' }}>
+                      ₹39 <span style={{ fontSize: '11px', color: 'var(--sub, #a2a9b8)', fontWeight: 400 }}>/ month</span>
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: 'var(--sub, #a2a9b8)' }}>Launch Offer</div>
+                  </div>
+                  <Link
+                    to="/premium"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '38px',
+                      padding: '0 18px',
+                      background: 'var(--gold, #ffd696)',
+                      color: '#080d1a',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      borderRadius: '6px',
+                      textDecoration: 'none',
+                      letterSpacing: '0.02em',
+                      whiteSpace: 'nowrap',
+                      transition: 'opacity 0.15s'
+                    }}
+                    onMouseOver={e => e.currentTarget.style.opacity = '0.9'}
+                    onMouseOut={e => e.currentTarget.style.opacity = '1'}
+                  >
+                    Upgrade to Premium
+                  </Link>
+                </div>
+              </div>
+            )}
+
             <StriverSheetView
               striverData={striverData}
               loading={striverLoading}
@@ -293,121 +402,57 @@ export default function LobbyViewV2({
               onBattleRandom={onBattleRandomFromSheet}
               queuingProblemId={queuingProblem?.id}
               isQueuing={queuing}
+              isGated={isPremiumEnabled && !isPremium}
+            />
+          </div>
+        ) : isLegacyQuickArena ? (
+          /* 2-COLUMN MAIN GRID (8 columns left, 4 columns right rail) - Legacy Fallback */
+          <div className="lobby-v2-grid">
+            {/* LEFT CONTENT COLUMN */}
+            <div className="lobby-v2-content-col">
+              {/* Topic Selection Grid (9 primary cells) */}
+              <TopicGrid
+                topics={topics}
+                selectedTopicId={topic}
+                onSelectTopic={onSelectTopic}
+                onSurpriseMe={onSurpriseMe}
+              />
+
+              {/* Difficulty Segment (Easy, Medium, Hard) */}
+              <DifficultySegment
+                selectedDiff={diff}
+                onSelectDiff={onSelectDiff}
+              />
+            </div>
+
+            {/* RIGHT SUMMARY RAIL (Sticky) */}
+            <MatchSummaryRail
+              selectedTopicObj={selectedTopicObj}
+              selectedTopicId={topic}
+              diff={diff}
+              diffObj={diffObj}
+              onStartQueue={onStartQueue}
+              queuing={queuing}
             />
           </div>
         ) : (
-          /* 2-COLUMN MAIN GRID (8 columns left, 4 columns right rail) */
-          <div className="lobby-v2-grid">
-            
-            {/* LEFT CONTENT COLUMN */}
-            <div className="lobby-v2-content-col">
-
-            
-            {/* Topic Selection Grid (9 primary cells) */}
-            <TopicGrid
-              topics={topics}
-              selectedTopicId={topic}
-              onSelectTopic={onSelectTopic}
-              onSurpriseMe={onSurpriseMe}
-            />
-
-            {/* Difficulty Segment (Easy, Medium, Hard) */}
-            <DifficultySegment
-              selectedDiff={diff}
-              onSelectDiff={onSelectDiff}
-            />
-
-            {/* BELOW SECTION: Featured Daily Arena Challenge Banner */}
-            <div className="lobby-v2-daily-section">
-              <div className={`lobby-v2-daily-card ${isDailySelected ? 'is-selected' : ''}`}>
-                <div className="lobby-v2-daily-header">
-                  <div className="lobby-v2-daily-badge-group">
-                    <span className="lobby-v2-daily-pill-live">
-                      <span className="lobby-v2-daily-live-dot" />
-                      <span>Daily Quest</span>
-                    </span>
-                    <span className="lobby-v2-daily-pill-meta">
-                      {dailyObj ? `${dailyObj.topic} · ${dailyObj.difficulty}` : 'General · Medium'}
-                    </span>
-                  </div>
-
-                  <span className="lobby-v2-daily-reset-hint">
-                    Resets daily · 00:00 UTC
-                  </span>
-                </div>
-
-                <div className="lobby-v2-daily-body">
-                  <div className="lobby-v2-daily-info">
-                    <h3 className="lobby-v2-daily-title">
-                      {dailyObj ? dailyObj.title : "Today's algorithmic problem"}
-                    </h3>
-
-                    <p
-                      className="lobby-v2-daily-desc"
-                      title={dailyProblem?.description || ''}
-                    >
-                      {dailyPreviewText}
-                    </p>
-
-                    <div className="lobby-v2-daily-perks">
-                      <span className="lobby-v2-daily-perk">
-                        <IconTrophy size={13} className="lobby-v2-daily-perk-icon-gold" />
-                        <span>Ranked Duel Rating Stake</span>
-                      </span>
-                      <span className="lobby-v2-daily-perk">
-                        <IconSwords size={13} className="lobby-v2-daily-perk-icon-blue" />
-                        <span>Synchronous 1v1 Clash</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="lobby-v2-daily-actions">
-                    <button
-                      type="button"
-                      className={`lobby-v2-daily-btn ${isDailySelected ? 'is-active' : ''}`}
-                      onClick={() => {
-                        if (isDailySelected) {
-                          onSelectTopic(null)
-                        } else if (dailyObj) {
-                          onSelectTopic(dailyObj.topic)
-                          onSelectDiff(dailyObj.difficulty)
-                        }
-                      }}
-                    >
-                      {isDailySelected ? (
-                        <>
-                          <IconCheck size={14} />
-                          <span>Daily Selected (Click to Deselect)</span>
-                        </>
-                      ) : (
-                        <>
-                          <IconPlay size={13} />
-                          <span>Play Daily Challenge</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* RIGHT SUMMARY RAIL (Sticky) */}
-          <MatchSummaryRail
-            selectedTopicObj={selectedTopicObj}
-            selectedTopicId={topic}
+          /* 3-COLUMN PRESENTATIONAL GRID (1 Topic, 2 Difficulty, 3 Match summary) */
+          <QuickArenaThreeCol
+            topics={topics}
+            topic={topic}
             diff={diff}
+            selectedTopicObj={selectedTopicObj}
             diffObj={diffObj}
+            onSelectTopic={onSelectTopic}
+            onSelectDiff={onSelectDiff}
             onStartQueue={onStartQueue}
+            onSurpriseMe={onSurpriseMe}
             queuing={queuing}
           />
+        )}
 
-        </div>
-      )}
-
-        {/* Mobile Sticky Quick Match Action Bar (Visible only on mobile/tablet when on Quick Arena) */}
-        {lobbyTab !== 'striver' && lobbyTab !== 'custom' && (
+        {/* Mobile Sticky Quick Match Action Bar (Only for legacy 2-column fallback on mobile) */}
+        {isLegacyQuickArena && lobbyTab !== 'striver' && lobbyTab !== 'custom' && (
           <aside className="lobby-v2-mobile-bottom-bar" aria-label="Mobile Quick Match Actions">
             <div className="lobby-v2-mobile-summary">
               <span className="lobby-v2-mobile-summary-topic">
@@ -429,7 +474,7 @@ export default function LobbyViewV2({
               disabled={!topic || queuing}
             >
               <IconSwords size={13} />
-              <span>{queuing ? 'Searching…' : (topic ? 'Find Match' : 'Choose Topic')}</span>
+              <span>{queuing ? 'Searching...' : (topic ? 'Find Match' : 'Choose Topic')}</span>
             </button>
           </aside>
         )}

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useSocket } from '../hooks/useSocket'
+import { usePremium } from '../hooks/usePremium'
 import api from '../utils/api'
 import { UserAvatar, getArenaTier } from '../utils/avatar'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -812,7 +813,10 @@ function PrivateMatchModal({ isOpen, onClose, topic, diff, emit, on, off, initia
 export default function Lobby() {
   const { user, isAuthenticated, loading } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
+  const { isPremium, isPremiumEnabled, openLockedModal } = usePremium()
+  const [premiumToast, setPremiumToast] = useState(location.state?.premiumToast || null)
   const live = useLiveCounter()
 
   const [topic, setTopic] = useState(null)
@@ -849,10 +853,21 @@ export default function Lobby() {
     } catch { }
   }, [])
 
-  // Fetch Striver Sheet curriculum
+  // Auto-dismiss and clean up premium toast
   useEffect(() => {
+    if (location.state?.premiumToast) {
+      setPremiumToast(location.state.premiumToast)
+      window.history.replaceState({}, document.title)
+      const timer = setTimeout(() => setPremiumToast(null), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [location.state])
+
+  // Fetch Striver Sheet curriculum only when user is Premium or gating is disabled
+  useEffect(() => {
+    if (isPremiumEnabled && !isPremium) return
     setStriverLoading(true)
-    api.get('/api/problems/striver-sheet')
+    api.get('/api/problems/striver-sheet', { skipGatedModal: true })
       .then(({ data }) => {
         if (Array.isArray(data) && data.length > 0) {
           setStriverData(data)
@@ -860,7 +875,7 @@ export default function Lobby() {
       })
       .catch(err => console.error('[Lobby] Failed to load striver sheet:', err))
       .finally(() => setStriverLoading(false))
-  }, [])
+  }, [isPremiumEnabled, isPremium])
 
   // Topic & Diff selection handlers with localStorage memory
   const handleSelectTopic = useCallback((tId) => {
@@ -906,7 +921,7 @@ export default function Lobby() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [topic, customModalOpen, queuing, matchFoundData, handleSelectTopic])
 
-  useEffect(() => { if (!loading && !isAuthenticated) navigate('/?auth=login') }, [loading, isAuthenticated, navigate])
+  useEffect(() => { if (!loading && !isAuthenticated) navigate('/', { replace: true }) }, [loading, isAuthenticated, navigate])
   useEffect(() => { if (initialRoomCode) setCustomModalOpen(true) }, [initialRoomCode])
 
   useEffect(() => {
@@ -918,6 +933,22 @@ export default function Lobby() {
   useEffect(() => {
     api.get('/api/problems/daily').then(({ data }) => setDailyProblem(data)).catch(() => { })
   }, [])
+
+  // Auto-select and start queue if directed from /daily page
+  useEffect(() => {
+    const dailyParam = searchParams.get('daily')
+    if (dailyParam && dailyProblem) {
+      handleSelectTopic(dailyProblem.topic)
+      handleSelectDiff(dailyProblem.difficulty)
+      if (dailyParam === 'queue' || dailyParam === 'start') {
+        setTimeout(() => {
+          setQueuingProblem(null)
+          setQueuing(true)
+          emit('join_queue', { topic: dailyProblem.topic, difficulty: dailyProblem.difficulty, problemId: dailyProblem.id })
+        }, 100)
+      }
+    }
+  }, [searchParams, dailyProblem, handleSelectTopic, handleSelectDiff, emit])
 
   // Auto re-join on reconnect
   useEffect(() => {
@@ -956,6 +987,10 @@ export default function Lobby() {
   }
 
   const handleBattleProblem = useCallback((prob) => {
+    if (isPremiumEnabled && !isPremium) {
+      openLockedModal('sheet_1v1')
+      return
+    }
     if (queuing) return
     setQueuingProblem(prob)
     setTopic(prob.topic || 'arrays')
@@ -966,16 +1001,20 @@ export default function Lobby() {
       difficulty: prob.difficulty || 'easy',
       problemId: prob.id
     })
-  }, [queuing, emit])
+  }, [queuing, emit, isPremiumEnabled, isPremium, openLockedModal])
 
   const handleBattleRandomFromSheet = useCallback((sheetTopic = 'arrays', sheetDiff = 'easy') => {
+    if (isPremiumEnabled && !isPremium) {
+      openLockedModal('sheet_1v1')
+      return
+    }
     if (queuing) return
     setQueuingProblem(null)
     setTopic(sheetTopic)
     setDiff(sheetDiff)
     setQueuing(true)
     emit('join_queue', { topic: sheetTopic, difficulty: sheetDiff })
-  }, [queuing, emit])
+  }, [queuing, emit, isPremiumEnabled, isPremium, openLockedModal])
 
   function handleSurpriseMe() {
     const randomTopic = TOPICS[Math.floor(Math.random() * TOPICS.length)].id
@@ -1149,14 +1188,110 @@ export default function Lobby() {
           </div>
 
           {lobbyTab === 'striver' ? (
-            <StriverSheetView
-              striverData={striverData}
-              loading={striverLoading}
-              onBattleProblem={handleBattleProblem}
-              onBattleRandom={handleBattleRandomFromSheet}
-              queuingProblemId={queuingProblem?.id}
-              isQueuing={queuing}
-            />
+            <>
+              {isPremiumEnabled && !isPremium && (
+                <div
+                  style={{
+                    background: 'var(--bg-1, #080d1a)',
+                    border: '1px solid rgba(255, 214, 150, 0.35)',
+                    borderRadius: '10px',
+                    padding: '16px 20px',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '16px',
+                    flexWrap: 'wrap'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div
+                      style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: '8px',
+                        background: 'rgba(255, 214, 150, 0.1)',
+                        border: '1px solid rgba(255, 214, 150, 0.3)',
+                        color: 'var(--gold, #ffd696)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}
+                    >
+                      <IconLock size={20} />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontFamily: 'var(--font-display, Sora, sans-serif)', fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>
+                          Striver A2Z Sheet Curriculum
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-mono, monospace)',
+                            fontSize: '10.5px',
+                            textTransform: 'uppercase',
+                            color: 'var(--gold, #ffd696)',
+                            background: 'rgba(255, 214, 150, 0.1)',
+                            padding: '2px 7px',
+                            borderRadius: '4px',
+                            border: '1px solid rgba(255, 214, 150, 0.25)',
+                            letterSpacing: '0.04em'
+                          }}
+                        >
+                          Preview Mode
+                        </span>
+                      </div>
+                      <p style={{ margin: '3px 0 0', fontSize: '12.5px', color: 'var(--sub, #a2a9b8)', lineHeight: '1.4' }}>
+                        Browse the full topic breakdown freely. AlgoArena Premium is required to launch 1v1 duels on sheet questions.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '16px', fontWeight: 700, color: 'var(--gold, #ffd696)' }}>
+                        ₹39 <span style={{ fontSize: '11px', color: 'var(--sub, #a2a9b8)', fontWeight: 400 }}>/ month</span>
+                      </div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--sub, #a2a9b8)' }}>Launch Offer</div>
+                    </div>
+                    <Link
+                      to="/premium"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '38px',
+                        padding: '0 18px',
+                        background: 'var(--gold, #ffd696)',
+                        color: '#080d1a',
+                        fontWeight: 700,
+                        fontSize: '13px',
+                        borderRadius: '6px',
+                        textDecoration: 'none',
+                        letterSpacing: '0.02em',
+                        whiteSpace: 'nowrap',
+                        transition: 'opacity 0.15s'
+                      }}
+                      onMouseOver={e => e.currentTarget.style.opacity = '0.9'}
+                      onMouseOut={e => e.currentTarget.style.opacity = '1'}
+                    >
+                      Upgrade to Premium
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              <StriverSheetView
+                striverData={striverData}
+                loading={striverLoading}
+                onBattleProblem={handleBattleProblem}
+                onBattleRandom={handleBattleRandomFromSheet}
+                queuingProblemId={queuingProblem?.id}
+                isQueuing={queuing}
+                isGated={isPremiumEnabled && !isPremium}
+              />
+            </>
           ) : (
             <>
               {/* STEPPER STRIP */}
@@ -1200,74 +1335,6 @@ export default function Lobby() {
               </div>
             </div>
           </div>
-
-          {/* FEATURED DAILY CHALLENGE BANNER */}
-          {dailyObj ? (
-            <HudPanel accentTopLeft="var(--c-gold)" accentBotRight="var(--c-gold)" glow glowColor="rgba(245,185,66,0.15)" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
-                      style={{ background: 'rgba(245,185,66,0.15)', color: 'var(--c-gold)', border: '1px solid rgba(245,185,66,0.3)' }}>
-                      Daily Challenge
-                    </span>
-                    <span className="font-mono text-xs uppercase" style={{ color: 'var(--c-text-mute)' }}>Topic: {dailyObj.topic}</span>
-                    <DiffChip difficulty={dailyObj.difficulty} />
-                  </div>
-                  <h3 className="font-display font-bold text-lg sm:text-xl" style={{ color: 'var(--c-text)' }}>
-                    {dailyObj.title}
-                  </h3>
-                  <p className="font-sans text-xs max-w-3xl leading-relaxed line-clamp-2" style={{ color: 'var(--c-text-dim)' }}>
-                    {dailyObj.desc.replace(/[*#`_]/g, '').replace(/\n/g, ' ').substring(0, 160)}...
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isDailySelected) {
-                        handleSelectTopic(null)
-                      } else {
-                        handleSelectTopic(dailyObj.topic)
-                        handleSelectDiff(dailyObj.difficulty)
-                      }
-                    }}
-                    className="px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider rounded transition-all flex items-center gap-2 cursor-pointer"
-                    style={{
-                      background: isDailySelected ? 'rgba(245,185,66,0.2)' : 'var(--c-gold)',
-                      color: isDailySelected ? 'var(--c-gold)' : '#000',
-                      border: `1px solid var(--c-gold)`,
-                      boxShadow: '0 0 15px rgba(245,185,66,0.3)'
-                    }}
-                  >
-                    {isDailySelected ? (
-                      <>
-                        <CheckCircle2 size={15} /> Daily Selected (Click to Deselect)
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={15} /> Take Daily Challenge
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </HudPanel>
-          ) : (
-            <HudPanel accentTopLeft="var(--c-border)" accentBotRight="var(--c-border)" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-2 flex-1 w-full">
-                  <Skeleton height={20} width={120} />
-                  <Skeleton height={28} width="60%" />
-                  <Skeleton height={14} width="90%" />
-                </div>
-                <div className="flex items-center gap-3">
-                  <Skeleton height={40} width={180} />
-                </div>
-              </div>
-            </HudPanel>
-          )}
 
           {/* TWO COLUMN CONTENT: TOPIC & DIFF GRID vs STICKY DEPLOY LOADOUT */}
           <div className="grid lg:grid-cols-[1fr_340px] gap-6 items-start">
@@ -1658,6 +1725,22 @@ export default function Lobby() {
           onBattleRandomFromSheet={handleBattleRandomFromSheet}
           queuingProblem={queuingProblem}
         />
+      )}
+
+      {premiumToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed top-20 right-6 z-50 px-4 py-3 rounded text-xs select-none shadow-lg"
+          style={{
+            background: 'var(--bg-1, #080d1a)',
+            border: '1px solid var(--gold, #ffd696)',
+            color: 'var(--gold, #ffd696)',
+            fontFamily: 'var(--font-sans, "Sora Variable", sans-serif)'
+          }}
+        >
+          {premiumToast}
+        </div>
       )}
     </>
   )

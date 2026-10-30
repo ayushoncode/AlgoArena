@@ -9,6 +9,7 @@ import {
 import api from "../utils/api"
 import { useAuth } from "../hooks/useAuth"
 import { PageWrapper, HudPanel, HudButton, GhostButton, ToastContainer } from "../components/ui/index.jsx"
+import { ShareExperienceWizardV2 } from "./Intel/ShareExperienceWizardV2.jsx"
 
 /* ─── Constants ─────────────────────────────────────────── */
 const STEPS = [
@@ -263,7 +264,7 @@ export default function ShareExperienceWizard() {
     return <LegacyShareExperienceWizardView {...viewProps} />
   }
 
-  return <LegacyShareExperienceWizardView {...viewProps} />
+  return <ShareExperienceWizardV2 {...viewProps} />
 }
 
 /* ═══════════════════════════════════════════════════════════════

@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react'
 import IntelOutcomeMark from './IntelOutcomeMark'
 import IntelMonogram from './IntelMonogram'
+import IntelDifficultyText from './IntelDifficultyText'
+import IntelStatusBadge from './IntelStatusBadge'
 import { UserAvatar } from '../../utils/avatar'
 import { IconThumbsUp, IconBookmark } from '../../components/icons/index.jsx'
 
 /**
- * IntelReportRow — Ruled list row for interview reports
+ * IntelReportRow: Ruled list row for interview reports
  * ───────────────────────────────────────────────────────
  * Renders an experience item as an architectural, calm ruled row.
  * Adheres strictly to privacy, safe linking, and plain text rendering.
@@ -15,6 +17,8 @@ export default function IntelReportRow({
   onClick,
   onToggleHelpful,
   onToggleBookmark,
+  viewMode = 'all',
+  onEdit,
 }) {
   const {
     id,
@@ -72,7 +76,7 @@ export default function IntelReportRow({
 
   const roundsCount = Array.isArray(rounds) ? rounds.length : 0
 
-  // Author identity (Privacy strict: Never render institute, no avatar for anonymous)
+  // Author identity (Privacy strict: Never render affiliation, no avatar for anonymous)
   const isAnon = Boolean(is_anonymous || author?.is_anonymous || !author?.username)
   const authorName = isAnon ? 'Anonymous' : author.username
 
@@ -96,8 +100,8 @@ export default function IntelReportRow({
           <IntelMonogram name={company} />
           <span className="intel-company-name">{company || 'Company'}</span>
           {role_title && <span className="intel-role-title">{role_title}</span>}
-          {status === 'pending' && (
-            <span className="intel-pending-badge">Pending review</span>
+          {(status === 'pending' || status === 'rejected' || (status === 'approved' && viewMode === 'mine')) && (
+            <IntelStatusBadge status={status} reason={report.rejection_reason} />
           )}
         </div>
 
@@ -117,9 +121,7 @@ export default function IntelReportRow({
         {difficulty && (
           <>
             <span className="intel-meta-sep" aria-hidden="true">•</span>
-            <span className="intel-meta-item" style={{ textTransform: 'uppercase' }}>
-              {difficulty}
-            </span>
+            <IntelDifficultyText difficulty={difficulty} />
           </>
         )}
 
@@ -141,7 +143,7 @@ export default function IntelReportRow({
         <p className="intel-row-summary">{overall_experience}</p>
       )}
 
-      {/* Row Footer: Topics, Author, and Actions (Helpful, Bookmark) */}
+      {/* Row Footer: Topics, Author, and Actions (Helpful, Bookmark, Edit, Remove) */}
       <div className="intel-row-footer">
         <div className="intel-author-group">
           {!isAnon && author && (
@@ -160,6 +162,17 @@ export default function IntelReportRow({
         </div>
 
         <div className="intel-actions-group">
+          {viewMode === 'mine' && onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="intel-action-btn"
+              title="Edit report"
+            >
+              <span>Edit</span>
+            </button>
+          )}
+
           <button
             type="button"
             title="Mark as helpful"
@@ -171,15 +184,26 @@ export default function IntelReportRow({
             <span>{helpful_count}</span>
           </button>
 
-          <button
-            type="button"
-            title="Bookmark report"
-            aria-pressed={is_bookmarked}
-            onClick={(e) => onToggleBookmark(e, id)}
-            className={`intel-action-btn ${is_bookmarked ? 'is-active' : ''}`}
-          >
-            <IconBookmark size={14} filled={is_bookmarked} />
-          </button>
+          {viewMode === 'saved' ? (
+            <button
+              type="button"
+              title="Remove from saved"
+              onClick={(e) => onToggleBookmark(e, id)}
+              className="intel-action-btn"
+            >
+              <span>Remove</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              title="Bookmark report"
+              aria-pressed={is_bookmarked}
+              onClick={(e) => onToggleBookmark(e, id)}
+              className={`intel-action-btn ${is_bookmarked ? 'is-active' : ''}`}
+            >
+              <IconBookmark size={14} filled={is_bookmarked} />
+            </button>
+          )}
         </div>
       </div>
     </div>

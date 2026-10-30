@@ -303,6 +303,66 @@ export const CANONICAL_SIGNATURES = {
     params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
     ret: TYPE_INT,
   },
+  'floor and ceil in sorted array': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'x', ...TYPE_INT }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'count occurrences in sorted array': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'target', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'find kth rotation': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
+  'single element in a sorted array': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
+  'koko eating bananas': {
+    params: [{ name: 'piles', ...TYPE_INT_ARR }, { name: 'h', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'find nth root of m': {
+    params: [{ name: 'n', ...TYPE_INT }, { name: 'm', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'minimum number of days to make m bouquets': {
+    params: [{ name: 'bloomDay', ...TYPE_INT_ARR }, { name: 'm', ...TYPE_INT }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'find the smallest divisor given a threshold': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'threshold', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'capacity to ship packages within d days': {
+    params: [{ name: 'weights', ...TYPE_INT_ARR }, { name: 'days', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'kth missing positive number': {
+    params: [{ name: 'arr', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'aggressive cows': {
+    params: [{ name: 'stalls', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'book allocation problem': {
+    params: [{ name: 'arr', ...TYPE_INT_ARR }, { name: 'm', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'split array largest sum': {
+    params: [{ name: 'nums', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  "painter's partition problem": {
+    params: [{ name: 'boards', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
+  'kth element of two sorted arrays': {
+    params: [{ name: 'nums1', ...TYPE_INT_ARR }, { name: 'nums2', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
+    ret: TYPE_INT,
+  },
   'valid sudoku': {
     params: [{ name: 'board', ...TYPE_CHAR_MATRIX }],
     ret: TYPE_BOOL,

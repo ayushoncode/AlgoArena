@@ -8,6 +8,7 @@ import AuthDialog from '../components/AuthDialog'
 import LeaderboardSkeleton from './Leaderboard/LeaderboardSkeleton'
 import PodiumPlinth from './Leaderboard/PodiumPlinth'
 import PlayerRow from './Leaderboard/PlayerRow'
+import { usePremiumBadges } from '../hooks/usePremiumBadges'
 import './Leaderboard/Leaderboard.css'
 
 /**
@@ -20,6 +21,9 @@ export default function Leaderboard() {
   const navigate = useNavigate()
 
   const [players, setPlayers] = useState([])
+  const playerUsernames = useMemo(() => players.map(p => p.username), [players])
+  const playerIds = useMemo(() => players.map(p => p.id), [players])
+  const premiumBadges = usePremiumBadges(playerUsernames, playerIds)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
@@ -352,18 +356,21 @@ export default function Leaderboard() {
                     rank={2}
                     player={top2}
                     isInitialMount={isInitialMount}
+                    isPremium={Boolean(top2 && (premiumBadges[top2.username?.toLowerCase()] || premiumBadges[top2.id]))}
                     onSelect={() => top2 && navigate(`/profile/${encodeURIComponent(top2.username)}`)}
                   />
                   <PodiumPlinth
                     rank={1}
                     player={top1}
                     isInitialMount={isInitialMount}
+                    isPremium={Boolean(top1 && (premiumBadges[top1.username?.toLowerCase()] || premiumBadges[top1.id]))}
                     onSelect={() => top1 && navigate(`/profile/${encodeURIComponent(top1.username)}`)}
                   />
                   <PodiumPlinth
                     rank={3}
                     player={top3}
                     isInitialMount={isInitialMount}
+                    isPremium={Boolean(top3 && (premiumBadges[top3.username?.toLowerCase()] || premiumBadges[top3.id]))}
                     onSelect={() => top3 && navigate(`/profile/${encodeURIComponent(top3.username)}`)}
                   />
                 </section>
@@ -397,6 +404,7 @@ export default function Leaderboard() {
                           actualRank={actualRank}
                           isMe={isMe}
                           isPodium={isPodium}
+                          isPremium={Boolean(premiumBadges[player.username?.toLowerCase()] || premiumBadges[player.id])}
                           rowRef={isMe ? userRowRef : null}
                           onSelect={() => navigate(`/profile/${encodeURIComponent(player.username)}`)}
                         />
@@ -436,6 +444,7 @@ export default function Leaderboard() {
                                 player={player}
                                 actualRank="--"
                                 isMe={isMe}
+                                isPremium={Boolean(premiumBadges[player.username?.toLowerCase()] || premiumBadges[player.id])}
                                 rowRef={isMe ? userRowRef : null}
                                 onSelect={() => navigate(`/profile/${encodeURIComponent(player.username)}`)}
                               />

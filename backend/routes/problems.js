@@ -4,6 +4,7 @@
 
 const express        = require('express')
 const authMiddleware = require('../middleware/auth')
+const requirePremium = require('../middleware/requirePremium')
 const db             = require('../db')
 const router         = express.Router()
 
@@ -46,7 +47,7 @@ router.get('/daily', async (_req, res) => {
 })
 
 // GET /api/problems/striver-sheet — returns Striver A2Z curriculum populated with live DB problem rows
-router.get('/striver-sheet', async (_req, res) => {
+router.get('/striver-sheet', requirePremium('sheet'), async (_req, res) => {
   try {
     const { rows: allProbs } = await db.query(
       `SELECT id, title, slug, topic, difficulty, sample_input, sample_output
@@ -137,7 +138,32 @@ router.get('/striver-sheet', async (_req, res) => {
               'lower-bound',
               'upper-bound',
               'search-insert-position',
-              'find-first-and-last-position-of-element-in-sorted-array'
+              'floor-and-ceil-in-sorted-array',
+              'find-first-and-last-position-of-element-in-sorted-array',
+              'count-occurrences-in-sorted-array',
+              'search-in-rotated-sorted-array',
+              'search-in-rotated-sorted-array-ii',
+              'find-minimum-in-rotated-sorted-array',
+              'find-kth-rotation',
+              'single-element-in-a-sorted-array',
+              'find-peak-element'
+            ]
+          },
+          {
+            title: 'Find Answers by BS in Search Space',
+            problems: [
+              'sqrt-x',
+              'nth-root-of-an-integer',
+              'koko-eating-bananas',
+              'minimum-number-of-days-to-make-m-bouquets',
+              'find-the-smallest-divisor-given-a-threshold',
+              'capacity-to-ship-packages-within-d-days',
+              'kth-missing-positive-number',
+              'aggressive-cows',
+              'book-allocation-problem',
+              'split-array-largest-sum',
+              'painter-s-partition-problem',
+              'kth-element-of-two-sorted-arrays'
             ]
           }
         ]

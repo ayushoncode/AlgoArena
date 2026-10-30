@@ -1,5 +1,6 @@
 import React from 'react'
 import { IconClock, IconExternalLink, IconSwords } from '../../components/icons/index.jsx'
+import IntelDifficultyText from './IntelDifficultyText.jsx'
 
 function isSafeUrl(url) {
   if (!url || typeof url !== 'string') return false
@@ -72,8 +73,8 @@ export function IntelTimelineNode({ round, index, onPracticeTopic }) {
                         </span>
                       )}
                       {q.difficulty && (
-                        <span className="text-[var(--sub)] font-mono">
-                          Difficulty: <span className="text-[var(--ink)] capitalize">{q.difficulty}</span>
+                        <span className="text-[var(--sub)] font-mono inline-flex items-center gap-1">
+                          Difficulty: <IntelDifficultyText difficulty={q.difficulty} />
                         </span>
                       )}
                       {isSafeUrl(q.link) ? (

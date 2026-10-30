@@ -9,6 +9,7 @@ import {
   IconCode,
   IconShuffle,
   IconBook,
+  IconLock,
 } from './icons'
 import { DEFAULT_STRIVER_CURRICULUM } from '../content/striverCurriculum'
 import '../pages/Lobby/Lobby.css'
@@ -21,7 +22,7 @@ const DIFF_CONFIG = {
 }
 
 // ── Single Problem Row ─────────────────────────────────────────────
-function ProblemRow({ problem, globalIdx, onBattleProblem, queuingProblemId, isQueuing }) {
+function ProblemRow({ problem, globalIdx, onBattleProblem, queuingProblemId, isQueuing, isGated = false }) {
   const isThis = isQueuing && queuingProblemId === problem.id
 
   return (
@@ -48,8 +49,14 @@ function ProblemRow({ problem, globalIdx, onBattleProblem, queuingProblemId, isQ
           onClick={() => onBattleProblem(problem)}
           disabled={isQueuing}
           className={`striver-v2-battle-btn ${isThis ? 'is-queuing' : ''}`}
+          style={isGated ? {
+            borderColor: 'rgba(255, 214, 150, 0.45)',
+            color: 'var(--gold, #ffd696)',
+            background: 'rgba(255, 214, 150, 0.06)'
+          } : undefined}
+          title={isGated ? 'AlgoArena Premium required to battle on this problem' : '1v1 Battle'}
         >
-          <IconSwords size={11} />
+          {isGated ? <IconLock size={11} /> : <IconSwords size={11} />}
           <span>{isThis ? 'Queuing…' : '1v1 Battle'}</span>
         </button>
       </div>
@@ -58,7 +65,7 @@ function ProblemRow({ problem, globalIdx, onBattleProblem, queuingProblemId, isQ
 }
 
 // ── Difficulty Subsection (Easy / Medium / Hard) ───────────────────
-function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, isQueuing, searchQuery }) {
+function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, isQueuing, searchQuery, isGated = false }) {
   const [open, setOpen] = useState(false)
   const isSearchActive = Boolean(searchQuery && searchQuery.trim().length > 0)
   const isOpen = isSearchActive ? true : open
@@ -115,6 +122,7 @@ function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, 
                   onBattleProblem={onBattleProblem}
                   queuingProblemId={queuingProblemId}
                   isQueuing={isQueuing}
+                  isGated={isGated}
                 />
               ))}
             </div>
@@ -134,6 +142,7 @@ function TopicStepCard({
   isQueuing,
   searchQuery,
   defaultOpen = false,
+  isGated = false,
 }) {
   const [open, setOpen] = useState(defaultOpen)
   const [showDiffMenu, setShowDiffMenu] = useState(false)
@@ -284,8 +293,13 @@ function TopicStepCard({
               className="striver-v2-random-btn"
               aria-haspopup="true"
               aria-expanded={showDiffMenu}
+              style={isGated ? {
+                borderColor: 'rgba(255, 214, 150, 0.45)',
+                color: 'var(--gold, #ffd696)',
+                background: 'rgba(255, 214, 150, 0.06)'
+              } : undefined}
             >
-              <IconShuffle size={12} />
+              {isGated ? <IconLock size={12} /> : <IconShuffle size={12} />}
               <span>Random Duel</span>
               <div style={{ transform: showDiffMenu ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 120ms ease' }}>
                 <IconChevronDown size={11} />
@@ -383,6 +397,7 @@ function TopicStepCard({
                     queuingProblemId={queuingProblemId}
                     isQueuing={isQueuing}
                     searchQuery={searchQuery}
+                    isGated={isGated}
                   />
                 )
               })}
@@ -402,6 +417,7 @@ export default function StriverSheetView({
   onBattleRandom,
   queuingProblemId,
   isQueuing = false,
+  isGated = false,
 }) {
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -472,6 +488,7 @@ export default function StriverSheetView({
                 queuingProblemId={queuingProblemId}
                 isQueuing={isQueuing}
                 searchQuery={searchQuery}
+                isGated={isGated}
               />
             )
           })}

@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { UserAvatar } from '../../utils/avatar'
 import { getTierForRating } from '../../lib/tiers'
+import ProfileSkillsCard from './ProfileSkillsCard'
+import { usePremium } from '../../hooks/usePremium'
+import { usePremiumBadges } from '../../hooks/usePremiumBadges'
+import PremiumBadge from '../../components/PremiumBadge'
+import { IconHexagonBadge } from '../../components/icons'
 
 export default function ProfileSidebar({
   activeUser,
@@ -15,12 +20,22 @@ export default function ProfileSidebar({
   handleErr,
   savingHandle,
   handleSaveUsername,
+  topicFreq = {},
+  matches = [],
+  eloHistory = [],
 }) {
   const [copied, setCopied] = useState(false)
   const [showShareMenu, setShowShareMenu] = useState(false)
   const shareMenuRef = useRef(null)
   const username = activeUser?.username || 'Warrior'
   const canonicalTier = getTierForRating(elo)
+
+  const { isPremium, status: subStatus } = usePremium()
+  const badges = usePremiumBadges(isMe ? [] : [username], isMe ? [] : [activeUser?.id])
+  const isPremiumUser = isMe ? isPremium : Boolean(badges[username?.toLowerCase()] || badges[activeUser?.id])
+  const launchSlotNum = isMe
+    ? (subStatus?.launchSlot ? subStatus?.slotNumber : null)
+    : (badges[`slot:${username?.toLowerCase()}`] || badges[`slot:${activeUser?.id}`] || null)
 
   // Display Name: from DB display_name or name or username
   const displayName = activeUser?.display_name || activeUser?.name || username
@@ -116,7 +131,7 @@ export default function ProfileSidebar({
       <div className="sidebar-user-card">
         {/* Top: Avatar + Display Name + Handle + Rank */}
         <div className="sidebar-avatar-header">
-          <div className="sidebar-avatar-wrap">
+          <div className="sidebar-avatar-wrap relative">
             <UserAvatar
               username={username}
               seed={activeUser?.avatar_seed}
@@ -125,6 +140,19 @@ export default function ProfileSidebar({
               size={80}
               isMe={isMe}
             />
+            {isPremiumUser && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: '-4px',
+                  borderRadius: '16px',
+                  border: '2px solid var(--gold, #ffd696)',
+                  pointerEvents: 'none',
+                  boxShadow: '0 0 14px rgba(255, 214, 150, 0.35)'
+                }}
+                title="Premium Member"
+              />
+            )}
             {isMe && (
               <button
                 type="button"
@@ -139,7 +167,10 @@ export default function ProfileSidebar({
           </div>
 
           <div className="sidebar-names">
-            <h1 className="sidebar-display-name">{displayName}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <h1 className="sidebar-display-name" style={{ margin: 0 }}>{displayName}</h1>
+              {isPremiumUser && <PremiumBadge size="sm" showLabel={true} />}
+            </div>
 
             {/* Permanent AlgoArena ID Handle */}
             <span className="sidebar-handle">@{username}</span>
@@ -154,6 +185,30 @@ export default function ProfileSidebar({
                 #{activeUser?.rank ? Number(activeUser.rank).toLocaleString() : '-'}
               </span>
             </div>
+
+            {/* Premium Membership Status Pill */}
+            {isPremiumUser && (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  marginTop: '8px',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  background: 'rgba(255, 214, 150, 0.08)',
+                  border: '1px solid rgba(255, 214, 150, 0.32)',
+                  color: 'var(--gold, #ffd696)',
+                  fontSize: '11px',
+                  fontFamily: 'var(--font-mono, monospace)',
+                  letterSpacing: '0.03em',
+                  width: 'fit-content'
+                }}
+              >
+                <IconHexagonBadge size={13} />
+                <span>{launchSlotNum ? `Launch Member #${launchSlotNum}` : 'Premium Subscriber'}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -164,9 +219,9 @@ export default function ProfileSidebar({
           </p>
         )}
 
-        {/* Action Buttons: Edit Profile + Share Profile */}
+        {/* Action Buttons: Edit Profile (when isMe) or Share Profile (when !isMe) */}
         <div className="sidebar-actions-row" style={{ marginTop: bio ? 12 : 16 }}>
-          {isMe ? (
+          {isMe && (
             <button
               type="button"
               className="btn-edit-profile"
@@ -174,31 +229,39 @@ export default function ProfileSidebar({
             >
               Edit Profile
             </button>
-          ) : (
-            <button
-              type="button"
-              className="btn-edit-profile"
-              onClick={() => setShowShareMenu(prev => !prev)}
-            >
-              Share Profile
-            </button>
           )}
 
-          <div className="share-menu-anchor" ref={shareMenuRef}>
-            <button
-              type="button"
-              className={`btn-share-icon ${showShareMenu ? 'active' : ''}`}
-              onClick={() => setShowShareMenu(prev => !prev)}
-              title="Share profile"
-              aria-label="Share profile"
-              aria-expanded={showShareMenu}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                <polyline points="16 6 12 2 8 6" />
-                <line x1="12" y1="2" x2="12" y2="15" />
-              </svg>
-            </button>
+          <div
+            className="share-menu-anchor"
+            ref={shareMenuRef}
+            style={!isMe ? { width: '100%' } : undefined}
+          >
+            {isMe ? (
+              <button
+                type="button"
+                className={`btn-share-icon ${showShareMenu ? 'active' : ''}`}
+                onClick={() => setShowShareMenu((prev) => !prev)}
+                title="Share profile"
+                aria-label="Share profile"
+                aria-expanded={showShareMenu}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                  <polyline points="16 6 12 2 8 6" />
+                  <line x1="12" y1="2" x2="12" y2="15" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn-edit-profile"
+                onClick={() => setShowShareMenu((prev) => !prev)}
+                aria-expanded={showShareMenu}
+                style={{ width: '100%' }}
+              >
+                Share Profile
+              </button>
+            )}
 
             {/* Share Popover Options */}
             {showShareMenu && (
@@ -414,6 +477,9 @@ export default function ProfileSidebar({
           </>
         )}
       </div>
+
+      {/* LeetCode-style Skills Card */}
+      <ProfileSkillsCard topicFreq={topicFreq} matches={matches} eloHistory={eloHistory} />
     </aside>
   )
 }

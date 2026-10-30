@@ -203,6 +203,15 @@ export function IconLock({ size = 20, className = '' }) {
   )
 }
 
+export function IconHexagonBadge({ size = 14, className = '' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="square" strokeLinejoin="miter" className={className} aria-hidden="true">
+      <polygon points="8,1.5 14,4.9 14,11.1 8,14.5 2,11.1 2,4.9" />
+      <line x1="5.5" y1="8" x2="10.5" y2="8" strokeWidth="1.2" />
+    </svg>
+  )
+}
+
 export function IconBookmark({ size = 20, filled = false, className = '' }) {
   return (
     <svg width={size} height={size} className={className} {...baseSvgProps} fill={filled ? 'currentColor' : 'none'}>
@@ -292,6 +301,68 @@ export function IconTrash({ size = 20, className = '' }) {
       <path d="M4.5 5.5L5.5 16.5H14.5L15.5 5.5" />
       <line x1="8.5" y1="8.5" x2="8.5" y2="13.5" />
       <line x1="11.5" y1="8.5" x2="11.5" y2="13.5" />
+    </svg>
+  )
+}
+
+export function IconFlame({ size = 20, filled = false, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps} fill={filled ? 'currentColor' : 'none'}>
+      <path d="M10 2.5C10 2.5 13.5 6 13.5 10C13.5 11.5 12.8 13 11.8 14C11.5 12.5 10.5 11.2 9.2 10.5C9 12.5 8 14 6.5 15C5.5 13.8 5 12 5 10C5 6.5 8 4 10 2.5Z" />
+    </svg>
+  )
+}
+
+export function IconUser({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <circle cx="10" cy="6.5" r="3.5" />
+      <path d="M4 17C4 13.5 6.5 12.5 10 12.5C13.5 12.5 16 13.5 16 17" />
+    </svg>
+  )
+}
+
+export function IconFileText({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <path d="M4 3H12L16 7V17H4V3Z" />
+      <polyline points="12 3 12 7 16 7" />
+      <line x1="7" y1="11" x2="13" y2="11" />
+      <line x1="7" y1="14" x2="11" y2="14" />
+    </svg>
+  )
+}
+
+export function IconLogOut({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <path d="M8 4H4V16H8" />
+      <polyline points="12 7 15.5 10 12 13" />
+      <line x1="15.5" y1="10" x2="7" y2="10" />
+    </svg>
+  )
+}
+
+export function IconSun({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <circle cx="10" cy="10" r="4" />
+      <line x1="10" y1="2" x2="10" y2="4" />
+      <line x1="10" y1="16" x2="10" y2="18" />
+      <line x1="2" y1="10" x2="4" y2="10" />
+      <line x1="16" y1="10" x2="18" y2="10" />
+      <line x1="4.34" y1="4.34" x2="5.76" y2="5.76" />
+      <line x1="14.24" y1="14.24" x2="15.66" y2="15.66" />
+      <line x1="4.34" y1="15.66" x2="5.76" y2="14.24" />
+      <line x1="14.24" y1="5.76" x2="15.66" y2="4.34" />
+    </svg>
+  )
+}
+
+export function IconMoon({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <path d="M16 11.5C15.2 14.5 12.5 16.5 9.5 16.5C6 16.5 3.5 14 3.5 10.5C3.5 7.5 5.5 4.8 8.5 4C8 5.2 8 6.8 8.5 8C9.5 10.5 12 11.5 14.5 11C15 11.2 15.5 11.4 16 11.5Z" />
     </svg>
   )
 }

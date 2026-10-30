@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { UserAvatar } from '../../utils/avatar'
 import { getEloTier } from '../../utils/tierHelper'
 import { IconShield } from '../../components/icons'
+import PremiumBadge from '../../components/PremiumBadge'
 import './Leaderboard.css'
 
 function CountUpNumber({ value, isInitialMount }) {
@@ -49,7 +50,7 @@ function CountUpNumber({ value, isInitialMount }) {
   return <>{displayVal}</>
 }
 
-export default function PodiumPlinth({ rank, player, isInitialMount, onSelect }) {
+export default function PodiumPlinth({ rank, player, isInitialMount, isPremium = false, onSelect }) {
   const isFirst = rank === 1
   const isEmpty = !player
   const tier = player ? getEloTier(player.elo_rating) : null
@@ -116,7 +117,10 @@ export default function PodiumPlinth({ rank, player, isInitialMount, onSelect })
                   />
                 </div>
                 <div className="lb-plinth-identity">
-                  <div className="lb-plinth-user">{player.username}</div>
+                  <div className="lb-plinth-user">
+                    {player.username}
+                    {isPremium && <PremiumBadge size="xs" showLabel={false} className="ml-1" />}
+                  </div>
                   {player.institute && (
                     <div className="lb-plinth-institute" title={player.institute}>
                       <IconShield size={11} className="lb-institute-shield" />

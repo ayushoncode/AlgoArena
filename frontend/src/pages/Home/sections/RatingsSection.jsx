@@ -9,7 +9,7 @@ const { s3Ratings } = HOME_CONFIG
 
 export default function RatingsSection() {
   return (
-    <section className="home-section surface-bg-1" id="ratings">
+    <section className="home-section surface-bg-1" id="ratings" data-mascot-section="ratings">
       <div className="depth-hairline-draw surface-hairline-top" aria-hidden="true" />
       <DepthSection id="s3-ratings" enter={true} exit={true}>
         <div className="section-container">

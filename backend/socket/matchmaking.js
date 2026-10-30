@@ -260,6 +260,19 @@ function registerMatchmaking(io) {
         console.warn('[Queue] Could not fetch fresh user info from DB:', err.message)
       }
 
+      // Premium guard: sheet-based 1v1 matchmaking requires active Premium when gating is enabled
+      if (problemId && process.env.PREMIUM_GATING_ENABLED === 'true') {
+        const { getSubscriptionStatus } = require('../services/premium')
+        const status = await getSubscriptionStatus(userId)
+        if (!status || !status.active) {
+          return socket.emit('premium_required', {
+            code: 'PREMIUM_REQUIRED',
+            feature: 'sheet_1v1',
+            message: 'Premium membership required for sheet-based matches.'
+          })
+        }
+      }
+
       const topicKey = problemId ? `problem:${problemId}` : `${topic}:${difficulty}`
 
       // Guard: don't let user join if they are already in an active match

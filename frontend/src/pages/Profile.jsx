@@ -17,6 +17,9 @@ import {
   AnimatedCounter, DiffChip, VerdictChip
 } from '../components/ui'
 import ProfileV2View from './Profile/ProfileV2View'
+import { usePremium } from '../hooks/usePremium'
+import { usePremiumBadges } from '../hooks/usePremiumBadges'
+import PremiumBadge from '../components/PremiumBadge'
 import '../styles/profile-v2.css'
 
 /* ════════════════════════════════════════════════
@@ -387,32 +390,43 @@ function EloChart({ data = [], username = 'Coder' }) {
   )
 }
 
+function toLocalDateKey(dt) {
+  if (!dt) return null
+  const d = new Date(dt)
+  if (isNaN(d.getTime())) return null
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 /* ════════════════════════════════════════════════
    HEATMAP CALENDAR (30 DAYS)
 ════════════════════════════════════════════════ */
 function StreakCalendar({ history, matches = [] }) {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = toLocalDateKey(new Date())
   const [hoveredCell, setHoveredCell] = useState(null)
 
   // Map of date -> match count
   const dateCounts = useMemo(() => {
     const map = new Map()
     if (history instanceof Set) {
-      history.forEach(d => map.set(d, 1))
+      history.forEach(d => {
+        const k = typeof d === 'string' && d.length === 10 ? d : toLocalDateKey(d)
+        if (k) map.set(k, 1)
+      })
     } else if (Array.isArray(history)) {
       history.forEach(d => {
-        const k = typeof d === 'string' ? d.slice(0, 10) : new Date(d).toISOString().slice(0, 10)
-        map.set(k, (map.get(k) || 0) + 1)
+        const k = typeof d === 'string' && d.length === 10 ? d : toLocalDateKey(d)
+        if (k) map.set(k, (map.get(k) || 0) + 1)
       })
     }
     if (Array.isArray(matches)) {
       matches.forEach(m => {
         const dt = m.ended_at || m.started_at || m.date
-        if (dt) {
-          try {
-            const k = new Date(dt).toISOString().slice(0, 10)
-            map.set(k, (map.get(k) || 0) + 1)
-          } catch { }
+        const k = toLocalDateKey(dt)
+        if (k) {
+          map.set(k, (map.get(k) || 0) + 1)
         }
       })
     }
@@ -423,7 +437,7 @@ function StreakCalendar({ history, matches = [] }) {
     return Array.from({ length: 30 }, (_, i) => {
       const d = new Date()
       d.setDate(d.getDate() - (29 - i))
-      const dateStr = d.toISOString().slice(0, 10)
+      const dateStr = toLocalDateKey(d)
       const count = dateCounts.get(dateStr) || 0
       return {
         date: dateStr,
@@ -748,11 +762,14 @@ export default function Profile() {
 
   const isOwnProfileRoute = !routeUsername
   const isMe = isOwnProfileRoute || (user?.username && routeUsername?.toLowerCase() === user.username.toLowerCase())
+  const { isPremium } = usePremium()
+  const badges = usePremiumBadges(isMe ? [] : [routeUsername], isMe ? [] : [profileUser?.id])
+  const hasBadge = isMe ? isPremium : Boolean(badges[routeUsername?.toLowerCase()] || badges[profileUser?.id])
 
   // Redirect if visiting private /profile when unauthenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated && isOwnProfileRoute) {
-      navigate('/?auth=login')
+      navigate('/', { replace: true })
     }
   }, [authLoading, isAuthenticated, isOwnProfileRoute, navigate])
 
@@ -825,49 +842,44 @@ export default function Profile() {
   const tierProgress = getTierProgress(elo)
   const currentTier = getArenaTier(elo)
 
-  // Dynamic Streak Calculation
+  // Dynamic Streak Calculation (based ONLY on actual played matches, NOT on login visits)
   const activeDates = new Set()
-  if (isMe && myHistory instanceof Set) {
-    myHistory.forEach(d => activeDates.add(d))
-  }
   matches.forEach(m => {
     const dt = m.ended_at || m.started_at || m.date
     if (dt) {
-      try { activeDates.add(new Date(dt).toISOString().slice(0, 10)) } catch { }
+      const k = toLocalDateKey(dt)
+      if (k) activeDates.add(k)
     }
   })
   eloHistory.forEach(e => {
-    if (e.date) {
-      try { activeDates.add(new Date(e.date).toISOString().slice(0, 10)) } catch { }
+    const dt = e.date || e.created_at
+    if (dt) {
+      const k = toLocalDateKey(dt)
+      if (k) activeDates.add(k)
     }
   })
 
   function getCalculatedStreak() {
-    if (activeDates.size === 0) return (wins + losses > 0 ? 1 : 0)
+    if (activeDates.size === 0) return 0
     const today = new Date()
-    const todayStr = today.toISOString().slice(0, 10)
+    const todayStr = toLocalDateKey(today)
     const yesterday = new Date()
     yesterday.setDate(yesterday.getDate() - 1)
-    const yesterdayStr = yesterday.toISOString().slice(0, 10)
+    const yesterdayStr = toLocalDateKey(yesterday)
 
     let checkDate = today
     if (!activeDates.has(todayStr)) {
       if (activeDates.has(yesterdayStr)) {
         checkDate = yesterday
       } else {
-        const sorted = Array.from(activeDates).sort().reverse()
-        if (sorted.length > 0) {
-          checkDate = new Date(sorted[0])
-        } else {
-          return 1
-        }
+        return 0
       }
     }
 
     let count = 0
     let curr = new Date(checkDate)
-    for (let i = 0; i < 30; i++) {
-      const dStr = curr.toISOString().slice(0, 10)
+    for (let i = 0; i < 365; i++) {
+      const dStr = toLocalDateKey(curr)
       if (activeDates.has(dStr)) {
         count++
         curr.setDate(curr.getDate() - 1)
@@ -875,17 +887,21 @@ export default function Profile() {
         break
       }
     }
-    return Math.max(1, count)
+    return count
   }
 
   const computedStreak = getCalculatedStreak()
-  const streak = isMe ? Math.max(myStreak || 0, computedStreak) : computedStreak
+  const streak = computedStreak
 
-  // Topic distribution
-  const topicFreq = matches.reduce((acc, m) => {
-    if (m.topic) acc[m.topic] = (acc[m.topic] || 0) + 1
+  // Topic distribution across all played matches (using eloHistory which contains all matches)
+  const topicFreq = useMemo(() => {
+    const acc = {}
+    const list = (eloHistory && eloHistory.length > 0) ? eloHistory : matches
+    list.forEach(m => {
+      if (m.topic) acc[m.topic] = (acc[m.topic] || 0) + 1
+    })
     return acc
-  }, {})
+  }, [eloHistory, matches])
 
   const favTopicRaw = Object.entries(topicFreq).sort((a, b) => b[1] - a[1])[0]?.[0]
   const favTopicTitle = favTopicRaw
@@ -1158,6 +1174,7 @@ function LegacyProfileView({
                       <h1 className="font-display font-bold text-3xl sm:text-4xl uppercase tracking-wide text-[color:var(--c-text)]">
                         {activeUser?.username}
                       </h1>
+                      {hasBadge && <PremiumBadge size="sm" showLabel className="ml-1" />}
                       {isMe && (
                         !activeUser?.is_username_set ? (
                           <button

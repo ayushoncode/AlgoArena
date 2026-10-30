@@ -1,9 +1,10 @@
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useSocket } from '../hooks/useSocket'
 import { UserAvatar } from '../utils/avatar'
 import { motion } from 'framer-motion'
+import ResultV2 from './ResultV2'
 import {
   Trophy, Swords, RotateCcw, User, TrendingUp, TrendingDown, Minus,
   ChevronRight, Star, Zap, Shield,
@@ -81,6 +82,32 @@ export default function Result() {
 
   const myTier  = getArenaTier(fromRating)
   const newTier = getArenaTier(toRating)
+
+  const [searchParams] = useSearchParams()
+  const isLegacy = searchParams.get('ui') === 'legacy' || import.meta.env.VITE_BATTLE_UI === 'legacy'
+
+  if (!isLegacy) {
+    return (
+      <ResultV2
+        user={user}
+        state={state}
+        isWin={isWin}
+        isDraw={isDraw}
+        isLoss={isLoss}
+        myData={myData}
+        oppData={oppData}
+        fromRating={fromRating}
+        toRating={toRating}
+        myDelta={myDelta}
+        isCustomMatch={isCustomMatch}
+        topic={topic}
+        difficulty={difficulty}
+        onPlayAgain={() => navigate('/lobby')}
+        onViewProfile={() => navigate('/profile')}
+        onBackToLobby={() => navigate('/lobby')}
+      />
+    )
+  }
 
   // Colors per outcome
   const outcomeColor = isWin ? 'var(--c-green)' : isDraw ? 'var(--c-blue)' : 'var(--c-red)'

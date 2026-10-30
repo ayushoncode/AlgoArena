@@ -59,9 +59,20 @@ export default function Privacy() {
           </p>
         </section>
 
-        {/* Section 4 */}
+        {/* Section 4: Payment Data */}
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-white">4. Data Retention and Security</h2>
+          <h2 className="text-xl font-semibold text-white">4. Payment Processing and Financial Data</h2>
+          <p className="text-sm leading-relaxed text-slate-300">
+            Payment transactions for AlgoArena Premium are processed through Razorpay. AlgoArena never collects, processes, or stores your credit card numbers, debit card numbers, UPI PINs, CVVs, or online banking passwords on our servers.
+          </p>
+          <p className="text-sm leading-relaxed text-slate-300">
+            We store only tokenized identifiers (such as Razorpay subscription IDs and payment IDs), payment timestamps, currency, amount paid, and status codes necessary to verify entitlements and maintain tax and accounting records.
+          </p>
+        </section>
+
+        {/* Section 5: Data Retention */}
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold text-white">5. Data Retention and Security</h2>
           <p className="text-sm leading-relaxed text-slate-300">
             Match results and rating history are retained to preserve historical leaderboard integrity. All communications occur over encrypted TLS connections, and user execution runs within disposable, unprivileged Linux sandboxes.
           </p>
@@ -70,7 +81,11 @@ export default function Privacy() {
         {/* Footer nav */}
         <div className="pt-8 border-t border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
           <Link to="/" className="text-[#ffd696] hover:underline">&larr; Return to Home</Link>
-          <Link to="/terms" className="hover:text-white transition-colors">Terms of Service &rarr;</Link>
+          <div className="flex items-center gap-4">
+            <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            <span>&middot;</span>
+            <Link to="/refund-policy" className="hover:text-white transition-colors">Refund Policy</Link>
+          </div>
         </div>
 
       </div>
