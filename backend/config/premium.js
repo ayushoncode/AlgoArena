@@ -8,12 +8,12 @@
 'use strict'
 
 module.exports = {
-  // Feature flags (defaults false)
+  // Feature flags (defaults true unless explicitly disabled with 'false')
   get isPremiumEnabled() {
-    return process.env.PREMIUM_ENABLED === 'true'
+    return process.env.PREMIUM_ENABLED !== 'false'
   },
   get isGatingEnabled() {
-    return process.env.PREMIUM_GATING_ENABLED === 'true'
+    return process.env.PREMIUM_GATING_ENABLED !== 'false'
   },
 
   currency: 'INR',
