@@ -1,28 +1,38 @@
-import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import React, { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './hooks/useAuth'
 import Navbar from './components/Navbar'
-import UsernameOnboardingModal from './components/UsernameOnboardingModal'
-import InstituteOnboardingModal from './components/InstituteOnboardingModal'
+import OnboardingModal from './components/OnboardingModal'
 import Home from './pages/Home'
 import Lobby from './pages/Lobby'
 import Match from './pages/Match'
 import Result from './pages/Result'
+// Phase C/D v2 components — imported lazily so the flag is tree-shaken when unused
+// import MatchV2 from './pages/MatchV2'   // placeholder — added in Phase C
+// import ResultV2 from './pages/ResultV2' // placeholder — added in Phase B
 import Profile from './pages/Profile'
 import Leaderboard from './pages/Leaderboard'
 import WhoWeAre from './pages/WhoWeAre'
 import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
+import DailyChallengePage from './pages/DailyChallengePage'
+import AuthPage from './pages/AuthPage'
 import IntelReports from './pages/IntelReports'
 import IntelReportDetail from './pages/IntelReportDetail'
 import ShareExperienceWizard from './pages/ShareExperienceWizard'
 import { useSocket } from './hooks/useSocket'
 import { getActiveMatch, setActiveMatch } from './utils/activeMatch'
 import { ThemeProvider } from './context/ThemeContext'
+import MascotProvider from './components/mascot/MascotProvider.jsx'
 
 import { Shield, ChevronRight } from 'lucide-react'
 import { PageWrapper, HudPanel } from './components/ui/index.jsx'
+
+// Dev-only preview route -- lazy, tree-shaken in production builds
+const DevMascot = import.meta.env.DEV
+  ? React.lazy(() => import('./pages/DevMascot.jsx'))
+  : null
 
 /**
  * ScrollToTop — Scrolls window to top whenever pathname changes.
@@ -35,6 +45,62 @@ function ScrollToTop() {
     if (pathname === '/' && search.includes('auth=')) return
     window.scrollTo(0, 0)
   }, [pathname, search])
+
+  return null
+}
+
+/**
+ * PageTitleSync — Synchronizes browser document.title with the active section/route.
+ * Ensures the browser tab title always accurately reflects the current page.
+ */
+function PageTitleSync() {
+  const { pathname } = useLocation()
+  const { isAuthenticated, user } = useAuth()
+
+  useEffect(() => {
+    if (pathname === '/') {
+      document.title = isAuthenticated
+        ? 'Lobby | AlgoArena'
+        : 'AlgoArena | Real-Time 1v1 Coding Duels'
+    } else if (pathname === '/lobby') {
+      document.title = 'Lobby | AlgoArena'
+    } else if (pathname === '/leaderboard') {
+      document.title = 'Leaderboard | AlgoArena'
+    } else if (pathname === '/daily') {
+      document.title = 'Daily Problem | AlgoArena'
+    } else if (pathname === '/experiences') {
+      document.title = 'Intel Reports | AlgoArena'
+    } else if (pathname === '/experiences/mine') {
+      document.title = 'My Reports | AlgoArena'
+    } else if (pathname === '/experiences/saved') {
+      document.title = 'Saved Reports | AlgoArena'
+    } else if (pathname === '/experiences/new') {
+      document.title = 'Share Experience | AlgoArena'
+    } else if (pathname.startsWith('/experiences/') && pathname.endsWith('/edit')) {
+      document.title = 'Edit Experience | AlgoArena'
+    } else if (pathname.startsWith('/experiences/')) {
+      document.title = 'Interview Report | AlgoArena'
+    } else if (pathname === '/profile') {
+      document.title = user?.username ? `${user.username} | AlgoArena` : 'Profile | AlgoArena'
+    } else if (pathname.startsWith('/profile/')) {
+      const username = pathname.replace('/profile/', '').split('/')[0]
+      document.title = username ? `${username} | AlgoArena` : 'Profile | AlgoArena'
+    } else if (pathname === '/who-we-are') {
+      document.title = 'Who We Are | AlgoArena'
+    } else if (pathname === '/terms') {
+      document.title = 'Terms of Service | AlgoArena'
+    } else if (pathname === '/privacy') {
+      document.title = 'Privacy Policy | AlgoArena'
+    } else if (pathname === '/login') {
+      document.title = 'Sign In | AlgoArena'
+    } else if (pathname === '/signup' || pathname === '/register') {
+      document.title = 'Join the Roster | AlgoArena'
+    } else if (pathname.startsWith('/match/')) {
+      document.title = 'Match Arena | AlgoArena'
+    } else if (pathname === '/result') {
+      document.title = 'Match Result | AlgoArena'
+    }
+  }, [pathname, isAuthenticated, user?.username])
 
   return null
 }
@@ -158,28 +224,60 @@ function ActiveMatchGuard() {
   return null
 }
 
+/**
+ * UI flag helpers — ?ui=legacy renders the original (legacy) battle room / result screens.
+ * When Phase C/D presentational v2 components exist, swap the import above and these
+ * wrappers will automatically serve v2 by default.
+ *
+ * Usage: /match/abc123?ui=legacy  or  /result?ui=legacy
+ */
+function MatchRoute() {
+  // Legacy flag: ?ui=legacy keeps the original component.
+  // Phase C: replace `null` with `<MatchV2 />` below.
+  const [params] = useSearchParams()
+  const isLegacy = params.get('ui') === 'legacy'
+  // When MatchV2 exists: return isLegacy ? <Match /> : <MatchV2 />
+  return <Match />
+}
+
+function ResultRoute() {
+  // Legacy flag: ?ui=legacy keeps the original component.
+  // Phase B: replace `null` with `<ResultV2 />` below.
+  const [params] = useSearchParams()
+  const isLegacy = params.get('ui') === 'legacy'
+  // When ResultV2 exists: return isLegacy ? <Result /> : <ResultV2 />
+  return <Result />
+}
+
 function AppLayout() {
   const { pathname } = useLocation()
   const { isAuthenticated } = useAuth()
   const isMatchPage = pathname.startsWith('/match')
+  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/register'
   const isLandingPage = pathname === '/' && !isAuthenticated
-  const isEditorialPage = isLandingPage || pathname === '/who-we-are' || (pathname === '/leaderboard' && !isAuthenticated)
+  const isEditorialPage = isLandingPage || pathname === '/who-we-are' || (pathname === '/leaderboard' && !isAuthenticated) || isAuthPage
 
   return (
     <>
       <ScrollToTop />
+      <PageTitleSync />
       <ActiveMatchGuard />
-      <UsernameOnboardingModal />
-      <InstituteOnboardingModal />
+      <OnboardingModal />
+      {/* Mascot guide -- one mount line, lazy-loaded after first paint */}
+      <MascotProvider />
       {!isMatchPage && !isEditorialPage && <Navbar />}
       {/* Remove pt-14 padding and use h-screen on match pages only */}
       <main className={isMatchPage ? "h-screen w-screen overflow-hidden" : isEditorialPage ? "min-h-screen w-full relative" : "pt-14 min-h-screen"}>
         <Routes>
           <Route path="/" element={<RootRoute />} />
+          <Route path="/login" element={<AuthPage initialMode="login" />} />
+          <Route path="/signup" element={<AuthPage initialMode="register" />} />
+          <Route path="/register" element={<AuthPage initialMode="register" />} />
           <Route path="/lobby" element={<Lobby />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:username" element={<Profile />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/daily" element={<DailyChallengePage />} />
           <Route path="/who-we-are" element={<WhoWeAre />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
@@ -191,8 +289,10 @@ function AppLayout() {
           <Route path="/experiences/:id" element={<RequireAuthGate><IntelReportDetail /></RequireAuthGate>} />
           <Route path="/experiences/:id/edit" element={<RequireAuthGate><ShareExperienceWizard /></RequireAuthGate>} />
 
-          <Route path="/match/:roomId" element={<Match />} />
-          <Route path="/result" element={<Result />} />
+          <Route path="/match/:roomId" element={<MatchRoute />} />
+          <Route path="/result" element={<ResultRoute />} />
+          {/* Dev-only preview routes (not built in production) */}
+          {DevMascot && <Route path="/dev/mascot" element={<React.Suspense fallback={null}><DevMascot /></React.Suspense>} />}
         </Routes>
       </main>
     </>

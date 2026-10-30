@@ -23,7 +23,7 @@ export default function FaqSection() {
   }
 
   return (
-    <section className="home-section" id="faq">
+    <section className="home-section" id="faq" data-mascot-section="questions">
       <div className="depth-hairline-draw surface-hairline-top" aria-hidden="true" />
       <DepthSection id="s7-faq" enter={true} exit={true}>
         <div className="section-container">

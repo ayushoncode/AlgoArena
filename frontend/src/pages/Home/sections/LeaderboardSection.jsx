@@ -57,7 +57,7 @@ export default function LeaderboardSection() {
   }, [])
 
   return (
-    <section className="home-section surface-bg-1" id="leaderboard-preview">
+    <section className="home-section surface-bg-1" id="leaderboard-preview" data-mascot-section="heroes">
       <div className="depth-hairline-draw surface-hairline-top" aria-hidden="true" />
       <DepthSection id="s6-leaderboard" enter={true} exit={true}>
         <div className="section-container">

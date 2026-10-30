@@ -33,7 +33,7 @@ export default function TopicsSection() {
   }, [])
 
   return (
-    <section className="home-section surface-bg-1" id="curriculum">
+    <section className="home-section surface-bg-1" id="curriculum" data-mascot-section="topics">
       <div className="depth-hairline-draw surface-hairline-top" aria-hidden="true" />
       <DepthSection id="s5-topics" enter={true} exit={true}>
         <div className="section-container">

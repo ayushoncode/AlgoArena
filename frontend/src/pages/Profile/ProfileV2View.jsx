@@ -118,6 +118,9 @@ export default function ProfileV2View({
             handleErr={handleErr}
             savingHandle={savingHandle}
             handleSaveUsername={handleSaveUsername}
+            topicFreq={topicFreq}
+            matches={matches}
+            eloHistory={eloHistory}
           />
 
           {/* ── RIGHT COLUMN: MAIN CONTENT ───────────────────────────── */}
@@ -127,13 +130,14 @@ export default function ProfileV2View({
               <RatingChartV2
                 data={chartData}
                 elo={elo}
+                username={activeUser?.username || 'Warrior'}
                 isOwnProfile={isMe}
                 onNavigateLobby={() => doNavigate('/lobby')}
               />
             </div>
 
-            {/* 2. MID ROW: KEY COMBAT NUMBERS + TOPIC BREAKDOWN */}
-            <div className="main-col-mid-grid">
+            {/* 2. MID ROW: KEY COMBAT NUMBERS (FULL WIDTH) */}
+            <div className="main-col-stats-row">
               <KeyNumbersRow
                 totalMatches={totalMatches}
                 wins={wins}
@@ -143,15 +147,12 @@ export default function ProfileV2View({
                 activeDates={activeDates}
                 favTopicTitle={favTopicTitle}
               />
-              <TopicBreakdownV2
-                topicFreq={topicFreq}
-                matches={matches}
-              />
             </div>
 
             {/* 3. BIG ANNUAL ACTIVITY HEATMAP */}
             <ActivityHeatmapYear
               matches={matches}
+              eloHistory={eloHistory}
               activeDates={activeDates}
               streak={streak}
             />

@@ -1,0 +1,422 @@
+/* ═══════════════════════════════════════════════════════════
+   AlgoArena Mascot Guide - Phase A Styles
+   Tokens: --bg-2, --hair, --gold, --blue from home-tokens.css
+   All layout: fixed, pointer-events:none on wrapper.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Entrance & Beacon Ping Animations ────────────────────── */
+@keyframes mascot-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(64px) scale(0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.08);
+  }
+  70% {
+    transform: translateY(4px) scale(0.97);
+  }
+  85% {
+    transform: translateY(-2px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes mascot-beacon-ping {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.9;
+  }
+  60% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+/* ── Wrapper: fixed bottom-right, never blocks clicks ─────── */
+.mascot-root {
+  position: fixed;
+  right: max(20px, env(safe-area-inset-right, 0px));
+  bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  z-index: 400;
+  /* below nav (500+), below auth dialog (600+) */
+  pointer-events: none;
+  /* HARD RULE: wrapper passes all clicks through */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  /* Reserve space to prevent layout shift */
+  width: 64px;
+  min-height: 64px;
+  animation: mascot-enter 700ms cubic-bezier(0.34, 1.56, 0.64, 1) 350ms both;
+}
+
+@media (max-width: 600px) {
+  .mascot-root {
+    width: 48px;
+    min-height: 48px;
+    right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: max(64px, calc(env(safe-area-inset-bottom, 0px) + 52px));
+  }
+}
+
+/* ── Float animation (disabled in reduced-motion / low-power) ── */
+@keyframes mascot-float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.mascot-button-wrap {
+  pointer-events: auto;
+  /* this element receives clicks */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.mascot-beacon-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid var(--blue, #8cc4ff);
+  pointer-events: none;
+  animation: mascot-beacon-ping 1000ms cubic-bezier(0.2, 0.8, 0.2, 1) 900ms 2 forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot-root {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .mascot-button-wrap {
+    animation: none !important;
+  }
+  .mascot-beacon-ring {
+    display: none !important;
+  }
+}
+
+/* ── Mascot button ────────────────────────────────────────── */
+.mascot-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  /* 44px minimum hit area on mobile */
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mascot-btn:focus-visible {
+  /* Site focus ring pattern */
+  outline: 1.5px solid var(--blue, #8cc4ff);
+  outline-offset: 3px;
+}
+
+/* ── Tip bubble ───────────────────────────────────────────── */
+.mascot-bubble-wrap {
+  pointer-events: auto;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+}
+
+.mascot-bubble {
+  background: var(--bg-2, #0a1428);
+  border: 1px solid var(--hair, rgba(196, 214, 232, 0.72));
+  border-radius: 6px;
+  padding: 12px 14px 12px;
+  max-width: 260px;
+  min-width: 200px;
+  box-sizing: border-box;
+  position: relative;
+
+  /* 160ms fade + 6px translate */
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.mascot-bubble.mascot-bubble-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 600px) {
+  .mascot-bubble {
+    max-width: 230px;
+    padding: 10px 12px;
+  }
+}
+
+.mascot-bubble-text {
+  font-family: 'Sora Variable', 'Sora', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink, #ffffff);
+  margin: 0;
+  padding-right: 20px;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+/* ── Bubble close button ─────────────────────────────────── */
+.mascot-bubble-close {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--sub, #a2a9b8);
+  pointer-events: auto;
+  padding: 0;
+  outline: none;
+}
+
+.mascot-bubble-close:focus-visible {
+  outline: 1px solid var(--blue, #8cc4ff);
+  outline-offset: 2px;
+}
+
+.mascot-bubble-close:hover {
+  color: var(--ink, #ffffff);
+}
+
+/* ── Bubble action button ─────────────────────────────────── */
+.mascot-bubble-action {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  font-family: 'Sora Variable', 'Sora', system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  color: var(--blue, #8cc4ff);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.mascot-bubble-action:focus-visible {
+  outline: 1px solid var(--blue, #8cc4ff);
+  outline-offset: 2px;
+}
+
+/* ── Mascot menu popover ─────────────────────────────────── */
+.mascot-menu {
+  pointer-events: auto;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: var(--bg-2, #0a1428);
+  border: 1px solid var(--hair, rgba(196, 214, 232, 0.72));
+  border-radius: 6px;
+  overflow: hidden;
+  min-width: 200px;
+
+  opacity: 0;
+  transform: translateY(6px) scale(0.97);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+  pointer-events: none;
+}
+
+.mascot-menu.mascot-menu-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.mascot-menu-row {
+  display: block;
+  width: 100%;
+  padding: 11px 16px;
+  font-family: 'Sora Variable', 'Sora', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: var(--ink, #ffffff);
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  border-bottom: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08));
+  transition: background 120ms ease;
+}
+
+.mascot-menu-row:last-child {
+  border-bottom: none;
+}
+
+.mascot-menu-row:hover {
+  background: rgba(140, 196, 255, 0.07);
+}
+
+.mascot-menu-row:focus-visible {
+  outline: 1px solid var(--blue, #8cc4ff);
+  outline-offset: -2px;
+  background: rgba(140, 196, 255, 0.07);
+}
+
+/* Destructive row (Hide the guide, Don't show tips) */
+.mascot-menu-row.mascot-menu-row-dim {
+  color: var(--sub, #a2a9b8);
+}
+
+.mascot-menu-row.mascot-menu-row-dim:hover {
+  color: var(--ink, #ffffff);
+}
+
+/* ── Hidden toggle (footer) ───────────────────────────────── */
+.mascot-toggle-btn {
+  font-family: 'Sora Variable', 'Sora', system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  color: var(--sub, #a2a9b8);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  outline: none;
+}
+
+.mascot-toggle-btn:focus-visible {
+  outline: 1px solid var(--blue, #8cc4ff);
+  outline-offset: 2px;
+}
+
+/* ── Reduced-motion overrides ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+
+  .mascot-bubble,
+  .mascot-menu {
+    transition: none !important;
+  }
+
+  .mascot-bubble.mascot-bubble-visible,
+  .mascot-menu.mascot-menu-open {
+    opacity: 1;
+    transform: none !important;
+  }
+}
+
+/* ── Section outline for tour (1px ink outline) ─────────── */
+.mascot-tour-outline {
+  outline: 1px solid rgba(255, 255, 255, 0.88) !important;
+  outline-offset: 8px !important;
+  border-radius: 6px;
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.12);
+  transition: outline-color 180ms ease, box-shadow 180ms ease;
+}
+
+/* Tour counter mono text */
+.mascot-tour-counter {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--sub, #a2a9b8);
+  margin-top: 6px;
+  display: block;
+  letter-spacing: 0.04em;
+}
+
+/* ── Tour controls & buttons ─────────────────────────────── */
+.mascot-tour-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.mascot-tour-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  min-height: 28px;
+  font-family: 'Sora Variable', 'Sora', system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #060d1c;
+  background: var(--blue, #8cc4ff);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 120ms ease;
+}
+
+.mascot-tour-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.mascot-tour-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 6px;
+  min-height: 28px;
+  font-family: 'Sora Variable', 'Sora', system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  color: var(--sub, #a2a9b8);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 120ms ease;
+}
+
+.mascot-tour-btn-secondary:hover {
+  color: var(--ink, #ffffff);
+}
+
+/* ── Debug badge ──────────────────────────────────────────── */
+.mascot-debug-badge {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  background: rgba(255, 214, 150, 0.12);
+  border: 1px solid rgba(255, 214, 150, 0.4);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: rgba(255, 214, 150, 0.9);
+  pointer-events: none;
+  z-index: 9999;
+  max-width: 240px;
+  line-height: 1.6;
+}
