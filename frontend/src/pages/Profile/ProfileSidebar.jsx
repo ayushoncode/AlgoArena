@@ -123,7 +123,7 @@ export default function ProfileSidebar({
   const linkedinUrl = rawLinkedin ? (rawLinkedin.startsWith('http') ? rawLinkedin : `https://linkedin.com/in/${rawLinkedin.replace(/^@/, '')}`) : ''
   const linkedinHandle = rawLinkedin ? rawLinkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, '').replace(/\/$/, '') : ''
 
-  const hasAnyLinks = Boolean(location || institute || website || rawGithub || rawLinkedin)
+  const hasAnyLinks = Boolean(location || website || rawGithub || rawLinkedin)
 
   return (
     <aside className="profile-leetcode-sidebar">
@@ -407,17 +407,6 @@ export default function ProfileSidebar({
                 </li>
               )}
 
-              {/* Institute */}
-              {institute && (
-                <li className="sidebar-meta-item" title="Institute / Academic Affiliation">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="meta-icon">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
-                  </svg>
-                  <span className="institute-name-text">{institute}</span>
-                </li>
-              )}
-
               {/* Website */}
               {website && (
                 <li className="sidebar-meta-item">
@@ -476,10 +465,10 @@ export default function ProfileSidebar({
             </ul>
           </>
         )}
-      </div>
 
-      {/* LeetCode-style Skills Card */}
-      <ProfileSkillsCard topicFreq={topicFreq} matches={matches} eloHistory={eloHistory} />
+        {/* LeetCode-style Skills Section (integrated into main card with divider line) */}
+        <ProfileSkillsCard topicFreq={topicFreq} matches={matches} eloHistory={eloHistory} />
+      </div>
     </aside>
   )
 }

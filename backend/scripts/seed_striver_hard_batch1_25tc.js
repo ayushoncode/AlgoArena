@@ -130,10 +130,10 @@ function generate3SumTCs() {
   }
   tcs.push({ input: JSON.stringify(s24), output: JSON.stringify(solve([...s24])), is_hidden: true });
 
-  // 25: 500 elements stress
+  // 25: 3000 elements max constraint stress test (strictly catches O(N^3) brute-force with TLE)
   const s25 = [];
-  for (let i = 0; i < 500; i++) {
-    s25.push((i * 47) % 61 - 30);
+  for (let i = 0; i < 3000; i++) {
+    s25.push(i % 2 === 0 ? (i * 2 + 1) : -(i * 2 + 1));
   }
   tcs.push({ input: JSON.stringify(s25), output: JSON.stringify(solve([...s25])), is_hidden: true });
 
@@ -222,10 +222,10 @@ function generate4SumTCs() {
   for (let i = 0; i < 100; i++) s24.push((i * 17) % 29 - 14);
   tcs.push({ input: `${JSON.stringify(s24)}, 0`, output: JSON.stringify(solve([...s24], 0)), is_hidden: true });
 
-  // 25: 120 small integers target -2
+  // 25: 500 elements mixed stress test (strictly catches O(N^4) brute force with TLE in both JS and Java)
   const s25 = [];
-  for (let i = 0; i < 120; i++) s25.push((i * 19) % 31 - 15);
-  tcs.push({ input: `${JSON.stringify(s25)}, -2`, output: JSON.stringify(solve([...s25], -2)), is_hidden: true });
+  for (let i = 0; i < 500; i++) s25.push((i * 17) % 31 - 15);
+  tcs.push({ input: `${JSON.stringify(s25)}, 0`, output: JSON.stringify(solve([...s25], 0)), is_hidden: true });
 
   return tcs;
 }

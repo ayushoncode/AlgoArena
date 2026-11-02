@@ -10,6 +10,7 @@ import {
   IconShuffle,
   IconBook,
   IconLock,
+  IconLeetCode,
 } from './icons'
 import { DEFAULT_STRIVER_CURRICULUM } from '../content/striverCurriculum'
 import '../pages/Lobby/Lobby.css'
@@ -25,6 +26,12 @@ const DIFF_CONFIG = {
 function ProblemRow({ problem, globalIdx, onBattleProblem, queuingProblemId, isQueuing, isGated = false }) {
   const isThis = isQueuing && queuingProblemId === problem.id
 
+  const leetCodeUrl = useMemo(() => {
+    if (problem.leetcode_url) return problem.leetcode_url
+    if (problem.slug) return `https://leetcode.com/problems/${problem.slug}/`
+    return `https://leetcode.com/problemset/?search=${encodeURIComponent(problem.title || '')}`
+  }, [problem.leetcode_url, problem.slug, problem.title])
+
   return (
     <div className={`striver-v2-problem-row ${isThis ? 'is-queuing' : ''}`}>
       {/* Left: Index + Title */}
@@ -37,12 +44,25 @@ function ProblemRow({ problem, globalIdx, onBattleProblem, queuingProblemId, isQ
         </span>
       </div>
 
-      {/* Right: Verified Badge + 1v1 Battle Action */}
+      {/* Right: Verified Badge + LeetCode Link + 1v1 Battle Action */}
       <div className="striver-v2-problem-right">
         <span className="striver-v2-verified-badge hidden sm:inline-flex">
           <IconCheck size={11} />
           <span>Verified</span>
         </span>
+
+        {/* LeetCode practice link */}
+        <a
+          href={leetCodeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="striver-v2-lc-link"
+          title={`Practice "${problem.title}" on LeetCode`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <IconLeetCode size={13} />
+          <span className="hidden sm:inline">LeetCode</span>
+        </a>
 
         <button
           type="button"

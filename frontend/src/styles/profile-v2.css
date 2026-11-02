@@ -757,88 +757,147 @@
   letter-spacing: 0.02em;
 }
 
+/* ── Tier Ladder: horizontal step track ─────────────────────────── */
 .profile-v2 .chart-tier-ladder {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08));
-}
-
-.profile-v2 .tier-ladder-item {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-family: var(--font-mono, 'JetBrains Mono', monospace);
-  font-size: 11px;
-  color: var(--sub, #a2a9b8);
-  padding: 6px 8px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(196, 214, 232, 0.06);
-  transition: all 120ms ease;
+  align-items: flex-start;
+  gap: 0;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08));
   position: relative;
 }
 
+/* connector line behind all dots */
+.profile-v2 .chart-tier-ladder::before {
+  content: '';
+  position: absolute;
+  top: 29px; /* aligns with dot vertical center */
+  left: calc(100% / 12); /* start at first dot centre approx */
+  right: calc(100% / 12);
+  height: 1px;
+  background: rgba(196, 214, 232, 0.12);
+  pointer-events: none;
+}
+
+.profile-v2 .tier-ladder-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  color: var(--sub, #a2a9b8);
+  position: relative;
+  padding: 0 4px;
+  background: none;
+  border: none;
+}
+
 .profile-v2 .tier-ladder-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(196, 214, 232, 0.14);
+  background: none;
+  border: none;
 }
 
 .profile-v2 .tier-ladder-item.is-active-tier {
-  background-color: rgba(255, 255, 255, 0.06);
-  border-color: rgba(196, 214, 232, 0.28);
+  background: none;
+  border: none;
   color: #ffffff;
+}
+
+/* dot node */
+.profile-v2 .tier-ladder-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  margin-top: 3px; /* keeps track line centered */
+  transition: transform 140ms ease;
+  border: 2px solid transparent;
+}
+
+/* active tier: larger outlined dot */
+.profile-v2 .tier-ladder-item.is-active-tier .tier-ladder-dot {
+  width: 14px;
+  height: 14px;
+  border-color: var(--tier-dot-color, currentColor);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tier-dot-color, #fff) 18%, transparent);
+  margin-top: 1px;
+}
+
+/* inactive tiers: muted dot */
+.profile-v2 .tier-ladder-item:not(.is-active-tier) .tier-ladder-dot {
+  opacity: 0.35;
 }
 
 .profile-v2 .tier-ladder-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
-}
-
-.profile-v2 .tier-ladder-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
+  gap: 4px;
 }
 
 .profile-v2 .tier-ladder-name {
   font-weight: 600;
-  font-size: 11px;
+  font-size: 10px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+  margin-top: 5px;
+  text-align: center;
+}
+
+.profile-v2 .tier-ladder-item:not(.is-active-tier) .tier-ladder-name {
+  opacity: 0.5;
 }
 
 .profile-v2 .tier-ladder-range {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--sub, #a2a9b8);
-  opacity: 0.8;
-  padding-left: 11px;
+  opacity: 0.55;
+  text-align: center;
+  margin-top: 1px;
+  padding-left: 0;
 }
 
+.profile-v2 .tier-ladder-item.is-active-tier .tier-ladder-range {
+  opacity: 0.75;
+}
+
+/* YOU badge sits above the dot */
 .profile-v2 .tier-ladder-current-tag {
   font-size: 8px;
   font-weight: 700;
   color: #060d1c;
-  padding: 1px 3px;
+  padding: 1px 5px;
   border-radius: 3px;
   text-transform: uppercase;
-  margin-left: auto;
+  margin-left: 0;
+  margin-bottom: 2px;
+  display: block;
+  text-align: center;
 }
 
 @media (max-width: 900px) {
   .profile-v2 .chart-tier-ladder {
-    grid-template-columns: repeat(3, 1fr);
+    flex-wrap: wrap;
+    gap: 12px 0;
+  }
+  .profile-v2 .chart-tier-ladder::before {
+    display: none;
+  }
+  .profile-v2 .tier-ladder-item {
+    flex: 0 0 33.33%;
   }
 }
 
-@media (max-width: 540px) {
-  .profile-v2 .chart-tier-ladder {
-    grid-template-columns: repeat(2, 1fr);
+@media (max-width: 480px) {
+  .profile-v2 .tier-ladder-item {
+    flex: 0 0 50%;
   }
 }
 
@@ -2605,21 +2664,11 @@
   }
 }
 
-/* ── LEETCODE-STYLE SKILLS CARD (Photo 4) ─────────────────────────── */
-.profile-v2 .sidebar-skills-card {
-  background-color: var(--bg-1, #060d1c);
-  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.12));
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-  transition: border-color 140ms ease;
+/* ── LEETCODE-STYLE SKILLS SECTION (Integrated with divider line) ── */
+.profile-v2 .sidebar-skills-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.profile-v2 .sidebar-skills-card:hover {
-  border-color: rgba(196, 214, 232, 0.22);
+  gap: 14px;
 }
 
 .profile-v2 .skills-card-header {
@@ -2628,7 +2677,7 @@
 
 .profile-v2 .skills-card-title {
   font-family: var(--font-sans, 'Sora Variable', sans-serif);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--ink, #ffffff);
   margin: 0;
@@ -2645,13 +2694,13 @@
 .profile-v2 .skills-tier-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .profile-v2 .skills-tier-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .profile-v2 .skills-tier-header {
@@ -2677,15 +2726,15 @@
 .profile-v2 .skills-pill-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px 8px;
   align-items: center;
 }
 
 .profile-v2 .skill-pill {
   background-color: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 9999px;
-  padding: 4px 12px;
+  padding: 3px 10px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -2713,9 +2762,9 @@
 .profile-v2 .skill-expand-btn {
   background: none;
   border: none;
-  padding: 4px 0 0 0;
+  padding: 2px 0;
   color: var(--sub, #a2a9b8);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   text-align: center;

@@ -2,11 +2,11 @@
  * routes/problems.js — problem listing + single problem + run
  */
 
-const express        = require('express')
+const express = require('express')
 const authMiddleware = require('../middleware/auth')
 const requirePremium = require('../middleware/requirePremium')
-const db             = require('../db')
-const router         = express.Router()
+const db = require('../db')
+const router = express.Router()
 
 // GET /api/problems/stats — real-time problem count & topic breakdown
 router.get('/stats', async (_req, res) => {
@@ -144,6 +144,7 @@ router.get('/striver-sheet', requirePremium('sheet'), async (_req, res) => {
               'search-in-rotated-sorted-array',
               'search-in-rotated-sorted-array-ii',
               'find-minimum-in-rotated-sorted-array',
+              'find-minimum-in-rotated-sorted-array-ii',
               'find-kth-rotation',
               'single-element-in-a-sorted-array',
               'find-peak-element'
@@ -163,7 +164,26 @@ router.get('/striver-sheet', requirePremium('sheet'), async (_req, res) => {
               'book-allocation-problem',
               'split-array-largest-sum',
               'painter-s-partition-problem',
-              'kth-element-of-two-sorted-arrays'
+              'kth-element-of-two-sorted-arrays',
+              'median-of-two-sorted-arrays'
+            ]
+          },
+          {
+            title: 'Find Peak / BS on 2D Arrays',
+            problems: [
+              'row-with-max-1s',
+              'search-a-2d-matrix',
+              'search-a-2d-matrix-ii',
+              'find-a-peak-element-ii',
+              'matrix-median'
+            ]
+          },
+          {
+            title: 'Advanced Binary Search & Interval Space',
+            problems: [
+              'h-index-ii',
+              'heaters',
+              'find-right-interval'
             ]
           }
         ]
@@ -208,10 +228,10 @@ router.get('/', authMiddleware, async (req, res) => {
       return res.json(fallback)
     }
 
-    let text    = `SELECT id, title, topic, difficulty FROM problems`
+    let text = `SELECT id, title, topic, difficulty FROM problems`
     const params = []
-    const where  = []
-    if (topic)      { params.push(topic);      where.push(`topic = $${params.length}`) }
+    const where = []
+    if (topic) { params.push(topic); where.push(`topic = $${params.length}`) }
     if (difficulty) { params.push(difficulty); where.push(`difficulty = $${params.length}`) }
     if (where.length) text += ' WHERE ' + where.join(' AND ')
     text += ' ORDER BY created_at DESC'
@@ -270,7 +290,7 @@ router.post('/:id/run', authMiddleware, async (req, res) => {
         let passed = false
 
         try {
-          const sandbox = { console: { log: () => {} }, result: undefined }
+          const sandbox = { console: { log: () => { } }, result: undefined }
           const script = new vm.Script(`
             function TreeNode(val, left, right) {
               this.val = (val===undefined ? 0 : val);
@@ -369,11 +389,11 @@ router.post('/:id/run', authMiddleware, async (req, res) => {
         testResults.push({
           testIndex: i + 1,
           passed,
-          input:    tc.input,
+          input: tc.input,
           expected: tc.output,
-          actual:   actualOutput !== null && actualOutput !== undefined
+          actual: actualOutput !== null && actualOutput !== undefined
             ? JSON.stringify(actualOutput) : null,
-          error:    errorMsg,
+          error: errorMsg,
           isHidden: false,
           runtimeMs: 0,
         })
@@ -391,11 +411,13 @@ router.post('/:id/run', authMiddleware, async (req, res) => {
     // Python, C++, Java → Docker sandbox
     const path = require('path')
     let sandboxRunner = null
-    try { sandboxRunner = require(path.join(__dirname, '../../workers/sandbox')) } catch {}
+    try { sandboxRunner = require(path.join(__dirname, '../../workers/sandbox')) } catch { }
 
     if (!sandboxRunner) {
-      return res.json({ verdict: 'RUNTIME_ERROR', passedTests: 0, totalTests: testCases.length, runtimeMs: 0,
-        testResults: testCases.map((_, i) => ({ testIndex: i+1, passed: false, input: _.input, expected: _.output, actual: null, error: 'Sandbox not available', isHidden: false, runtimeMs: 0 })) })
+      return res.json({
+        verdict: 'RUNTIME_ERROR', passedTests: 0, totalTests: testCases.length, runtimeMs: 0,
+        testResults: testCases.map((_, i) => ({ testIndex: i + 1, passed: false, input: _.input, expected: _.output, actual: null, error: 'Sandbox not available', isHidden: false, runtimeMs: 0 }))
+      })
     }
 
     const result = await sandboxRunner.runSandbox({ code, language: lang, testCases })

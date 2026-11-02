@@ -488,6 +488,15 @@ export const DEFAULT_STRIVER_CURRICULUM = [
             sample_output: '1'
           },
           {
+            id: '80ac3e07-bac9-4b80-beed-1382be5c8649',
+            title: 'Find Minimum in Rotated Sorted Array II',
+            slug: 'find-minimum-in-rotated-sorted-array-ii',
+            topic: 'binary-search',
+            difficulty: 'hard',
+            sample_input: '[2,2,2,0,1]',
+            sample_output: '0'
+          },
+          {
             id: '9c15151f-b62d-4a29-92c8-ad45e6e1f794',
             title: 'Find Kth Rotation',
             slug: 'find-kth-rotation',
@@ -626,6 +635,97 @@ export const DEFAULT_STRIVER_CURRICULUM = [
             difficulty: 'medium',
             sample_input: '[2, 3, 6, 7, 9], [1, 4, 8, 10], 5',
             sample_output: '6'
+          },
+          {
+            id: 'e0db31ab-ee7f-4d32-84df-ac2e93fbbb86',
+            title: 'Median of Two Sorted Arrays',
+            slug: 'median-of-two-sorted-arrays',
+            topic: 'binary-search',
+            difficulty: 'hard',
+            sample_input: '[1, 3], [2]',
+            sample_output: '2'
+          }
+        ]
+      },
+      {
+        title: 'Find Peak / BS on 2D Arrays',
+        problems: [
+          {
+            id: '8d2059d9-2787-4163-b734-d320828da7ab',
+            title: 'Row with Maximum 1s',
+            slug: 'row-with-max-1s',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[[0, 1, 1, 1], [0, 0, 1, 1], [1, 1, 1, 1], [0, 0, 0, 0]]',
+            sample_output: '2'
+          },
+          {
+            id: '9b6d6247-8e8a-46aa-9c8b-fadd6f71fb85',
+            title: 'Search a 2D Matrix',
+            slug: 'search-a-2d-matrix',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[[1,3,5,7],[10,11,16,20],[23,30,34,60]], 3',
+            sample_output: 'true'
+          },
+          {
+            id: '4632f27b-5f77-457f-bd7b-db3619017caf',
+            title: 'Search a 2D Matrix II',
+            slug: 'search-a-2d-matrix-ii',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22],[10,13,14,17,24],[18,21,23,26,30]], 5',
+            sample_output: 'true'
+          },
+          {
+            id: 'fe29ae72-90b3-4024-837c-1aa42e27151d',
+            title: 'Find a Peak Element II',
+            slug: 'find-a-peak-element-ii',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[[1, 4], [3, 2]]',
+            sample_output: '[1, 0]'
+          },
+          {
+            id: '8de7ee5f-2e4a-469d-ae9b-837450355caa',
+            title: 'Matrix Median',
+            slug: 'matrix-median',
+            topic: 'binary-search',
+            difficulty: 'hard',
+            sample_input: '[[1, 3, 5], [2, 6, 9], [3, 6, 9]]',
+            sample_output: '5'
+          }
+        ]
+      },
+      {
+        title: 'Advanced Binary Search & Interval Space',
+        problems: [
+          {
+            id: '924f483e-7888-4ef5-86b3-569746bc2eb9',
+            title: 'H-Index II',
+            slug: 'h-index-ii',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[0,1,3,5,6]',
+            sample_output: '3'
+          },
+          {
+            id: '4e6e1275-e39e-4c06-a28c-28429f88517c',
+            title: 'Heaters',
+            slug: 'heaters',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[1,2,3], [2]',
+            sample_output: '1'
+          },
+          {
+            id: 'a7057d13-b518-4bbc-863c-685069bf4a97',
+            title: 'Find Right Interval',
+            slug: 'find-right-interval',
+            topic: 'binary-search',
+            difficulty: 'medium',
+            sample_input: '[[3,4],[2,3],[1,2]]',
+            sample_output: '[-1,0,1]'
           }
         ]
       }

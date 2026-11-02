@@ -363,6 +363,38 @@ export const CANONICAL_SIGNATURES = {
     params: [{ name: 'nums1', ...TYPE_INT_ARR }, { name: 'nums2', ...TYPE_INT_ARR }, { name: 'k', ...TYPE_INT }],
     ret: TYPE_INT,
   },
+  'search a 2d matrix ii': {
+    params: [{ name: 'matrix', ...TYPE_INT_MATRIX }, { name: 'target', ...TYPE_INT }],
+    ret: TYPE_BOOL,
+  },
+  'find a peak element ii': {
+    params: [{ name: 'mat', ...TYPE_INT_MATRIX }],
+    ret: TYPE_INT_ARR_RET,
+  },
+  'row with max 1s': {
+    params: [{ name: 'mat', ...TYPE_INT_MATRIX }],
+    ret: TYPE_INT,
+  },
+  'row with maximum 1s': {
+    params: [{ name: 'mat', ...TYPE_INT_MATRIX }],
+    ret: TYPE_INT,
+  },
+  'matrix median': {
+    params: [{ name: 'mat', ...TYPE_INT_MATRIX }],
+    ret: TYPE_INT,
+  },
+  'h-index ii': {
+    params: [{ name: 'citations', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
+  'heaters': {
+    params: [{ name: 'houses', ...TYPE_INT_ARR }, { name: 'heaters', ...TYPE_INT_ARR }],
+    ret: TYPE_INT,
+  },
+  'find right interval': {
+    params: [{ name: 'intervals', ...TYPE_INT_MATRIX }],
+    ret: TYPE_INT_ARR_RET,
+  },
   'valid sudoku': {
     params: [{ name: 'board', ...TYPE_CHAR_MATRIX }],
     ret: TYPE_BOOL,
