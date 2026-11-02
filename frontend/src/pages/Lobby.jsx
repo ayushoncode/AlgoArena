@@ -22,6 +22,7 @@ import { ArenaLogo } from '../components/ArenaLogo'
 import StriverSheetView from '../components/StriverSheetView'
 import { DEFAULT_STRIVER_CURRICULUM } from '../content/striverCurriculum'
 import LobbyViewV2 from './Lobby/LobbyViewV2'
+import LobbySkeleton from './Lobby/LobbySkeleton'
 import SearchingOverlayV2 from './Lobby/SearchingOverlayV2'
 import MatchFoundOverlayV2 from './Lobby/MatchFoundOverlayV2'
 import PrivateMatchModalV2 from './Lobby/PrivateMatchModalV2'
@@ -1023,37 +1024,10 @@ export default function Lobby() {
 
   const isDailySelected = dailyObj ? (topic === dailyObj.topic && diff === dailyObj.difficulty) : false
 
-  // Show loader only while auth is being restored from localStorage.
-  // The useEffect above (line 898) handles redirect to /login if not authenticated.
-  if (loading) {
-    return (
-      <PageWrapper heroGlow>
-        <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-8 h-8 rounded-full animate-ping" style={{ background: 'var(--c-red)', opacity: 0.6 }} />
-            <p className="font-mono text-sm tracking-wider uppercase" style={{ color: 'var(--c-text-mute)' }}>
-              Initializing Command Center…
-            </p>
-          </div>
-        </div>
-      </PageWrapper>
-    )
-  }
-
-  if (!isAuthenticated) {
-    // Navigate fires asynchronously — show loader instead of black screen
-    return (
-      <PageWrapper heroGlow>
-        <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-8 h-8 rounded-full animate-ping" style={{ background: 'var(--c-red)', opacity: 0.6 }} />
-            <p className="font-mono text-sm tracking-wider uppercase" style={{ color: 'var(--c-text-mute)' }}>
-              Redirecting to login…
-            </p>
-          </div>
-        </div>
-      </PageWrapper>
-    )
+  // Show true-to-layout skeleton while auth is being restored from localStorage
+  // or before unauthenticated redirect occurs.
+  if (loading || !isAuthenticated) {
+    return <LobbySkeleton />
   }
 
   return (

@@ -4,8 +4,8 @@
 
 'use strict'
 
-const db                   = require('../db')
-const { calculateElo }      = require('../utils/elo')
+const db = require('../db')
+const { calculateElo } = require('../utils/elo')
 const { evaluateSubmission } = require('../services/judge')
 
 // ── In-memory active matches ───────────────────────────────────
@@ -56,11 +56,11 @@ async function createMatchRow({ playerOneId, playerTwoId, topic, difficulty }) {
 /* ── Resolve match: update Elo, write history, finish match row ─ */
 async function resolveMatch({ dbMatchId, winner, loser, isCustom = false, difficulty = 'medium', solveTimeSec = null }) {
   let winnerOldRating = winner?.rating ?? 1200
-  let loserOldRating  = loser?.rating ?? 1200
+  let loserOldRating = loser?.rating ?? 1200
   let winnerDelta = 0
-  let loserDelta  = 0
+  let loserDelta = 0
   let winnerNewRating = winnerOldRating
-  let loserNewRating  = loserOldRating
+  let loserNewRating = loserOldRating
 
   if (!dbMatchId && !winner?.userId) {
     return { winnerDelta, loserDelta, winnerOldRating, winnerNewRating, loserOldRating, loserNewRating }
@@ -97,7 +97,7 @@ async function resolveMatch({ dbMatchId, winner, loser, isCustom = false, diffic
     }
 
     let winnerMatches = 0
-    let loserMatches  = 0
+    let loserMatches = 0
 
     if (winner?.userId) {
       const { rows } = await client.query(
@@ -106,7 +106,7 @@ async function resolveMatch({ dbMatchId, winner, loser, isCustom = false, diffic
       )
       if (rows[0]) {
         winnerOldRating = Number(rows[0].elo_rating) || 1200
-        winnerMatches   = (Number(rows[0].wins) || 0) + (Number(rows[0].losses) || 0)
+        winnerMatches = (Number(rows[0].wins) || 0) + (Number(rows[0].losses) || 0)
       }
     }
 
@@ -117,23 +117,23 @@ async function resolveMatch({ dbMatchId, winner, loser, isCustom = false, diffic
       )
       if (rows[0]) {
         loserOldRating = Number(rows[0].elo_rating) || 1200
-        loserMatches   = (Number(rows[0].wins) || 0) + (Number(rows[0].losses) || 0)
+        loserMatches = (Number(rows[0].wins) || 0) + (Number(rows[0].losses) || 0)
       }
     }
 
     if (!isCustom && winner?.userId) {
       const calculated = calculateElo({
         winnerRating: winnerOldRating,
-        loserRating:  loserOldRating,
+        loserRating: loserOldRating,
         winnerMatches,
         loserMatches,
         difficulty,
         solveTimeSec,
       })
-      winnerDelta     = calculated.winnerDelta
-      loserDelta      = calculated.loserDelta
+      winnerDelta = calculated.winnerDelta
+      loserDelta = calculated.loserDelta
       winnerNewRating = calculated.newWinnerRating
-      loserNewRating  = calculated.newLoserRating
+      loserNewRating = calculated.newLoserRating
 
       // Update winner
       await client.query(
@@ -349,7 +349,7 @@ function registerMatch(io) {
       const difficulty = match.difficulty || 'medium'
 
       const winnerInfo = opponent ? { userId: opponent.userId, username: opponent.username, rating: opponent.rating } : { userId: null, username: 'Opponent' }
-      const loserInfo  = { userId, username, rating: elo_rating }
+      const loserInfo = { userId, username, rating: elo_rating }
 
       const resolved = await resolveMatch({
         dbMatchId: match.dbMatchId,
@@ -404,16 +404,16 @@ function registerMatch(io) {
 
       if (!activeMatches.has(roomId)) {
         activeMatches.set(roomId, {
-          dbMatchId:   null,
-          problemId:   null,
-          topic:       topic || 'arrays',
-          difficulty:  difficulty || 'medium',
+          dbMatchId: null,
+          problemId: null,
+          topic: topic || 'arrays',
+          difficulty: difficulty || 'medium',
           submissions: new Map(),
-          evaluating:  new Map(),
-          isResolved:  false,
-          winnerId:    null,
+          evaluating: new Map(),
+          isResolved: false,
+          winnerId: null,
           matchEndPayload: null,
-          startedAt:   Date.now(),
+          startedAt: Date.now(),
           disconnectTimers: new Map(),
         })
       }
@@ -473,10 +473,39 @@ function registerMatch(io) {
         })
         console.log(`[Match] queued submission user=${username} room=${roomId}`)
 
-        // Wait for worker to evaluate and publish verdict to Redis pub/sub
-        const res = await evalPromise
-        verdict = res.verdict
-        judgeResult = res.judgeResult
+        // Wait for worker to evaluate and publish verdict to Redis pub/sub (with 20s safety timeout)
+        const EVAL_TIMEOUT_MS = 20000
+        let timeoutHandle
+        const timeoutPromise = new Promise((_, reject) => {
+          timeoutHandle = setTimeout(() => reject(new Error('Judge evaluation timed out')), EVAL_TIMEOUT_MS)
+        })
+
+        try {
+          const res = await Promise.race([evalPromise, timeoutPromise])
+          clearTimeout(timeoutHandle)
+          verdict = res.verdict
+          judgeResult = res.judgeResult
+        } catch (timeoutErr) {
+          clearTimeout(timeoutHandle)
+          console.error(`[Match] ${timeoutErr.message} user=${username} room=${roomId}`)
+          verdict = 'RUNTIME_ERROR'
+          judgeResult = {
+            verdict: 'RUNTIME_ERROR',
+            totalTests: 1,
+            passedTests: 0,
+            runtimeMs: EVAL_TIMEOUT_MS,
+            testResults: [{
+              testIndex: 1,
+              passed: false,
+              input: '[Submission Queue Timeout]',
+              expected: 'Verdict from judge worker',
+              actual: 'Worker timed out or disconnected',
+              error: 'Evaluation timed out. Please verify that workers are running.',
+              isHidden: false,
+              totalTests: 1,
+            }]
+          }
+        }
       } else {
         judgeResult = await evaluateSubmission(targetProblemId, code, language, {
           onProgress: (tr) => {
@@ -563,7 +592,7 @@ function registerMatch(io) {
           const solveTimeSec = Math.round((Date.now() - (match.startedAt || Date.now())) / 1000)
 
           const winnerInfo = { userId, username, rating: elo_rating }
-          const loserInfo  = opponent ? { userId: opponent.userId, username: opponent.username, rating: opponent.rating } : null
+          const loserInfo = opponent ? { userId: opponent.userId, username: opponent.username, rating: opponent.rating } : null
 
           const resolved = await resolveMatch({
             dbMatchId: match.dbMatchId,
@@ -669,7 +698,7 @@ function registerMatch(io) {
           const difficulty = match.difficulty || 'medium'
 
           const winnerInfo = { userId: opponent.userId, username: opponent.username, rating: opponent.rating }
-          const loserInfo  = { userId, username, rating: elo_rating }
+          const loserInfo = { userId, username, rating: elo_rating }
 
           const resolved = await resolveMatch({
             dbMatchId: match.dbMatchId,

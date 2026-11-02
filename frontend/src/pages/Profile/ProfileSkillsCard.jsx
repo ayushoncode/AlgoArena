@@ -144,7 +144,8 @@ export default function ProfileSkillsCard({ topicFreq = {}, matches = [], eloHis
   }
 
   return (
-    <div className="sidebar-skills-card">
+    <div className="sidebar-skills-section">
+      <div className="sidebar-divider" />
       <div className="skills-card-header">
         <h3 className="skills-card-title">Skills</h3>
       </div>

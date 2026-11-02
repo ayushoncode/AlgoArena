@@ -1106,7 +1106,7 @@ export default function RatingChartV2({
         </div>
       )}
 
-      {/* ── 8. Rank Tier Ladder Strip (Below Chart) ────────────────── */}
+      {/* ── 8. Rank Tier Track (Below Chart) ───────────────────────── */}
       <div className="chart-tier-ladder" role="region" aria-label="Rating tier thresholds">
         {CANONICAL_TIERS.map((tier) => {
           const rangeLabel = tier.nextThreshold
@@ -1121,8 +1121,14 @@ export default function RatingChartV2({
               key={tier.name}
               className={`tier-ladder-item ${isCurrent ? 'is-active-tier' : ''}`}
               title={`${tier.name}: ${rangeLabel} Elo`}
+              style={{ '--tier-dot-color': tier.color }}
             >
               <div className="tier-ladder-header">
+                {isCurrent && isOwnProfile && (
+                  <span className="tier-ladder-current-tag" style={{ backgroundColor: tier.color }}>
+                    You
+                  </span>
+                )}
                 <span
                   className="tier-ladder-dot"
                   style={{ backgroundColor: tier.color }}
@@ -1134,11 +1140,6 @@ export default function RatingChartV2({
                 >
                   {tier.name}
                 </span>
-                {isCurrent && isOwnProfile && (
-                  <span className="tier-ladder-current-tag" style={{ backgroundColor: tier.color }}>
-                    You
-                  </span>
-                )}
               </div>
               <span className="tier-ladder-range">{rangeLabel}</span>
             </div>

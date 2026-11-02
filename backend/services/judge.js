@@ -39,6 +39,20 @@ function compareOutputs(actual, expectedStr) {
 
   if (normActual === normExpected) return true
 
+  // String quote normalization (handles cases where expected is JSON-quoted string e.g. "\"/home\"" or vice-versa)
+  if (normExpected.startsWith('"') && normExpected.endsWith('"')) {
+    try {
+      const parsedExpected = JSON.parse(normExpected)
+      if (typeof parsedExpected === 'string' && normActual === parsedExpected) return true
+    } catch {}
+  }
+  if (normActual.startsWith('"') && normActual.endsWith('"')) {
+    try {
+      const parsedActual = JSON.parse(normActual)
+      if (typeof parsedActual === 'string' && parsedActual === normExpected) return true
+    } catch {}
+  }
+
   // Empty collection / null equivalency (for linked lists / trees / optional lists)
   if ((normActual === 'null' && (normExpected === '[]' || normExpected === 'null')) ||
       (normActual === '[]' && (normExpected === 'null' || normExpected === '[]'))) return true

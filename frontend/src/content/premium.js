@@ -2,7 +2,7 @@
  * frontend/src/content/premium.js
  *
  * Single source of truth for Premium product definitions, pricing,
- * and feature comparison rows on the client.
+ * and feature cards on the client.
  */
 
 export const PREMIUM_CONFIG = {
@@ -12,106 +12,116 @@ export const PREMIUM_CONFIG = {
   currencySymbol: '₹',
   
   // Prices in paise
-  standardPricePaise: 5000,
+  standardPricePaise: 10000,
   launchPricePaise: 3900,
 
   // Formatted display values (in rupees)
-  standardPriceDisplay: '50',
+  standardPriceDisplay: '100',
   launchPriceDisplay: '39',
 
   // Launch offer limits
   totalLaunchSlots: 100,
 
   // Tax disclosure: set to true only when inclusive of applicable taxes
-  // [TODO: owner to confirm GST registration status and tax inclusion]
-  taxesIncluded: false,
+  // When false or undefined, nothing about tax is printed
+  pricesIncludeTax: false,
 
-  // A2Z sheet branding (default generic label, no personal names or photos without permission)
-  sheetFeatureLabel: 'A2Z Sheet',
+  // A2Z sheet branding (generic label, no personal names or photos without permission)
+  sheetFeatureLabel: 'A2Z sheet with topic index',
 
   // Support / billing contact
   supportEmail: 'support@algoarena.io',
 
-  // Feature comparison rows (data driven: status 'live' | 'comingSoon' | 'hidden')
+  // Free card copy
+  freePlan: {
+    name: 'Free',
+    title: 'Play and climb',
+    tagline: 'Standard matchmaking on all topics, room duels, and live leaderboard ratings.',
+    priceDisplay: '0'
+  },
+
+  // Premium card copy
+  premiumPlan: {
+    name: 'Premium',
+    title: 'Study the sheet, duel on it',
+    tagline: 'Structured curriculum progression, question by question duels, and profile distinction.'
+  },
+
+  // Feature rows (data driven: status 'live' | 'comingSoon' | 'hidden')
   features: [
+    // Free card features
     {
       id: 'quick_arena',
-      name: '1v1 Quick Arena matches',
-      description: 'System-assigned problem on chosen topic and difficulty',
-      free: 'Included',
-      premium: 'Included',
+      icon: 'duel',
+      name: 'Quick Arena duels on any topic',
+      tier: 'free',
       status: 'live'
     },
     {
       id: 'private_duel',
-      name: 'Private Duels',
-      description: 'Custom room creation and room code entry with peers',
-      free: 'Included',
-      premium: 'Included',
+      icon: 'room',
+      name: 'Private duels with room codes',
+      tier: 'free',
       status: 'live'
     },
     {
       id: 'leaderboard_ratings',
-      name: 'Elo rating and leaderboard rankings',
-      description: 'Transparent rating adjustments based on duel outcomes',
-      free: 'Included',
-      premium: 'Included',
+      icon: 'bars',
+      name: 'Ratings and leaderboard',
+      tier: 'free',
       status: 'live'
     },
     {
       id: 'intel_reports',
-      name: 'Intel Reports access',
-      description: 'Read and write interview experience debriefs',
-      free: 'Included',
-      premium: 'Included',
+      icon: 'document',
+      name: 'Read and write Intel Reports',
+      tier: 'free',
       status: 'live'
     },
+
+    // Premium card features (included)
     {
       id: 'a2z_sheet',
-      name: 'Curated A2Z Sheet curriculum',
-      description: 'Structured topic breakdown and problem indexing',
-      free: 'Not included',
-      premium: 'Included',
+      icon: 'list',
+      name: 'A2Z sheet with topic index',
+      tier: 'premium',
       status: 'live'
     },
     {
       id: 'sheet_1v1',
-      name: 'Sheet-based 1v1 battles',
-      description: 'Challenge opponents on questions chosen question by question',
-      free: 'Not included',
-      premium: 'Included',
+      icon: 'arrows',
+      name: '1v1 duels on sheet questions',
+      tier: 'premium',
       status: 'live'
     },
     {
       id: 'premium_badge',
-      name: 'Premium member badge',
-      description: 'Minimal badge displayed beside username on profile and standings',
-      free: 'Not included',
-      premium: 'Included',
+      icon: 'hexagon',
+      name: 'Premium badge on your profile',
+      tier: 'premium',
       status: 'live'
     },
+
+    // Premium card features (coming later)
     {
       id: 'discussion_rooms',
+      icon: 'chat',
       name: 'Discussion rooms',
-      description: 'Post-duel problem analysis rooms',
-      free: 'Not included',
-      premium: 'Coming soon',
+      tier: 'premium',
       status: 'comingSoon'
     },
     {
       id: 'global_chat',
+      icon: 'chat',
       name: 'Global chat',
-      description: 'Real-time arena community communication',
-      free: 'Not included',
-      premium: 'Coming soon',
+      tier: 'premium',
       status: 'comingSoon'
     },
     {
       id: 'voice_chat',
+      icon: 'voice',
       name: 'Live voice communication',
-      description: 'Audio channel with your duel opponent',
-      free: 'Not included',
-      premium: 'Coming soon',
+      tier: 'premium',
       status: 'comingSoon'
     }
   ],
@@ -148,4 +158,3 @@ export const PREMIUM_CONFIG = {
     }
   ]
 }
-
