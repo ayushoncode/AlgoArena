@@ -42,6 +42,12 @@ export default function BattleRoomV2({
   // Mobile tab state
   mobileTab,
   setMobileTab,
+  // Voice integration (additive props)
+  voiceControl,
+  voiceDock,
+  voiceIncomingPrompt,
+  voiceErrorBanner,
+  voiceSlotForRival,
   // Editor slot
   children,
 }) {
@@ -68,10 +74,24 @@ export default function BattleRoomV2({
         opp={opp}
         user={user}
         onOpenResign={onOpenResign}
+        voiceControl={voiceControl}
+        voiceDock={voiceDock}
       />
 
       {/* Connection State Banner */}
       <ConnectionBannerV2 connected={connected} />
+
+      {/* Voice Banners */}
+      {voiceErrorBanner && (
+        <div className="shrink-0 px-3 py-1.5 bg-rose-500/10 border-b border-rose-500/30 text-[var(--bad)] text-xs font-mono flex items-center justify-between">
+          {voiceErrorBanner}
+        </div>
+      )}
+      {voiceIncomingPrompt && (
+        <div className="shrink-0 px-3 py-1.5 border-b border-[var(--c-border)] bg-[var(--c-panel2)]">
+          {voiceIncomingPrompt}
+        </div>
+      )}
 
       {/* Resign Confirmation Modal */}
       <ResignModalV2
@@ -175,6 +195,7 @@ export default function BattleRoomV2({
             oppProgress={oppProgress}
             oppDisconnectState={oppDisconnectState}
             width={oppPanelWidth}
+            voiceSlot={voiceSlotForRival}
           />
         </div>
       </div>

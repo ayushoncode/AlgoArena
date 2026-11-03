@@ -1,0 +1,521 @@
+/**
+ * frontend/src/components/voice/voice.css
+ *
+ * Design system tokens for Live Voice:
+ * Sora typography, navy tonal surfaces, 1px hairlines, semantic colors.
+ * Zero gradients, zero glow, zero Lucide, zero emoji.
+ * Full light theme and prefers-reduced-motion support.
+ */
+
+/* ── Base Container ─────────────────────────────────────────── */
+.voice-root {
+  font-family: 'Sora', sans-serif;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ── Top Bar Voice Button ───────────────────────────────────── */
+.voice-topbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background-color: var(--c-panel2, #111827);
+  border: 1px solid var(--c-border, #27272a);
+  color: var(--c-text-dim, #94a3b8);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.voice-topbar-btn:hover:not(:disabled) {
+  border-color: var(--c-border2, #3f3f46);
+  color: var(--c-text, #f1f5f9);
+}
+
+.voice-topbar-btn:focus-visible {
+  outline: 2px solid var(--info, #38bdf8);
+  outline-offset: 1px;
+}
+
+.voice-topbar-btn.is-active {
+  border-color: var(--ok, #10b981);
+  color: var(--ok, #10b981);
+  background-color: rgba(16, 185, 129, 0.08);
+}
+
+.voice-topbar-btn.is-live {
+  border-color: var(--ok, #10b981);
+  color: var(--ok, #10b981);
+}
+
+.voice-topbar-btn.is-warn {
+  border-color: var(--warn, #f59e0b);
+  color: var(--warn, #f59e0b);
+  background-color: rgba(245, 158, 11, 0.08);
+}
+
+.voice-topbar-btn.is-bad {
+  border-color: var(--bad, #f43f5e);
+  color: var(--bad, #f43f5e);
+  background-color: rgba(244, 63, 94, 0.08);
+}
+
+.voice-topbar-btn.is-locked {
+  border-color: var(--c-border, #27272a);
+  color: var(--c-text-mute, #64748b);
+  opacity: 0.85;
+}
+
+.voice-badge-premium {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  color: var(--warn, #f59e0b);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 2px;
+  padding: 1px 4px;
+}
+
+/* ── Voice Dock (Connected Desktop Bar) ─────────────────────── */
+.voice-dock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background-color: var(--c-panel, #0f172a);
+  border: 1px solid var(--c-border, #1e293b);
+  border-radius: 6px;
+  height: 44px;
+  box-sizing: border-box;
+}
+
+/* 44px Mute Button */
+.voice-dock__mute-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid var(--c-border, #27272a);
+  background-color: var(--c-panel2, #1e293b);
+  color: var(--c-text, #f1f5f9);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.voice-dock__mute-btn:hover {
+  border-color: var(--c-border2, #3f3f46);
+}
+
+.voice-dock__mute-btn:focus-visible {
+  outline: 2px solid var(--info, #38bdf8);
+  outline-offset: 1px;
+}
+
+.voice-dock__mute-btn.is-muted {
+  border-color: rgba(244, 63, 94, 0.4);
+  background-color: rgba(244, 63, 94, 0.08);
+  color: var(--bad, #f43f5e);
+}
+
+.voice-dock__mute-btn.is-live {
+  border-color: rgba(16, 185, 129, 0.4);
+  background-color: rgba(16, 185, 129, 0.08);
+  color: var(--ok, #10b981);
+}
+
+/* Real-time Audio Level Sound Wave Bars */
+.voice-audio-bars {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 16px;
+  padding: 0 1px;
+  user-select: none;
+}
+
+.voice-audio-bars span {
+  display: block;
+  width: 2.5px;
+  height: 16px;
+  background-color: var(--ok, #10b981);
+  border-radius: 2px;
+  transform-origin: center;
+  transition: transform 0.06s cubic-bezier(0.2, 0.8, 0.4, 1);
+}
+
+.voice-audio-bars.is-opponent span {
+  background-color: var(--info, #38bdf8);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .voice-audio-bars.is-idle span {
+    animation: voice-bar-idle 1.3s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes voice-bar-idle {
+  0% {
+    transform: scaleY(0.2);
+    opacity: 0.45;
+  }
+  100% {
+    transform: scaleY(0.5);
+    opacity: 0.9;
+  }
+}
+
+@media (max-width: 640px) {
+  .voice-topbar-btn {
+    height: 26px;
+    padding: 0 6px;
+    font-size: 10px;
+    gap: 4px;
+  }
+  .voice-audio-bars {
+    height: 12px;
+    gap: 1.5px;
+  }
+  .voice-audio-bars span {
+    width: 2px;
+    height: 12px;
+  }
+  .battle-v2__rival-body .voice-dock {
+    width: 100%;
+    justify-content: space-between;
+    padding: 4px 8px;
+    height: auto;
+    min-height: 44px;
+  }
+}
+
+/* Opponent Active Speaker Ring (2px Ink Ring, No Glow) */
+.voice-speaker-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voice-speaker-ring {
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 9999px;
+  border: 2px solid var(--ok, #10b981);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .voice-speaker-ring.is-speaking {
+    animation: voice-speaker-pulse 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes voice-speaker-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.06);
+  }
+}
+
+/* Network Quality Indicator */
+.voice-quality-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: 1px solid var(--c-border, #27272a);
+  background-color: var(--c-panel2, #1e293b);
+  cursor: help;
+}
+
+.voice-quality-badge.is-good {
+  color: var(--ok, #10b981);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.voice-quality-badge.is-fair {
+  color: var(--warn, #f59e0b);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.voice-quality-badge.is-poor {
+  color: var(--bad, #f43f5e);
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+.voice-quality-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1.5px;
+  height: 10px;
+}
+
+.voice-quality-bars span {
+  width: 2px;
+  background-color: currentColor;
+  border-radius: 0.5px;
+}
+
+.voice-quality-bars span:nth-child(1) { height: 3px; }
+.voice-quality-bars span:nth-child(2) { height: 6px; }
+.voice-quality-bars span:nth-child(3) { height: 10px; }
+
+/* ── Incoming Prompt Bar ────────────────────────────────────── */
+.voice-incoming-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 12px;
+  background-color: var(--c-panel, #0f172a);
+  border: 1px solid var(--info, #38bdf8);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--c-text, #f1f5f9);
+}
+
+.voice-btn-accept {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background-color: var(--ok, #10b981);
+  border: 1px solid var(--ok, #10b981);
+  color: #0b1120;
+  cursor: pointer;
+}
+
+.voice-btn-accept:focus-visible {
+  outline: 2px solid var(--info, #38bdf8);
+  outline-offset: 1px;
+}
+
+.voice-btn-decline {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background-color: transparent;
+  border: 1px solid var(--c-border, #27272a);
+  color: var(--c-text-dim, #94a3b8);
+  cursor: pointer;
+}
+
+.voice-btn-decline:hover {
+  border-color: var(--bad, #f43f5e);
+  color: var(--bad, #f43f5e);
+}
+
+/* ── Modals and Dialog Backdrops ────────────────────────────── */
+.voice-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(3, 7, 18, 0.75);
+  backdrop-filter: blur(2px);
+  padding: 16px;
+}
+
+.voice-modal-frame {
+  width: 100%;
+  max-width: 440px;
+  background-color: var(--c-panel, #0f172a);
+  border: 1px solid var(--c-border, #1e293b);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.voice-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--c-border, #1e293b);
+  background-color: var(--c-panel2, #111827);
+}
+
+.voice-modal-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-text, #f1f5f9);
+  letter-spacing: -0.01em;
+}
+
+.voice-modal-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--c-text-dim, #94a3b8);
+}
+
+.voice-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--c-border, #1e293b);
+  background-color: var(--c-panel2, #111827);
+}
+
+.voice-modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--c-text-mute, #64748b);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voice-modal-close-btn:hover {
+  color: var(--c-text, #f1f5f9);
+}
+
+/* Form Controls */
+.voice-select-label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--c-text-mute, #64748b);
+  margin-bottom: 4px;
+}
+
+.voice-select {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  background-color: var(--c-void, #030712);
+  border: 1px solid var(--c-border, #27272a);
+  border-radius: 4px;
+  color: var(--c-text, #f1f5f9);
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+
+.voice-select:focus {
+  border-color: var(--info, #38bdf8);
+}
+
+.voice-meter-bar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--c-void, #030712);
+  border: 1px solid var(--c-border, #27272a);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.voice-meter-fill {
+  height: 100%;
+  background-color: var(--ok, #10b981);
+  transition: width 0.08s ease;
+}
+
+/* Light Theme Overrides */
+[data-theme="light"] .voice-topbar-btn {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+[data-theme="light"] .voice-topbar-btn:hover:not(:disabled) {
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+[data-theme="light"] .voice-dock {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .voice-dock__mute-btn {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme="light"] .voice-modal-frame {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .voice-modal-header,
+[data-theme="light"] .voice-modal-footer {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .voice-select {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme="light"] .voice-incoming-bar {
+  background-color: #f0f9ff;
+  border-color: #38bdf8;
+  color: #0f172a;
+}
+
+[data-theme="light"] .voice-quality-badge {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .voice-meter-bar {
+  background-color: #e2e8f0;
+  border-color: #cbd5e1;
+}
+

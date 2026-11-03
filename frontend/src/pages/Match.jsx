@@ -13,6 +13,17 @@ import { RankBadge, DiffChip, VerdictChip, getArenaTier } from '../components/ui
 import BattleRoomV2 from './Match/BattleRoomV2'
 import EditorToolbarV2 from './Match/EditorToolbarV2'
 import RunConsoleV2 from './Match/RunConsoleV2'
+import { usePremium } from '../hooks/usePremium'
+import { usePremiumBadges } from '../hooks/usePremiumBadges'
+import { useLiveVoice } from '../voice/useLiveVoice'
+import VoiceControl from '../components/voice/VoiceControl'
+import VoiceDock from '../components/voice/VoiceDock'
+import IncomingVoicePrompt from '../components/voice/IncomingVoicePrompt'
+import VoiceFirstUseModal from '../components/voice/VoiceFirstUseModal'
+import VoiceSettingsModal from '../components/voice/VoiceSettingsModal'
+import VoiceReportModal from '../components/voice/VoiceReportModal'
+import VoiceBlockModal from '../components/voice/VoiceBlockModal'
+import { IconAlert, IconClose } from '../components/voice/VoiceIcons'
 
 import { ArenaLogo } from '../components/ArenaLogo'
 import { setActiveMatch, clearActiveMatch } from '../utils/activeMatch'
@@ -71,32 +82,32 @@ function defineTheme(monaco) {
     },
   })
 
-  // AlgoArena V2 Dark Theme
+  // AlgoArena V2 Dark Theme (Clean Neutral Developer Dark Mode)
   monaco.editor.defineTheme('algoarena-v2-dark', {
     base: 'vs-dark',
     inherit: true,
     rules: [
-      { token: 'comment', foreground: '4a5878', fontStyle: 'italic' },
-      { token: 'keyword', foreground: '8cc4ff' },
+      { token: 'comment', foreground: '6b7280', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '38bdf8' },
       { token: 'string', foreground: '86efac' },
-      { token: 'number', foreground: 'ffd696' },
-      { token: 'function', foreground: 'e2e8f4' },
-      { token: 'type', foreground: '94a3b8' },
-      { token: 'variable', foreground: 'e2e8f4' },
-      { token: 'delimiter', foreground: '64748b' },
-      { token: 'operator', foreground: '8cc4ff' },
+      { token: 'number', foreground: 'fcd34d' },
+      { token: 'function', foreground: 'f3f4f6' },
+      { token: 'type', foreground: 'a1a1aa' },
+      { token: 'variable', foreground: 'f3f4f6' },
+      { token: 'delimiter', foreground: '71717a' },
+      { token: 'operator', foreground: '38bdf8' },
     ],
     colors: {
-      'editor.background': '#060d1c',
-      'editor.foreground': '#e2e8f4',
-      'editorLineNumber.foreground': '#4a5878',
+      'editor.background': '#1e1e1e',
+      'editor.foreground': '#f3f4f6',
+      'editorLineNumber.foreground': '#52525b',
       'editorLineNumber.activeForeground': '#38bdf8',
       'editor.selectionBackground': '#38bdf81f',
-      'editor.lineHighlightBackground': '#38bdf80d',
-      'editorCursor.foreground': '#e2e8f4',
-      'editorGutter.background': '#060d1c',
-      'scrollbarSlider.background': '#1e293b66',
-      'scrollbarSlider.hoverBackground': '#33415599',
+      'editor.lineHighlightBackground': '#27272a',
+      'editorCursor.foreground': '#f3f4f6',
+      'editorGutter.background': '#1e1e1e',
+      'scrollbarSlider.background': '#3f3f4666',
+      'scrollbarSlider.hoverBackground': '#52525b99',
     },
   })
 
@@ -565,7 +576,7 @@ export default function Match() {
   const { roomId } = useParams()
   const { state } = useLocation()
   const { user } = useAuth()
-  const { connected, emit, on, off } = useSocket()
+  const { connected, emit, on, off, socket } = useSocket()
   const navigate = useNavigate()
 
   // Panel widths — draggable
@@ -916,38 +927,121 @@ export default function Match() {
   const [searchParams] = useSearchParams()
   const isLegacy = searchParams.get('ui') === 'legacy' || import.meta.env.VITE_BATTLE_UI === 'legacy'
 
+  const { isPremium: isMePremium, openLockedModal } = usePremium()
+  const oppBadges = usePremiumBadges(opp?.username ? [opp.username] : [], opp?.id ? [opp.id] : [])
+  const isOppPremium = Boolean(opp?.username && (oppBadges[opp.username.toLowerCase()] || oppBadges[opp.id]))
+
+  const voice = useLiveVoice({
+    roomId,
+    me: me || (user ? { id: user.id, username: user.username } : null),
+    opp,
+    socket,
+    isConnected: connected,
+    isMePremium,
+    isOppPremium,
+  })
+
+  const voiceControlElement = (
+    <VoiceControl
+      voiceState={voice.voiceState}
+      isMicMuted={voice.isMicMuted}
+      speakingLevel={voice.speakingLevel}
+      isMePremium={isMePremium}
+      isOppPremium={isOppPremium}
+      requestExpiresAt={voice.requestExpiresAt}
+      onOpenPremium={() => openLockedModal('voice_chat')}
+      onRequestVoice={voice.requestVoice}
+      onAcceptVoice={voice.acceptVoice}
+      onDeclineVoice={voice.declineVoice}
+      onEndVoice={voice.endVoice}
+      onToggleMute={voice.toggleMute}
+    />
+  )
+
+  const voiceDockElement = (voice.voiceState === 'connected' || voice.voiceState === 'live' || voice.voiceState === 'reconnecting') ? (
+    <VoiceDock
+      opp={opp}
+      isMicMuted={voice.isMicMuted}
+      isOpponentSpeaking={voice.isOpponentSpeaking}
+      speakingLevel={voice.speakingLevel}
+      opponentSpeakingLevel={voice.opponentSpeakingLevel}
+      quality={voice.quality}
+      outputVolume={voice.outputVolume}
+      isOpponentMutedLocally={voice.isOpponentMutedLocally}
+      onToggleMute={voice.toggleMute}
+      onToggleOpponentMute={voice.toggleOpponentMuteLocally}
+      onChangeVolume={voice.changeOutputVolume}
+      onOpenSettings={() => voice.setShowSettingsModal(true)}
+      onOpenReport={() => voice.setShowReportModal(true)}
+      onOpenBlock={() => voice.setShowBlockModal(true)}
+      onEndVoice={voice.endVoice}
+    />
+  ) : null
+
+  const voiceIncomingPromptElement = voice.voiceState === 'incoming' ? (
+    <IncomingVoicePrompt
+      opponentName={opp?.username || 'Opponent'}
+      requestExpiresAt={voice.requestExpiresAt}
+      onAccept={voice.acceptVoice}
+      onDecline={voice.declineVoice}
+    />
+  ) : null
+
+  const voiceErrorBannerElement = voice.errorMessage ? (
+    <div className="flex items-center justify-between w-full">
+      <div className="flex items-center gap-2">
+        <IconAlert size={14} />
+        <span>{voice.errorMessage}</span>
+      </div>
+      <button
+        type="button"
+        onClick={voice.clearError}
+        className="p-1 hover:opacity-80"
+        aria-label="Dismiss error"
+      >
+        <IconClose size={12} />
+      </button>
+    </div>
+  ) : null
+
   if (!isLegacy) {
     return (
-      <BattleRoomV2
-        topic={matchState?.topic}
-        difficulty={matchState?.difficulty}
-        roomId={roomId}
-        timerDisplay={timerDisplay}
-        remaining={remaining}
-        me={me}
-        opp={opp}
-        user={user}
-        connected={connected}
-        showResignModal={showResignModal}
-        onCloseResign={() => setShowResignModal(false)}
-        onConfirmResign={handleConfirmResign}
-        onOpenResign={() => setShowResignModal(true)}
-        problemId={matchState?.problemId}
-        probPanelWidth={probPanel.width}
-        probCollapsed={probCollapsed}
-        onToggleCollapse={() => setProbCollapsed(c => !c)}
-        onProblemLoaded={handleProblemLoaded}
-        onMouseDownProb={probPanel.onMouseDown}
-        onResetProbWidth={() => probPanel.setWidth(320)}
-        oppVerdict={oppVerdict}
-        oppProgress={oppProgress}
-        oppDisconnectState={oppDisconnectState}
-        oppPanelWidth={oppPanel.width}
-        onMouseDownOpp={handleOpponentDrag}
-        onResetOppWidth={() => oppPanel.setWidth(180)}
-        mobileTab={mobileTab}
-        setMobileTab={setMobileTab}
-      >
+      <>
+        <BattleRoomV2
+          topic={matchState?.topic}
+          difficulty={matchState?.difficulty}
+          roomId={roomId}
+          timerDisplay={timerDisplay}
+          remaining={remaining}
+          me={me}
+          opp={opp}
+          user={user}
+          connected={connected}
+          showResignModal={showResignModal}
+          onCloseResign={() => setShowResignModal(false)}
+          onConfirmResign={handleConfirmResign}
+          onOpenResign={() => setShowResignModal(true)}
+          problemId={matchState?.problemId}
+          probPanelWidth={probPanel.width}
+          probCollapsed={probCollapsed}
+          onToggleCollapse={() => setProbCollapsed(c => !c)}
+          onProblemLoaded={handleProblemLoaded}
+          onMouseDownProb={probPanel.onMouseDown}
+          onResetProbWidth={() => probPanel.setWidth(320)}
+          oppVerdict={oppVerdict}
+          oppProgress={oppProgress}
+          oppDisconnectState={oppDisconnectState}
+          oppPanelWidth={oppPanel.width}
+          onMouseDownOpp={handleOpponentDrag}
+          onResetOppWidth={() => oppPanel.setWidth(180)}
+          mobileTab={mobileTab}
+          setMobileTab={setMobileTab}
+          voiceControl={voiceControlElement}
+          voiceDock={voiceDockElement}
+          voiceIncomingPrompt={voiceIncomingPromptElement}
+          voiceErrorBanner={voiceErrorBannerElement}
+          voiceSlotForRival={voiceDockElement || voiceControlElement}
+        >
         <div className="flex flex-col flex-1 h-full min-w-0">
           <EditorToolbarV2
             player={me ?? { username: user?.username, rating: user?.elo_rating }}
@@ -1015,6 +1109,35 @@ export default function Match() {
           />
         </div>
       </BattleRoomV2>
+
+      {/* Voice Modals */}
+      <VoiceFirstUseModal
+        isOpen={voice.showFirstUseModal}
+        onClose={() => voice.setShowFirstUseModal(false)}
+        onContinue={voice.markFirstUseAcked}
+        onConfirm={voice.markFirstUseAcked}
+      />
+      <VoiceSettingsModal
+        isOpen={voice.showSettingsModal}
+        onClose={() => voice.setShowSettingsModal(false)}
+        pushToTalk={voice.pushToTalkEnabled}
+        onTogglePushToTalk={() => voice.setPushToTalkEnabled(s => !s)}
+      />
+      <VoiceReportModal
+        isOpen={voice.showReportModal}
+        onClose={() => voice.setShowReportModal(false)}
+        reportedUser={opp}
+        matchId={roomId}
+      />
+      <VoiceBlockModal
+        isOpen={voice.showBlockModal}
+        onClose={() => voice.setShowBlockModal(false)}
+        blockedUser={opp}
+        onBlocked={() => {
+          voice.endVoice()
+        }}
+      />
+      </>
     )
   }
 
@@ -1075,6 +1198,8 @@ export default function Match() {
             </span>
           </div>
 
+          {voiceDockElement || voiceControlElement}
+
           <button
             onClick={() => setShowResignModal(true)}
             className="font-mono text-xs font-bold px-3 md:px-4 py-1.5 md:py-2 transition-all active:scale-[0.97] flex items-center gap-2 rounded hover:brightness-110"
@@ -1085,6 +1210,18 @@ export default function Match() {
           </button>
         </div>
       </div>
+
+      {/* Voice Banners */}
+      {voiceErrorBannerElement && (
+        <div className="shrink-0 px-3 py-1.5 bg-rose-500/10 border-b border-rose-500/30 text-[var(--bad)] text-xs font-mono flex items-center justify-between">
+          {voiceErrorBannerElement}
+        </div>
+      )}
+      {voiceIncomingPromptElement && (
+        <div className="shrink-0 px-3 py-1.5 border-b border-[var(--c-border)] bg-[var(--c-panel2)]">
+          {voiceIncomingPromptElement}
+        </div>
+      )}
 
       {/* Resign Confirmation Modal */}
       {showResignModal && (
@@ -1400,6 +1537,34 @@ export default function Match() {
           boxShadow: urgent ? '0 0 8px var(--c-red)' : '0 0 6px var(--c-blue)',
         }} />
       </div>
+
+      {/* Voice Modals */}
+      <VoiceFirstUseModal
+        isOpen={voice.showFirstUseModal}
+        onClose={() => voice.setShowFirstUseModal(false)}
+        onContinue={voice.markFirstUseAcked}
+        onConfirm={voice.markFirstUseAcked}
+      />
+      <VoiceSettingsModal
+        isOpen={voice.showSettingsModal}
+        onClose={() => voice.setShowSettingsModal(false)}
+        pushToTalk={voice.pushToTalkEnabled}
+        onTogglePushToTalk={() => voice.setPushToTalkEnabled(s => !s)}
+      />
+      <VoiceReportModal
+        isOpen={voice.showReportModal}
+        onClose={() => voice.setShowReportModal(false)}
+        reportedUser={opp}
+        matchId={roomId}
+      />
+      <VoiceBlockModal
+        isOpen={voice.showBlockModal}
+        onClose={() => voice.setShowBlockModal(false)}
+        blockedUser={opp}
+        onBlocked={() => {
+          voice.endVoice()
+        }}
+      />
     </div>
   )
 }
