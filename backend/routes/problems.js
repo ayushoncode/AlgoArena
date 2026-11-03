@@ -27,10 +27,10 @@ router.get('/stats', async (_req, res) => {
   }
 })
 
-// GET /api/problems/daily — today's deterministic daily challenge from DB
+// GET /api/problems/daily — today's deterministic daily challenge from DB (synchronized with 00:00 UTC 24hr reset)
 router.get('/daily', async (_req, res) => {
   try {
-    const doy = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
+    const utcDay = Math.floor(Date.now() / 86400000)
     const { rows: problems } = await db.query(
       `SELECT id, title, topic, difficulty, description, sample_input, sample_output, hints
        FROM problems ORDER BY id ASC`
@@ -38,7 +38,7 @@ router.get('/daily', async (_req, res) => {
     if (!problems.length) {
       return res.status(404).json({ message: 'No problems available' })
     }
-    const dailyProblem = problems[doy % problems.length]
+    const dailyProblem = problems[utcDay % problems.length]
     return res.json(dailyProblem)
   } catch (err) {
     console.error('[GET /problems/daily]', err)
@@ -184,6 +184,74 @@ router.get('/striver-sheet', requirePremium('sheet'), async (_req, res) => {
               'h-index-ii',
               'heaters',
               'find-right-interval'
+            ]
+          }
+        ]
+      },
+      {
+        id: 'step-5-strings',
+        title: 'Strings',
+        topic: 'strings',
+        icon: 'Type',
+        badge: 'Curriculum Ready',
+        subsections: [
+          {
+            title: 'Basic and Easy String Problems',
+            problems: [
+              'remove-outermost-parentheses',
+              'reverse-words-in-a-string',
+              'largest-odd-number-in-string',
+              'longest-common-prefix',
+              'isomorphic-strings',
+              'rotate-string',
+              'valid-anagram'
+            ]
+          },
+          {
+            title: 'Medium String Problems',
+            problems: [
+              'sort-characters-by-frequency',
+              'maximum-nesting-depth-of-the-parentheses',
+              'roman-to-integer',
+              'string-to-integer-atoi',
+              'count-number-of-substrings',
+              'longest-palindromic-substring',
+              'sum-of-beauty-of-all-substrings',
+              'find-the-index-of-the-first-occurrence-in-a-string'
+            ]
+          }
+        ]
+      },
+      {
+        id: 'step-6-learn-linkedlist',
+        title: 'Learn LinkedList',
+        topic: 'linked-list',
+        icon: 'Link',
+        badge: 'Curriculum Ready',
+        subsections: [
+          {
+            title: 'Learn 1D LinkedList',
+            problems: [
+              'introduction-to-linked-list',
+              'insert-node-at-the-end-of-linked-list',
+              'delete-node-in-a-linked-list',
+              'count-nodes-of-linked-list',
+              'search-in-a-linked-list'
+            ]
+          },
+          {
+            title: 'Learn Doubly LinkedList',
+            problems: [
+              'introduction-to-doubly-linked-list',
+              'insert-a-node-in-doubly-linked-list',
+              'delete-node-in-doubly-linked-list',
+              'reverse-a-doubly-linked-list'
+            ]
+          },
+          {
+            title: 'Medium Problems of LL',
+            problems: [
+              'middle-of-the-linked-list'
             ]
           }
         ]

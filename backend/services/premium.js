@@ -276,7 +276,7 @@ async function getEntitlements(userId) {
     hasPremiumBadge: isPremium,
     canAccessDiscussion: false, // Feature marked Coming Soon
     canAccessChat: false,       // Feature marked Coming Soon
-    canAccessVoice: false       // Feature marked Coming Soon
+    canAccessVoice: isPremium
   }
 }
 

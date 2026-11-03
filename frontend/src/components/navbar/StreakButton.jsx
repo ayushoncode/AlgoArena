@@ -28,8 +28,8 @@ export default function StreakButton({
     )
   }
 
-  const isGlowing = isCompletedToday && streak > 0
-  const isAlive = streak > 0
+  const isGlowing = Boolean(isCompletedToday && streak > 0)
+  const isAlive = Boolean(streak > 0 && !isCompletedToday)
 
   let stateClass = 'is-muted'
   if (isGlowing) {
@@ -38,7 +38,11 @@ export default function StreakButton({
     stateClass = 'is-alive'
   }
 
-  const tooltip = 'Daily Problem'
+  const tooltip = isCompletedToday
+    ? 'Daily Problem: Completed today'
+    : streak > 0
+    ? `Daily Problem: Solve today to keep your ${streak} day streak`
+    : 'Daily Problem: Solve today to start your streak'
 
   return (
     <button

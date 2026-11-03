@@ -69,31 +69,21 @@ export default function LobbyHeader({
 
   return (
     <header className="lobby-v2-header-block" aria-label="Lobby Header">
-      {/* Left: Overline, H1, Subtitle */}
+      {/* Left: Overline with Live Arena Status, H1, Subtitle */}
       <div className="lobby-v2-header-left">
-        <div className="lobby-v2-overline">Play</div>
-        <h1 className="lobby-v2-title">Find a match</h1>
-        <p className="lobby-v2-subtitle">
-          You and a rival get the same problem. The first full pass wins the rating points.
-        </p>
-      </div>
-
-      {/* Right: Live System Stats & Player Search */}
-      <div className="lobby-v2-header-right">
-        {/* System Stats Card: Live Problems & Online Coders */}
-        <div className="lobby-v2-stats-card" aria-label="System status">
-          <div className="lobby-v2-stats-top-row">
+        <div className="lobby-v2-overline-row">
+          <span className="lobby-v2-overline">Play</span>
+          <span className="lobby-v2-overline-sep">·</span>
+          <div className="lobby-v2-stats-inline" aria-label="Live arena status">
             <span
               className={`lobby-v2-status-dot ${connected ? 'is-connected' : 'is-reconnecting'}`}
               aria-hidden="true"
             />
             <span className="lobby-v2-stats-num">
-              {live?.loading && !live?.totalProblems ? '...' : (live?.totalProblems || 209)}
+              {live?.loading && !live?.totalProblems ? '...' : (live?.totalProblems || 234)}
             </span>
             <span className="lobby-v2-stats-label">Problems</span>
-          </div>
-
-          <div className="lobby-v2-stats-bottom-row">
+            <span className="lobby-v2-stats-sep">·</span>
             <span className="lobby-v2-stats-online-num">
               {live?.loading ? '...' : (live?.players ?? 0)}
             </span>
@@ -105,6 +95,14 @@ export default function LobbyHeader({
           </div>
         </div>
 
+        <h1 className="lobby-v2-title">Find a match</h1>
+        <p className="lobby-v2-subtitle">
+          You and a rival get the same problem. The first full pass wins the rating points.
+        </p>
+      </div>
+
+      {/* Right: Player Search Field (Clean single control, no awkward corner stack) */}
+      <div className="lobby-v2-header-right">
         {/* Search Player Field */}
         <div ref={wrapRef} className="lobby-v2-search-wrap">
           <form onSubmit={handleSearchSubmit}>

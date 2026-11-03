@@ -11,7 +11,9 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     localStorage.setItem('arena-theme', theme)
-    if (theme === 'light') {
+    // Outside pages (Landing Page & Who We Are) must ALWAYS remain pure dark
+    const isOutside = typeof window !== 'undefined' && (window.location.pathname === '/' || window.location.pathname === '/who-we-are')
+    if (theme === 'light' && !isOutside) {
       document.documentElement.setAttribute('data-theme', 'light')
     } else {
       document.documentElement.removeAttribute('data-theme')

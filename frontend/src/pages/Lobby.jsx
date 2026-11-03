@@ -1017,6 +1017,29 @@ export default function Lobby() {
     emit('join_queue', { topic: sheetTopic, difficulty: sheetDiff })
   }, [queuing, emit, isPremiumEnabled, isPremium, openLockedModal])
 
+  const handleAcceptChallenge = useCallback((challenge) => {
+    if (!challenge) return
+    if (challenge.problemId) {
+      handleBattleProblem({
+        id: challenge.problemId,
+        title: challenge.problemTitle,
+        topic: challenge.topic,
+        difficulty: challenge.difficulty
+      })
+    } else {
+      const chosenTopic = challenge.topic || 'arrays'
+      const chosenDiff = challenge.difficulty || 'medium'
+      handleSelectTopic(chosenTopic)
+      handleSelectDiff(chosenDiff)
+      setQueuingProblem(null)
+      setQueuing(true)
+      emit('join_queue', {
+        topic: chosenTopic,
+        difficulty: chosenDiff
+      })
+    }
+  }, [handleBattleProblem, handleSelectTopic, handleSelectDiff, emit])
+
   function handleSurpriseMe() {
     const randomTopic = TOPICS[Math.floor(Math.random() * TOPICS.length)].id
     handleSelectTopic(randomTopic)
@@ -1698,6 +1721,10 @@ export default function Lobby() {
           onBattleProblem={handleBattleProblem}
           onBattleRandomFromSheet={handleBattleRandomFromSheet}
           queuingProblem={queuingProblem}
+          onAcceptChallenge={handleAcceptChallenge}
+          on={on}
+          off={off}
+          emit={emit}
         />
       )}
 

@@ -17,9 +17,9 @@ import '../pages/Lobby/Lobby.css'
 
 // ── Difficulty Config ──────────────────────────────────────────────
 const DIFF_CONFIG = {
-  easy:   { label: 'Easy',   dot: '#22c55e' },
+  easy: { label: 'Easy', dot: '#22c55e' },
   medium: { label: 'Medium', dot: '#f59e0b' },
-  hard:   { label: 'Hard',   dot: '#f43f5e' },
+  hard: { label: 'Hard', dot: '#f43f5e' },
 }
 
 // ── Single Problem Row ─────────────────────────────────────────────
@@ -85,8 +85,8 @@ function ProblemRow({ problem, globalIdx, onBattleProblem, queuingProblemId, isQ
 }
 
 // ── Difficulty Subsection (Easy / Medium / Hard) ───────────────────
-function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, isQueuing, searchQuery, isGated = false }) {
-  const [open, setOpen] = useState(false)
+function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, isQueuing, searchQuery, isGated = false, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen)
   const isSearchActive = Boolean(searchQuery && searchQuery.trim().length > 0)
   const isOpen = isSearchActive ? true : open
 
@@ -102,8 +102,8 @@ function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, 
   const diffKey = subsection.title.toLowerCase().includes('easy')
     ? 'easy'
     : subsection.title.toLowerCase().includes('medium')
-    ? 'medium'
-    : 'hard'
+      ? 'medium'
+      : 'hard'
   const cfg = DIFF_CONFIG[diffKey] || DIFF_CONFIG.easy
 
   return (
@@ -216,28 +216,16 @@ function TopicStepCard({
   const totalProblems = allProblems.length
 
   const easyCount = useMemo(() => {
-    const easySubs = (step.subsections || []).filter(s => s.title.toLowerCase().includes('easy'))
-    if (easySubs.length > 0) {
-      return easySubs.reduce((acc, s) => acc + (s.problems || []).length, 0)
-    }
     return allProblems.filter(p => p.difficulty === 'easy').length
-  }, [step.subsections, allProblems])
+  }, [allProblems])
 
   const mediumCount = useMemo(() => {
-    const medSubs = (step.subsections || []).filter(s => s.title.toLowerCase().includes('medium'))
-    if (medSubs.length > 0) {
-      return medSubs.reduce((acc, s) => acc + (s.problems || []).length, 0)
-    }
     return allProblems.filter(p => p.difficulty === 'medium').length
-  }, [step.subsections, allProblems])
+  }, [allProblems])
 
   const hardCount = useMemo(() => {
-    const hardSubs = (step.subsections || []).filter(s => s.title.toLowerCase().includes('hard'))
-    if (hardSubs.length > 0) {
-      return hardSubs.reduce((acc, s) => acc + (s.problems || []).length, 0)
-    }
     return allProblems.filter(p => p.difficulty === 'hard').length
-  }, [step.subsections, allProblems])
+  }, [allProblems])
 
   const availableDiffs = useMemo(() => {
     const list = []
@@ -258,8 +246,15 @@ function TopicStepCard({
 
   return (
     <div className={`striver-v2-topic-card ${showDiffMenu ? 'has-dropdown-open' : ''}`}>
-      {/* Topic Card Header */}
-      <div className="striver-v2-topic-header">
+      {/* Topic Card Header (Clickable across entire bar to expand/collapse) */}
+      <div
+        className="striver-v2-topic-header"
+        onClick={() => setOpen(o => !o)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o); } }}
+        aria-expanded={isOpen}
+      >
         <div className="striver-v2-topic-left">
           <div className="striver-v2-topic-icon-box">
             <IconCode size={16} />
@@ -299,7 +294,7 @@ function TopicStepCard({
         </div>
 
         {/* Right Actions: Random Duel & Toggle */}
-        <div className="striver-v2-topic-actions">
+        <div className="striver-v2-topic-actions" onClick={e => e.stopPropagation()}>
           {/* Random Battle Dropdown */}
           <div
             ref={dropdownRef}
@@ -382,7 +377,10 @@ function TopicStepCard({
           {/* Toggle Accordion Button */}
           <button
             type="button"
-            onClick={() => setOpen(o => !o)}
+            onClick={(e) => {
+              e.stopPropagation()
+              setOpen(o => !o)
+            }}
             className="striver-v2-toggle-btn"
             aria-label={isOpen ? 'Collapse topic' : 'Expand topic'}
           >
@@ -485,7 +483,7 @@ export default function StriverSheetView({
 
       {/* Curriculum Topic Steps */}
       {dataToUse.length === 0 ? (
-        <div style={{ padding: '40px', textAlign: 'center', border: '1px dashed var(--hair-muted, rgba(196, 214, 232, 0.16))', borderRadius: '4px', background: 'var(--bg-1, #060d1c)' }}>
+        <div style={{ padding: '40px', textAlign: 'center', border: '1px dashed var(--hair-muted, rgba(255, 255, 255, 0.08))', borderRadius: '4px', background: 'var(--bg-1, #262626)' }}>
           <IconBook size={24} style={{ margin: '0 auto 8px auto', opacity: 0.5, color: 'var(--sub, #a2a9b8)' }} />
           <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600, color: 'var(--ink, #ffffff)', margin: '0 0 4px 0' }}>
             No curriculum loaded

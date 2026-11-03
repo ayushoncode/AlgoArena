@@ -165,11 +165,15 @@ export function IconClose({ size = 20, className = '' }) {
 
 export function IconSwords({ size = 20, className = '' }) {
   return (
-    <svg width={size} height={size} className={className} {...baseSvgProps}>
-      <line x1="3.5" y1="3.5" x2="13.5" y2="13.5" />
-      <line x1="16.5" y1="3.5" x2="6.5" y2="13.5" />
-      <line x1="2" y1="18" x2="5" y2="15" />
-      <line x1="18" y1="18" x2="15" y2="15" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
+      <line x1="13" y1="19" x2="19" y2="13" />
+      <line x1="16" y1="16" x2="20" y2="20" />
+      <line x1="19" y1="21" x2="21" y2="19" />
+      <polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" />
+      <line x1="5" y1="14" x2="9" y2="18" />
+      <line x1="7" y1="17" x2="4" y2="20" />
+      <line x1="3" y1="19" x2="5" y2="21" />
     </svg>
   )
 }

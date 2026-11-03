@@ -3,7 +3,7 @@
 .billing-page-wrapper {
   min-height: 100vh;
   padding: 48px 24px 96px;
-  background-color: var(--bg-0, #02060f);
+  background-color: var(--bg-0, #1a1a1a);
   color: var(--ink, #ffffff);
   font-family: var(--font-sans, "Sora Variable", sans-serif);
 }
@@ -274,7 +274,7 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(2, 6, 15, 0.8);
+  background: rgba(26, 26, 26, 0.8);
 }
 
 .billing-modal-box {

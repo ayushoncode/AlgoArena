@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { UserAvatar } from '../utils/avatar'
 import { getTierForRating } from '../lib/tiers'
+import { useTheme } from '../context/ThemeContext'
+import { getDailyChallenge, clearStreakCache } from '../components/navbar/navData'
 import './ResultV2.css'
 
 function CheckIcon({ size = 14, className = '' }) {
@@ -141,12 +143,31 @@ export default function ResultV2({
 }) {
   const [copied, setCopied] = useState(false)
 
+  // Record daily problem completion immediately if this match was today's daily quest
+  useEffect(() => {
+    try {
+      const todayStr = new Date().toISOString().slice(0, 10)
+      const problemTitle = state?.problemTitle || state?.matchState?.problem?.title || state?.matchState?.problem_title || state?.title
+      const currentUserId = user?.id || user?._id || user?.user_id || user?.username
+      if (currentUserId && problemTitle && typeof window !== 'undefined' && window.localStorage) {
+        getDailyChallenge().then(daily => {
+          if (daily?.title && daily.title.toLowerCase() === String(problemTitle).toLowerCase()) {
+            localStorage.setItem(`aa_daily_done_${currentUserId}_${todayStr}`, 'true')
+            clearStreakCache()
+          }
+        }).catch(() => {})
+      }
+    } catch { }
+  }, [state, user])
+
   const endCauseText = getEndCauseText({ isWin, isDraw, isLoss, state, user, oppData })
   const formattedTopic = formatTopic(topic)
   const diffCfg = formatDifficulty(difficulty)
 
+  const { theme } = useTheme()
   const oldTier = getTierForRating(fromRating)
   const newTier = getTierForRating(toRating)
+  const tierColor = theme === 'light' && newTier.code === 'NOV' ? '#475569' : newTier.color
   const tierChanged = !isCustomMatch && oldTier.name !== newTier.name
   const isPromotion = toRating > fromRating
 
@@ -252,7 +273,7 @@ export default function ResultV2({
             <p className="result-v2__meta-label">Rating Change</p>
             {isCustomMatch ? (
               <div className="result-v2__rating-block">
-                <span className="result-v2__rating-new font-mono">{fromRating}</span>
+                <span className="result-v2__rating-new font-mono" style={{ color: tierColor }}>{fromRating}</span>
                 <span className="result-v2__delta font-mono font-bold" style={{ color: 'var(--c-text-mute, #64748b)' }}>
                   Unranked
                 </span>
@@ -263,7 +284,7 @@ export default function ResultV2({
                 <span className="result-v2__rating-arrow" aria-hidden="true">
                   →
                 </span>
-                <span className="result-v2__rating-new">
+                <span className="result-v2__rating-new" style={{ color: tierColor }}>
                   <AnimatedRating value={toRating} fromValue={fromRating} />
                 </span>
                 <span
@@ -276,9 +297,9 @@ export default function ResultV2({
             )}
 
             {!isCustomMatch && (
-              <div className="result-v2__tier-line">
+              <div className="result-v2__tier-line" style={{ color: tierColor, borderColor: `${tierColor}40` }}>
                 <newTier.Mark size={14} />
-                <span className="font-mono text-xs font-semibold" style={{ color: newTier.color }}>
+                <span className="font-mono text-xs font-semibold" style={{ color: tierColor }}>
                   {newTier.name}
                 </span>
               </div>

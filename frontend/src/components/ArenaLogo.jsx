@@ -166,7 +166,7 @@ export function ArenaEmblem({
         {/* 3. Inner Hex Recessed Core Trench */}
         <polygon
           points="80,31 124,57 124,107 80,134 36,107 36,57"
-          fill="#020610"
+          fill="#1a1a1a"
           opacity="0.9"
         />
 
@@ -211,7 +211,7 @@ export function ArenaEmblem({
         {/* Inner Triangular Recess */}
         <polygon
           points="80,62 67,90 93,90"
-          fill="#020610"
+          fill="#1a1a1a"
         />
 
         {/* 5. Iconic Kinetic 3D Slash (Light Beam cutting through) */}
@@ -285,7 +285,7 @@ export function ArenaLogo({
             textTransform: 'uppercase',
             display: 'flex',
             alignItems: 'center',
-            color: '#ffffff',
+            color: 'var(--ink, #ffffff)',
           }}
         >
           <span>ALGOARENA</span>

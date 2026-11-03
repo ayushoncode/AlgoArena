@@ -173,7 +173,9 @@ router.post('/verify-otp', async (req, res) => {
 
     // Check if user exists
     const { rows: existing } = await db.query(
-      `SELECT id, username, email, elo_rating, wins, losses, is_username_set, institute, institute_locked FROM users WHERE email = $1`,
+      `SELECT id, username, email, elo_rating, wins, losses, is_username_set, institute, institute_locked,
+              avatar_seed, avatar_style, display_name, bio, website, github, linkedin, location, created_at
+       FROM users WHERE email = $1`,
       [cleanEmail]
     )
 
@@ -243,7 +245,8 @@ router.post('/firebase', async (req, res) => {
 
     // Look up by firebase_uid or email
     const { rows: existing } = await db.query(
-      `SELECT id, username, email, elo_rating, wins, losses, firebase_uid, is_username_set, institute, institute_locked
+      `SELECT id, username, email, elo_rating, wins, losses, firebase_uid, is_username_set, institute, institute_locked,
+              avatar_seed, avatar_style, display_name, bio, website, github, linkedin, location, created_at
        FROM users WHERE firebase_uid = $1 OR email = $2`,
       [firebaseUid, cleanEmail]
     )
@@ -346,7 +349,8 @@ router.post('/login', async (req, res) => {
     }
 
     const { rows } = await db.query(
-      `SELECT id, username, email, password, elo_rating, wins, losses, is_username_set, institute, institute_locked
+      `SELECT id, username, email, password, elo_rating, wins, losses, is_username_set, institute, institute_locked,
+              avatar_seed, avatar_style, display_name, bio, website, github, linkedin, location, created_at
        FROM users WHERE email = $1`,
       [email.toLowerCase()]
     )

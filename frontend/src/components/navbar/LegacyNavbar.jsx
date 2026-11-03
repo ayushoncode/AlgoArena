@@ -64,7 +64,7 @@ export default function LegacyNavbar() {
       <nav
         className="fixed top-0 inset-x-0 z-50"
         style={{
-          background: 'rgba(2, 6, 15, 0.92)',
+          background: 'rgba(26, 26, 26, 0.92)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           borderBottom: '1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08))',
@@ -143,7 +143,7 @@ export default function LegacyNavbar() {
                   onClick={() => setDropOpen(o => !o)}
                   className="flex items-center gap-2.5 px-3 py-1.5 transition-all"
                   style={{
-                    background: dropOpen ? 'var(--bg-2, #0a1428)' : 'var(--bg-1, #060d1c)',
+                    background: dropOpen ? 'var(--bg-2, #2f2f2f)' : 'var(--bg-1, #262626)',
                     border: `1px solid ${dropOpen ? 'var(--hair, rgba(196, 214, 232, 0.4))' : 'var(--hair-muted, rgba(196, 214, 232, 0.16))'}`,
                     borderRadius: '4px',
                     minHeight: '36px',
@@ -181,7 +181,7 @@ export default function LegacyNavbar() {
                       transition={{ duration: 0.15 }}
                       className="absolute right-0 mt-1.5 w-52"
                       style={{
-                        background: 'var(--bg-1, #060d1c)',
+                        background: 'var(--bg-1, #262626)',
                         border: '1px solid var(--hair-muted, rgba(196, 214, 232, 0.18))',
                         boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
                         borderRadius: '4px',
@@ -266,7 +266,7 @@ export default function LegacyNavbar() {
                   onClick={() => goAuth('register')}
                   style={{
                     fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600,
-                    padding: '8px 18px', color: '#02060f', background: '#ffffff',
+                    padding: '8px 18px', color: '#1a1a1a', background: '#ffffff',
                     border: '1px solid #ffffff', borderRadius: '999px',
                     cursor: 'pointer', transition: 'all 0.15s',
                   }}
@@ -348,7 +348,7 @@ export default function LegacyNavbar() {
                     onClick={() => { goAuth('register'); setMobileOpen(false) }}
                     style={{
                       fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600,
-                      padding: '12px', color: '#02060f', background: '#ffffff',
+                      padding: '12px', color: '#1a1a1a', background: '#ffffff',
                       border: 'none', borderRadius: '4px', cursor: 'pointer', width: '100%',
                     }}
                   >

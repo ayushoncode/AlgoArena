@@ -6,7 +6,7 @@
 .lb-page-root {
   min-height: 100vh;
   width: 100%;
-  background-color: var(--bg-0, #02060f);
+  background-color: var(--bg-0, #1a1a1a);
   color: var(--ink, #ffffff);
   font-family: var(--font-sans, 'Sora Variable', sans-serif);
   position: relative;
@@ -15,9 +15,15 @@
 }
 
 /* ── Navbar Restyle Hook (Applies homepage nav look when logged in) ── */
-body:has(.lb-page-root) nav.fixed {
-  background: rgba(2, 6, 15, 0.88) !important;
-  border-bottom: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08)) !important;
+html:not([data-theme='light']) body:has(.lb-page-root) nav.fixed {
+  background: rgba(26, 26, 26, 0.92) !important;
+  border-bottom: 1px solid var(--hair-subtle, rgba(255, 255, 255, 0.05)) !important;
+  font-family: var(--font-sans, 'Sora Variable', sans-serif) !important;
+}
+
+html[data-theme='light'] body:has(.lb-page-root) nav.fixed {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important;
   font-family: var(--font-sans, 'Sora Variable', sans-serif) !important;
 }
 
@@ -161,8 +167,8 @@ body:has(.lb-page-root) nav.fixed button {
     flex-direction: column;
     justify-content: flex-start;
     padding: 12px 14px;
-    background: var(--bg-1, #060d1c);
-    border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.16));
+    background: var(--bg-1, #262626);
+    border: 1px solid var(--hair-muted, rgba(255, 255, 255, 0.08));
     border-radius: 6px;
     gap: 8px;
     min-width: 0;
@@ -281,8 +287,8 @@ body:has(.lb-page-root) nav.fixed button {
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 10px;
-  background: var(--bg-2, #0a1428);
-  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.22));
+  background: var(--bg-2, #2f2f2f);
+  border: 1px solid var(--hair-muted, rgba(255, 255, 255, 0.12));
 }
 
 .plinth-rank-1 .lb-plinth-avatar {
@@ -392,7 +398,7 @@ body:has(.lb-page-root) nav.fixed button {
     justify-content: space-between;
     width: 100%;
     padding-top: 6px;
-    border-top: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08));
+    border-top: 1px solid var(--hair-subtle, rgba(255, 255, 255, 0.05));
     padding-left: 36px;
   }
 }
@@ -400,9 +406,9 @@ body:has(.lb-page-root) nav.fixed button {
 /* Plinth Pedestal 3D Box */
 .lb-plinth-pedestal {
   width: 100%;
-  background: var(--bg-1, #060d1c);
-  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.22));
-  border-bottom: 2px solid var(--hair, rgba(196, 214, 232, 0.72));
+  background: var(--bg-1, #262626);
+  border: 1px solid var(--hair-muted, rgba(255, 255, 255, 0.12));
+  border-bottom: 2px solid var(--hair, rgba(255, 255, 255, 0.22));
   border-radius: 4px 4px 0 0;
   display: flex;
   align-items: center;
@@ -417,8 +423,8 @@ body:has(.lb-page-root) nav.fixed button {
   left: 0;
   right: 0;
   height: 10px;
-  background: rgba(196, 214, 232, 0.06);
-  border-bottom: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.14));
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--hair-subtle, rgba(255, 255, 255, 0.08));
 }
 
 .lb-pedestal-left-bevel,
@@ -427,7 +433,7 @@ body:has(.lb-page-root) nav.fixed button {
   top: 0;
   bottom: 0;
   width: 1px;
-  background: var(--hair-subtle, rgba(196, 214, 232, 0.1));
+  background: var(--hair-subtle, rgba(255, 255, 255, 0.05));
 }
 
 .lb-pedestal-left-bevel {
@@ -454,7 +460,7 @@ body:has(.lb-page-root) nav.fixed button {
 
 .plinth-pedestal-1 {
   height: 240px;
-  background: var(--bg-2, #0a1428);
+  background: var(--bg-2, #2f2f2f);
 }
 
 .plinth-pedestal-2 {
@@ -469,7 +475,7 @@ body:has(.lb-page-root) nav.fixed button {
   font-family: var(--font-mono, monospace);
   font-size: 48px;
   font-weight: 700;
-  color: rgba(196, 214, 232, 0.12);
+  color: rgba(255, 255, 255, 0.08);
   user-select: none;
 }
 
@@ -495,8 +501,8 @@ body:has(.lb-page-root) nav.fixed button {
    CONTROLS BAR (Tabs, Search, Counts)
    ════════════════════════════════════════════════════════════ */
 .lb-controls-bar {
-  background: var(--bg-1, #060d1c);
-  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.18));
+  background: var(--bg-1, #262626);
+  border: 1px solid var(--hair-muted, rgba(255, 255, 255, 0.08));
   border-radius: 4px;
   padding: 10px 16px;
   display: flex;
@@ -593,8 +599,8 @@ body:has(.lb-page-root) nav.fixed button {
 .lb-search-input {
   width: 100%;
   min-height: 44px;
-  background: var(--bg-0, #02060f);
-  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.2));
+  background: var(--bg-0, #1a1a1a);
+  border: 1px solid var(--hair-muted, rgba(255, 255, 255, 0.12));
   border-radius: 4px;
   padding: 8px 36px 8px 36px;
   font-family: var(--font-mono, monospace);
@@ -639,7 +645,7 @@ body:has(.lb-page-root) nav.fixed button {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  border-top: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.12));
+  border-top: 1px solid var(--hair-subtle, rgba(255, 255, 255, 0.08));
 }
 
 .lb-table {
@@ -649,8 +655,8 @@ body:has(.lb-page-root) nav.fixed button {
 }
 
 .lb-table thead {
-  background: var(--bg-0, #02060f);
-  border-bottom: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.22));
+  background: var(--bg-0, #1a1a1a);
+  border-bottom: 1px solid var(--hair-muted, rgba(255, 255, 255, 0.12));
 }
 
 /* Podium rows in table: hidden on desktop when not searching */
@@ -714,7 +720,7 @@ body:has(.lb-page-root) nav.fixed button {
 
 .lb-table td {
   padding: 16px;
-  border-bottom: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08));
+  border-bottom: 1px solid var(--hair-subtle, rgba(255, 255, 255, 0.05));
   font-family: var(--font-sans, sans-serif);
   font-size: 13.5px;
   vertical-align: middle;
@@ -730,7 +736,7 @@ body:has(.lb-page-root) nav.fixed button {
 }
 
 .lb-row:hover {
-  background: rgba(196, 214, 232, 0.025);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .lb-row:hover .lb-player-username {
@@ -780,8 +786,8 @@ body:has(.lb-page-root) nav.fixed button {
   height: 34px;
   border-radius: 4px;
   overflow: hidden;
-  background: var(--bg-2, #0a1428);
-  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.16));
+  background: var(--bg-2, #2f2f2f);
+  border: 1px solid var(--hair-muted, rgba(255, 255, 255, 0.08));
   flex-shrink: 0;
 }
 
@@ -851,7 +857,7 @@ body:has(.lb-page-root) nav.fixed button {
 .lb-winrate-bar-track {
   width: 64px;
   height: 2px;
-  background: rgba(196, 214, 232, 0.12);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 1px;
   overflow: hidden;
 }
@@ -899,7 +905,7 @@ body:has(.lb-page-root) nav.fixed button {
    ════════════════════════════════════════════════════════════ */
 .lb-unranked-section {
   margin-top: 16px;
-  border-top: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.1));
+  border-top: 1px solid var(--hair-subtle, rgba(255, 255, 255, 0.05));
 }
 
 .lb-unranked-toggle {
@@ -932,7 +938,7 @@ body:has(.lb-page-root) nav.fixed button {
   left: 0;
   right: 0;
   height: 48px;
-  background: var(--bg-1, #060d1c);
+  background: var(--bg-1, #262626);
   border-top: 1px solid var(--gold, #ffd696);
   z-index: 40;
   display: flex;
@@ -961,7 +967,7 @@ body:has(.lb-page-root) nav.fixed button {
 .lb-footnote {
   margin-top: 40px;
   padding-top: 20px;
-  border-top: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08));
+  border-top: 1px solid var(--hair-subtle, rgba(255, 255, 255, 0.05));
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1013,8 +1019,8 @@ body:has(.lb-page-root) nav.fixed button {
 
 .lb-clear-search-btn,
 .lb-retry-btn {
-  background: var(--bg-1, #060d1c);
-  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.2));
+  background: var(--bg-1, #262626);
+  border: 1px solid var(--hair-muted, rgba(255, 255, 255, 0.12));
   color: var(--ink, #ffffff);
   font-family: var(--font-sans, sans-serif);
   font-size: 13px;
@@ -1149,7 +1155,7 @@ body:has(.lb-page-root) nav.fixed button {
 
   .lb-row {
     padding: 10px;
-    border-bottom: 1px solid var(--hair-subtle, rgba(196, 214, 232, 0.08));
+    border-bottom: 1px solid var(--hair-subtle, rgba(255, 255, 255, 0.05));
     height: auto;
     min-height: 54px;
     box-sizing: border-box;

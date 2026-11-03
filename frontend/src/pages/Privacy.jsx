@@ -70,9 +70,22 @@ export default function Privacy() {
           </p>
         </section>
 
-        {/* Section 5: Data Retention */}
+        {/* Section 5: Voice Communication Privacy */}
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-white">5. Data Retention and Security</h2>
+          <h2 className="text-xl font-semibold text-white">5. Real-Time Voice Communication Privacy</h2>
+          <p className="text-sm leading-relaxed text-slate-300">
+            For users who opt in to 1v1 Live Voice, media streams are transmitted in real time using encrypted WebRTC.
+          </p>
+          <ul className="list-disc pl-5 space-y-1.5 text-sm text-slate-300">
+            <li>Zero Audio Recording: AlgoArena does not record, intercept, store, transcribe, or analyze voice audio under any circumstances.</li>
+            <li>Pseudonymous Session Tokens: Voice rooms are assigned a cryptographic HMAC hash of the match identifier. No player names, emails, or personal identifiers are published to media routing servers.</li>
+            <li>Abuse Reports: When a user reports inappropriate conduct, only the report category, optional user notes, participant identifiers, and match timestamp are recorded. No audio data is captured or reviewed.</li>
+          </ul>
+        </section>
+
+        {/* Section 6: Data Retention */}
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold text-white">6. Data Retention and Security</h2>
           <p className="text-sm leading-relaxed text-slate-300">
             Match results and rating history are retained to preserve historical leaderboard integrity. All communications occur over encrypted TLS connections, and user execution runs within disposable, unprivileged Linux sandboxes.
           </p>

@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useSocket } from '../hooks/useSocket'
 import SearchingOverlayV2 from './Lobby/SearchingOverlayV2'
 import MatchFoundOverlayV2 from './Lobby/MatchFoundOverlayV2'
-import { parseLeetCodeDescription, renderInline } from '../components/LeetCodeProblemView'
+import { parseLeetCodeDescription, renderInline, cleanField } from '../components/LeetCodeProblemView'
 import {
   IconFlame,
   IconCheck,
@@ -53,7 +53,7 @@ export default function DailyChallengePage() {
 
     Promise.all([
       getDailyChallenge(),
-      isAuthenticated ? getStreakData() : Promise.resolve({ current: 0, best: 0, isCompletedToday: false })
+      isAuthenticated ? getStreakData(user?.id) : Promise.resolve({ current: 0, best: 0, isCompletedToday: false })
     ])
       .then(([problem, streak]) => {
         if (unmounted) return
@@ -70,7 +70,7 @@ export default function DailyChallengePage() {
     return () => {
       unmounted = true
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, user?.id])
 
   // Socket listener for matchmaking
   useEffect(() => {
@@ -231,8 +231,8 @@ export default function DailyChallengePage() {
             <div
               className="px-4 py-2 rounded flex items-center gap-2.5"
               style={{
-                background: 'var(--bg-1, #060d1c)',
-                border: '1px solid var(--hair-muted, rgba(196, 214, 232, 0.14))',
+                background: 'var(--bg-1, #262626)',
+                border: '1px solid var(--hair-muted, rgba(255, 255, 255, 0.08))',
               }}
             >
               <IconClock size={16} className="text-[var(--sub,#a2a9b8)]" />
@@ -267,8 +267,8 @@ export default function DailyChallengePage() {
               <span
                 className="px-2.5 py-1 rounded text-xs font-mono text-[var(--sub,#a2a9b8)]"
                 style={{
-                  background: 'var(--bg-1, #060d1c)',
-                  border: '1px solid var(--hair-muted, rgba(196, 214, 232, 0.14))',
+                  background: 'var(--bg-1, #262626)',
+                  border: '1px solid var(--hair-muted, rgba(255, 255, 255, 0.08))',
                 }}
               >
                 Topic: {topic}
@@ -304,8 +304,8 @@ export default function DailyChallengePage() {
             <div
               className="p-6 rounded-lg"
               style={{
-                background: 'var(--bg-1, #060d1c)',
-                border: '1px solid var(--hair-muted, rgba(196, 214, 232, 0.14))',
+                background: 'var(--bg-1, #262626)',
+                border: '1px solid var(--hair-muted, rgba(255, 255, 255, 0.08))',
               }}
             >
               <h2 className="text-sm font-mono uppercase tracking-wider text-[var(--sub,#a2a9b8)] font-bold mb-4">
@@ -345,6 +345,8 @@ export default function DailyChallengePage() {
                             src={p.url}
                             alt={p.alt || 'Problem illustration'}
                             className="max-w-full h-auto max-h-64 object-contain rounded"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
                           />
                         </div>
                       )
@@ -385,6 +387,22 @@ export default function DailyChallengePage() {
                           border: '1px solid var(--hair-muted, rgba(196, 214, 232, 0.12))',
                         }}
                       >
+                        {(ex.images && ex.images.length > 0 ? ex.images : (ex.image ? [ex.image] : [])).map((imgSrc, imgIdx) => (
+                          <div
+                            key={imgIdx}
+                            className="bg-white p-2.5 rounded-lg border flex items-center justify-center mb-2"
+                            style={{ borderColor: 'var(--hair-muted, rgba(196, 214, 232, 0.12))' }}
+                          >
+                            <img
+                              src={imgSrc}
+                              alt={`Example ${ex.num || idx + 1}`}
+                              className="max-w-full h-auto max-h-64 object-contain rounded"
+                              referrerPolicy="no-referrer"
+                              onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+                            />
+                          </div>
+                        ))}
+
                         {ex.diagram && (
                           <div
                             className="pb-3 mb-2 font-mono text-xs leading-tight overflow-x-auto border-b"
@@ -400,7 +418,7 @@ export default function DailyChallengePage() {
                               Input:
                             </span>
                             <code className="text-[var(--ink,#ffffff)] font-mono break-all">
-                              {ex.input}
+                              {renderInline(cleanField(ex.input))}
                             </code>
                           </div>
                         )}
@@ -411,7 +429,7 @@ export default function DailyChallengePage() {
                               Output:
                             </span>
                             <code className="text-[var(--ok,#10b981)] font-mono font-bold break-all">
-                              {ex.output}
+                              {renderInline(cleanField(ex.output))}
                             </code>
                           </div>
                         )}
@@ -422,7 +440,7 @@ export default function DailyChallengePage() {
                               Explanation:
                             </span>
                             <div className="text-[var(--sub,#a2a9b8)] font-sans text-xs leading-relaxed whitespace-pre-line">
-                              {renderInline(ex.explanation)}
+                              {renderInline(cleanField(ex.explanation))}
                             </div>
                           </div>
                         )}
@@ -519,8 +537,8 @@ export default function DailyChallengePage() {
             <div
               className="p-6 rounded-lg flex flex-col gap-4"
               style={{
-                background: 'var(--bg-1, #060d1c)',
-                border: `1px solid ${isGlowing ? 'rgba(245, 158, 11, 0.35)' : 'var(--hair-muted, rgba(196, 214, 232, 0.14))'}`,
+                background: 'var(--bg-1, #262626)',
+                border: `1px solid ${isGlowing ? 'rgba(245, 158, 11, 0.35)' : 'var(--hair-muted, rgba(255, 255, 255, 0.08))'}`,
               }}
             >
               <div className="flex items-center gap-3">
@@ -581,12 +599,20 @@ export default function DailyChallengePage() {
                   disabled={queuing}
                   className="w-full py-3 px-4 rounded font-sans font-semibold text-sm transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   style={{
-                    background: '#ffffff',
-                    color: '#02060f',
-                    border: '1px solid #ffffff',
+                    background: 'var(--ink, #ffffff)',
+                    color: 'var(--bg-0, #02060f)',
+                    border: '1px solid var(--hair-muted, rgba(196,214,232,0.16))',
                   }}
-                  onMouseOver={e => { if (!queuing) e.currentTarget.style.background = '#e2ebf5' }}
-                  onMouseOut={e => { if (!queuing) e.currentTarget.style.background = '#ffffff' }}
+                  onMouseOver={e => {
+                    if (!queuing) {
+                      e.currentTarget.style.opacity = '0.9'
+                    }
+                  }}
+                  onMouseOut={e => {
+                    if (!queuing) {
+                      e.currentTarget.style.opacity = '1'
+                    }
+                  }}
                 >
                   <IconSwords size={16} />
                   <span>

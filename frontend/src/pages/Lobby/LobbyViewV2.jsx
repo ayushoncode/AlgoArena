@@ -5,6 +5,7 @@ import TopicGrid from './TopicGrid'
 import DifficultySegment from './DifficultySegment'
 import MatchSummaryRail from './MatchSummaryRail'
 import QuickArenaThreeCol from './QuickArenaThreeCol'
+import LiveArenaQueue from './LiveArenaQueue'
 import StriverSheetView from '../../components/StriverSheetView'
 import { IconSwords, IconCheck, IconClose, IconCode, IconShield, IconTrophy, IconPlay, IconLock } from '../../components/icons'
 import { usePremium } from '../../hooks/usePremium'
@@ -74,6 +75,12 @@ export default function LobbyViewV2({
 
   // Search Ref
   desktopSearchRef,
+
+  // Live Queue & Socket
+  onAcceptChallenge,
+  on,
+  off,
+  emit,
 }) {
   const { isPremium, isPremiumEnabled, openLockedModal } = usePremium()
   const dailyPreviewText = dailyProblem?.description
@@ -99,20 +106,34 @@ export default function LobbyViewV2({
           desktopSearchRef={desktopSearchRef}
         />
 
+        {/* 1.5 LIVE ARENA QUEUE ACTIVITY TICKER */}
+        <LiveArenaQueue
+          user={user}
+          queuing={queuing}
+          onAcceptChallenge={onAcceptChallenge}
+          onCancelQueue={onCancelQueue}
+          on={on}
+          off={off}
+          emit={emit}
+        />
+
         {/* 2. MODE SELECTOR (Quick Arena vs Striver Sheet vs Private Duel) */}
-        <div className="lobby-v2-mode-selector">
+        <div className="lobby-v2-mode-selector" role="tablist" aria-label="Game Modes">
           <button
             type="button"
+            role="tab"
+            aria-selected={lobbyTab === 'random'}
             onClick={() => setLobbyTab && setLobbyTab('random')}
             className={`lobby-v2-mode-tab ${lobbyTab === 'random' ? 'is-active' : ''}`}
           >
-            <IconSwords size={14} />
+            <IconSwords size={15} />
             <span><span className="hidden sm:inline">Quick Arena</span><span className="sm:hidden">Quick</span></span>
-            <span className="lobby-v2-mode-pill">Topic & Diff</span>
           </button>
 
           <button
             type="button"
+            role="tab"
+            aria-selected={lobbyTab === 'striver'}
             onClick={() => setLobbyTab && setLobbyTab('striver')}
             className={`lobby-v2-mode-tab lobby-v2-striver-tab ${lobbyTab === 'striver' ? 'is-active' : ''}`}
           >
@@ -123,26 +144,25 @@ export default function LobbyViewV2({
                 className="lobby-v2-striver-mascot"
               />
             </div>
-            <IconCode size={14} />
+            <IconCode size={15} />
             <span><span className="hidden sm:inline">Striver A2Z Sheet</span><span className="sm:hidden">Striver</span></span>
-            {isPremiumEnabled && !isPremium ? (
-              <span className="lobby-v2-mode-pill flex items-center gap-1" style={{ color: 'var(--gold, #ffd696)', borderColor: 'rgba(255, 214, 150, 0.4)' }}>
-                <IconLock size={10} />
+            {isPremiumEnabled && !isPremium && (
+              <span className="flex items-center gap-1 text-[11px] font-mono text-amber-300 ml-1">
+                <IconLock size={11} />
                 <span>Premium</span>
               </span>
-            ) : (
-              <span className="lobby-v2-mode-pill">Curriculum</span>
             )}
           </button>
 
           <button
             type="button"
+            role="tab"
+            aria-selected={lobbyTab === 'custom'}
             onClick={() => setLobbyTab && setLobbyTab('custom')}
             className={`lobby-v2-mode-tab ${lobbyTab === 'custom' ? 'is-active' : ''}`}
           >
-            <IconShield size={14} />
+            <IconShield size={15} />
             <span><span className="hidden sm:inline">Private Duel</span><span className="sm:hidden">Private</span></span>
-            <span className="lobby-v2-mode-pill">Custom Room</span>
           </button>
         </div>
 
@@ -150,10 +170,9 @@ export default function LobbyViewV2({
         {lobbyTab === 'custom' ? (
           <div className="lobby-v2-private-section">
             <div className="lobby-v2-private-hero">
-              <div className="lobby-v2-overline">Head-to-head match</div>
               <h2 className="lobby-v2-private-title">Private Duels</h2>
               <p className="lobby-v2-private-subtitle">
-                Host a private duel room with custom topics, or enter a peer's 6-character room code to clash head-to-head. Match results are unranked with zero Elo rating risk.
+                Unranked 1v1 duels with friends. No Elo at stake.
               </p>
             </div>
 
@@ -166,16 +185,16 @@ export default function LobbyViewV2({
                     <span className="lobby-v2-feature-badge">Unranked</span>
                   </div>
 
-                  <h3 className="lobby-v2-private-card-title">Create Private Room</h3>
+                  <h3 className="lobby-v2-private-card-title">Create Room</h3>
 
                   <p className="lobby-v2-private-card-desc">
-                    Choose a topic and difficulty, then generate a secret 6-character code to share with your rival.
+                    Pick a topic &amp; difficulty to generate a 6-character room code.
                   </p>
 
                   {/* 1. Topic Picker */}
                   <div className="lobby-v2-private-picker-section">
                     <div className="lobby-v2-private-picker-head">
-                      <span className="lobby-v2-private-picker-title">Choose Topic</span>
+                      <span className="lobby-v2-private-picker-title">Topic</span>
                       {selectedTopicObj && (
                         <span className="lobby-v2-private-picker-current">
                           {selectedTopicObj.label}
@@ -200,18 +219,12 @@ export default function LobbyViewV2({
                         )
                       })}
                     </div>
-
-                    {selectedTopicObj && (
-                      <p className="lobby-v2-private-topic-desc">
-                        {selectedTopicObj.desc}
-                      </p>
-                    )}
                   </div>
 
                   {/* 2. Difficulty Picker */}
                   <div className="lobby-v2-private-picker-section">
                     <div className="lobby-v2-private-picker-head">
-                      <span className="lobby-v2-private-picker-title">Choose Difficulty</span>
+                      <span className="lobby-v2-private-picker-title">Difficulty</span>
                     </div>
 
                     <div className="lobby-v2-private-diff-row" role="radiogroup" aria-label="Select duel difficulty">
@@ -255,7 +268,7 @@ export default function LobbyViewV2({
                     }}
                   >
                     <IconSwords size={14} />
-                    <span>Create Room & Generate Code</span>
+                    <span>Create Room</span>
                   </button>
                 </div>
               </div>
@@ -268,22 +281,11 @@ export default function LobbyViewV2({
                     <span className="lobby-v2-feature-badge">Direct Connect</span>
                   </div>
 
-                  <h3 className="lobby-v2-private-card-title">Join with Code</h3>
+                  <h3 className="lobby-v2-private-card-title">Join Room</h3>
 
                   <p className="lobby-v2-private-card-desc">
-                    Have a room code from a friend? Enter the 6-character room code to join their custom match and start coding instantly.
+                    Enter a friend's 6-character room code to start coding instantly.
                   </p>
-
-                  <div className="lobby-v2-private-rules">
-                    <div className="lobby-v2-private-rule-item">
-                      <span className="lobby-v2-status-dot is-connected" />
-                      <span>Zero Elo rating penalty on defeat</span>
-                    </div>
-                    <div className="lobby-v2-private-rule-item">
-                      <span className="lobby-v2-status-dot is-connected" />
-                      <span>Live sync and real-time pass detection</span>
-                    </div>
-                  </div>
                 </div>
 
                 <div>

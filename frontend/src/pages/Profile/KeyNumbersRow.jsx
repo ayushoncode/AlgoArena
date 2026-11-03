@@ -13,7 +13,7 @@ export default function KeyNumbersRow({
   // but the bottom row (streak/topic boxes) is intentionally not rendered
 
   const topRow = [
-    { label: 'MATCHES', val: totalMatches, color: '#ffffff', type: 'matches' },
+    { label: 'MATCHES', val: totalMatches, color: 'var(--ink, #ffffff)', type: 'matches' },
     { label: 'WINS', val: wins, color: '#10b981', type: 'wins' },
     { label: 'LOSSES', val: losses, color: '#f43f5e', type: 'losses' },
     { label: 'WIN RATE', val: `${wr}%`, color: '#2dd4bf', type: 'winrate' },

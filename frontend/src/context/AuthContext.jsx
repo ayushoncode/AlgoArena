@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import api from '../utils/api'
+import { clearStreakCache } from '../components/navbar/navData'
 
 const AuthContext = createContext(null)
 
@@ -88,13 +89,26 @@ export function AuthProvider({ children }) {
   }, [])
 
   /** Called after successful /login or /register response */
-  const login = useCallback(({ token, user: userData }) => {
+  const login = useCallback(async ({ token, user: userData }) => {
+    clearStreakCache()
     const full = { ...userData, token }
     setUser(full)
-    // Set user first so that when token triggers a storage event in other tabs,
-    // the user object is already available to parse.
     localStorage.setItem('aa_user', JSON.stringify(userData))
     localStorage.setItem('aa_token', token)
+
+    // Immediately fetch full fresh user profile (including rank) to guarantee zero stale data
+    try {
+      const { data } = await api.get('/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (data) {
+        const enriched = { ...data, token }
+        setUser(enriched)
+        localStorage.setItem('aa_user', JSON.stringify(data))
+      }
+    } catch {
+      // Non-fatal if offline or backend unavailable
+    }
   }, [])
 
   /** Send OTP to email */
@@ -123,6 +137,7 @@ export function AuthProvider({ children }) {
 
   /** Clears session */
   const logout = useCallback(() => {
+    clearStreakCache()
     setUser(null)
     localStorage.removeItem('aa_token')
     localStorage.removeItem('aa_user')
