@@ -68,6 +68,8 @@ export default function TopBarV2({
   opp,
   user,
   onOpenResign,
+  voiceControl,
+  voiceDock,
 }) {
   const { isPremium: isMePremium } = usePremium()
   const oppBadges = usePremiumBadges(opp?.username ? [opp.username] : [], opp?.id ? [opp.id] : [])
@@ -188,6 +190,16 @@ export default function TopBarV2({
             </div>
           )
         })()}
+
+        {/* Desktop: Show full VoiceDock if connected, otherwise VoiceControl button */}
+        <div className="hidden md:flex items-center">
+          {voiceDock || voiceControl}
+        </div>
+
+        {/* Mobile (< md): Always show compact VoiceControl button */}
+        <div className="flex md:hidden items-center">
+          {voiceControl}
+        </div>
 
         <button
           type="button"
