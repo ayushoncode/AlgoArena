@@ -26,6 +26,28 @@ function purgeMatchPlayersFromQueues(match) {
   }
 }
 
+/** Clean up voice session and notify room when match finishes */
+function cleanupVoiceOnMatchEnd(io, roomId, match, reason = 'match_ended') {
+  if (!match) return
+  if (match.voiceConsent) {
+    if (match.voiceConsent.timer) {
+      clearTimeout(match.voiceConsent.timer)
+      match.voiceConsent.timer = null
+    }
+    if (match.voiceConsent.status !== 'ended') {
+      match.voiceConsent.status = 'ended'
+      match.voiceConsent.accepted = false
+      io.to(roomId).emit('voice:state', { roomId, status: 'ended', reason })
+      try {
+        const { endVoiceSession } = require('../services/voice')
+        endVoiceSession(match.dbMatchId || roomId, reason)
+      } catch (err) {
+        console.warn('[Match] cleanupVoiceOnMatchEnd error:', err.message)
+      }
+    }
+  }
+}
+
 /* ── Create match row in DB ──────────────────────────────────── */
 async function createMatchRow({ playerOneId, playerTwoId, topic, difficulty }) {
   try {
@@ -227,6 +249,160 @@ function registerMatch(io) {
       }
     })
 
+    /* ── Live Voice Consent Signaling (voice:*) ──────────── */
+    socket.on('voice:request', ({ roomId }) => {
+      const voiceConfig = require('../config/voice')
+      if (!voiceConfig.isVoiceEnabled) return
+      if (!roomId) return
+      const match = activeMatches.get(roomId)
+      if (!match || match.isResolved) return
+      const isParticipant = match.players?.some(p => String(p.userId) === String(userId))
+      if (!isParticipant) return
+
+      if (!match.voiceConsent) {
+        match.voiceConsent = {
+          status: 'idle',
+          requestedBy: null,
+          requestCount: 0,
+          accepted: false,
+          timer: null,
+        }
+      }
+
+      if (match.voiceConsent.status === 'requesting' || match.voiceConsent.status === 'accepted') {
+        return
+      }
+
+      if (match.voiceConsent.requestCount >= voiceConfig.maxRequestsPerMatch) {
+        socket.emit('voice:state', {
+          roomId,
+          status: 'limit_reached',
+          requestCount: match.voiceConsent.requestCount,
+        })
+        return
+      }
+
+      match.voiceConsent.requestCount++
+      match.voiceConsent.status = 'requesting'
+      match.voiceConsent.requestedBy = userId
+      match.voiceConsent.accepted = false
+
+      const expiresAt = Date.now() + (voiceConfig.requestExpirySeconds * 1000)
+      io.to(roomId).emit('voice:state', {
+        roomId,
+        status: 'requesting',
+        requestedBy: userId,
+        requestCount: match.voiceConsent.requestCount,
+        expiresAt,
+      })
+
+      if (match.voiceConsent.timer) clearTimeout(match.voiceConsent.timer)
+      match.voiceConsent.timer = setTimeout(() => {
+        if (match.voiceConsent && match.voiceConsent.status === 'requesting') {
+          match.voiceConsent.status = 'idle'
+          match.voiceConsent.requestedBy = null
+          match.voiceConsent.timer = null
+          io.to(roomId).emit('voice:state', {
+            roomId,
+            status: 'idle',
+            reason: 'expired',
+            requestCount: match.voiceConsent.requestCount,
+          })
+        }
+      }, voiceConfig.requestExpirySeconds * 1000)
+    })
+
+    socket.on('voice:accept', ({ roomId }) => {
+      const voiceConfig = require('../config/voice')
+      if (!voiceConfig.isVoiceEnabled) return
+      if (!roomId) return
+      const match = activeMatches.get(roomId)
+      if (!match || match.isResolved || !match.voiceConsent) return
+      const isParticipant = match.players?.some(p => String(p.userId) === String(userId))
+      if (!isParticipant) return
+      if (String(match.voiceConsent.requestedBy) === String(userId)) return
+      if (match.voiceConsent.status !== 'requesting') return
+
+      if (match.voiceConsent.timer) {
+        clearTimeout(match.voiceConsent.timer)
+        match.voiceConsent.timer = null
+      }
+
+      match.voiceConsent.status = 'accepted'
+      match.voiceConsent.accepted = true
+      io.to(roomId).emit('voice:state', {
+        roomId,
+        status: 'accepted',
+        requestCount: match.voiceConsent.requestCount,
+      })
+    })
+
+    socket.on('voice:decline', ({ roomId }) => {
+      if (!roomId) return
+      const match = activeMatches.get(roomId)
+      if (!match || !match.voiceConsent) return
+      const isParticipant = match.players?.some(p => String(p.userId) === String(userId))
+      if (!isParticipant) return
+      if (String(match.voiceConsent.requestedBy) === String(userId)) return
+
+      if (match.voiceConsent.timer) {
+        clearTimeout(match.voiceConsent.timer)
+        match.voiceConsent.timer = null
+      }
+
+      match.voiceConsent.status = 'idle'
+      match.voiceConsent.requestedBy = null
+      match.voiceConsent.accepted = false
+      io.to(roomId).emit('voice:state', {
+        roomId,
+        status: 'idle',
+        reason: 'declined',
+        requestCount: match.voiceConsent.requestCount,
+      })
+    })
+
+    socket.on('voice:end', ({ roomId }) => {
+      if (!roomId) return
+      const match = activeMatches.get(roomId)
+      if (!match) return
+      const isParticipant = match.players?.some(p => String(p.userId) === String(userId))
+      if (!isParticipant) return
+
+      if (match.voiceConsent) {
+        if (match.voiceConsent.timer) {
+          clearTimeout(match.voiceConsent.timer)
+          match.voiceConsent.timer = null
+        }
+        match.voiceConsent.status = 'ended'
+        match.voiceConsent.accepted = false
+      }
+
+      const { endVoiceSession } = require('../services/voice')
+      endVoiceSession(match.dbMatchId || roomId, 'user_ended')
+
+      io.to(roomId).emit('voice:state', {
+        roomId,
+        status: 'ended',
+        reason: 'user_ended',
+      })
+    })
+
+    socket.on('voice:state', ({ roomId }) => {
+      if (!roomId) return
+      const match = activeMatches.get(roomId)
+      if (!match) return
+      const isParticipant = match.players?.some(p => String(p.userId) === String(userId))
+      if (!isParticipant) return
+
+      socket.emit('voice:state', {
+        roomId,
+        status: match.voiceConsent?.status || 'idle',
+        requestedBy: match.voiceConsent?.requestedBy || null,
+        requestCount: match.voiceConsent?.requestCount || 0,
+        accepted: match.voiceConsent?.accepted || false,
+      })
+    })
+
     /* ── rejoin_match (clear disconnect timer if reconnected) ────── */
     socket.on('rejoin_match', async ({ roomId }) => {
       if (roomId) socket.join(roomId)
@@ -273,6 +449,16 @@ function registerMatch(io) {
           players: match.players || [],
           startedAt: match.startedAt,
         })
+
+        if (match.voiceConsent) {
+          socket.emit('voice:state', {
+            roomId,
+            status: match.voiceConsent.status || 'idle',
+            requestedBy: match.voiceConsent.requestedBy || null,
+            requestCount: match.voiceConsent.requestCount || 0,
+            accepted: match.voiceConsent.accepted || false,
+          })
+        }
       } else if (roomId) {
         try {
           const { rows } = await db.query(
@@ -386,6 +572,7 @@ function registerMatch(io) {
 
       match.matchEndPayload = payload
       purgeMatchPlayersFromQueues(match)
+      cleanupVoiceOnMatchEnd(io, roomId, match, 'resign')
 
       // Emit to room and directly to resigning socket
       io.to(roomId).emit('match_end', payload)
@@ -628,6 +815,7 @@ function registerMatch(io) {
 
           match.matchEndPayload = payload
           purgeMatchPlayersFromQueues(match)
+          cleanupVoiceOnMatchEnd(io, roomId, match, 'solve')
           io.to(roomId).emit('match_end', payload)
           console.log(`[Match] ENDED winner=${username}(+${resolved.winnerDelta}) loser=${loserInfo?.username ?? '?'}(${resolved.loserDelta}) room=${roomId} custom=${isCustom}`)
 
@@ -735,6 +923,7 @@ function registerMatch(io) {
 
           match.matchEndPayload = payload
           purgeMatchPlayersFromQueues(match)
+          cleanupVoiceOnMatchEnd(io, roomId, match, 'forfeit')
           io.to(roomId).emit('match_end', payload)
           console.log(`[Match] FORFEIT ENDED winner=${opponent.username}(+${resolved.winnerDelta}) loser=${username}(${resolved.loserDelta}) room=${roomId}`)
 
@@ -826,4 +1015,4 @@ function isUserInActiveMatch(userId) {
   return false
 }
 
-module.exports = { registerMatch, trackRoom, handleVerdict, isUserInActiveMatch }
+module.exports = { registerMatch, trackRoom, handleVerdict, isUserInActiveMatch, activeMatches }

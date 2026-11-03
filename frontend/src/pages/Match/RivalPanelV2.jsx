@@ -49,6 +49,7 @@ export default function RivalPanelV2({
   oppProgress,
   oppDisconnectState,
   width,
+  voiceSlot,
 }) {
   const isTyping = oppProgress?.isTyping
   const lineCount = oppProgress?.lineCount || 1
@@ -107,6 +108,11 @@ export default function RivalPanelV2({
 
       {/* Body */}
       <div className="battle-v2__rival-body">
+        {voiceSlot && (
+          <div className="w-full mb-3 flex justify-center">
+            {voiceSlot}
+          </div>
+        )}
         {oppDisconnectState ? (
           <div
             className="p-3 w-full border text-center rounded space-y-1.5"

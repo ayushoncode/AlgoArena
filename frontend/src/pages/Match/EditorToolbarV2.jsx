@@ -104,7 +104,7 @@ export default function EditorToolbarV2({
             size={20}
             isMe={true}
           />
-          <span className="font-mono text-xs font-bold text-[#e2e8f4]">
+          <span className="battle-v2__toolbar-username font-mono text-xs font-bold">
             {player?.username ?? user?.username ?? 'You'}
           </span>
           <span className="battle-v2__you-tag">You</span>

@@ -28,6 +28,7 @@ const problemRoutes = require('./routes/problems')
 const matchRoutes   = require('./routes/matches')
 const experienceRoutes = require('./routes/experiences')
 const premiumRoutes = require('./routes/premium')
+const voiceRoutes   = require('./routes/voice')
 const { registerMatchmaking, queueStats } = require('./socket/matchmaking')
 const { registerMatch, handleVerdict }  = require('./socket/match')
 const { registerCustomRoom }  = require('./socket/customRoom')
@@ -100,6 +101,7 @@ app.use('/api/problems', problemRoutes)
 app.use('/api/matches',  matchRoutes)
 app.use('/api/experiences', experienceRoutes)
 app.use('/api/premium',  premiumRoutes)
+app.use('/api/voice',    voiceRoutes)
 
 // ── Health check — useful for Render uptime pings ────────────────────────────
 app.get('/health', (_req, res) => {
