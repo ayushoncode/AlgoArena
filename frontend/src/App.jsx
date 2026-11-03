@@ -267,6 +267,19 @@ function AppLayout() {
   const isLandingPage = pathname === '/' && !isAuthenticated
   const isEditorialPage = isLandingPage || pathname === '/who-we-are' || (pathname === '/leaderboard' && !isAuthenticated) || isAuthPage
 
+  // Outside pages (Landing page, Who We Are) must ALWAYS remain pure dark
+  useEffect(() => {
+    const isOutside = pathname === '/' || pathname === '/who-we-are'
+    if (isOutside) {
+      document.documentElement.removeAttribute('data-theme')
+    } else {
+      const stored = localStorage.getItem('arena-theme')
+      if (stored === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light')
+      }
+    }
+  }, [pathname])
+
   return (
     <>
       <ScrollToTop />

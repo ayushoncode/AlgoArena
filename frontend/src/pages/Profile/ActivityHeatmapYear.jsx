@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import { useTheme } from '../../context/ThemeContext'
 
 function toLocalDateKey(dt) {
   if (!dt) return null
@@ -156,13 +157,23 @@ export default function ActivityHeatmapYear({
     }
   }, [dateCounts, streak])
 
-  // Get vibrant green color palette matching LeetCode
+  const { theme } = useTheme?.() || { theme: 'dark' }
+  const isLight = theme === 'light'
+
+  // Get vibrant green color palette matching LeetCode / GitHub for each theme
   const getCellColor = (count) => {
-    if (count <= 0) return '#23272f' // clean subtle dark slate, no border
-    if (count === 1) return '#0e4429' // dark green
-    if (count <= 4) return '#006d32' // emerald
-    if (count <= 9) return '#26a641' // bright green
-    return '#39d353' // vibrant neon green
+    if (isLight) {
+      if (count <= 0) return '#ebedf0' // subtle light grey for empty cells
+      if (count === 1) return '#9be9a8' // soft green
+      if (count <= 4) return '#40c463' // medium green
+      if (count <= 9) return '#30a14e' // rich green
+      return '#216e39' // deep green
+    }
+    if (count <= 0) return '#383838' // LeetCode clean neutral empty cell
+    if (count === 1) return '#006921' // emerald level 1
+    if (count <= 4) return '#16a34a' // medium green level 2
+    if (count <= 9) return '#22c55e' // vibrant green level 3
+    return '#4ade80' // high green level 4
   }
 
   return (

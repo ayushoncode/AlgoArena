@@ -57,7 +57,7 @@ export default function EditProfileModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(2, 6, 15, 0.92)' }}
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.75)' }}
     >
       <div className="edit-profile-modal-card">
         {/* Modal Header */}
@@ -102,7 +102,6 @@ export default function EditProfileModal({
                   onOpenAvatarModal()
                 }}
                 className="btn-change-avatar-action"
-                title="Change Avatar"
                 aria-label="Change Avatar"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -84,12 +84,12 @@ export function getUserEmoji(username = '') {
 }
 
 export const RANK_TIERS = [
-  { name: 'Recruit', min: 0, max: 1199, col: '#94a3b8', bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.3)', glow: 'rgba(100,116,139,0.2)' },
-  { name: 'Operative', min: 1200, max: 1399, col: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', glow: 'rgba(16,185,129,0.25)' },
-  { name: 'Vanguard', min: 1400, max: 1599, col: '#38BDF8', bg: 'rgba(56,189,248,0.12)', border: 'rgba(56,189,248,0.3)', glow: 'rgba(56,189,248,0.25)' },
-  { name: 'Champion', min: 1600, max: 1799, col: '#818cf8', bg: 'rgba(129,140,248,0.14)', border: 'rgba(129,140,248,0.35)', glow: 'rgba(129,140,248,0.3)' },
-  { name: 'Legend', min: 1800, max: 2199, col: '#c084fc', bg: 'rgba(192,132,252,0.14)', border: 'rgba(192,132,252,0.35)', glow: 'rgba(192,132,252,0.3)' },
-  { name: 'Bihari', min: 2200, max: 9999, col: '#F5B942', bg: 'rgba(245,185,66,0.14)', border: 'rgba(245,185,66,0.35)', glow: 'rgba(245,185,66,0.35)' },
+  { name: 'Novice', min: 0, max: 1199, col: '#94a3b8', bg: 'rgba(148,163,184,0.12)', border: 'rgba(148,163,184,0.3)', glow: 'rgba(148,163,184,0.2)' },
+  { name: 'Apprentice', min: 1200, max: 1399, col: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', glow: 'rgba(16,185,129,0.25)' },
+  { name: 'Specialist', min: 1400, max: 1599, col: '#06b6d4', bg: 'rgba(6,182,212,0.12)', border: 'rgba(6,182,212,0.3)', glow: 'rgba(6,182,212,0.25)' },
+  { name: 'Expert', min: 1600, max: 1799, col: '#3b82f6', bg: 'rgba(59,130,246,0.14)', border: 'rgba(59,130,246,0.35)', glow: 'rgba(59,130,246,0.3)' },
+  { name: 'Candidate Master', min: 1800, max: 1999, col: '#a855f7', bg: 'rgba(168,85,247,0.14)', border: 'rgba(168,85,247,0.35)', glow: 'rgba(168,85,247,0.3)' },
+  { name: 'Grandmaster', min: 2000, max: 9999, col: '#f97316', bg: 'rgba(249,115,22,0.14)', border: 'rgba(249,115,22,0.35)', glow: 'rgba(249,115,22,0.35)' },
 ]
 
 export function getTier(elo) {

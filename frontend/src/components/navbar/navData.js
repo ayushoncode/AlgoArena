@@ -30,89 +30,142 @@ export async function getDailyChallenge() {
   return cachedDaily
 }
 
-let cachedStreakData = null
-let streakTimestamp = 0
+const userStreakCache = new Map()
+
+export function clearStreakCache() {
+  userStreakCache.clear()
+}
 
 /**
- * Calculates current streak and best streak deterministically from match/elo history
- * Matches exact logic used on the AlgoArena Profile page.
+ * Remove legacy unscoped aa_daily_done_YYYY-MM-DD keys that were erroneously shared across accounts
  */
-export async function getStreakData() {
+function purgeLegacyUnscopedDailyKeys() {
+  if (typeof window === 'undefined' || !window.localStorage) return
+  try {
+    const keysToRemove = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k && /^aa_daily_done_\d{4}-\d{2}-\d{2}$/.test(k)) {
+        keysToRemove.push(k)
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k))
+  } catch { }
+}
+
+export function getCurrentUserId(explicitUserId) {
+  if (explicitUserId) return String(explicitUserId)
+  if (typeof window === 'undefined' || !window.localStorage) return null
+  try {
+    const raw = localStorage.getItem('aa_user')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return parsed?.id || parsed?.user_id || parsed?.username || null
+    }
+  } catch { }
+  return null
+}
+
+/**
+ * Calculates current streak and best streak strictly from Daily Problem completions.
+ * Guaranteed isolated per logged-in user account.
+ */
+export async function getStreakData(explicitUserId) {
+  const userId = getCurrentUserId(explicitUserId)
+  if (!userId) {
+    return { current: 0, best: 0, isCompletedToday: false }
+  }
+
+  // Purge any legacy shared keys once
+  purgeLegacyUnscopedDailyKeys()
+
   const now = Date.now()
-  if (cachedStreakData && now - streakTimestamp < 60_000) {
-    return cachedStreakData
+  const cached = userStreakCache.get(userId)
+  if (cached && now - cached.timestamp < 30_000) {
+    return cached.data
   }
 
   try {
-    const res = await api.get('/api/users/me/elo-history')
-    const eloHistory = Array.isArray(res?.data) ? res.data : []
+    const dailyCompletedDates = new Set()
 
-    const activeDates = new Set()
-    eloHistory.forEach(e => {
-      const dt = e.date || e.created_at
-      if (dt) {
+    // 1. Gather recorded daily challenge completion dates from localStorage for THIS user only
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const prefix = `aa_daily_done_${userId}_`
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i)
+          if (k && k.startsWith(prefix) && localStorage.getItem(k) === 'true') {
+            const dStr = k.slice(prefix.length)
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dStr)) {
+              dailyCompletedDates.add(dStr)
+            }
+          }
+        }
+      } catch { }
+    }
+
+    // 2. Fetch today's daily problem and user's match history
+    const daily = await getDailyChallenge()
+    const today = new Date()
+    const todayStr = today.toISOString().slice(0, 10)
+    const todayLocal = today.toLocaleDateString('en-CA')
+
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayStr = yesterday.toISOString().slice(0, 10)
+    const yesterdayLocal = yesterday.toLocaleDateString('en-CA')
+
+    const matchesRes = await api.get('/api/matches').catch(() => null)
+    const matches = Array.isArray(matchesRes?.data) ? matchesRes.data : []
+
+    // 3. Check today's finished matches against today's daily challenge problem
+    matches.forEach(m => {
+      if (m.status !== 'finished') return
+      const rawDate = m.ended_at || m.started_at
+      if (!rawDate) return
+      const dt = new Date(rawDate)
+      if (isNaN(dt.getTime())) return
+
+      const mDateStr = dt.toISOString().slice(0, 10)
+      const mDateLocal = dt.toLocaleDateString('en-CA')
+
+      if (
+        daily?.title &&
+        (mDateStr === todayStr || mDateLocal === todayLocal) &&
+        m.problem_title &&
+        m.problem_title.toLowerCase() === daily.title.toLowerCase()
+      ) {
+        dailyCompletedDates.add(todayStr)
         try {
-          activeDates.add(new Date(dt).toISOString().slice(0, 10))
+          localStorage.setItem(`aa_daily_done_${userId}_${todayStr}`, 'true')
         } catch { }
       }
     })
 
-    // Check if today's daily question is completed
-    let isCompletedToday = false
-    const today = new Date()
-    const todayStr = today.toISOString().slice(0, 10)
-    const yesterday = new Date()
-    yesterday.setDate(yesterday.getDate() - 1)
-    const yesterdayStr = yesterday.toISOString().slice(0, 10)
+    const isCompletedToday = dailyCompletedDates.has(todayStr) || dailyCompletedDates.has(todayLocal)
 
-    try {
-      const daily = await getDailyChallenge()
-      const todayLocal = new Date().toLocaleDateString('en-CA')
+    if (dailyCompletedDates.size === 0) {
+      const result = { current: 0, best: 0, isCompletedToday: false }
+      userStreakCache.set(userId, { data: result, timestamp: Date.now() })
+      return result
+    }
 
-      if (localStorage.getItem(`aa_daily_done_${todayStr}`) === 'true') {
-        isCompletedToday = true
-      } else {
-        const matchesRes = await api.get('/api/matches').catch(() => null)
-        const matches = Array.isArray(matchesRes?.data) ? matchesRes.data : []
-        const hasDailyMatch = matches.some(m => {
-          const mDate = (m.ended_at || m.started_at || '').slice(0, 10)
-          return (
-            (mDate === todayStr || mDate === todayLocal) &&
-            m.status === 'finished' &&
-            m.problem_title === daily?.title
-          )
-        })
-        if (hasDailyMatch) {
-          isCompletedToday = true
-          localStorage.setItem(`aa_daily_done_${todayStr}`, 'true')
-        }
-      }
-    } catch { }
+    // 4. Current Daily Streak calculation
+    let currentStreak = 0
+    let checkDate = null
 
     if (isCompletedToday) {
-      activeDates.add(todayStr)
-    }
-
-    if (activeDates.size === 0) {
-      cachedStreakData = { current: 0, best: 0, isCompletedToday: false }
-      streakTimestamp = Date.now()
-      return cachedStreakData
-    }
-
-    // 1. Current streak calculation
-    let checkDate = null
-    if (activeDates.has(todayStr)) {
       checkDate = today
-    } else if (activeDates.has(yesterdayStr)) {
+    } else if (dailyCompletedDates.has(yesterdayStr) || dailyCompletedDates.has(yesterdayLocal)) {
       checkDate = yesterday
     }
 
-    let currentStreak = 0
     if (checkDate) {
-      let curr = new Date(checkDate)
+      const curr = new Date(checkDate)
       for (let i = 0; i < 365; i++) {
-        const dStr = curr.toISOString().slice(0, 10)
-        if (activeDates.has(dStr)) {
+        const dIso = curr.toISOString().slice(0, 10)
+        const dLoc = curr.toLocaleDateString('en-CA')
+        if (dailyCompletedDates.has(dIso) || dailyCompletedDates.has(dLoc)) {
           currentStreak++
           curr.setDate(curr.getDate() - 1)
         } else {
@@ -121,8 +174,8 @@ export async function getStreakData() {
       }
     }
 
-    // 2. Best streak calculation
-    const sorted = Array.from(activeDates).sort()
+    // 5. Best Daily Streak calculation
+    const sorted = Array.from(dailyCompletedDates).sort()
     let max = 1
     let currRun = 1
     for (let i = 1; i < sorted.length; i++) {
@@ -138,11 +191,11 @@ export async function getStreakData() {
     }
     const bestStreak = Math.max(max, currentStreak)
 
-    cachedStreakData = { current: currentStreak, best: bestStreak, isCompletedToday }
-    streakTimestamp = Date.now()
-    return cachedStreakData
+    const result = { current: currentStreak, best: bestStreak, isCompletedToday }
+    userStreakCache.set(userId, { data: result, timestamp: Date.now() })
+    return result
   } catch (err) {
-    console.error('[Navbar] Error fetching streak data:', err)
+    console.error('[Navbar] Error fetching daily streak data:', err)
     return cachedStreakData || { current: 0, best: 0, isCompletedToday: false, isError: true }
   }
 }

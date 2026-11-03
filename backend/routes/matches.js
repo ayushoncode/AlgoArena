@@ -57,4 +57,15 @@ router.get('/:id', authMiddleware, async (req, res) => {
   }
 })
 
+// GET /api/matches/live-queue — returns current open challenges waiting in matchmaking queue
+router.get('/live-queue', (_req, res) => {
+  try {
+    const { getActiveQueueChallenges } = require('../socket/matchmaking')
+    return res.json(getActiveQueueChallenges())
+  } catch (err) {
+    console.error('[GET /matches/live-queue]', err)
+    return res.json([])
+  }
+})
+
 module.exports = router

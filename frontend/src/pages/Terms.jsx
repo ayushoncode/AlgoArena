@@ -73,25 +73,38 @@ export default function Terms() {
           </p>
         </section>
 
-        {/* Section 6: Cancellation and Refunds */}
+        {/* Section 6: Live Voice Communication */}
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-white">6. Cancellation and Refund Policy</h2>
+          <h2 className="text-xl font-semibold text-white">6. Live Voice Communication</h2>
+          <p className="text-sm leading-relaxed text-slate-300">
+            AlgoArena provides optional real-time voice communication during live matches for eligible Premium subscribers. Voice is disabled by default and starts only upon mutual consent from both participants.
+          </p>
+          <ul className="list-disc pl-5 space-y-1.5 text-sm text-slate-300">
+            <li>Zero Audio Recording: Audio is transmitted peer-to-peer over encrypted WebRTC. Voice is never recorded, stored, or transcribed by AlgoArena.</li>
+            <li>Safety Tools: Players may mute opponents locally, block future voice requests from specific users, or submit conduct reports at any time. Either player may end voice immediately.</li>
+            <li>Code of Conduct: Verbal abuse, harassment, discrimination, hate speech, threats, and disruption are strictly forbidden. Conduct violations result in voice access suspension or account termination.</li>
+          </ul>
+        </section>
+
+        {/* Section 7: Cancellation and Refunds */}
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold text-white">7. Cancellation and Refund Policy</h2>
           <p className="text-sm leading-relaxed text-slate-300">
             You may cancel your monthly subscription at any time via <Link to="/account/billing" className="text-[#ffd696] underline">/account/billing</Link>. Cancellation takes effect at the end of the current billing cycle, and access remains active through that date. Subscription fees are subject to our <Link to="/refund-policy" className="text-[#ffd696] underline">Refund Policy</Link>. Disputed charges or chargebacks will suspend account access pending resolution.
           </p>
         </section>
 
-        {/* Section 7: Eligibility */}
+        {/* Section 8: Eligibility */}
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-white">7. Eligibility and Capacity</h2>
+          <h2 className="text-xl font-semibold text-white">8. Eligibility and Capacity</h2>
           <p className="text-sm leading-relaxed text-slate-300">
             You must be at least 18 years of age, or have the valid consent and supervision of a parent or legal guardian, to register an account and enter into payment obligations on AlgoArena.
           </p>
         </section>
 
-        {/* Section 8: Limitation of Liability */}
+        {/* Section 9: Limitation of Liability */}
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-white">8. Limitation of Liability</h2>
+          <h2 className="text-xl font-semibold text-white">9. Limitation of Liability</h2>
           <p className="text-sm leading-relaxed text-slate-300">
             AlgoArena is provided on an "as is" and "as available" basis without warranties of any kind. We are not liable for match disconnects resulting from local client network instability or third-party internet service disruptions.
           </p>

@@ -1,9 +1,30 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { CANONICAL_TIERS, getTierForRating } from '../../lib/tiers'
+import { useTheme } from '../../context/ThemeContext'
 
 const VIEW_W = 800
 const VIEW_H = 280
-const PADDING = { top: 36, right: 90, bottom: 42, left: 56 }
+const PADDING = { top: 36, right: 112, bottom: 42, left: 56 }
+
+export function getEffectiveTierColor(color, name, isLight) {
+  if (!isLight) return color
+  switch (name) {
+    case 'Novice':
+      return '#334155'
+    case 'Apprentice':
+      return '#059669'
+    case 'Specialist':
+      return '#0891b2'
+    case 'Expert':
+      return '#2563eb'
+    case 'Candidate Master':
+      return '#9333ea'
+    case 'Grandmaster':
+      return '#ea580c'
+    default:
+      return color
+  }
+}
 
 export default function RatingChartV2({
   data = [],
@@ -12,6 +33,9 @@ export default function RatingChartV2({
   isOwnProfile = true,
   onNavigateLobby,
 }) {
+  const { theme } = useTheme?.() || { theme: 'dark' }
+  const isLight = theme === 'light'
+
   const [range, setRange] = useState('all') // 'last20' | '30d' | 'all'
   const [zoomRange, setZoomRange] = useState(null) // [startIndex, endIndex] or null
   const [hoveredIndex, setHoveredIndex] = useState(null)
@@ -222,7 +246,7 @@ export default function RatingChartV2({
         if (!dayMap.has(dayKey)) {
           dayMap.set(dayKey, { idx, date: new Date(d.date) })
         }
-      } catch {}
+      } catch { }
     })
 
     const uniqueDays = Array.from(dayMap.values())
@@ -449,9 +473,9 @@ export default function RatingChartV2({
   const activeCoords =
     activeIndex !== null
       ? [
-          xScale(activeIndex, activePoints.length),
-          yScale(Number(activePoint?.rating) || 1200),
-        ]
+        xScale(activeIndex, activePoints.length),
+        yScale(Number(activePoint?.rating) || 1200),
+      ]
       : null
 
   // Screen-reader announcement string
@@ -461,6 +485,24 @@ export default function RatingChartV2({
 
   // Rank Tier Background Band Fill
   const getTierBandFill = (name) => {
+    if (isLight) {
+      switch (name) {
+        case 'Novice':
+          return 'rgba(100, 116, 139, 0.04)'
+        case 'Apprentice':
+          return 'rgba(16, 185, 129, 0.08)'
+        case 'Specialist':
+          return 'rgba(6, 182, 212, 0.08)'
+        case 'Expert':
+          return 'rgba(59, 130, 246, 0.08)'
+        case 'Candidate Master':
+          return 'rgba(168, 85, 247, 0.08)'
+        case 'Grandmaster':
+          return 'rgba(249, 115, 22, 0.08)'
+        default:
+          return 'rgba(100, 116, 139, 0.04)'
+      }
+    }
     switch (name) {
       case 'Novice':
         return 'rgba(148, 163, 184, 0.08)'
@@ -479,6 +521,9 @@ export default function RatingChartV2({
     }
   }
 
+  const effectiveCurrentColor = getEffectiveTierColor(currentTier.color, currentTier.name, isLight)
+  const effectivePeakColor = getEffectiveTierColor(peakTier.color, peakTier.name, isLight)
+
   return (
     <div className="rating-chart-v2-container">
       {/* ── Heading Row + Controls ──────────────── */}
@@ -488,13 +533,13 @@ export default function RatingChartV2({
           <div className="contest-rating-stats">
             <span
               className="contest-rating-main"
-              style={{ color: currentTier.color }}
+              style={{ color: effectiveCurrentColor }}
             >
               {Number(currentRating).toLocaleString()}
             </span>
             <div className="contest-rating-substats">
               <span className="substat-item">
-                Peak <strong style={{ color: peakTier.color }}>{Number(peakRating).toLocaleString()}</strong>
+                Peak <strong style={{ color: effectivePeakColor }}>{Number(peakRating).toLocaleString()}</strong>
               </span>
               <span className="substat-dot">•</span>
               <span className="substat-item">
@@ -596,9 +641,9 @@ export default function RatingChartV2({
               {activePoints.map((d, i) => {
                 const dateStr = d.date
                   ? new Date(d.date).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                    })
+                    month: 'short',
+                    day: 'numeric',
+                  })
                   : '-'
                 const deltaNum = Number(d.delta) || 0
                 const deltaStr =
@@ -686,7 +731,7 @@ export default function RatingChartV2({
                       y1={yTop}
                       x2={plotW}
                       y2={yTop}
-                      stroke="rgba(255, 255, 255, 0.12)"
+                      stroke={isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.12)'}
                       strokeWidth={1}
                     />
 
@@ -695,7 +740,12 @@ export default function RatingChartV2({
                       x={plotW + 8}
                       y={yTop + bandH / 2 + 4}
                       className="tier-band-label"
-                      style={{ fill: tier.color, fontWeight: 600, fontSize: 10, opacity: 0.8 }}
+                      style={{
+                        fill: getEffectiveTierColor(tier.color, tier.name, isLight),
+                        fontWeight: 700,
+                        fontSize: 10,
+                        opacity: isLight ? 0.95 : 0.8
+                      }}
                     >
                       {tier.name}
                     </text>
@@ -715,7 +765,7 @@ export default function RatingChartV2({
                         y1={y}
                         x2={plotW}
                         y2={y}
-                        stroke="rgba(255, 255, 255, 0.18)"
+                        stroke={isLight ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.18)'}
                         strokeWidth={1}
                       />
                     )}
@@ -740,7 +790,7 @@ export default function RatingChartV2({
                     y1={plotH}
                     x2={t.x}
                     y2={plotH + 4}
-                    stroke="rgba(255, 255, 255, 0.2)"
+                    stroke={isLight ? 'rgba(15, 23, 42, 0.15)' : 'rgba(255, 255, 255, 0.2)'}
                     strokeWidth={1}
                   />
                   <text
@@ -760,14 +810,14 @@ export default function RatingChartV2({
                 width={plotW}
                 height={plotH}
                 fill="none"
-                stroke="rgba(255, 255, 255, 0.18)"
+                stroke={isLight ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.18)'}
                 strokeWidth={1}
               />
 
               {/* 4. Area Fill + Rank-Tier Segmented Line Inside Clip Path */}
               <g clipPath="url(#plot-area-clip)">
                 {areaPath && (
-                  <path d={areaPath} fill="rgba(16, 185, 129, 0.04)" />
+                  <path d={areaPath} fill={isLight ? 'rgba(16, 185, 129, 0.03)' : 'rgba(16, 185, 129, 0.04)'} />
                 )}
 
                 {/* Multi-Colored Line Segments by Rank/Tier (NO YELLOW!) */}
@@ -781,6 +831,7 @@ export default function RatingChartV2({
                     const y2 = yScale(Number(pNext.rating) || 1200)
                     const avgR = (Number(p.rating) + Number(pNext.rating)) / 2
                     const segTier = getTierForRating(avgR)
+                    const effectiveSegCol = getEffectiveTierColor(segTier.color, segTier.name, isLight)
 
                     return (
                       <line
@@ -789,8 +840,8 @@ export default function RatingChartV2({
                         y1={y1}
                         x2={x2}
                         y2={y2}
-                        stroke={segTier.color}
-                        strokeWidth={2.5}
+                        stroke={effectiveSegCol}
+                        strokeWidth={2.8}
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
@@ -810,7 +861,7 @@ export default function RatingChartV2({
                         cx={x}
                         cy={y}
                         r={3}
-                        fill="#060d1c"
+                        fill="#262626"
                         stroke={pTier.color}
                         strokeWidth={1.8}
                       />
@@ -846,19 +897,19 @@ export default function RatingChartV2({
                     transform={`translate(${px}, ${py})`}
                     pointerEvents="none"
                   >
-                    <circle r={5} fill={peakTier.color} stroke="#060d1c" strokeWidth={1.5} />
+                    <circle r={5} fill={effectivePeakColor} stroke={isLight ? '#ffffff' : '#262626'} strokeWidth={1.5} />
                     <g transform={`translate(0, ${chevronOffsetY})`}>
-                      <circle r={6.5} fill={peakTier.color} />
+                      <circle r={6.5} fill={effectivePeakColor} />
                       <path
                         d={placePeakBelow ? "M-2.5 -1 L0 1.5 L2.5 -1" : "M-2.5 1 L0 -1.5 L2.5 1"}
                         fill="none"
-                        stroke="#060d1c"
+                        stroke={isLight ? '#ffffff' : '#262626'}
                         strokeWidth={1.5}
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
                     </g>
-                    {/* Peak label badge with solid dark background so lines never cut through */}
+                    {/* Peak label badge with solid background */}
                     <g transform={`translate(0, ${badgeOffsetY})`}>
                       <rect
                         x={-34}
@@ -866,9 +917,9 @@ export default function RatingChartV2({
                         width={68}
                         height={18}
                         rx={4}
-                        fill="#060d1c"
-                        stroke={peakTier.color}
-                        strokeWidth={1}
+                        fill={isLight ? '#ffffff' : '#262626'}
+                        stroke={effectivePeakColor}
+                        strokeWidth={1.2}
                         opacity={0.96}
                       />
                       <text
@@ -876,7 +927,7 @@ export default function RatingChartV2({
                         y={3.5}
                         textAnchor="middle"
                         style={{
-                          fill: peakTier.color,
+                          fill: effectivePeakColor,
                           fontWeight: 700,
                           fontSize: 10,
                           fontFamily: 'var(--font-mono, monospace)',
@@ -914,15 +965,15 @@ export default function RatingChartV2({
                     <circle
                       r={9}
                       fill="none"
-                      stroke={currentTier.color}
+                      stroke={effectiveCurrentColor}
                       strokeWidth={1.5}
                       opacity={0.65}
                     />
                     {/* Inner point dot */}
                     <circle
                       r={5}
-                      fill={currentTier.color}
-                      stroke="#ffffff"
+                      fill={effectiveCurrentColor}
+                      stroke={isLight ? '#ffffff' : '#262626'}
                       strokeWidth={2}
                     />
 
@@ -932,8 +983,8 @@ export default function RatingChartV2({
                         width={badgeW}
                         height={badgeH}
                         rx={4}
-                        fill="#060d1c"
-                        stroke={currentTier.color}
+                        fill={isLight ? '#ffffff' : '#262626'}
+                        stroke={effectiveCurrentColor}
                         strokeWidth={1.2}
                       />
                       <text
@@ -943,8 +994,8 @@ export default function RatingChartV2({
                         fontFamily="var(--font-mono, monospace)"
                         fontSize={10.5}
                       >
-                        <tspan fill="#94a3b8" fontWeight={500}>Now </tspan>
-                        <tspan fill={currentTier.color} fontWeight={700}>
+                        <tspan fill={isLight ? '#64748b' : '#94a3b8'} fontWeight={500}>Now </tspan>
+                        <tspan fill={effectiveCurrentColor} fontWeight={700}>
                           {currentRating}
                         </tspan>
                       </text>
@@ -957,18 +1008,18 @@ export default function RatingChartV2({
               {activeIndex !== null && activeCoords && activePoint && (() => {
                 const formattedTopic = activePoint.topic
                   ? activePoint.topic
-                      .replace(/[-_]/g, ' ')
-                      .split(' ')
-                      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-                      .join(' ')
+                    .replace(/[-_]/g, ' ')
+                    .split(' ')
+                    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                    .join(' ')
                   : null
                 const hasTopic = Boolean(formattedTopic)
                 const dateStr = activePoint.date
                   ? new Date(activePoint.date).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })
                   : 'Recent match'
 
                 // Generous dynamic width so even long topics (e.g. Dynamic Programming) never overflow
@@ -1109,6 +1160,7 @@ export default function RatingChartV2({
       {/* ── 8. Rank Tier Track (Below Chart) ───────────────────────── */}
       <div className="chart-tier-ladder" role="region" aria-label="Rating tier thresholds">
         {CANONICAL_TIERS.map((tier) => {
+          const effectiveCol = getEffectiveTierColor(tier.color, tier.name, isLight)
           const rangeLabel = tier.nextThreshold
             ? `${tier.threshold}-${tier.nextThreshold - 1}`
             : `${tier.threshold}+`
@@ -1120,23 +1172,23 @@ export default function RatingChartV2({
             <div
               key={tier.name}
               className={`tier-ladder-item ${isCurrent ? 'is-active-tier' : ''}`}
-              title={`${tier.name}: ${rangeLabel} Elo`}
-              style={{ '--tier-dot-color': tier.color }}
+              aria-label={`${tier.name}: ${rangeLabel} Elo`}
+              style={{ '--tier-dot-color': effectiveCol }}
             >
               <div className="tier-ladder-header">
                 {isCurrent && isOwnProfile && (
-                  <span className="tier-ladder-current-tag" style={{ backgroundColor: tier.color }}>
+                  <span className="tier-ladder-current-tag" style={{ backgroundColor: effectiveCol, color: '#ffffff' }}>
                     You
                   </span>
                 )}
                 <span
                   className="tier-ladder-dot"
-                  style={{ backgroundColor: tier.color }}
+                  style={{ backgroundColor: effectiveCol }}
                   aria-hidden="true"
                 />
                 <span
                   className="tier-ladder-name"
-                  style={{ color: isCurrent ? tier.color : undefined }}
+                  style={{ color: isCurrent ? effectiveCol : undefined }}
                 >
                   {tier.name}
                 </span>

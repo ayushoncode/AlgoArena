@@ -77,7 +77,7 @@ function NavbarV2({ navigate, pathname }) {
     let isSubscribed = true
     setStreakLoading(true)
 
-    getStreakData()
+    getStreakData(user?.id)
       .then(data => {
         if (!isSubscribed) return
         if (data.isError) {
@@ -98,7 +98,7 @@ function NavbarV2({ navigate, pathname }) {
     return () => {
       isSubscribed = false
     }
-  }, [isAuthenticated, pathname])
+  }, [isAuthenticated, user?.id, pathname])
 
   function handleFlameClick() {
     setMenuOpen(false)
@@ -143,34 +143,13 @@ function NavbarV2({ navigate, pathname }) {
                 <Link
                   key={href}
                   to={href}
-                  className="relative flex items-center transition-colors duration-150"
-                  style={{
-                    fontFamily: 'var(--font-sans, "Sora Variable", sans-serif)',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    textDecoration: 'none',
-                    color: active ? 'var(--feat, #e2ebf5)' : 'var(--sub, #a2a9b8)',
-                    minHeight: '44px',
-                  }}
-                  onMouseOver={e => {
-                    if (!active) e.currentTarget.style.color = 'var(--ink, #ffffff)'
-                  }}
-                  onMouseOut={e => {
-                    if (!active) e.currentTarget.style.color = 'var(--sub, #a2a9b8)'
-                  }}
+                  className={`nav-v2-desktop-link ${active ? 'is-active' : ''}`}
                 >
                   {label}
                   {active && (
                     <span
                       aria-hidden="true"
-                      style={{
-                        position: 'absolute',
-                        bottom: '8px',
-                        left: 0,
-                        right: 0,
-                        height: '1.5px',
-                        background: 'var(--hair, rgba(196, 214, 232, 0.72))',
-                      }}
+                      className="nav-v2-link-underline"
                     />
                   )}
                 </Link>

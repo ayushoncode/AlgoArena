@@ -20,22 +20,22 @@
 }
 
 :root {
-  /* Tonal navy surface steps */
-  --bg-0: #02060f;
-  --bg-1: #060d1c;
-  --bg-2: #0a1428;
+  /* Tonal surface steps (Dark theme: Clean Neutral Developer Dark Mode) */
+  --bg-0: #1a1a1a;
+  --bg-1: #262626;
+  --bg-2: #2f2f2f;
 
   /* Editorial type colors */
   --ink: #ffffff;
-  --sub: #a2a9b8;
+  --sub: #a1a1aa;
   --nav: #fbfdff;
   --foot: #f4f8fd;
   --feat: #e2ebf5;
 
-  /* Precise hairlines */
-  --hair: rgba(196, 214, 232, 0.72);
-  --hair-muted: rgba(196, 214, 232, 0.16);
-  --hair-subtle: rgba(196, 214, 232, 0.08);
+  /* Precise hairlines (Neutral crisp borders, no sci-fi blue) */
+  --hair: rgba(255, 255, 255, 0.22);
+  --hair-muted: rgba(255, 255, 255, 0.08);
+  --hair-subtle: rgba(255, 255, 255, 0.04);
 
   /* Accents */
   --gold: #ffd696;
@@ -67,7 +67,9 @@
   --page-max-w: 1240px;
 }
 
-[data-theme="light"] {
+[data-theme="light"],
+html[data-theme="light"],
+:root[data-theme="light"] {
   /* Tonal surface steps (Light theme) */
   --bg-0: #f8fafc;
   --bg-1: #ffffff;
@@ -94,6 +96,29 @@
   --warn-tint: rgba(138, 90, 0, 0.12);
   --info: #1D5FA8;
   --info-tint: rgba(29, 95, 168, 0.12);
+
+  /* Accents (Light theme) */
+  --gold: #b45309;
+  --gold-glow: rgba(180, 83, 9, 0.12);
+  --blue: #0284c7;
+  --blue-glow: rgba(2, 132, 199, 0.12);
+}
+
+/* Outside pages (Landing page, Who We Are) must ALWAYS remain pure dark */
+html.is-landing,
+html.is-landing[data-theme="light"],
+.is-landing {
+  --bg-0: #02060f !important;
+  --bg-1: #060d1c !important;
+  --bg-2: #0a1428 !important;
+  --ink: #ffffff !important;
+  --sub: #a2a9b8 !important;
+  --nav: #fbfdff !important;
+  --foot: #f4f8fd !important;
+  --feat: #e2ebf5 !important;
+  --hair: rgba(196, 214, 232, 0.72) !important;
+  --hair-muted: rgba(196, 214, 232, 0.16) !important;
+  --hair-subtle: rgba(196, 214, 232, 0.08) !important;
 }
 
 /* Skeleton loader primitives with zero layout shift */

@@ -29,12 +29,12 @@ import '../styles/profile-v2.css'
 function getTierProgress(rating = 1200) {
   const r = Number(rating) || 1200
   const tiers = [
-    { name: 'Recruit', min: 0, max: 1199, nextMin: 1200, nextName: 'Operative' },
-    { name: 'Operative', min: 1200, max: 1399, nextMin: 1400, nextName: 'Vanguard' },
-    { name: 'Vanguard', min: 1400, max: 1599, nextMin: 1600, nextName: 'Champion' },
-    { name: 'Champion', min: 1600, max: 1799, nextMin: 1800, nextName: 'Legend' },
-    { name: 'Legend', min: 1800, max: 2199, nextMin: 2200, nextName: 'Bihari' },
-    { name: 'Bihari', min: 2200, max: 9999, nextMin: null, nextName: null },
+    { name: 'Novice', min: 0, max: 1199, nextMin: 1200, nextName: 'Apprentice' },
+    { name: 'Apprentice', min: 1200, max: 1399, nextMin: 1400, nextName: 'Specialist' },
+    { name: 'Specialist', min: 1400, max: 1599, nextMin: 1600, nextName: 'Expert' },
+    { name: 'Expert', min: 1600, max: 1799, nextMin: 1800, nextName: 'Candidate Master' },
+    { name: 'Candidate Master', min: 1800, max: 1999, nextMin: 2000, nextName: 'Grandmaster' },
+    { name: 'Grandmaster', min: 2000, max: 9999, nextMin: null, nextName: null },
   ]
   const current = tiers.find(t => r >= t.min && r <= t.max) || tiers[0]
   if (!current.nextMin) {

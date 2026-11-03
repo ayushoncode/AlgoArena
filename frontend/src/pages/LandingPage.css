@@ -62,7 +62,7 @@ html.is-landing main:not(.hero) {
 }
 
 /* ── 3. TOKENS (:root, scoped) ──────────────────────────── */
-:root {
+:root:not([data-theme="light"]) {
   --ink: #ffffff;
   --sub: #a2a9b8;
   --nav: #fbfdff;

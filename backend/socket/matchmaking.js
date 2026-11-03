@@ -52,15 +52,50 @@ function makeRoomId() {
 }
 
 /** Remove a socketId or userId from every queue bucket */
-function removeFromQueues(socketId, userId = null) {
+function removeFromQueues(socketId, userId = null, io = null) {
+  let changed = false
   for (const [key, bucket] of queues.entries()) {
     const before = bucket.length
     const filtered = bucket.filter(e => e.socketId !== socketId && (!userId || e.userId !== userId))
     if (filtered.length !== before) {
       queues.set(key, filtered)
+      changed = true
       console.log(`[Queue] removed socket=${socketId} user=${userId} from ${key} (${before} → ${filtered.length})`)
     }
   }
+  if (changed && io) {
+    broadcastLiveQueue(io)
+  }
+}
+
+/** Get list of all currently waiting challengers across all queues */
+function getActiveQueueChallenges() {
+  const active = []
+  for (const [topicKey, bucket] of queues.entries()) {
+    for (const entry of bucket) {
+      active.push({
+        id: entry.socketId,
+        userId: entry.userId,
+        username: entry.username,
+        rating: entry.rating,
+        avatar_seed: entry.avatar_seed,
+        avatar_style: entry.avatar_style,
+        topic: entry.topic,
+        difficulty: entry.difficulty,
+        problemId: entry.problemId,
+        problemTitle: entry.problemTitle || null,
+        joinedAt: entry.joinedAt
+      })
+    }
+  }
+  return active
+}
+
+/** Broadcast current open queue challenges to all connected lobby clients */
+function broadcastLiveQueue(io) {
+  if (!io) return
+  const active = getActiveQueueChallenges()
+  io.emit('live_queue_update', active)
 }
 
 /**
@@ -238,11 +273,18 @@ function registerMatchmaking(io) {
 
     console.log(`[Socket] authed  user=${username}  id=${socket.id}  transport=${socket.conn.transport.name}`)
 
+    // Immediately send current live challenges to newly connected client
+    socket.emit('live_queue_update', getActiveQueueChallenges())
+
+    socket.on('get_live_queue', () => {
+      socket.emit('live_queue_update', getActiveQueueChallenges())
+    })
+
     // ── Multiple Tab Support ─────────────────────
     // Removed single active session enforcement so users can open multiple tabs.
 
     /* ── join_queue ─────────────────────────────────────── */
-    socket.on('join_queue', async ({ topic, difficulty, problemId = null }) => {
+    socket.on('join_queue', async ({ topic, difficulty, problemId = null, problemTitle = null }) => {
       let rating = elo_rating ?? 1200
       let avatar_seed = socket.user.avatar_seed ?? null
       let avatar_style = socket.user.avatar_style ?? null
@@ -258,6 +300,13 @@ function registerMatchmaking(io) {
         }
       } catch (err) {
         console.warn('[Queue] Could not fetch fresh user info from DB:', err.message)
+      }
+
+      if (problemId && !problemTitle) {
+        try {
+          const { rows: pRows } = await db.query('SELECT title FROM problems WHERE id = $1', [problemId])
+          if (pRows[0]) problemTitle = pRows[0].title
+        } catch {}
       }
 
       // Premium guard: sheet-based 1v1 matchmaking requires active Premium when gating is enabled
@@ -282,7 +331,7 @@ function registerMatchmaking(io) {
       }
 
       // Guard: don't let same user join twice from any window
-      removeFromQueues(socket.id, userId)
+      removeFromQueues(socket.id, userId, io)
 
       const newEntry = {
         socketId:   socket.id,
@@ -294,6 +343,7 @@ function registerMatchmaking(io) {
         topic,
         difficulty,
         problemId,
+        problemTitle: problemTitle || (topic ? `${topic.charAt(0).toUpperCase() + topic.slice(1)}` : null),
         joinedAt:   Date.now(),
       }
 
@@ -315,29 +365,34 @@ function registerMatchmaking(io) {
         
         matchingUsers.add(newEntry.userId)
         matchingUsers.add(opponent.userId)
+
+        // Broadcast updated queue since opponent was paired
+        broadcastLiveQueue(io)
         
         executeMatch(io, newEntry, opponent, topic, difficulty, chosenProblemId).finally(() => {
           matchingUsers.delete(newEntry.userId)
           matchingUsers.delete(opponent.userId)
+          broadcastLiveQueue(io)
         })
       } else {
         // ── No match yet — push into queue ────────────────
         bucket.push(newEntry)
         socket.emit('queue_status', { status: 'waiting', position: bucket.length, topic, difficulty, problemId })
+        broadcastLiveQueue(io)
         console.log(`[Queue] waiting  ${username}  ${topicKey}  queue size: ${bucket.length}`)
       }
     })
 
     /* ── leave_queue ────────────────────────────────────── */
     socket.on('leave_queue', () => {
-      removeFromQueues(socket.id)
+      removeFromQueues(socket.id, null, io)
       socket.emit('queue_status', { status: 'cancelled' })
       console.log(`[Queue] ${username} left queue`)
     })
 
     /* ── disconnect ─────────────────────────────────────── */
     socket.on('disconnect', (reason) => {
-      removeFromQueues(socket.id)
+      removeFromQueues(socket.id, null, io)
       console.log(`[Socket] disconnected  user=${username}  id=${socket.id}  reason=${reason}`)
     })
   })
@@ -352,4 +407,4 @@ function queueStats() {
   return stats
 }
 
-module.exports = { registerMatchmaking, queueStats, removeFromQueues }
+module.exports = { registerMatchmaking, queueStats, removeFromQueues, getActiveQueueChallenges }

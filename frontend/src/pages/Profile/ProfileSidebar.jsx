@@ -158,7 +158,6 @@ export default function ProfileSidebar({
                 type="button"
                 onClick={() => setShowAvatarModal(true)}
                 className="avatar-change-btn"
-                title="Change Avatar"
                 aria-label="Change Avatar"
               >
                 Change avatar
@@ -167,13 +166,28 @@ export default function ProfileSidebar({
           </div>
 
           <div className="sidebar-names">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <h1 className="sidebar-display-name" style={{ margin: 0 }}>{displayName}</h1>
-              {isPremiumUser && <PremiumBadge size="sm" showLabel={true} />}
+              {isPremiumUser && (
+                <span
+                  title={launchSlotNum ? `Launch Member #${launchSlotNum}` : 'Premium Subscriber'}
+                  aria-label="Premium member"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    color: 'var(--gold, #ffd696)',
+                    verticalAlign: 'middle',
+                    cursor: 'default',
+                    flexShrink: 0,
+                  }}
+                >
+                  <IconHexagonBadge size={15} />
+                </span>
+              )}
             </div>
 
             {/* Permanent AlgoArena ID Handle */}
-            <span className="sidebar-handle">@{username}</span>
+            <span className="sidebar-handle">{username}</span>
 
             {/* Global Rank colored according to user's Tier */}
             <div className="sidebar-rank-row">
@@ -182,33 +196,9 @@ export default function ProfileSidebar({
                 className="sidebar-rank-value"
                 style={{ color: canonicalTier.color }}
               >
-                #{activeUser?.rank ? Number(activeUser.rank).toLocaleString() : '-'}
+                {activeUser?.rank ? Number(activeUser.rank).toLocaleString() : '-'}
               </span>
             </div>
-
-            {/* Premium Membership Status Pill */}
-            {isPremiumUser && (
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  marginTop: '8px',
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  background: 'rgba(255, 214, 150, 0.08)',
-                  border: '1px solid rgba(255, 214, 150, 0.32)',
-                  color: 'var(--gold, #ffd696)',
-                  fontSize: '11px',
-                  fontFamily: 'var(--font-mono, monospace)',
-                  letterSpacing: '0.03em',
-                  width: 'fit-content'
-                }}
-              >
-                <IconHexagonBadge size={13} />
-                <span>{launchSlotNum ? `Launch Member #${launchSlotNum}` : 'Premium Subscriber'}</span>
-              </div>
-            )}
           </div>
         </div>
 

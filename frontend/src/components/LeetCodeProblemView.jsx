@@ -4,11 +4,35 @@ import React, { useState } from 'react'
  * Renders inline markdown text:
  * Supports `inline code`, **bold**, *italics*, and regular text.
  */
+function cleanField(raw) {
+  if (!raw || typeof raw !== 'string') return ''
+  return raw
+    .replace(/(?:\r?\n)?---+$/g, '')    // remove trailing markdown divider lines
+    .replace(/^[-*•\s]+/, '')           // remove leading bullets / dashes
+    .replace(/^(\*\*|__)\s*/, '')       // remove leading opening bold
+    .replace(/\s*(\*\*|__)$/, '')       // remove trailing closing bold
+    .replace(/^(\*|_)\s*/, '')          // remove leading italic
+    .replace(/\s*(\*|_)$/, '')          // remove trailing italic
+    .trim()
+}
+
+const inputRegex = /^[-*•\s]*(?:`|\*\*|\*)?\s*Input\s*(?:`|\*\*|\*)?:?(?:`|\*\*|\*)?:?\s*/i
+const outputRegex = /^[-*•\s]*(?:`|\*\*|\*)?\s*Output\s*(?:`|\*\*|\*)?:?(?:`|\*\*|\*)?:?\s*/i
+const explanationRegex = /^[-*•\s]*(?:`|\*\*|\*)?\s*Explanation\s*(?:`|\*\*|\*)?:?(?:`|\*\*|\*)?:?\s*/i
+
 function renderInline(text) {
   if (!text) return null
+  if (typeof text !== 'string') return text
+
+  // Strip unmatched/orphan ** or __ if count is odd
+  let safeText = text
+  const starPairs = (safeText.match(/\*\*/g) || []).length
+  if (starPairs % 2 !== 0) {
+    safeText = safeText.replace(/^\*\*\s*/, '').replace(/\s*\*\*$/, '').replace(/\*\*/g, '')
+  }
 
   // Split by markdown formatting tokens
-  const tokens = text.split(/(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|_[^_]+_)/g)
+  const tokens = safeText.split(/(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|_[^_]+_)/g)
 
   return tokens.map((chunk, i) => {
     if (!chunk) return null
@@ -132,10 +156,21 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
       continue
     }
 
+    // Detect Examples Container Header (e.g. ### Examples or Examples:)
+    if (/^(?:#+\s*)?(?:\*\*)?Examples:?(?:\*\*)?$/i.test(trimmed)) {
+      currentSection = 'example'
+      continue
+    }
+
     // Detect Example Header (e.g. ### **Example 1:** or **Example 1:** or Example 1:)
     const exampleMatch = trimmed.match(/^(?:###\s*)?(?:\*\*)?Example\s*(\d+)?:?(?:\*\*)?:?/i)
     if (exampleMatch) {
-      if (curExample) examples.push(curExample)
+      if (curExample && (curExample.input || curExample.output || curExample.diagram)) {
+        curExample.input = cleanField(curExample.input)
+        curExample.output = cleanField(curExample.output)
+        curExample.explanation = cleanField(curExample.explanation)
+        examples.push(curExample)
+      }
       const num = exampleMatch[1] ? parseInt(exampleMatch[1], 10) : examples.length + 1
       curExample = { num, diagram: null, input: '', output: '', explanation: '', inExplanation: false }
       currentSection = 'example'
@@ -145,7 +180,10 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
     // Detect Constraints Header (e.g. ### **Constraints:** or Constraints:)
     const constraintsMatch = trimmed.match(/^(?:###\s*)?(?:\*\*)?Constraints:?(?:\*\*)?:?/i)
     if (constraintsMatch) {
-      if (curExample) {
+      if (curExample && (curExample.input || curExample.output || curExample.diagram)) {
+        curExample.input = cleanField(curExample.input)
+        curExample.output = cleanField(curExample.output)
+        curExample.explanation = cleanField(curExample.explanation)
         examples.push(curExample)
         curExample = null
       }
@@ -156,7 +194,10 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
     // Detect Hints Header
     const hintsMatch = trimmed.match(/^(?:###\s*)?(?:\*\*)?Hints:?(?:\*\*)?:?/i)
     if (hintsMatch) {
-      if (curExample) {
+      if (curExample && (curExample.input || curExample.output || curExample.diagram)) {
+        curExample.input = cleanField(curExample.input)
+        curExample.output = cleanField(curExample.output)
+        curExample.explanation = cleanField(curExample.explanation)
         examples.push(curExample)
         curExample = null
       }
@@ -164,38 +205,42 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
       continue
     }
 
-    if (!trimmed) continue
+    if (!trimmed || trimmed === '---') {
+      if (curExample) curExample.inExplanation = false
+      continue
+    }
 
     // Handle Example section lines
-    // Handle Example section lines
     if (currentSection === 'example' && curExample) {
-      const mdImgMatch = trimmed.match(/!\[(.*?)\]\((.*?)\)/)
+      const mdImgMatch = trimmed.match(/!\[(.*?)\]\((https?:\/\/[^\s\)]+)\)/i)
       const htmlImgMatch = trimmed.match(/<img[^>]*src=["']([^"']+)["'][^>]*>/i)
       const imgUrl = mdImgMatch ? mdImgMatch[2] : (htmlImgMatch ? htmlImgMatch[1] : null)
       if (imgUrl) {
-        curExample.image = imgUrl
+        if (!curExample.images) curExample.images = []
+        curExample.images.push(imgUrl)
+        curExample.image = curExample.images[0]
         continue
       }
 
-      if (/^\*?\*?Input\*?\*?:?/i.test(trimmed)) {
-        curExample.input = trimmed.replace(/^\*?\*?Input\*?\*?:?\s*/i, '').trim()
+      if (inputRegex.test(trimmed)) {
+        curExample.input = cleanField(trimmed.replace(inputRegex, ''))
         curExample.inExplanation = false
         continue
       }
-      if (/^\*?\*?Output\*?\*?:?/i.test(trimmed)) {
-        curExample.output = trimmed.replace(/^\*?\*?Output\*?\*?:?\s*/i, '').trim()
+      if (outputRegex.test(trimmed)) {
+        curExample.output = cleanField(trimmed.replace(outputRegex, ''))
         curExample.inExplanation = false
         continue
       }
-      if (/^\*?\*?Explanation\*?\*?:?/i.test(trimmed)) {
-        curExample.explanation = trimmed.replace(/^\*?\*?Explanation\*?\*?:?\s*/i, '').trim()
+      if (explanationRegex.test(trimmed)) {
+        curExample.explanation = cleanField(trimmed.replace(explanationRegex, ''))
         curExample.inExplanation = true
         continue
       }
 
       // If line is `root = [1,2,3]`, etc.
       if (!curExample.input && /^([a-zA-Z0-9_,\s]+=\s*.*)/.test(trimmed) && !trimmed.toLowerCase().startsWith('output')) {
-        curExample.input = trimmed
+        curExample.input = cleanField(trimmed)
         continue
       }
 
@@ -220,8 +265,14 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
     // Handle Constraints section lines
     if (currentSection === 'constraints') {
       let cleanConstraint = trimmed.replace(/^[-*•]\s*/, '').trim()
-      if (cleanConstraint) {
-        constraints.push(cleanConstraint)
+      if (cleanConstraint && cleanConstraint !== '---') {
+        cleanConstraint = cleanConstraint
+          .replace(/^\$|\$$/g, '')
+          .replace(/\\le/g, '<=')
+          .replace(/\\ge/g, '>=')
+          .replace(/\\times/g, '×')
+          .trim()
+        constraints.push(cleanField(cleanConstraint))
       }
       continue
     }
@@ -248,7 +299,7 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
           const prev = paragraphs[paragraphs.length - 1]
           const cells = trimmed.slice(1, -1).split('|').map(c => c.trim())
           const isSeparator = cells.every(c => /^:?-+:?$/.test(c))
-          
+
           if (prev && prev.type === 'table') {
             if (!isSeparator) {
               prev.rows.push(cells)
@@ -265,7 +316,10 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
     }
   }
 
-  if (curExample) {
+  if (curExample && (curExample.input || curExample.output || curExample.diagram)) {
+    curExample.input = cleanField(curExample.input)
+    curExample.output = cleanField(curExample.output)
+    curExample.explanation = cleanField(curExample.explanation)
     examples.push(curExample)
   }
 
@@ -274,8 +328,8 @@ function parseLeetCodeDescription(rawDesc, sampleInput, sampleOutput) {
     examples.push({
       num: 1,
       diagram: null,
-      input: sampleInput || '',
-      output: sampleOutput || '',
+      input: cleanField(sampleInput || ''),
+      output: cleanField(sampleOutput || ''),
       explanation: ''
     })
   }
@@ -287,15 +341,27 @@ function parseBlockIntoExample(block, ex) {
   const lines = block.split('\n')
   for (const l of lines) {
     const trimmed = l.trim()
-    if (!trimmed) continue
-    if (/^Input:/i.test(trimmed)) {
-      ex.input = trimmed.replace(/^Input:\s*/i, '').trim()
+    if (!trimmed || trimmed === '---') {
+      if (ex) ex.inExplanation = false
+      continue
+    }
+    const mdImgMatch = trimmed.match(/!\[(.*?)\]\((https?:\/\/[^\s\)]+)\)/i)
+    const htmlImgMatch = trimmed.match(/<img[^>]*src=["']([^"']+)["'][^>]*>/i)
+    const imgUrl = mdImgMatch ? mdImgMatch[2] : (htmlImgMatch ? htmlImgMatch[1] : null)
+    if (imgUrl) {
+      if (!ex.images) ex.images = []
+      ex.images.push(imgUrl)
+      ex.image = ex.images[0]
+      continue
+    }
+    if (inputRegex.test(trimmed)) {
+      ex.input = cleanField(trimmed.replace(inputRegex, ''))
       ex.inExplanation = false
-    } else if (/^Output:/i.test(trimmed)) {
-      ex.output = trimmed.replace(/^Output:\s*/i, '').trim()
+    } else if (outputRegex.test(trimmed)) {
+      ex.output = cleanField(trimmed.replace(outputRegex, ''))
       ex.inExplanation = false
-    } else if (/^Explanation:/i.test(trimmed)) {
-      ex.explanation = trimmed.replace(/^Explanation:\s*/i, '').trim()
+    } else if (explanationRegex.test(trimmed)) {
+      ex.explanation = cleanField(trimmed.replace(explanationRegex, ''))
       ex.inExplanation = true
     } else if (ex.inExplanation) {
       ex.explanation = ex.explanation ? ex.explanation + '\n' + trimmed : trimmed
@@ -305,19 +371,22 @@ function parseBlockIntoExample(block, ex) {
       ex.input += ' ' + trimmed
     } else if (!ex.input) {
       if ((trimmed.includes('=') || /^([a-zA-Z0-9_,\s]+=\s*.*)/.test(trimmed)) && !trimmed.toLowerCase().startsWith('output') && !trimmed.toLowerCase().startsWith('explanation')) {
-        ex.input = trimmed
+        ex.input = cleanField(trimmed)
       } else {
         if (!ex.diagram) ex.diagram = trimmed
         else ex.diagram += '\n' + l
       }
     }
   }
+  ex.input = cleanField(ex.input)
+  ex.output = cleanField(ex.output)
+  ex.explanation = cleanField(ex.explanation)
 }
 
 /**
  * Authentic LeetCode-grade Problem Description View
  */
-export { parseLeetCodeDescription, renderInline }
+export { parseLeetCodeDescription, renderInline, cleanField }
 export default function LeetCodeProblemView({ problem, difficulty, topic }) {
   const [showTopics, setShowTopics] = useState(false)
 
@@ -475,6 +544,7 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                     src={item.url}
                     alt={item.alt || "Problem illustration"}
                     className="max-w-full h-auto max-h-64 object-contain rounded"
+                    referrerPolicy="no-referrer"
                     onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
                   />
                 </div>
@@ -544,16 +614,17 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                   border: '1px solid var(--c-border)'
                 }}
               >
-                {ex.image && (
-                  <div className="bg-white p-2.5 border-b flex items-center justify-center" style={{ borderColor: 'var(--c-border)' }}>
+                {(ex.images && ex.images.length > 0 ? ex.images : (ex.image ? [ex.image] : [])).map((imgSrc, imgIdx) => (
+                  <div key={imgIdx} className="bg-white p-2.5 border-b flex items-center justify-center" style={{ borderColor: 'var(--c-border)' }}>
                     <img
-                      src={ex.image}
+                      src={imgSrc}
                       alt={`Example ${ex.num || idx + 1}`}
                       className="max-w-full h-auto max-h-64 object-contain rounded"
+                      referrerPolicy="no-referrer"
                       onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
                     />
                   </div>
-                )}
+                ))}
                 {/* Visual Tree / ASCII Diagram Preview if present */}
                 {ex.diagram && (
                   <div
@@ -574,7 +645,7 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                     <div className="flex flex-wrap items-baseline gap-1.5">
                       <span className="font-bold text-[color:var(--c-text-mute)] shrink-0 font-sans text-[12px]">Input:</span>
                       <code className="text-[color:var(--c-text)] break-all max-h-36 overflow-y-auto block pr-1">
-                        {ex.input.length > 500 ? ex.input.slice(0, 300) + ` ... [truncated ${ex.input.length - 300} chars]` : ex.input}
+                        {renderInline(cleanField(ex.input.length > 500 ? ex.input.slice(0, 300) + ` ... [truncated ${ex.input.length - 300} chars]` : ex.input))}
                       </code>
                     </div>
                   )}
@@ -583,7 +654,7 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                     <div className="flex flex-wrap items-baseline gap-1.5">
                       <span className="font-bold text-[color:var(--c-text-mute)] shrink-0 font-sans text-[12px]">Output:</span>
                       <code className="text-[#34d399] font-bold break-all max-h-36 overflow-y-auto block pr-1">
-                        {ex.output.length > 500 ? ex.output.slice(0, 300) + ` ... [truncated ${ex.output.length - 300} chars]` : ex.output}
+                        {renderInline(cleanField(ex.output.length > 500 ? ex.output.slice(0, 300) + ` ... [truncated ${ex.output.length - 300} chars]` : ex.output))}
                       </code>
                     </div>
                   )}
@@ -592,7 +663,7 @@ export default function LeetCodeProblemView({ problem, difficulty, topic }) {
                     <div className="pt-1 space-y-1">
                       <span className="font-bold text-[color:var(--c-text-mute)] shrink-0 font-sans text-[12px] block">Explanation:</span>
                       <div className="text-[color:var(--c-text)] font-sans text-[12px] leading-relaxed whitespace-pre-line pl-0.5">
-                        {renderInline(ex.explanation)}
+                        {renderInline(cleanField(ex.explanation))}
                       </div>
                     </div>
                   )}

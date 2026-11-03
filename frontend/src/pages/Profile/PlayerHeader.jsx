@@ -85,7 +85,6 @@ export default function PlayerHeader({
               type="button"
               onClick={() => setShowAvatarModal(true)}
               className="avatar-change-btn"
-              title="Change Avatar"
               aria-label="Change Avatar"
             >
               Change avatar

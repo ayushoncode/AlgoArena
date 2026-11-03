@@ -730,6 +730,272 @@ export const DEFAULT_STRIVER_CURRICULUM = [
         ]
       }
     ]
+  },
+  {
+    id: 'step-5-strings',
+    title: 'Strings',
+    topic: 'strings',
+    badge: 'Curriculum Ready',
+    subsections: [
+      {
+        title: 'Basic and Easy String Problems',
+        problems: [
+          {
+            id: '1bde0271-eba8-4e65-9a19-0d87702478a2',
+            title: 'Remove Outermost Parentheses',
+            slug: 'remove-outermost-parentheses',
+            topic: 'strings',
+            difficulty: 'easy',
+            sample_input: '"(()())(())"',
+            sample_output: '"()()()"'
+          },
+          {
+            id: 'a39b3100-0381-4109-a06d-5273cf7b8dbe',
+            title: 'Reverse Words in a String',
+            slug: 'reverse-words-in-a-string',
+            topic: 'strings',
+            difficulty: 'medium',
+            sample_input: '"the sky is blue"',
+            sample_output: '"blue is sky the"'
+          },
+          {
+            id: '13572739-c969-40d2-9029-8abb9ee863d3',
+            title: 'Largest Odd Number in String',
+            slug: 'largest-odd-number-in-string',
+            topic: 'strings',
+            difficulty: 'easy',
+            sample_input: '"52"',
+            sample_output: '"5"'
+          },
+          {
+            id: 'b4716156-4d04-4127-bfb6-62b7d625795e',
+            title: 'Longest Common Prefix',
+            slug: 'longest-common-prefix',
+            topic: 'strings',
+            difficulty: 'easy',
+            sample_input: '["flower","flow","flight"]',
+            sample_output: '"fl"'
+          },
+          {
+            id: 'a492153c-7921-45f9-8157-b8091b599a9b',
+            title: 'Isomorphic Strings',
+            slug: 'isomorphic-strings',
+            topic: 'strings',
+            difficulty: 'easy',
+            sample_input: '"egg", "add"',
+            sample_output: 'true'
+          },
+          {
+            id: 'a8da426b-cd1f-4d91-b96e-9b04a081738a',
+            title: 'Rotate String',
+            slug: 'rotate-string',
+            topic: 'strings',
+            difficulty: 'easy',
+            sample_input: '"abcde", "cdeab"',
+            sample_output: 'true'
+          },
+          {
+            id: '53356cd1-454d-44d4-91f2-d0df4223bb9b',
+            title: 'Valid Anagram',
+            slug: 'valid-anagram',
+            topic: 'strings',
+            difficulty: 'easy',
+            sample_input: '"anagram", "nagaram"',
+            sample_output: 'true'
+          }
+        ]
+      },
+      {
+        title: 'Medium String Problems',
+        problems: [
+          {
+            id: 'd8c00f1b-ec14-4abc-8828-a5d6a359ee81',
+            title: 'Sort Characters By Frequency',
+            slug: 'sort-characters-by-frequency',
+            topic: 'strings',
+            difficulty: 'medium',
+            sample_input: '"tree"',
+            sample_output: '"eert"'
+          },
+          {
+            id: '7ed8b71c-6511-40f5-9b7e-4739a165e1fb',
+            title: 'Maximum Nesting Depth of the Parentheses',
+            slug: 'maximum-nesting-depth-of-the-parentheses',
+            topic: 'strings',
+            difficulty: 'easy',
+            sample_input: '"(1+(2*3)+((8)/4))+1"',
+            sample_output: '3'
+          },
+          {
+            id: 'd37c4560-471e-45ff-88b5-2e2ceea9bb4e',
+            title: 'Roman to Integer',
+            slug: 'roman-to-integer',
+            topic: 'strings',
+            difficulty: 'easy',
+            sample_input: '"III"',
+            sample_output: '3'
+          },
+          {
+            id: '33ddd563-d1f3-45e9-a3f4-7f55bddcd941',
+            title: 'String to Integer (atoi)',
+            slug: 'string-to-integer-atoi',
+            topic: 'strings',
+            difficulty: 'medium',
+            sample_input: '"42"',
+            sample_output: '42'
+          },
+          {
+            id: '1bca12df-4c49-4486-b4de-fc1de9bd029e',
+            title: 'Count Number of Substrings',
+            slug: 'count-number-of-substrings',
+            topic: 'strings',
+            difficulty: 'medium',
+            sample_input: '"aba", 2',
+            sample_output: '3'
+          },
+          {
+            id: '8e345781-1280-4cab-aa6e-88dee6366205',
+            title: 'Longest Palindromic Substring',
+            slug: 'longest-palindromic-substring',
+            topic: 'strings',
+            difficulty: 'medium',
+            sample_input: '"babad"',
+            sample_output: '"bab"'
+          },
+          {
+            id: 'cccc018f-1857-4dd0-8ca0-42a94496e097',
+            title: 'Sum of Beauty of All Substrings',
+            slug: 'sum-of-beauty-of-all-substrings',
+            topic: 'strings',
+            difficulty: 'medium',
+            sample_input: '"aabcb"',
+            sample_output: '5'
+          },
+          {
+            id: '1e00c2e7-6893-4488-b783-fa57b1e0c25e',
+            title: 'Find the Index of the First Occurrence in a String',
+            slug: 'find-the-index-of-the-first-occurrence-in-a-string',
+            topic: 'strings',
+            difficulty: 'medium',
+            sample_input: '"sadbutsad", "sad"',
+            sample_output: '0'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'step-6-learn-linkedlist',
+    title: 'Learn LinkedList',
+    topic: 'linked-list',
+    badge: 'Curriculum Ready',
+    subsections: [
+      {
+        title: 'Learn 1D LinkedList',
+        problems: [
+          {
+            id: '7f9530eb-ce06-4beb-8bcd-132549816702',
+            title: 'Introduction to Linked List',
+            slug: 'introduction-to-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[1, 2, 3, 4, 5]',
+            sample_output: '[1, 2, 3, 4, 5]'
+          },
+          {
+            id: '72d133e2-4c7d-4abc-8ea7-4400391d3321',
+            title: 'Insert Node at the End of Linked List',
+            slug: 'insert-node-at-the-end-of-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[1, 2, 3, 4, 5], 6',
+            sample_output: '[1, 2, 3, 4, 5, 6]'
+          },
+          {
+            id: '575d7c09-9a5e-4f33-a2e1-297683bbe06e',
+            title: 'Delete Node in a Linked List',
+            slug: 'delete-node-in-a-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[4, 5, 1, 9], 5',
+            sample_output: '[4, 1, 9]'
+          },
+          {
+            id: 'e2ba666f-9fd8-41bc-b265-efbd6374a395',
+            title: 'Count Nodes of Linked List',
+            slug: 'count-nodes-of-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[1, 2, 3, 4, 5]',
+            sample_output: '5'
+          },
+          {
+            id: '1a6c4dfe-8e73-40fa-9ca9-0418e1256dd8',
+            title: 'Search in a Linked List',
+            slug: 'search-in-a-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[1, 2, 3, 4], 3',
+            sample_output: 'true'
+          }
+        ]
+      },
+      {
+        title: 'Learn Doubly LinkedList',
+        problems: [
+          {
+            id: 'c87d292b-a825-4e7d-98ae-79aa0f5ed9ab',
+            title: 'Introduction to Doubly Linked List',
+            slug: 'introduction-to-doubly-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[1, 2, 3, 4, 5]',
+            sample_output: '[1, 2, 3, 4, 5]'
+          },
+          {
+            id: '5cca4f36-5d4e-4f92-95bd-9c1ed356a752',
+            title: 'Insert a Node in Doubly Linked List',
+            slug: 'insert-a-node-in-doubly-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[2, 4, 5], 2, 6',
+            sample_output: '[2, 4, 5, 6]'
+          },
+          {
+            id: '55748ff9-772a-417e-8e16-b18e48191008',
+            title: 'Delete Node in Doubly Linked List',
+            slug: 'delete-node-in-doubly-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[1, 3, 4], 3',
+            sample_output: '[1, 3]'
+          },
+          {
+            id: '829021b5-fb89-4706-9837-72313acfa3be',
+            title: 'Reverse a Doubly Linked List',
+            slug: 'reverse-a-doubly-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[3, 4, 5]',
+            sample_output: '[5, 4, 3]'
+          }
+        ]
+      },
+      {
+        title: 'Medium Problems of LL',
+        problems: [
+          {
+            id: '35e61f94-74e6-4b95-86f6-1a115756a663',
+            title: 'Middle of the Linked List',
+            slug: 'middle-of-the-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[1, 2, 3, 4, 5]',
+            sample_output: '[3, 4, 5]'
+          }
+        ]
+      }
+    ]
   }
 ]
 

@@ -248,7 +248,7 @@ export default function MobileMenuSheet({
                 background: 'rgba(255, 214, 150, 0.05)',
                 border: '1px solid rgba(255, 214, 150, 0.25)',
                 borderRadius: '8px',
-                margin: '4px 8px 8px 8px',
+                margin: '4px 0 8px 0',
                 padding: '10px 12px'
               }}
             >

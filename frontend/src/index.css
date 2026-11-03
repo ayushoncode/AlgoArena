@@ -13,19 +13,14 @@
 
 /* ── CSS Custom Properties (Design Tokens) ──────────────── */
 :root {
-  /* Core Palette */
-  --c-void: #05070F;
-  /* deep space black */
-  --c-panel: #0B1120;
-  /* steel panel dark */
-  --c-panel2: #121A2E;
-  /* steel panel mid */
-  --c-border: #1C2842;
-  /* HUD border */
-  --c-border2: #243356;
-  /* active border */
-  --c-nav-bg: rgba(5, 7, 15, 0.92);
-  --c-vignette: rgba(5, 7, 15, 0.7);
+  /* Core Palette (Clean Neutral Developer Dark Mode) */
+  --c-void: #1a1a1a;
+  --c-panel: #262626;
+  --c-panel2: #2f2f2f;
+  --c-border: rgba(255, 255, 255, 0.08);
+  --c-border2: rgba(255, 255, 255, 0.14);
+  --c-nav-bg: rgba(26, 26, 26, 0.92);
+  --c-vignette: rgba(26, 26, 26, 0.7);
 
   /* Accent Colors */
   --c-red: #E11D48;
@@ -43,9 +38,9 @@
   /* legacy / accent only */
 
   /* Text */
-  --c-text: #E2E8F4;
-  --c-text-dim: #8B9ABB;
-  --c-text-mute: #4A5878;
+  --c-text: #eff1f6;
+  --c-text-dim: #a1a1aa;
+  --c-text-mute: #71717a;
 
   /* Fonts */
   --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -54,17 +49,17 @@
 }
 
 [data-theme="dark"] {
-  --c-void: #05070F;
-  --c-panel: #0B1120;
-  --c-panel2: #121A2E;
-  --c-border: #1C2842;
-  --c-border2: #243356;
-  --c-nav-bg: rgba(5, 7, 15, 0.92);
-  --c-vignette: rgba(5, 7, 15, 0.7);
+  --c-void: #1a1a1a;
+  --c-panel: #262626;
+  --c-panel2: #2f2f2f;
+  --c-border: rgba(255, 255, 255, 0.08);
+  --c-border2: rgba(255, 255, 255, 0.14);
+  --c-nav-bg: rgba(26, 26, 26, 0.92);
+  --c-vignette: rgba(26, 26, 26, 0.7);
 
-  --c-text: #E2E8F4;
-  --c-text-dim: #8B9ABB;
-  --c-text-mute: #4A5878;
+  --c-text: #eff1f6;
+  --c-text-dim: #a1a1aa;
+  --c-text-mute: #71717a;
 }
 
 [data-theme="light"] {
@@ -787,20 +782,34 @@
 }
 
 /* ── Tier glow colors ──────────────────────────────────── */
+.tier-novice,
 .tier-recruit {
   color: #94a3b8;
 }
 
+.tier-apprentice,
 .tier-operative {
   color: #10b981;
 }
 
+.tier-specialist,
 .tier-vanguard {
-  color: #38BDF8;
+  color: #06b6d4;
 }
 
+.tier-expert,
 .tier-champion {
-  color: #818cf8;
+  color: #3b82f6;
+}
+
+.tier-candidate-master,
+.tier-legend {
+  color: #a855f7;
+}
+
+.tier-grandmaster,
+.tier-bihari {
+  color: #f97316;
 }
 
 .tier-legend {

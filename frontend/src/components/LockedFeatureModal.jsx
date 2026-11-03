@@ -16,12 +16,14 @@ import { IconLock, IconClose } from './icons'
 const FEATURE_TITLES = {
   sheet_1v1: 'Striver A2Z 1v1 Battle',
   sheet: 'Striver A2Z Curriculum',
+  voice_chat: 'Live Voice Communication',
   default: 'Premium Feature'
 }
 
 const FEATURE_DESCRIPTIONS = {
   sheet_1v1: 'Duel 1v1 on curated curriculum problems with live judge verdicts.',
   sheet: 'Structured curriculum topic breakdown and problem indexing.',
+  voice_chat: 'Real-time 1v1 voice communication during live matches.',
   default: 'Curated curriculum indexing and question-by-question duel matchmaking.'
 }
 
@@ -92,7 +94,7 @@ export default function LockedFeatureModal({ isOpen, onClose, featureKey = 'shee
       aria-describedby="locked-modal-desc"
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{
-        background: 'rgba(2, 6, 15, 0.78)',
+        background: 'rgba(0, 0, 0, 0.75)',
         backdropFilter: 'none'
       }}
       onClick={(e) => {
