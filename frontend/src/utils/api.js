@@ -38,7 +38,10 @@ api.interceptors.response.use(
     }
     const msg = error?.response?.data?.message || error.message || 'Unknown error'
     console.error('[API Error]', msg)
-    return Promise.reject(new Error(msg))
+    const errObj = new Error(msg)
+    errObj.response = error?.response
+    errObj.status = error?.response?.status
+    return Promise.reject(errObj)
   }
 )
 

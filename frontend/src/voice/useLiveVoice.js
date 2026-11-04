@@ -9,7 +9,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../utils/api';
 import { VOICE_CONFIG } from '../content/voice';
 
-export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium, isOppPremium }) {
+export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium, isOppPremium, oppBadgeResolved = true }) {
   const [voiceState, setVoiceState] = useState('off'); // off, requesting, incoming, connecting, connected, live, reconnecting, failed, ended
   const [isMicMuted, setIsMicMuted] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -37,6 +37,8 @@ export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium
   const providerRef = useRef(null);
   const countdownTimerRef = useRef(null);
   const pendingActionRef = useRef(null); // 'start' | 'accept'
+  const doStartVoiceRequestRef = useRef(null);
+  const doAcceptVoiceRef = useRef(null);
 
   const myId = String(me?.id || me?.userId || '');
   const oppId = String(opp?.id || opp?.userId || '');
@@ -57,10 +59,14 @@ export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium
     setShowFirstUseModal(false);
     if (pendingActionRef.current === 'start') {
       pendingActionRef.current = null;
-      doStartVoiceRequest();
+      if (doStartVoiceRequestRef.current) {
+        doStartVoiceRequestRef.current();
+      }
     } else if (pendingActionRef.current === 'accept') {
       pendingActionRef.current = null;
-      doAcceptVoice();
+      if (doAcceptVoiceRef.current) {
+        doAcceptVoiceRef.current();
+      }
     }
   }, []);
 
@@ -178,7 +184,14 @@ export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium
           setErrorMessage(VOICE_CONFIG.copy.requestExpired);
         } else if (data.reason === 'declined') {
           setErrorMessage(VOICE_CONFIG.copy.requestDeclined);
+        } else if (data.reason === 'opponent_not_premium') {
+          setErrorMessage(VOICE_CONFIG.copy.opponentNotPremium);
+        } else if (data.reason === 'premium_required') {
+          setErrorMessage(VOICE_CONFIG.copy.premiumRequired);
         }
+      } else if (data.status === 'failed') {
+        setVoiceState('failed');
+        setErrorMessage(data.message || VOICE_CONFIG.copy.connectionFailed);
       } else if (data.status === 'limit_reached') {
         setErrorMessage(VOICE_CONFIG.copy.limitReached);
       } else if (data.status === 'ended') {
@@ -211,7 +224,8 @@ export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium
       setErrorMessage(VOICE_CONFIG.copy.premiumRequired);
       return;
     }
-    if (!isOppPremium) {
+    // Only pre-gate opponent if badges have actually loaded and opponent is confirmed non-premium
+    if (oppBadgeResolved && !isOppPremium) {
       setErrorMessage(VOICE_CONFIG.copy.opponentNotPremium);
       return;
     }
@@ -224,7 +238,9 @@ export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium
     }
 
     socket.emit('voice:request', { roomId });
-  }, [socket, roomId, isMePremium, isOppPremium]);
+  }, [socket, roomId, isMePremium, isOppPremium, oppBadgeResolved]);
+
+  doStartVoiceRequestRef.current = doStartVoiceRequest;
 
   const requestVoice = useCallback(() => {
     if (!isFirstUseAcked()) {
@@ -240,6 +256,8 @@ export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium
     setErrorMessage(null);
     socket.emit('voice:accept', { roomId });
   }, [socket, roomId]);
+
+  doAcceptVoiceRef.current = doAcceptVoice;
 
   const acceptVoice = useCallback(() => {
     if (!isFirstUseAcked()) {
