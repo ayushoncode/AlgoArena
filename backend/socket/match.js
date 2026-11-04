@@ -250,14 +250,54 @@ function registerMatch(io) {
     })
 
     /* ── Live Voice Consent Signaling (voice:*) ──────────── */
-    socket.on('voice:request', ({ roomId }) => {
+    socket.on('voice:request', async ({ roomId }) => {
       const voiceConfig = require('../config/voice')
-      if (!voiceConfig.isVoiceEnabled) return
+      if (!voiceConfig.isVoiceEnabled) {
+        socket.emit('voice:state', {
+          roomId,
+          status: 'failed',
+          reason: 'voice_disabled',
+          message: 'Live Voice is currently disabled on the server.',
+        })
+        return
+      }
       if (!roomId) return
       const match = activeMatches.get(roomId)
       if (!match || match.isResolved) return
       const isParticipant = match.players?.some(p => String(p.userId) === String(userId))
       if (!isParticipant) return
+
+      // Validate premium entitlements if required
+      if (voiceConfig.requireBothPremium) {
+        const oppPlayer = match.players?.find(p => String(p.userId) !== String(userId))
+        if (oppPlayer?.userId) {
+          try {
+            const { getEntitlements } = require('../services/premium')
+            const [myEnt, oppEnt] = await Promise.all([
+              getEntitlements(userId),
+              getEntitlements(oppPlayer.userId),
+            ])
+            if (!myEnt.isPremium) {
+              socket.emit('voice:state', {
+                roomId,
+                status: 'idle',
+                reason: 'premium_required',
+              })
+              return
+            }
+            if (!oppEnt.isPremium) {
+              socket.emit('voice:state', {
+                roomId,
+                status: 'idle',
+                reason: 'opponent_not_premium',
+              })
+              return
+            }
+          } catch (err) {
+            console.warn('[Match] voice:request entitlement error:', err.message)
+          }
+        }
+      }
 
       if (!match.voiceConsent) {
         match.voiceConsent = {
@@ -314,7 +354,15 @@ function registerMatch(io) {
 
     socket.on('voice:accept', ({ roomId }) => {
       const voiceConfig = require('../config/voice')
-      if (!voiceConfig.isVoiceEnabled) return
+      if (!voiceConfig.isVoiceEnabled) {
+        socket.emit('voice:state', {
+          roomId,
+          status: 'failed',
+          reason: 'voice_disabled',
+          message: 'Live Voice is currently disabled on the server.',
+        })
+        return
+      }
       if (!roomId) return
       const match = activeMatches.get(roomId)
       if (!match || match.isResolved || !match.voiceConsent) return

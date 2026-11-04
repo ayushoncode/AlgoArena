@@ -928,8 +928,20 @@ export default function Match() {
   const isLegacy = searchParams.get('ui') === 'legacy' || import.meta.env.VITE_BATTLE_UI === 'legacy'
 
   const { isPremium: isMePremium, openLockedModal } = usePremium()
-  const oppBadges = usePremiumBadges(opp?.username ? [opp.username] : [], opp?.id ? [opp.id] : [])
-  const isOppPremium = Boolean(opp?.username && (oppBadges[opp.username.toLowerCase()] || oppBadges[opp.id]))
+  const oppId = opp?.userId || opp?.id
+  const oppBadges = usePremiumBadges(opp?.username ? [opp.username] : [], oppId ? [oppId] : [])
+  const oppBadgeResolved = Boolean(
+    opp?.username && (
+      oppBadges[opp.username.toLowerCase()] !== undefined ||
+      (oppId && oppBadges[oppId] !== undefined)
+    )
+  )
+  const isOppPremium = Boolean(
+    opp?.username && (
+      oppBadges[opp.username.toLowerCase()] ||
+      (oppId && oppBadges[oppId])
+    )
+  )
 
   const voice = useLiveVoice({
     roomId,
@@ -939,6 +951,7 @@ export default function Match() {
     isConnected: connected,
     isMePremium,
     isOppPremium,
+    oppBadgeResolved,
   })
 
   const voiceControlElement = (
