@@ -18,6 +18,9 @@ import { usePremiumBadges } from '../hooks/usePremiumBadges'
 import { useLiveVoice } from '../voice/useLiveVoice'
 import VoiceControl from '../components/voice/VoiceControl'
 import VoiceDock from '../components/voice/VoiceDock'
+import VoiceRow from '../components/voice/VoiceRow'
+import VoiceBottomSheet from '../components/voice/VoiceBottomSheet'
+import VoiceMobileStrip from '../components/voice/VoiceMobileStrip'
 import IncomingVoicePrompt from '../components/voice/IncomingVoicePrompt'
 import VoiceFirstUseModal from '../components/voice/VoiceFirstUseModal'
 import VoiceSettingsModal from '../components/voice/VoiceSettingsModal'
@@ -582,7 +585,7 @@ export default function Match() {
   // Panel widths — draggable
   const probPanel = useDragResize(320, 220, 560)
   const [probCollapsed, setProbCollapsed] = useState(false)
-  const oppPanel = useDragResize(180, 120, 360)
+  const oppPanel = useDragResize(280, 260, 360)
 
   // Match state from navigation, sessionStorage or socket
   const [matchState, setMatchState] = useState(() => {
@@ -640,7 +643,7 @@ export default function Match() {
   const [oppDisconnectState, setOppDisconnectState] = useState(null)
   const [oppProgress, setOppProgress] = useState(null)
   const [showResignModal, setShowResignModal] = useState(false)
-  
+
   // Mobile Tab State
   const [mobileTab, setMobileTab] = useState('editor')
 
@@ -712,7 +715,7 @@ export default function Match() {
         sessionStorage.removeItem(`aa_match_${roomId}`)
         clearActiveMatch(roomId)
       }
-      try { emit('leave_queue') } catch {}
+      try { emit('leave_queue') } catch { }
       // Give 1.4s for user to see the green ACCEPTED indicator before going to results
       setTimeout(() => {
         navigate('/result', { state: { ...payload, roomId } })
@@ -781,7 +784,7 @@ export default function Match() {
     if (myVerdict === 'ACCEPTED' || remaining === 0) return
 
     window.history.pushState(null, '', window.location.href)
-    
+
     function handlePopState(e) {
       window.history.pushState(null, '', window.location.href)
       setShowResignModal(true)
@@ -911,7 +914,7 @@ export default function Match() {
     const onMove = (ev) => {
       if (!dragging.active) return
       const delta = dragging.startX - ev.clientX
-      oppPanel.setWidth(Math.min(360, Math.max(120, dragging.startW + delta)))
+      oppPanel.setWidth(Math.min(360, Math.max(260, dragging.startW + delta)))
     }
     const onUp = () => {
       dragging.active = false
@@ -943,6 +946,8 @@ export default function Match() {
     )
   )
 
+  const [showVoiceBottomSheet, setShowVoiceBottomSheet] = useState(false)
+
   const voice = useLiveVoice({
     roomId,
     me: me || (user ? { id: user.id, username: user.username } : null),
@@ -958,7 +963,10 @@ export default function Match() {
     <VoiceControl
       voiceState={voice.voiceState}
       isMicMuted={voice.isMicMuted}
+      mutedByOpponent={voice.mutedByOpponent}
       speakingLevel={voice.speakingLevel}
+      outputVolume={voice.outputVolume}
+      isOpponentMutedLocally={voice.isOpponentMutedLocally}
       isMePremium={isMePremium}
       isOppPremium={isOppPremium}
       requestExpiresAt={voice.requestExpiresAt}
@@ -968,13 +976,60 @@ export default function Match() {
       onDeclineVoice={voice.declineVoice}
       onEndVoice={voice.endVoice}
       onToggleMute={voice.toggleMute}
+      onToggleOpponentMute={voice.toggleOpponentMuteLocally}
+      onChangeVolume={voice.changeOutputVolume}
+      onOpenSettings={() => voice.setShowSettingsModal(true)}
+      onOpenReport={() => voice.setShowReportModal(true)}
+      onOpenBlock={() => voice.setShowBlockModal(true)}
+      onOpenBottomSheet={() => setShowVoiceBottomSheet(true)}
     />
   )
+
+  const voiceRowElement = (
+    <VoiceRow
+      voiceState={voice.voiceState}
+      isMicMuted={voice.isMicMuted}
+      mutedByOpponent={voice.mutedByOpponent}
+      isOpponentSpeaking={voice.isOpponentSpeaking}
+      speakingLevel={voice.speakingLevel}
+      opponentSpeakingLevel={voice.opponentSpeakingLevel}
+      quality={voice.quality}
+      outputVolume={voice.outputVolume}
+      isOpponentMutedLocally={voice.isOpponentMutedLocally}
+      isMePremium={isMePremium}
+      isOppPremium={isOppPremium}
+      requestExpiresAt={voice.requestExpiresAt}
+      errorMessage={voice.errorMessage}
+      onOpenPremium={() => openLockedModal('voice_chat')}
+      onRequestVoice={voice.requestVoice}
+      onAcceptVoice={voice.acceptVoice}
+      onDeclineVoice={voice.declineVoice}
+      onEndVoice={voice.endVoice}
+      onToggleMute={voice.toggleMute}
+      onToggleOpponentMute={voice.toggleOpponentMuteLocally}
+      onChangeVolume={voice.changeOutputVolume}
+      onOpenSettings={() => voice.setShowSettingsModal(true)}
+      onOpenReport={() => voice.setShowReportModal(true)}
+      onOpenBlock={() => voice.setShowBlockModal(true)}
+      onClearError={voice.clearError}
+    />
+  )
+
+  const voiceMobileStripElement = (voice.voiceState === 'connected' || voice.voiceState === 'live') ? (
+    <VoiceMobileStrip
+      isMicMuted={voice.isMicMuted}
+      isOpponentMutedLocally={voice.isOpponentMutedLocally}
+      onToggleMute={voice.toggleMute}
+      onToggleOpponentMute={voice.toggleOpponentMuteLocally}
+      onEndVoice={voice.endVoice}
+    />
+  ) : null
 
   const voiceDockElement = (voice.voiceState === 'connected' || voice.voiceState === 'live' || voice.voiceState === 'reconnecting') ? (
     <VoiceDock
       opp={opp}
       isMicMuted={voice.isMicMuted}
+      mutedByOpponent={voice.mutedByOpponent}
       isOpponentSpeaking={voice.isOpponentSpeaking}
       speakingLevel={voice.speakingLevel}
       opponentSpeakingLevel={voice.opponentSpeakingLevel}
@@ -1046,110 +1101,134 @@ export default function Match() {
           oppDisconnectState={oppDisconnectState}
           oppPanelWidth={oppPanel.width}
           onMouseDownOpp={handleOpponentDrag}
-          onResetOppWidth={() => oppPanel.setWidth(180)}
+          onResetOppWidth={() => oppPanel.setWidth(280)}
           mobileTab={mobileTab}
           setMobileTab={setMobileTab}
           voiceControl={voiceControlElement}
           voiceDock={voiceDockElement}
           voiceIncomingPrompt={voiceIncomingPromptElement}
           voiceErrorBanner={voiceErrorBannerElement}
-          voiceSlotForRival={voiceDockElement || voiceControlElement}
+          voiceSlotForRival={voiceRowElement}
+          voiceMobileStrip={voiceMobileStripElement}
+          isOpponentSpeaking={voice.isOpponentSpeaking}
         >
-        <div className="flex flex-col flex-1 h-full min-w-0">
-          <EditorToolbarV2
-            player={me ?? { username: user?.username, rating: user?.elo_rating }}
-            user={user}
-            verdict={myVerdict}
-            progress={submitProgress}
-            langs={LANGS}
-            lang={lang}
-            onLangChange={handleLangChange}
-            running={running}
-            submitting={submitting}
-            onRun={handleRun}
-            onSubmit={handleSubmit}
-          />
+          <div className="flex flex-col flex-1 h-full min-w-0">
+            <EditorToolbarV2
+              player={me ?? { username: user?.username, rating: user?.elo_rating }}
+              user={user}
+              verdict={myVerdict}
+              progress={submitProgress}
+              langs={LANGS}
+              lang={lang}
+              onLangChange={handleLangChange}
+              running={running}
+              submitting={submitting}
+              onRun={handleRun}
+              onSubmit={handleSubmit}
+            />
 
-          {/* Monaco */}
-          <div className="flex-1 min-h-0">
-            <Editor
-              height="100%"
-              language={lang}
-              value={code}
-              onChange={v => {
-                const val = v ?? ''
-                setUserHasTyped(true)
-                setCodeMap(prev => ({ ...prev, [lang]: val }))
-                const lineCount = val.split('\n').length
-                const charCount = val.length
-                emit('code_change', { roomId, lineCount, charCount, isTyping: true })
-                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
-                typingTimeoutRef.current = setTimeout(() => {
-                  emit('code_change', { roomId, lineCount, charCount, isTyping: false })
-                }, 1200)
-              }}
-              theme={theme === 'dark' ? 'algoarena-v2-dark' : 'algoarena-v2-light'}
-              beforeMount={defineTheme}
-              onMount={e => {
-                editorRef.current = e
-                window.__monacoMountCount = (window.__monacoMountCount || 0) + 1
-              }}
-              options={{
-                fontSize: 13,
-                fontFamily: "'JetBrains Mono', monospace",
-                fontLigatures: false,
-                lineNumbers: 'on',
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                renderLineHighlight: 'line',
-                padding: { top: 16 },
-                tabSize: 2,
-                wordWrap: 'on',
-                smoothScrolling: true,
-                cursorBlinking: 'phase',
-                renderWhitespace: 'none',
-              }}
+            {/* Monaco */}
+            <div className="flex-1 min-h-0">
+              <Editor
+                height="100%"
+                language={lang}
+                value={code}
+                onChange={v => {
+                  const val = v ?? ''
+                  setUserHasTyped(true)
+                  setCodeMap(prev => ({ ...prev, [lang]: val }))
+                  const lineCount = val.split('\n').length
+                  const charCount = val.length
+                  emit('code_change', { roomId, lineCount, charCount, isTyping: true })
+                  if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+                  typingTimeoutRef.current = setTimeout(() => {
+                    emit('code_change', { roomId, lineCount, charCount, isTyping: false })
+                  }, 1200)
+                }}
+                theme={theme === 'dark' ? 'algoarena-v2-dark' : 'algoarena-v2-light'}
+                beforeMount={defineTheme}
+                onMount={e => {
+                  editorRef.current = e
+                  window.__monacoMountCount = (window.__monacoMountCount || 0) + 1
+                }}
+                options={{
+                  fontSize: 13,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontLigatures: false,
+                  lineNumbers: 'on',
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                  renderLineHighlight: 'line',
+                  padding: { top: 16 },
+                  tabSize: 2,
+                  wordWrap: 'on',
+                  smoothScrolling: true,
+                  cursorBlinking: 'phase',
+                  renderWhitespace: 'none',
+                }}
+              />
+            </div>
+
+            {/* Results Console V2 */}
+            <RunConsoleV2
+              runResult={runResult}
+              submitResult={submitResult}
+              submitting={submitting}
+              submitProgress={submitProgress}
+              onClose={() => { setRunResult(null); setSubmitResult(null) }}
             />
           </div>
+        </BattleRoomV2>
 
-          {/* Results Console V2 */}
-          <RunConsoleV2
-            runResult={runResult}
-            submitResult={submitResult}
-            submitting={submitting}
-            submitProgress={submitProgress}
-            onClose={() => { setRunResult(null); setSubmitResult(null) }}
-          />
-        </div>
-      </BattleRoomV2>
-
-      {/* Voice Modals */}
-      <VoiceFirstUseModal
-        isOpen={voice.showFirstUseModal}
-        onClose={() => voice.setShowFirstUseModal(false)}
-        onContinue={voice.markFirstUseAcked}
-        onConfirm={voice.markFirstUseAcked}
-      />
-      <VoiceSettingsModal
-        isOpen={voice.showSettingsModal}
-        onClose={() => voice.setShowSettingsModal(false)}
-        pushToTalk={voice.pushToTalkEnabled}
-        onTogglePushToTalk={() => voice.setPushToTalkEnabled(s => !s)}
-      />
-      <VoiceReportModal
-        isOpen={voice.showReportModal}
-        onClose={() => voice.setShowReportModal(false)}
-        reportedUser={opp}
-        matchId={roomId}
-      />
-      <VoiceBlockModal
-        isOpen={voice.showBlockModal}
-        onClose={() => voice.setShowBlockModal(false)}
-        blockedUser={opp}
-        onBlocked={() => {
-          voice.endVoice()
-        }}
-      />
+        {/* Voice Modals */}
+        <VoiceFirstUseModal
+          isOpen={voice.showFirstUseModal}
+          onClose={() => voice.setShowFirstUseModal(false)}
+          onContinue={voice.markFirstUseAcked}
+          onConfirm={voice.markFirstUseAcked}
+        />
+        <VoiceSettingsModal
+          isOpen={voice.showSettingsModal}
+          onClose={() => voice.setShowSettingsModal(false)}
+          pushToTalk={voice.pushToTalkEnabled}
+          onTogglePushToTalk={() => voice.setPushToTalkEnabled(s => !s)}
+        />
+        <VoiceReportModal
+          isOpen={voice.showReportModal}
+          onClose={() => voice.setShowReportModal(false)}
+          reportedUser={opp}
+          matchId={matchState?.dbMatchId || null}
+        />
+        <VoiceBlockModal
+          isOpen={voice.showBlockModal}
+          onClose={() => voice.setShowBlockModal(false)}
+          blockedUser={opp}
+          onBlocked={() => {
+            voice.endVoice()
+          }}
+        />
+        <VoiceBottomSheet
+          isOpen={showVoiceBottomSheet}
+          onClose={() => setShowVoiceBottomSheet(false)}
+          opp={opp}
+          voiceState={voice.voiceState}
+          isMicMuted={voice.isMicMuted}
+          quality={voice.quality}
+          outputVolume={voice.outputVolume}
+          isOpponentMutedLocally={voice.isOpponentMutedLocally}
+          isMePremium={isMePremium}
+          isOppPremium={isOppPremium}
+          onOpenPremium={() => openLockedModal('voice_chat')}
+          onRequestVoice={voice.requestVoice}
+          onAcceptVoice={voice.acceptVoice}
+          onDeclineVoice={voice.declineVoice}
+          onEndVoice={voice.endVoice}
+          onToggleMute={voice.toggleMute}
+          onToggleOpponentMute={voice.toggleOpponentMuteLocally}
+          onChangeVolume={voice.changeOutputVolume}
+          onOpenReport={() => voice.setShowReportModal(true)}
+          onOpenBlock={() => voice.setShowBlockModal(true)}
+        />
       </>
     )
   }
@@ -1307,15 +1386,15 @@ export default function Match() {
         {/* PROBLEM PANEL — resizable */}
         <div className={`${mobileTab === 'problem' ? 'flex absolute inset-0 z-10 bg-[var(--c-panel)]' : 'hidden'} md:flex flex-col shrink-0 overflow-hidden md:relative md:z-auto max-md:!w-full max-md:!min-w-0`}
           style={{
-          width: probCollapsed ? 40 : probPanel.width,
-          minWidth: probCollapsed ? 40 : 220,
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          flexShrink: 0,
-          overflow: 'hidden',
-          transition: 'width 0.2s cubic-bezier(.4,0,.2,1)',
-        }}>
+            width: probCollapsed ? 40 : probPanel.width,
+            minWidth: probCollapsed ? 40 : 220,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            flexShrink: 0,
+            overflow: 'hidden',
+            transition: 'width 0.2s cubic-bezier(.4,0,.2,1)',
+          }}>
           <ProblemPanel
             problemId={matchState?.problemId}
             topic={matchState?.topic}
@@ -1336,7 +1415,7 @@ export default function Match() {
         </div>
 
         {/* EDITOR PANEL — fills remaining space */}
-        <div  className={`${mobileTab === 'editor' ? 'flex absolute inset-0 z-10 bg-[var(--c-void)]' : 'hidden'} md:flex flex-col flex-1 min-w-0 md:relative md:z-auto max-md:!w-full`}>
+        <div className={`${mobileTab === 'editor' ? 'flex absolute inset-0 z-10 bg-[var(--c-void)]' : 'hidden'} md:flex flex-col flex-1 min-w-0 md:relative md:z-auto max-md:!w-full`}>
           <PlayerHeader player={me ?? { username: user?.username, rating: user?.elo_rating }} isMe={true} verdict={myVerdict} progress={submitProgress} />
 
           {/* Lang selector + submit */}
@@ -1455,7 +1534,7 @@ export default function Match() {
               const onMove = (ev) => {
                 if (!dragging.active) return
                 const delta = dragging.startX - ev.clientX   // inverted: drag left = wider
-                oppPanel.setWidth(Math.min(360, Math.max(120, dragging.startW + delta)))
+                oppPanel.setWidth(Math.min(360, Math.max(260, dragging.startW + delta)))
               }
               const onUp = () => {
                 dragging.active = false
@@ -1467,12 +1546,12 @@ export default function Match() {
               window.addEventListener('mousemove', onMove)
               window.addEventListener('mouseup', onUp)
             }}
-            onDoubleClick={() => oppPanel.setWidth(180)}
+            onDoubleClick={() => oppPanel.setWidth(280)}
           />
         </div>
 
         {/* OPPONENT PANEL */}
-        <div  className={`${mobileTab === 'opponent' ? 'flex absolute inset-0 z-10 bg-[var(--c-panel)]' : 'hidden'} md:flex flex-col shrink-0 md:relative md:z-auto max-md:!w-full max-md:!min-w-0`}
+        <div className={`${mobileTab === 'opponent' ? 'flex absolute inset-0 z-10 bg-[var(--c-panel)]' : 'hidden'} md:flex flex-col shrink-0 md:relative md:z-auto max-md:!w-full max-md:!min-w-0`}
           style={{ width: oppPanel.width, minWidth: oppPanel.width, background: 'var(--c-panel)', overflow: 'hidden', borderLeft: '1px solid var(--c-border)' }}>
           <PlayerHeader player={opp} isMe={false} verdict={oppVerdict} progress={oppProgress} />
 

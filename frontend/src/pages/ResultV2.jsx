@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { usePremium } from '../hooks/usePremium'
 import { UserAvatar } from '../utils/avatar'
 import { getTierForRating } from '../lib/tiers'
 import { useTheme } from '../context/ThemeContext'
@@ -165,6 +167,9 @@ export default function ResultV2({
   const diffCfg = formatDifficulty(difficulty)
 
   const { theme } = useTheme()
+  const { isPremium } = usePremium()
+  const isFreeReadEnabled = import.meta.env.VITE_DISCUSSION_FREE_READ === 'true'
+  const problemSlug = state?.problemSlug || state?.slug || state?.problem?.slug || state?.matchState?.problem?.slug
   const oldTier = getTierForRating(fromRating)
   const newTier = getTierForRating(toRating)
   const tierColor = theme === 'light' && newTier.code === 'NOV' ? '#475569' : newTier.color
@@ -375,6 +380,18 @@ export default function ResultV2({
             View profile
           </button>
         </div>
+
+        {/* Discuss this problem link */}
+        {problemSlug && (isPremium || isFreeReadEnabled) && (
+          <div className="mt-3 text-center">
+            <Link
+              to={`/discuss/${problemSlug}`}
+              className="text-xs text-sky-400 hover:text-sky-300 underline underline-offset-2 transition-colors font-sans"
+            >
+              Discuss this problem
+            </Link>
+          </div>
+        )}
 
         {/* Tertiary action */}
         <div className="result-v2__tertiary">

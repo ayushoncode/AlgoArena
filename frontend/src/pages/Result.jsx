@@ -1,6 +1,7 @@
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { usePremium } from '../hooks/usePremium'
 import { useSocket } from '../hooks/useSocket'
 import { UserAvatar } from '../utils/avatar'
 import { motion } from 'framer-motion'
@@ -82,6 +83,9 @@ export default function Result() {
 
   const myTier  = getArenaTier(fromRating)
   const newTier = getArenaTier(toRating)
+  const { isPremium } = usePremium()
+  const isFreeReadEnabled = import.meta.env.VITE_DISCUSSION_FREE_READ === 'true'
+  const problemSlug = state?.problemSlug || state?.slug || state?.problem?.slug || state?.matchState?.problem?.slug
 
   const [searchParams] = useSearchParams()
   const isLegacy = searchParams.get('ui') === 'legacy' || import.meta.env.VITE_BATTLE_UI === 'legacy'
@@ -276,6 +280,18 @@ export default function Result() {
                 <User size={14} /> Profile
               </GhostButton>
             </div>
+
+            {/* Discuss this problem link */}
+            {problemSlug && (isPremium || isFreeReadEnabled) && (
+              <div className="text-center">
+                <Link
+                  to={`/discuss/${problemSlug}`}
+                  className="font-mono text-xs text-sky-400 hover:text-sky-300 underline underline-offset-2"
+                >
+                  Discuss this problem
+                </Link>
+              </div>
+            )}
 
             {/* Motivational */}
             <motion.p

@@ -398,3 +398,47 @@ export function IconLeetCode({ size = 16, className = '', style = {} }) {
     </svg>
   )
 }
+
+export function IconMessageSquare({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <path d="M17 3.5H3V14.5H6.5V17.5L10.5 14.5H17V3.5Z" />
+    </svg>
+  )
+}
+
+export function IconChevronUp({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <path d="M15.5 12.5L10 7L4.5 12.5" />
+    </svg>
+  )
+}
+
+export function IconSend({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <path d="M3 10L17 3.5L10.5 17.5L9.5 11.5L3 10Z" />
+    </svg>
+  )
+}
+
+export function IconEye({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <path d="M2.5 10C4 6 7 3.5 10 3.5C13 3.5 16 6 17.5 10C16 14 13 16.5 10 16.5C7 16.5 4 14 2.5 10Z" />
+      <circle cx="10" cy="10" r="2.5" />
+    </svg>
+  )
+}
+
+export function IconQuote({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <path d="M4 11H8V15H4V11Z" />
+      <path d="M8 11C8 8.5 7 6 4.5 5.5" />
+      <path d="M12 11H16V15H12V11Z" />
+      <path d="M16 11C16 8.5 15 6 12.5 5.5" />
+    </svg>
+  )
+}

@@ -1,13 +1,51 @@
 /**
  * frontend/src/components/voice/voice.css
  *
- * Design system tokens for Live Voice:
- * Sora typography, navy tonal surfaces, 1px hairlines, semantic colors.
- * Zero gradients, zero glow, zero Lucide, zero emoji.
- * Full light theme and prefers-reduced-motion support.
+ * Design System Presentation for Live Voice:
+ * - Sora typography, navy tonal surfaces, 1px hairlines, semantic colors
+ * - Strict tokens: --bg-base, --bg-elevated, --bg-surface, --hairline, --ink, --ink-muted, --ink-faint, --info, --ok, --warn, --bad, --accent
+ * - JetBrains Mono for numbers and timers
+ * - Zero gradients, zero glow, zero Lucide, zero emoji
+ * - 44px minimum tap targets for touch controls
+ * - Full prefers-reduced-motion support
+ * - Full light theme contrast compliance (WCAG AA 4.5:1)
  */
 
-/* ── Base Container ─────────────────────────────────────────── */
+/* ── Tokens ────────────────────────────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --bg-base: #11141d;
+  --bg-elevated: #181d29;
+  --bg-surface: #1e2433;
+  --hairline: rgba(255, 255, 255, 0.08);
+  --hairline-subtle: rgba(255, 255, 255, 0.05);
+  --ink: #f1f5f9;
+  --ink-muted: #a1a1aa;
+  --ink-faint: #94a3b8;
+  --info: #38bdf8;
+  --ok: #10b981;
+  --warn: #f59e0b;
+  --bad: #f43f5e;
+  --accent: #f5b942;
+}
+
+[data-theme="light"] {
+  --bg-base: #f8fafc;
+  --bg-elevated: #ffffff;
+  --bg-surface: #f1f5f9;
+  --hairline: rgba(15, 23, 42, 0.12);
+  --hairline-subtle: rgba(15, 23, 42, 0.06);
+  --ink: #0f172a;
+  --ink-muted: #334155;
+  --ink-faint: #475569;
+  --info: #0284c7;
+  --ok: #059669;
+  --warn: #d97706;
+  --bad: #e11d48;
+  --accent: #d97706;
+}
+
+/* ── Base Container ─────────────────────────────────────────────────── */
 .voice-root {
   font-family: 'Sora', sans-serif;
   position: relative;
@@ -15,91 +53,279 @@
   align-items: center;
 }
 
-/* ── Top Bar Voice Button ───────────────────────────────────── */
-.voice-topbar-btn {
+/* ── Voice Row (Desktop / Tablet Rival Panel: 44px tall) ─────────────── */
+.voice-row-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.voice-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+  background-color: var(--bg-elevated);
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  box-sizing: border-box;
+  font-family: 'Sora', sans-serif;
+}
+
+.voice-notice-line {
+  font-family: 'Sora', sans-serif;
+  font-size: 11px;
+  color: var(--ink-faint);
+  padding: 4px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--hairline-subtle);
+  background-color: var(--bg-base);
+}
+
+/* 40px Mic Button in Voice Row */
+.voice-row__mic-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 28px;
+  justify-content: center;
+  width: 44px;
+  min-width: 44px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: var(--bg-surface);
+  transition: background-color 0.15s ease, border-color 0.15s ease, outline-color 0.15s ease;
+}
+
+.voice-row__mic-btn.is-muted {
+  outline: 1px solid var(--hairline);
+  color: var(--ink);
+  border: none;
+}
+
+.voice-row__mic-btn.is-live {
+  outline: 1.5px solid var(--info);
+  color: var(--info);
+  border: none;
+  background-color: rgba(56, 189, 248, 0.08);
+}
+
+.voice-row__mic-btn:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+
+.voice-row__overflow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 40px;
+  border-radius: 4px;
+  border: 1px solid var(--hairline);
+  background-color: var(--bg-surface);
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.voice-row__overflow-btn:hover {
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+
+.voice-row__overflow-btn:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+
+/* Voice Row Buttons */
+.voice-row-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
   padding: 0 10px;
   border-radius: 4px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  background-color: var(--c-panel2, #111827);
-  border: 1px solid var(--c-border, #27272a);
-  color: var(--c-text-dim, #94a3b8);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.voice-row-btn-secondary:hover {
+  border-color: var(--ink-faint);
+}
+
+.voice-row-btn-secondary:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+
+.voice-row-btn-accept {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  background-color: var(--info);
+  border: 1px solid var(--info);
+  color: #030712;
+  cursor: pointer;
+}
+
+.voice-row-btn-accept:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+
+.voice-row-btn-text {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.voice-row-btn-text:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+
+/* ── Top Bar Button (44px min tap target) ────────────────────────────── */
+.voice-topbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  cursor: pointer;
   user-select: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
 }
 
 .voice-topbar-btn:hover:not(:disabled) {
-  border-color: var(--c-border2, #3f3f46);
-  color: var(--c-text, #f1f5f9);
+  border-color: var(--ink-faint);
+  color: var(--ink);
 }
 
 .voice-topbar-btn:focus-visible {
-  outline: 2px solid var(--info, #38bdf8);
-  outline-offset: 1px;
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
 }
 
-.voice-topbar-btn.is-active {
-  border-color: var(--ok, #10b981);
-  color: var(--ok, #10b981);
-  background-color: rgba(16, 185, 129, 0.08);
+.voice-topbar-btn.is-muted {
+  border-color: var(--hairline);
+  color: var(--ink);
 }
 
 .voice-topbar-btn.is-live {
-  border-color: var(--ok, #10b981);
-  color: var(--ok, #10b981);
+  border-color: var(--info);
+  color: var(--info);
+  background-color: rgba(56, 189, 248, 0.08);
 }
 
 .voice-topbar-btn.is-warn {
-  border-color: var(--warn, #f59e0b);
-  color: var(--warn, #f59e0b);
+  border-color: var(--warn);
+  color: var(--warn);
   background-color: rgba(245, 158, 11, 0.08);
 }
 
 .voice-topbar-btn.is-bad {
-  border-color: var(--bad, #f43f5e);
-  color: var(--bad, #f43f5e);
+  border-color: var(--bad);
+  color: var(--bad);
   background-color: rgba(244, 63, 94, 0.08);
 }
 
 .voice-topbar-btn.is-locked {
-  border-color: var(--c-border, #27272a);
-  color: var(--c-text-mute, #64748b);
-  opacity: 0.85;
+  border-color: var(--hairline);
+  color: var(--ink-muted);
 }
 
 .voice-badge-premium {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
   font-size: 9px;
-  color: var(--warn, #f59e0b);
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  font-weight: 700;
+  color: var(--warn);
+  border: 1px solid rgba(245, 158, 11, 0.4);
   border-radius: 2px;
   padding: 1px 4px;
 }
 
-/* ── Voice Dock (Connected Desktop Bar) ─────────────────────── */
+.voice-topbar-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.voice-topbar-more-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: 4px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--hairline);
+  color: var(--ink-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.voice-topbar-more-btn:hover {
+  border-color: var(--ink-faint);
+  color: var(--ink);
+  background-color: var(--bg-elevated);
+}
+
+.voice-topbar-more-btn:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+
+.voice-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Voice Dock (Desktop) ───────────────────────────────────────────── */
 .voice-dock {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 4px 10px;
-  background-color: var(--c-panel, #0f172a);
-  border: 1px solid var(--c-border, #1e293b);
-  border-radius: 6px;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
   height: 44px;
   box-sizing: border-box;
 }
 
-/* 44px Mute Button */
 .voice-dock__mute-btn {
   display: inline-flex;
   align-items: center;
@@ -111,103 +337,31 @@
   border-radius: 4px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--c-border, #27272a);
-  background-color: var(--c-panel2, #1e293b);
-  color: var(--c-text, #f1f5f9);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.voice-dock__mute-btn:hover {
-  border-color: var(--c-border2, #3f3f46);
-}
-
-.voice-dock__mute-btn:focus-visible {
-  outline: 2px solid var(--info, #38bdf8);
-  outline-offset: 1px;
+.voice-dock__mute-btn.is-live {
+  border-color: var(--info);
+  color: var(--info);
+  background-color: rgba(56, 189, 248, 0.08);
 }
 
 .voice-dock__mute-btn.is-muted {
-  border-color: rgba(244, 63, 94, 0.4);
-  background-color: rgba(244, 63, 94, 0.08);
-  color: var(--bad, #f43f5e);
+  border-color: var(--hairline);
+  color: var(--ink);
 }
 
-.voice-dock__mute-btn.is-live {
-  border-color: rgba(16, 185, 129, 0.4);
-  background-color: rgba(16, 185, 129, 0.08);
-  color: var(--ok, #10b981);
+.voice-dock__mute-btn:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
 }
 
-/* Real-time Audio Level Sound Wave Bars */
-.voice-audio-bars {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  height: 16px;
-  padding: 0 1px;
-  user-select: none;
-}
-
-.voice-audio-bars span {
-  display: block;
-  width: 2.5px;
-  height: 16px;
-  background-color: var(--ok, #10b981);
-  border-radius: 2px;
-  transform-origin: center;
-  transition: transform 0.06s cubic-bezier(0.2, 0.8, 0.4, 1);
-}
-
-.voice-audio-bars.is-opponent span {
-  background-color: var(--info, #38bdf8);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .voice-audio-bars.is-idle span {
-    animation: voice-bar-idle 1.3s ease-in-out infinite alternate;
-  }
-}
-
-@keyframes voice-bar-idle {
-  0% {
-    transform: scaleY(0.2);
-    opacity: 0.45;
-  }
-  100% {
-    transform: scaleY(0.5);
-    opacity: 0.9;
-  }
-}
-
-@media (max-width: 640px) {
-  .voice-topbar-btn {
-    height: 26px;
-    padding: 0 6px;
-    font-size: 10px;
-    gap: 4px;
-  }
-  .voice-audio-bars {
-    height: 12px;
-    gap: 1.5px;
-  }
-  .voice-audio-bars span {
-    width: 2px;
-    height: 12px;
-  }
-  .battle-v2__rival-body .voice-dock {
-    width: 100%;
-    justify-content: space-between;
-    padding: 4px 8px;
-    height: auto;
-    min-height: 44px;
-  }
-}
-
-/* Opponent Active Speaker Ring (2px Ink Ring, No Glow) */
+/* ── Opponent Avatar Speaking Ring (2px Ink Ring) ─────────────────────── */
 .voice-speaker-wrap {
   position: relative;
   display: inline-flex;
@@ -217,61 +371,43 @@
 
 .voice-speaker-ring {
   position: absolute;
-  top: -3px;
-  left: -3px;
-  right: -3px;
-  bottom: -3px;
-  border-radius: 9999px;
-  border: 2px solid var(--ok, #10b981);
+  inset: -3px;
+  border-radius: 6px;
+  border: 2px solid var(--ink);
   pointer-events: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .voice-speaker-ring.is-speaking {
-    animation: voice-speaker-pulse 1.2s ease-in-out infinite;
-  }
+.rival-avatar-wrap {
+  position: relative;
+  display: inline-flex;
+  border-radius: 4px;
+  transition: outline 0.15s ease;
 }
 
-@keyframes voice-speaker-pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.06);
-  }
+.rival-avatar-wrap.is-speaking {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
-/* Network Quality Indicator */
+/* ── Connection Quality Badge ────────────────────────────────────────── */
 .voice-quality-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 3px 6px;
   border-radius: 3px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--hairline);
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  border: 1px solid var(--c-border, #27272a);
-  background-color: var(--c-panel2, #1e293b);
+  color: var(--ink-muted);
   cursor: help;
+  user-select: none;
 }
 
-.voice-quality-badge.is-good {
-  color: var(--ok, #10b981);
-  border-color: rgba(16, 185, 129, 0.3);
-}
-
-.voice-quality-badge.is-fair {
-  color: var(--warn, #f59e0b);
-  border-color: rgba(245, 158, 11, 0.3);
-}
-
-.voice-quality-badge.is-poor {
-  color: var(--bad, #f43f5e);
-  border-color: rgba(244, 63, 94, 0.3);
+.voice-quality-badge:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 1px;
 }
 
 .voice-quality-bars {
@@ -283,115 +419,171 @@
 
 .voice-quality-bars span {
   width: 2px;
-  background-color: currentColor;
+  background-color: var(--ink-faint);
   border-radius: 0.5px;
 }
 
-.voice-quality-bars span:nth-child(1) { height: 3px; }
-.voice-quality-bars span:nth-child(2) { height: 6px; }
-.voice-quality-bars span:nth-child(3) { height: 10px; }
+.voice-quality-bars span:nth-child(1) {
+  height: 4px;
+}
 
-/* ── Incoming Prompt Bar ────────────────────────────────────── */
+.voice-quality-bars span:nth-child(2) {
+  height: 7px;
+}
+
+.voice-quality-bars span:nth-child(3) {
+  height: 10px;
+}
+
+.voice-quality-badge.is-good .voice-quality-bars span {
+  background-color: var(--ok);
+}
+
+.voice-quality-badge.is-fair .voice-quality-bars span:nth-child(1),
+.voice-quality-badge.is-fair .voice-quality-bars span:nth-child(2) {
+  background-color: var(--warn);
+}
+
+.voice-quality-badge.is-fair .voice-quality-bars span:nth-child(3) {
+  background-color: var(--hairline);
+}
+
+.voice-quality-badge.is-poor .voice-quality-bars span:nth-child(1) {
+  background-color: var(--bad);
+}
+
+.voice-quality-badge.is-poor .voice-quality-bars span:nth-child(2),
+.voice-quality-badge.is-poor .voice-quality-bars span:nth-child(3) {
+  background-color: var(--hairline);
+}
+
+/* ── Overflow Menu (Solid Surface, Hairline, No Blur) ───────────────── */
+.voice-overflow-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  width: 240px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.voice-overflow-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 3px;
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
+  color: var(--ink);
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.voice-overflow-item:hover,
+.voice-overflow-item:focus-visible {
+  background-color: var(--bg-surface);
+  outline: none;
+}
+
+.voice-overflow-item:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: -2px;
+}
+
+/* ── Incoming Prompt Bar ────────────────────────────────────────────── */
 .voice-incoming-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  width: 100%;
   padding: 6px 12px;
-  background-color: var(--c-panel, #0f172a);
-  border: 1px solid var(--info, #38bdf8);
-  border-radius: 6px;
-  font-size: 12px;
-  color: var(--c-text, #f1f5f9);
+  background-color: var(--bg-elevated);
+  border-bottom: 1px solid var(--hairline);
+  box-sizing: border-box;
 }
 
-.voice-btn-accept {
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  background-color: var(--ok, #10b981);
-  border: 1px solid var(--ok, #10b981);
-  color: #0b1120;
-  cursor: pointer;
-}
-
-.voice-btn-accept:focus-visible {
-  outline: 2px solid var(--info, #38bdf8);
-  outline-offset: 1px;
-}
-
-.voice-btn-decline {
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  background-color: transparent;
-  border: 1px solid var(--c-border, #27272a);
-  color: var(--c-text-dim, #94a3b8);
-  cursor: pointer;
-}
-
-.voice-btn-decline:hover {
-  border-color: var(--bad, #f43f5e);
-  color: var(--bad, #f43f5e);
-}
-
-/* ── Modals and Dialog Backdrops ────────────────────────────── */
+/* ── Modals & Dialogs (Solid Surface, 6px Radius, Hairline, Max 480px) ─ */
 .voice-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  background-color: rgba(5, 7, 15, 0.82);
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(3, 7, 18, 0.75);
-  backdrop-filter: blur(2px);
   padding: 16px;
+  z-index: 999;
 }
 
 .voice-modal-frame {
   width: 100%;
-  max-width: 440px;
-  background-color: var(--c-panel, #0f172a);
-  border: 1px solid var(--c-border, #1e293b);
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
+  max-width: 480px;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .voice-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--c-border, #1e293b);
-  background-color: var(--c-panel2, #111827);
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--hairline);
+  background-color: var(--bg-elevated);
 }
 
 .voice-modal-title {
+  font-family: 'Sora', sans-serif;
   font-size: 14px;
   font-weight: 700;
-  color: var(--c-text, #f1f5f9);
-  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0;
+}
+
+.voice-modal-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.voice-modal-close-btn:hover {
+  color: var(--ink);
+}
+
+.voice-modal-close-btn:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
 }
 
 .voice-modal-body {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--c-text-dim, #94a3b8);
+  padding: 18px;
+  font-family: 'Sora', sans-serif;
+  color: var(--ink);
 }
 
 .voice-modal-footer {
@@ -399,123 +591,342 @@
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  padding: 12px 16px;
-  border-top: 1px solid var(--c-border, #1e293b);
-  background-color: var(--c-panel2, #111827);
+  padding: 12px 18px;
+  border-top: 1px solid var(--hairline);
+  background-color: var(--bg-surface);
 }
 
-.voice-modal-close-btn {
-  background: none;
-  border: none;
-  color: var(--c-text-mute, #64748b);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+/* Modal Buttons (Minimum 44px height for touch targets) */
+.voice-btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background-color: var(--info);
+  border: 1px solid var(--info);
+  color: #030712;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
 }
 
-.voice-modal-close-btn:hover {
-  color: var(--c-text, #f1f5f9);
+.voice-btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
 }
 
-/* Form Controls */
+.voice-btn-primary:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+
+.voice-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.voice-btn-secondary:hover:not(:disabled) {
+  border-color: var(--ink-faint);
+}
+
+.voice-btn-secondary:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+
+.voice-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  background-color: var(--bad);
+  border: 1px solid var(--bad);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.voice-btn-danger:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+
+/* ── Settings Inputs & 3-bar Meter ──────────────────────────────────── */
 .voice-select-label {
   display: block;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--c-text-mute, #64748b);
-  margin-bottom: 4px;
+  color: var(--ink-muted);
+  margin-bottom: 6px;
 }
 
 .voice-select {
   width: 100%;
-  height: 36px;
+  min-height: 40px;
   padding: 0 10px;
-  background-color: var(--c-void, #030712);
-  border: 1px solid var(--c-border, #27272a);
   border-radius: 4px;
-  color: var(--c-text, #f1f5f9);
+  background-color: var(--bg-base);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  font-family: 'Sora', sans-serif;
   font-size: 12px;
-  font-family: inherit;
   outline: none;
 }
 
-.voice-select:focus {
-  border-color: var(--info, #38bdf8);
+.voice-select:focus-visible {
+  border-color: var(--info);
 }
 
-.voice-meter-bar {
+.voice-level-meter-three {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   width: 100%;
   height: 8px;
-  background-color: var(--c-void, #030712);
-  border: 1px solid var(--c-border, #27272a);
-  border-radius: 4px;
-  overflow: hidden;
 }
 
-.voice-meter-fill {
+.voice-level-bar {
+  flex: 1;
   height: 100%;
-  background-color: var(--ok, #10b981);
-  transition: width 0.08s ease;
+  border-radius: 2px;
+  background-color: var(--hairline);
+  transition: background-color 0.08s ease;
 }
 
-/* Light Theme Overrides */
-[data-theme="light"] .voice-topbar-btn {
-  background-color: #f8fafc;
-  border-color: #cbd5e1;
-  color: #334155;
+.voice-level-bar.is-active {
+  background-color: var(--ink-muted);
 }
 
-[data-theme="light"] .voice-topbar-btn:hover:not(:disabled) {
-  border-color: #94a3b8;
-  color: #0f172a;
+/* ── Mobile Bottom Sheet (Max 70dvh, Swipe/Esc to Dismiss) ──────────── */
+.voice-bottom-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(5, 7, 15, 0.75);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  z-index: 1000;
 }
 
-[data-theme="light"] .voice-dock {
-  background-color: #ffffff;
-  border-color: #e2e8f0;
+.voice-bottom-sheet {
+  width: 100%;
+  max-height: 70dvh;
+  background-color: var(--bg-elevated);
+  border-top: 1px solid var(--hairline);
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  font-family: 'Sora', sans-serif;
 }
 
-[data-theme="light"] .voice-dock__mute-btn {
-  background-color: #f1f5f9;
-  border-color: #cbd5e1;
-  color: #0f172a;
+.voice-bottom-sheet__handle-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 4px;
 }
 
-[data-theme="light"] .voice-modal-frame {
-  background-color: #ffffff;
-  border-color: #e2e8f0;
+.voice-bottom-sheet__handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--ink-faint);
 }
 
-[data-theme="light"] .voice-modal-header,
-[data-theme="light"] .voice-modal-footer {
-  background-color: #f8fafc;
-  border-color: #e2e8f0;
+.voice-bottom-sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 12px;
+  border-bottom: 1px solid var(--hairline);
 }
 
-[data-theme="light"] .voice-select {
-  background-color: #f8fafc;
-  border-color: #cbd5e1;
-  color: #0f172a;
+.voice-bottom-sheet__close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  cursor: pointer;
 }
 
-[data-theme="light"] .voice-incoming-bar {
-  background-color: #f0f9ff;
-  border-color: #38bdf8;
-  color: #0f172a;
+.voice-bottom-sheet__body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-[data-theme="light"] .voice-quality-badge {
-  background-color: #f1f5f9;
-  border-color: #cbd5e1;
+.voice-bottom-sheet__mic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 140px;
+  height: 48px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
 }
 
-[data-theme="light"] .voice-meter-bar {
-  background-color: #e2e8f0;
-  border-color: #cbd5e1;
+.voice-bottom-sheet__mic-btn.is-live {
+  border-color: var(--info);
+  color: var(--info);
+  background-color: rgba(56, 189, 248, 0.08);
 }
 
+.voice-bottom-sheet__action-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 4px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.voice-bottom-sheet__end-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  border-radius: 4px;
+  background-color: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: var(--bad);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.voice-bottom-sheet__danger-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  background: none;
+  border: none;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.voice-bottom-sheet__note {
+  font-family: 'Sora', sans-serif;
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* ── Mobile In-flow Strip in Code Tab (40px high) ───────────────────── */
+.voice-mobile-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 10px;
+  background-color: var(--bg-elevated);
+  border-top: 1px solid var(--hairline);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.voice-mobile-strip__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 4px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.voice-mobile-strip__btn.is-live {
+  border-color: var(--info);
+  color: var(--info);
+  background-color: rgba(56, 189, 248, 0.08);
+}
+
+.voice-mobile-strip__end-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 4px;
+  background-color: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  color: var(--bad);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── Reduced Motion ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .animate-pulse {
+    animation: none !important;
+  }
+
+  .voice-speaker-ring {
+    animation: none !important;
+  }
+}

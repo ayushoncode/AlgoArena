@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   IconSearch,
@@ -11,6 +12,7 @@ import {
   IconBook,
   IconLock,
   IconLeetCode,
+  IconMessageSquare,
 } from './icons'
 import { DEFAULT_STRIVER_CURRICULUM } from '../content/striverCurriculum'
 import '../pages/Lobby/Lobby.css'
@@ -63,6 +65,19 @@ function ProblemRow({ problem, globalIdx, onBattleProblem, queuingProblemId, isQ
           <IconLeetCode size={13} />
           <span className="hidden sm:inline">LeetCode</span>
         </a>
+
+        {/* Discuss Room link */}
+        {problem.slug && (
+          <Link
+            to={`/discuss/${problem.slug}`}
+            className="striver-v2-lc-link"
+            title={`Discuss "${problem.title}"`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <IconMessageSquare size={13} />
+            <span className="hidden sm:inline">Discuss</span>
+          </Link>
+        )}
 
         <button
           type="button"

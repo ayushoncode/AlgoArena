@@ -221,10 +221,13 @@ async function resolveMatch({ dbMatchId, winner, loser, isCustom = false, diffic
   }
 }
 
+let matchIo = null
+
 /* ════════════════════════════════════════════════
    REGISTER SOCKET HANDLERS
 ════════════════════════════════════════════════ */
 function registerMatch(io) {
+  matchIo = io
   io._createMatchRow = createMatchRow
 
   io.on('connection', (socket) => {
@@ -448,6 +451,32 @@ function registerMatch(io) {
         requestedBy: match.voiceConsent?.requestedBy || null,
         requestCount: match.voiceConsent?.requestCount || 0,
         accepted: match.voiceConsent?.accepted || false,
+      })
+    })
+
+    socket.on('voice:mute_opponent', ({ roomId }) => {
+      if (!roomId) return
+      const match = activeMatches.get(roomId)
+      if (!match || match.isResolved) return
+      const isParticipant = match.players?.some(p => String(p.userId) === String(userId))
+      if (!isParticipant) return
+
+      socket.to(roomId).emit('voice:opponent_muted', {
+        roomId,
+        mutedBy: userId,
+      })
+    })
+
+    socket.on('voice:unmuted', ({ roomId }) => {
+      if (!roomId) return
+      const match = activeMatches.get(roomId)
+      if (!match || match.isResolved) return
+      const isParticipant = match.players?.some(p => String(p.userId) === String(userId))
+      if (!isParticipant) return
+
+      socket.to(roomId).emit('voice:opponent_unmuted', {
+        roomId,
+        unmutedBy: userId,
       })
     })
 
@@ -1051,6 +1080,14 @@ function trackRoom(roomId, dbMatchId, problemId, isCustom = false, players = [],
       startedAt: Date.now(),
       disconnectTimers: new Map(),
     })
+  }
+
+  // Integrity Rule 1: Drop players from discussion room when match starts
+  if (matchIo && problemId && players?.length) {
+    try {
+      const { dropUsersFromDiscussionRoom } = require('./discussion')
+      dropUsersFromDiscussionRoom(matchIo, players.map(p => p.userId), problemId)
+    } catch {}
   }
 }
 

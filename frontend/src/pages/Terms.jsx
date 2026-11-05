@@ -110,6 +110,21 @@ export default function Terms() {
           </p>
         </section>
 
+        {/* Section 10: Discussion Rooms and Community Content */}
+        <section id="discussion-rules" className="space-y-3">
+          <h2 className="text-xl font-semibold text-white">10. Discussion Rooms and Community Content</h2>
+          <p className="text-sm leading-relaxed text-slate-300">
+            AlgoArena provides problem discussion rooms for educational analysis, peer hints, and algorithmic approaches. By participating, you agree to the following rules:
+          </p>
+          <ul className="list-disc pl-5 space-y-1.5 text-sm text-slate-300">
+            <li>Competitive Separation: Discussion rooms are strictly isolated from active matches. Users currently in a match on a problem cannot access its room until the match concludes.</li>
+            <li>Content Standards: Posts must remain respectful and relevant. Hate speech, harassment, slurs, spam, malicious code, and sharing private personal data are strictly prohibited.</li>
+            <li>Spoiler Etiquette: Posts containing solution code or detailed answers must be designated as Solutions or enclosed in code blocks. Code blocks exceeding 5 lines are categorized as Solutions automatically.</li>
+            <li>Daily Challenge Secrecy: Solution posts on the current daily challenge are masked until the UTC midnight reset to preserve fair competition for all participants.</li>
+            <li>Moderation and Safety: Users may report offending posts or block disruptive members. Posts that receive three or more reports are hidden pending moderator review. AlgoArena reserves the right to suspend discussion rights or remove content violating these rules [TODO: owner to confirm formal appeal process].</li>
+          </ul>
+        </section>
+
         {/* Footer nav */}
         <div className="pt-8 border-t border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
           <Link to="/" className="text-[#ffd696] hover:underline">&larr; Return to Home</Link>
