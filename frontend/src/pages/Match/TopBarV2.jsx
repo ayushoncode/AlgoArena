@@ -192,13 +192,8 @@ export default function TopBarV2({
           )
         })()}
 
-        {/* Desktop: Show full VoiceDock if connected, otherwise VoiceControl button */}
-        <div className="hidden md:flex items-center">
-          {voiceDock || voiceControl}
-        </div>
-
-        {/* Mobile (< md): Always show compact VoiceControl button */}
-        <div className="flex md:hidden items-center">
+        {/* Voice control button (44px min tap target) */}
+        <div className="flex items-center">
           {voiceControl}
         </div>
 

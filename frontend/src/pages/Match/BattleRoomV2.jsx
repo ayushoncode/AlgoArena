@@ -48,6 +48,8 @@ export default function BattleRoomV2({
   voiceIncomingPrompt,
   voiceErrorBanner,
   voiceSlotForRival,
+  voiceMobileStrip,
+  isOpponentSpeaking,
   // Editor slot
   children,
 }) {
@@ -81,14 +83,16 @@ export default function BattleRoomV2({
       {/* Connection State Banner */}
       <ConnectionBannerV2 connected={connected} />
 
-      {/* Voice Banners */}
+      {/* Voice Error Banner */}
       {voiceErrorBanner && (
         <div className="shrink-0 px-3 py-1.5 bg-rose-500/10 border-b border-rose-500/30 text-[var(--bad)] text-xs font-mono flex items-center justify-between">
           {voiceErrorBanner}
         </div>
       )}
+
+      {/* Non-modal Incoming Voice Toast (Pinned top-right, zero editor layout reflow) */}
       {voiceIncomingPrompt && (
-        <div className="shrink-0 px-3 py-1.5 border-b border-[var(--c-border)] bg-[var(--c-panel2)]">
+        <div className="absolute top-[52px] right-3 z-30 max-w-sm rounded-md shadow-xl border border-[var(--hairline)] bg-[var(--bg-elevated)] overflow-hidden">
           {voiceIncomingPrompt}
         </div>
       )}
@@ -101,7 +105,7 @@ export default function BattleRoomV2({
       />
 
       {/* Mobile navigation tabs */}
-      <div className="flex md:hidden items-center px-2 py-1.5 shrink-0 bg-[var(--c-panel2)] border-b border-[var(--c-border)] gap-2">
+      <div className="flex md:hidden items-center px-2 py-1.5 shrink-0 bg-[var(--bg-elevated)] border-b border-[var(--hairline)] gap-2">
         {[
           { id: 'problem', label: 'Problem' },
           { id: 'editor', label: 'Code' },
@@ -114,7 +118,7 @@ export default function BattleRoomV2({
             className="font-mono text-[11px] px-3 py-1 font-semibold uppercase transition-colors rounded-sm"
             style={{
               backgroundColor: mobileTab === t.id ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
-              color: mobileTab === t.id ? 'var(--info, #38bdf8)' : 'var(--c-text-mute, #64748b)',
+              color: mobileTab === t.id ? 'var(--info, #38bdf8)' : 'var(--ink-muted, #94a3b8)',
               borderBottom: mobileTab === t.id ? '2px solid var(--info, #38bdf8)' : '2px solid transparent',
             }}
           >
@@ -127,9 +131,8 @@ export default function BattleRoomV2({
       <div className="battle-v2__workspace">
         {/* Left: Problem Panel */}
         <div
-          className={`${
-            mobileTab === 'problem' ? 'flex absolute inset-0 z-10 w-full' : 'hidden'
-          } md:flex flex-col shrink-0 md:relative md:z-auto`}
+          className={`${mobileTab === 'problem' ? 'flex absolute inset-0 z-10 w-full' : 'hidden'
+            } md:flex flex-col shrink-0 md:relative md:z-auto`}
           style={{
             width: probCollapsed ? 40 : probPanelWidth,
             minWidth: probCollapsed ? 40 : 220,
@@ -160,10 +163,15 @@ export default function BattleRoomV2({
 
         {/* Center: Editor Panel */}
         <div
-          className={`${
-            mobileTab === 'editor' ? 'flex absolute inset-0 z-10 w-full' : 'hidden'
-          } md:flex flex-col flex-1 min-w-0 md:relative md:z-auto`}
+          className={`${mobileTab === 'editor' ? 'flex absolute inset-0 z-10 w-full' : 'hidden'
+            } md:flex flex-col flex-1 min-w-0 md:relative md:z-auto`}
         >
+          {/* Mobile in-flow 40px voice strip in code tab */}
+          {voiceMobileStrip && (
+            <div className="md:hidden shrink-0">
+              {voiceMobileStrip}
+            </div>
+          )}
           {children}
         </div>
 
@@ -181,12 +189,11 @@ export default function BattleRoomV2({
 
         {/* Right: Rival Panel */}
         <div
-          className={`${
-            mobileTab === 'opponent' ? 'flex absolute inset-0 z-10 w-full' : 'hidden'
-          } md:flex flex-col shrink-0 md:relative md:z-auto`}
+          className={`${mobileTab === 'opponent' ? 'flex absolute inset-0 z-10 w-full' : 'hidden'
+            } md:flex flex-col shrink-0 md:relative md:z-auto`}
           style={{
-            width: oppPanelWidth,
-            minWidth: oppPanelWidth,
+            width: Math.max(260, oppPanelWidth || 260),
+            minWidth: 260,
           }}
         >
           <RivalPanelV2
@@ -196,6 +203,7 @@ export default function BattleRoomV2({
             oppDisconnectState={oppDisconnectState}
             width={oppPanelWidth}
             voiceSlot={voiceSlotForRival}
+            isOpponentSpeaking={isOpponentSpeaking}
           />
         </div>
       </div>
@@ -219,4 +227,3 @@ export default function BattleRoomV2({
     </div>
   )
 }
-

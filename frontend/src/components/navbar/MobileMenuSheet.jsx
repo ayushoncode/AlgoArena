@@ -15,7 +15,9 @@ import {
   IconSun,
   IconMoon,
   IconLogOut,
-  IconHexagonBadge
+  IconHexagonBadge,
+  IconMessageSquare,
+  IconLock
 } from '../icons'
 import { usePremium } from '../../hooks/usePremium'
 import PremiumBadge from '../PremiumBadge'
@@ -41,10 +43,12 @@ export default function MobileMenuSheet({
   pathname,
   navigate,
   goAuth,
-  triggerRef
+  triggerRef,
+  hasUnreadDiscuss = false,
+  isDiscussionGated = false
 }) {
   const { theme, toggleTheme } = useTheme()
-  const { isPremium, isPremiumEnabled } = usePremium()
+  const { isPremium, isPremiumEnabled, openLockedModal } = usePremium()
   const sheetRef = useRef(null)
   const closeBtnRef = useRef(null)
   const [imgErr, setImgErr] = useState(false)
@@ -297,6 +301,44 @@ export default function MobileMenuSheet({
               <IconTrophy size={20} />
             </span>
             <span className="nav-v2-m-row-label">Leaderboard</span>
+          </button>
+
+          <button
+            type="button"
+            className={`nav-v2-m-row ${pathname.startsWith('/discuss') ? 'is-active' : ''}`}
+            onClick={() => {
+              if (isDiscussionGated) {
+                onClose()
+                openLockedModal('discussion')
+              } else {
+                handleNav('/discuss')
+              }
+            }}
+            aria-current={pathname.startsWith('/discuss') ? 'page' : undefined}
+          >
+            <span className="nav-v2-m-row-icon">
+              <IconMessageSquare size={20} />
+            </span>
+            <span className="nav-v2-m-row-label">Discussions</span>
+            {hasUnreadDiscuss && (
+              <span className="w-2 h-2 rounded-full bg-sky-400 ml-2" />
+            )}
+            {isDiscussionGated && (
+              <span
+                style={{
+                  marginLeft: 'auto',
+                  fontSize: '11px',
+                  fontFamily: 'var(--font-mono, monospace)',
+                  color: 'var(--c-text-mute)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <IconLock size={12} />
+                <span>Premium</span>
+              </span>
+            )}
           </button>
 
           {isAuthenticated ? (

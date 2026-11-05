@@ -1,13 +1,13 @@
 /**
  * frontend/src/components/voice/IncomingVoicePrompt.jsx
  *
- * Prominent consent prompt when the opponent requests Live Voice.
- * Shows Accept and Decline buttons with 30-second countdown and privacy note.
+ * Non-modal consent prompt when the opponent requests Live Voice.
+ * Pinned without causing editor layout shifts.
+ * 44px tap targets, plain copy, countdown.
  */
 
 import React, { useState, useEffect } from 'react';
 import { IconMic, IconClose, IconCheck } from './VoiceIcons';
-import { VOICE_CONFIG } from '../../content/voice';
 import './voice.css';
 
 export default function IncomingVoicePrompt({
@@ -37,14 +37,14 @@ export default function IncomingVoicePrompt({
       aria-label="Incoming voice call request"
       className="voice-incoming-bar"
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 min-w-0">
         <IconMic size={16} className="text-[var(--info)] shrink-0" />
-        <div>
-          <span className="font-semibold text-xs text-[var(--c-text)]">
+        <div className="truncate">
+          <span className="font-semibold text-xs text-[var(--ink)]">
             {opponentName} requested voice
           </span>
-          <span className="font-mono text-[10px] text-[var(--c-text-mute)] ml-2">
-            ({countdown}s) · {VOICE_CONFIG.copy.privacyNotice}
+          <span className="font-mono text-[11px] text-[var(--ink-muted)] ml-2">
+            ({countdown}s) · Voice is not recorded
           </span>
         </div>
       </div>
@@ -53,23 +53,22 @@ export default function IncomingVoicePrompt({
         <button
           type="button"
           onClick={onAccept}
-          className="voice-btn-accept flex items-center gap-1.5"
+          className="voice-btn-accept voice-btn-primary h-9 px-3 flex items-center gap-1.5"
           aria-label={`Accept voice request from ${opponentName}`}
         >
-          <IconCheck size={13} />
-          <span>{VOICE_CONFIG.copy.accept}</span>
+          <IconCheck size={14} />
+          <span>Accept</span>
         </button>
         <button
           type="button"
           onClick={onDecline}
-          className="voice-btn-decline flex items-center gap-1"
+          className="voice-btn-secondary h-9 px-3 flex items-center gap-1.5"
           aria-label={`Decline voice request from ${opponentName}`}
         >
           <IconClose size={13} />
-          <span>{VOICE_CONFIG.copy.decline}</span>
+          <span>Decline</span>
         </button>
       </div>
     </div>
   );
 }
-

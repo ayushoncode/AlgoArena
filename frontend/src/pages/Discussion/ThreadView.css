@@ -1,0 +1,125 @@
+/* frontend/src/pages/Discussion/ThreadView.css */
+
+.disc-thread-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 28px 20px 140px;
+  font-family: var(--font-sans, "Sora Variable", sans-serif);
+}
+
+.disc-op-post {
+  border: 1px solid var(--c-border, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  background: var(--c-panel, #262626);
+  padding: 24px;
+  margin-bottom: 28px;
+}
+
+.disc-op-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.disc-op-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--c-text, #eff1f6);
+  margin-bottom: 16px;
+  line-height: 1.35;
+}
+
+.disc-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 16px;
+  margin-top: 20px;
+  border-top: 1px solid var(--c-border, rgba(255, 255, 255, 0.06));
+}
+
+.disc-vote-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--c-border, rgba(255, 255, 255, 0.1));
+  color: var(--c-text-dim, #a1a1aa);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.disc-vote-btn:hover {
+  border-color: var(--c-blue, #38bdf8);
+  color: var(--c-text, #eff1f6);
+}
+
+.disc-vote-btn.is-voted {
+  background: rgba(56, 189, 248, 0.14);
+  border-color: var(--c-blue, #38bdf8);
+  color: var(--c-blue, #38bdf8);
+}
+
+.disc-action-text-btn {
+  font-size: 12px;
+  color: var(--c-text-mute, #71717a);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color 0.12s;
+}
+
+.disc-action-text-btn:hover {
+  color: var(--c-text, #eff1f6);
+}
+
+.disc-replies-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.disc-reply-item {
+  border: 1px solid var(--c-border, rgba(255, 255, 255, 0.07));
+  border-radius: 8px;
+  background: var(--c-panel, #262626);
+  padding: 16px 20px;
+}
+
+.disc-quote-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--c-border, rgba(255, 255, 255, 0.08));
+  color: var(--c-text-dim, #a1a1aa);
+  margin-bottom: 10px;
+}
+
+.disc-pinned-composer {
+  position: fixed;
+  bottom: 0;
+  inset-x: 0;
+  background: rgba(26, 26, 26, 0.96);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--c-border, rgba(255, 255, 255, 0.1));
+  padding: 14px 20px;
+  z-index: 40;
+}
+
+.disc-composer-inner {
+  max-width: 960px;
+  margin: 0 auto;
+}

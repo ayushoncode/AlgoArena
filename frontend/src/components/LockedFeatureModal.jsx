@@ -17,6 +17,7 @@ const FEATURE_TITLES = {
   sheet_1v1: 'Striver A2Z 1v1 Battle',
   sheet: 'Striver A2Z Curriculum',
   voice_chat: 'Live Voice Communication',
+  discussion: 'Discussion Rooms',
   default: 'Premium Feature'
 }
 
@@ -24,6 +25,7 @@ const FEATURE_DESCRIPTIONS = {
   sheet_1v1: 'Duel 1v1 on curated curriculum problems with live judge verdicts.',
   sheet: 'Structured curriculum topic breakdown and problem indexing.',
   voice_chat: 'Real-time 1v1 voice communication during live matches.',
+  discussion: 'Forum-style problem rooms with live updates, peer hints, and safe approach discussions.',
   default: 'Curated curriculum indexing and question-by-question duel matchmaking.'
 }
 

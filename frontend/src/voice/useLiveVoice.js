@@ -19,6 +19,7 @@ export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium
   const [quality, setQuality] = useState({ rating: 'good', rtt: 0, jitter: 0, packetLoss: 0, bitrate: 0 });
   const [outputVolume, setOutputVolume] = useState(1.0);
   const [isOpponentMutedLocally, setIsOpponentMutedLocally] = useState(false);
+  const [mutedByOpponent, setMutedByOpponent] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [requestedBy, setRequestedBy] = useState(null);
   const [requestExpiresAt, setRequestExpiresAt] = useState(null);
@@ -204,15 +205,38 @@ export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium
       }
     }
 
+    function handleOpponentMuted(data) {
+      if (data.roomId && data.roomId !== roomId) return;
+      if (providerRef.current) {
+        providerRef.current.setMicEnabled(false).catch(() => {});
+      }
+      setIsMicMuted(true);
+      setVoiceState('connected');
+      setMutedByOpponent(true);
+      setErrorMessage('You were muted by opponent. Turn on mic to speak.');
+    }
+
+    function handleOpponentUnmuted(data) {
+      if (data.roomId && data.roomId !== roomId) return;
+      setIsOpponentMutedLocally(false);
+      if (providerRef.current) {
+        providerRef.current.setOutputVolume(outputVolume);
+      }
+    }
+
     socket.on('voice:state', handleVoiceState);
+    socket.on('voice:opponent_muted', handleOpponentMuted);
+    socket.on('voice:opponent_unmuted', handleOpponentUnmuted);
 
     // Initial state query
     socket.emit('voice:state', { roomId });
 
     return () => {
       socket.off('voice:state', handleVoiceState);
+      socket.off('voice:opponent_muted', handleOpponentMuted);
+      socket.off('voice:opponent_unmuted', handleOpponentUnmuted);
     };
-  }, [socket, isConnected, roomId, myId, connectVoiceSession]);
+  }, [socket, isConnected, roomId, myId, connectVoiceSession, outputVolume]);
 
   // ── Actions: Start, Accept, Decline, End ─────────────────────
   const doStartVoiceRequest = useCallback(() => {
@@ -298,6 +322,13 @@ export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium
       } else {
         setVoiceState('live');
         setVoiceAnnouncement('Microphone live');
+        if (mutedByOpponent) {
+          setMutedByOpponent(false);
+          setErrorMessage(null);
+        }
+        if (socket && roomId) {
+          socket.emit('voice:unmuted', { roomId });
+        }
       }
     } catch (err) {
       console.warn('[LiveVoice] setMicEnabled error:', err);
@@ -307,7 +338,7 @@ export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium
         setErrorMessage(VOICE_CONFIG.copy.noMicrophone);
       }
     }
-  }, [isMicMuted]);
+  }, [isMicMuted, mutedByOpponent, socket, roomId]);
 
   // ── Alt+M Keyboard Shortcut ──────────────────────────────────
   useEffect(() => {
@@ -334,7 +365,11 @@ export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium
     const nextMuted = !isOpponentMutedLocally;
     setIsOpponentMutedLocally(nextMuted);
     providerRef.current.setOutputVolume(nextMuted ? 0 : outputVolume);
-  }, [isOpponentMutedLocally, outputVolume]);
+
+    if (socket && roomId && nextMuted) {
+      socket.emit('voice:mute_opponent', { roomId });
+    }
+  }, [isOpponentMutedLocally, outputVolume, socket, roomId]);
 
   const changeOutputVolume = useCallback((vol) => {
     setOutputVolume(vol);
@@ -366,6 +401,7 @@ export function useLiveVoice({ roomId, me, opp, socket, isConnected, isMePremium
     quality,
     outputVolume,
     isOpponentMutedLocally,
+    mutedByOpponent,
     errorMessage,
     requestedBy,
     requestExpiresAt,

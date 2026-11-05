@@ -29,9 +29,11 @@ const matchRoutes   = require('./routes/matches')
 const experienceRoutes = require('./routes/experiences')
 const premiumRoutes = require('./routes/premium')
 const voiceRoutes   = require('./routes/voice')
+const discussionRoutes = require('./routes/discussion')
 const { registerMatchmaking, queueStats } = require('./socket/matchmaking')
 const { registerMatch, handleVerdict }  = require('./socket/match')
 const { registerCustomRoom }  = require('./socket/customRoom')
+const { registerDiscussion }  = require('./socket/discussion')
 const socketAuth              = require('./middleware/socketAuth')
 const { startVerdictSubscriber } = require('./queues/verdictSubscriber')
 
@@ -102,6 +104,7 @@ app.use('/api/matches',  matchRoutes)
 app.use('/api/experiences', experienceRoutes)
 app.use('/api/premium',  premiumRoutes)
 app.use('/api/voice',    voiceRoutes)
+app.use('/api/discussion', discussionRoutes)
 
 // ── Health check — useful for Render uptime pings ────────────────────────────
 app.get('/health', (_req, res) => {
@@ -134,6 +137,7 @@ app.use((err, _req, res, _next) => {
 registerMatchmaking(io)
 registerMatch(io)
 registerCustomRoom(io)
+registerDiscussion(io)
 
 // Log every new socket connection
 io.on('connection', (socket) => {

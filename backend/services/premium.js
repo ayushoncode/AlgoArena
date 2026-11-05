@@ -274,7 +274,7 @@ async function getEntitlements(userId) {
     canAccessSheet: isPremium,
     canBattleSheet: isPremium,
     hasPremiumBadge: isPremium,
-    canAccessDiscussion: false, // Feature marked Coming Soon
+    canAccessDiscussion: process.env.DISCUSSION_ENABLED === 'true' && isPremium,
     canAccessChat: false,       // Feature marked Coming Soon
     canAccessVoice: isPremium
   }

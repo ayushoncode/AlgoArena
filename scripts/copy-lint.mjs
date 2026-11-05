@@ -52,7 +52,22 @@ const TARGET_FILES = [
   'backend/config/premium.js',
   'backend/services/premium.js',
   'backend/routes/premium.js',
-  'backend/middleware/requirePremium.js'
+  'backend/middleware/requirePremium.js',
+  'frontend/src/content/discussion.js',
+  'backend/config/discussion.js',
+  'backend/services/discussion.js',
+  'backend/routes/discussion.js',
+  'backend/socket/discussion.js',
+  'frontend/src/utils/markdown.jsx',
+  'frontend/src/utils/discussionFormatters.js',
+  'frontend/src/services/discussionApi.js',
+  'frontend/src/hooks/useDiscussionRoom.js',
+  'frontend/src/pages/Discussion/DiscussionIndex.jsx',
+  'frontend/src/pages/Discussion/DiscussionIndex.css',
+  'frontend/src/pages/Discussion/DiscussionRoom.jsx',
+  'frontend/src/pages/Discussion/DiscussionRoom.css',
+  'frontend/src/pages/Discussion/ThreadView.jsx',
+  'frontend/src/pages/Discussion/ThreadView.css'
 ]
 
 // Regex for emoji (excludes mathematical / standard checkmark U+2713)
