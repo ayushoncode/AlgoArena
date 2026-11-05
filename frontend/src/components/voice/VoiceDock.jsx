@@ -1,11 +1,11 @@
 /**
  * frontend/src/components/voice/VoiceDock.jsx
  *
- * Connected voice dock with:
- * - 44px microphone mute toggle button ("Mic off" / "Mic on")
- * - Opponent avatar active speaking indicator (2px ink ring, zero glow)
- * - Connection quality telemetry indicator (three bars + Good/Fair/Poor + tooltip)
- * - Overflow menu (volume slider, mute opponent, block, report, settings, end call)
+ * Connected voice dock component:
+ * - 44px minimum tap targets
+ * - Mic on uses --info outline; Mic off uses ink on hairline (never green for connected)
+ * - Network quality telemetry badge (3 bars + Good/Fair/Poor + tooltip)
+ * - Keyboard accessible overflow menu with Arrow keys, Esc dismiss, and focus return
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -21,18 +21,17 @@ import {
 } from './VoiceIcons';
 import { UserAvatar } from '../../utils/avatar';
 import AudioWaveBar from './AudioWaveBar';
-import { VOICE_CONFIG } from '../../content/voice';
 import './voice.css';
 
 export default function VoiceDock({
   opp,
-  isMicMuted,
-  isOpponentSpeaking,
+  isMicMuted = true,
+  isOpponentSpeaking = false,
   speakingLevel = 0,
   opponentSpeakingLevel = 0,
   quality,
-  outputVolume,
-  isOpponentMutedLocally,
+  outputVolume = 1,
+  isOpponentMutedLocally = false,
   onToggleMute,
   onToggleOpponentMute,
   onChangeVolume,
@@ -43,20 +42,48 @@ export default function VoiceDock({
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
+  const moreBtnRef = useRef(null);
+  const menuItemsRef = useRef([]);
 
-  // Close overflow menu on outside click or Escape
   useEffect(() => {
     if (!showMenu) return;
+
     function onPointerDown(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setShowMenu(false);
       }
     }
+
     function onKeyDown(e) {
-      if (e.key === 'Escape') setShowMenu(false);
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowMenu(false);
+        moreBtnRef.current?.focus();
+        return;
+      }
+
+      const items = menuItemsRef.current.filter(Boolean);
+      if (items.length === 0) return;
+      const currentIndex = items.indexOf(document.activeElement);
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+        items[nextIndex]?.focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+        items[prevIndex]?.focus();
+      }
     }
+
     window.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('keydown', onKeyDown);
+
+    setTimeout(() => {
+      menuItemsRef.current[0]?.focus();
+    }, 40);
+
     return () => {
       window.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('keydown', onKeyDown);
@@ -70,24 +97,24 @@ export default function VoiceDock({
 
   return (
     <div className="voice-dock" role="region" aria-label="Live Voice Call Controls">
-      {/* 44px Mic Mute Button */}
+      {/* 40-44px Mic Mute Button (Never green: --info for live, ink on hairline for muted) */}
       <button
         type="button"
         onClick={onToggleMute}
-        className={`voice-dock__mute-btn ${isMicMuted ? 'is-muted' : 'is-live'}`}
+        className={`voice-dock__mute-btn ${!isMicMuted ? 'is-live' : 'is-muted'}`}
         aria-label={isMicMuted ? 'Microphone is muted. Click or press Alt+M to speak' : 'Microphone is live. Click or press Alt+M to mute'}
         aria-pressed={!isMicMuted}
         title="Toggle Microphone (Alt+M)"
       >
-        {isMicMuted ? <IconMicOff size={16} /> : <IconMic size={16} />}
-        <span>{isMicMuted ? VOICE_CONFIG.copy.micOff : VOICE_CONFIG.copy.micOn}</span>
+        {!isMicMuted ? <IconMic size={16} /> : <IconMicOff size={16} />}
+        <span>{!isMicMuted ? 'Mic on' : 'Mic off'}</span>
         {!isMicMuted && (
-          <AudioWaveBar level={speakingLevel} isLive={true} isOpponent={false} count={5} />
+          <AudioWaveBar level={speakingLevel} isLive={true} isOpponent={false} count={4} />
         )}
       </button>
 
-      {/* Opponent Speaking Ring & Name */}
-      <div className="flex items-center gap-2 pl-1 pr-2 border-r border-[var(--c-border)]">
+      {/* Opponent Avatar & Speaking Ring */}
+      <div className="flex items-center gap-2 pl-1 pr-2 border-r border-[var(--hairline)]">
         <div className="voice-speaker-wrap">
           <UserAvatar
             username={opp?.username}
@@ -101,17 +128,17 @@ export default function VoiceDock({
           )}
         </div>
         <span
-          className="font-mono text-xs font-semibold truncate max-w-[80px] text-[var(--c-text)]"
+          className="font-mono text-xs font-semibold truncate max-w-[80px] text-[var(--ink)]"
           title={opp?.username ?? 'Opponent'}
         >
           {opp?.username ?? 'Opponent'}
         </span>
         {isOpponentSpeaking && (
-          <AudioWaveBar level={opponentSpeakingLevel} isLive={true} isOpponent={true} count={4} />
+          <AudioWaveBar level={opponentSpeakingLevel} isLive={true} isOpponent={true} count={3} />
         )}
       </div>
 
-      {/* Connection Quality Badge */}
+      {/* Connection Quality Telemetry Indicator */}
       <div
         className={`voice-quality-badge ${qualityClass}`}
         title={qualityTooltip}
@@ -130,9 +157,10 @@ export default function VoiceDock({
       <div className="relative" ref={menuRef}>
         <button
           type="button"
+          ref={moreBtnRef}
           onClick={() => setShowMenu(s => !s)}
-          className="voice-modal-close-btn p-1.5"
-          aria-label="Voice options menu"
+          className="voice-row__overflow-btn voice-dock__more-btn"
+          aria-label="Voice settings and actions"
           aria-haspopup="true"
           aria-expanded={showMenu}
         >
@@ -143,16 +171,16 @@ export default function VoiceDock({
           <div
             role="menu"
             aria-label="Voice Options"
-            className="absolute right-0 top-full mt-2 w-56 bg-[var(--c-panel)] border border-[var(--c-border)] rounded-md shadow-lg p-2 text-xs z-50 flex flex-col gap-1"
+            className="voice-overflow-menu"
           >
             {/* Output volume slider */}
-            <div className="p-2 border-b border-[var(--c-border)]">
-              <div className="flex items-center justify-between mb-1.5 font-mono text-[10px] text-[var(--c-text-mute)] uppercase">
+            <div className="p-2 border-b border-[var(--hairline)]">
+              <div className="flex items-center justify-between mb-1.5 font-mono text-[10px] text-[var(--ink-muted)] uppercase">
                 <span className="flex items-center gap-1.5">
                   <IconSpeaker size={12} />
-                  <span>Volume</span>
+                  <span>Output Volume</span>
                 </span>
-                <span>{Math.round(outputVolume * 100)}%</span>
+                <span className="tabular-nums">{Math.round(outputVolume * 100)}%</span>
               </div>
               <input
                 type="range"
@@ -160,8 +188,8 @@ export default function VoiceDock({
                 max="1"
                 step="0.05"
                 value={isOpponentMutedLocally ? 0 : outputVolume}
-                onChange={(e) => onChangeVolume(parseFloat(e.target.value))}
-                className="w-full h-1 bg-[var(--c-panel2)] rounded cursor-pointer accent-[var(--info)]"
+                onChange={(e) => onChangeVolume?.(parseFloat(e.target.value))}
+                className="w-full h-1 bg-[var(--bg-surface)] rounded cursor-pointer accent-[var(--info)]"
                 aria-label="Opponent output volume"
               />
             </div>
@@ -170,71 +198,76 @@ export default function VoiceDock({
             <button
               type="button"
               role="menuitem"
+              ref={el => (menuItemsRef.current[0] = el)}
               onClick={() => {
-                onToggleOpponentMute();
+                onToggleOpponentMute?.();
                 setShowMenu(false);
               }}
-              className="w-full text-left px-2 py-1.5 rounded hover:bg-[var(--c-panel2)] text-[var(--c-text)] flex items-center gap-2"
+              className="voice-overflow-item voice-dock__menu-item"
             >
-              <IconMicOff size={14} className="text-[var(--c-text-mute)]" />
-              <span>{isOpponentMutedLocally ? VOICE_CONFIG.copy.unmuteOpponent : VOICE_CONFIG.copy.muteOpponent}</span>
+              <IconMicOff size={14} className="text-[var(--ink-muted)] shrink-0" />
+              <span>{isOpponentMutedLocally ? 'Unmute opponent' : 'Mute opponent'}</span>
             </button>
 
             {/* Settings */}
             <button
               type="button"
               role="menuitem"
+              ref={el => (menuItemsRef.current[1] = el)}
               onClick={() => {
-                onOpenSettings();
+                onOpenSettings?.();
                 setShowMenu(false);
               }}
-              className="w-full text-left px-2 py-1.5 rounded hover:bg-[var(--c-panel2)] text-[var(--c-text)] flex items-center gap-2"
+              className="voice-overflow-item voice-dock__menu-item"
             >
-              <IconSliders size={14} className="text-[var(--c-text-mute)]" />
-              <span>{VOICE_CONFIG.copy.deviceSettings}</span>
+              <IconSliders size={14} className="text-[var(--ink-muted)] shrink-0" />
+              <span>Settings</span>
             </button>
 
             {/* Report */}
             <button
               type="button"
               role="menuitem"
+              ref={el => (menuItemsRef.current[2] = el)}
               onClick={() => {
-                onOpenReport();
+                onOpenReport?.();
                 setShowMenu(false);
               }}
-              className="w-full text-left px-2 py-1.5 rounded hover:bg-[var(--c-panel2)] text-[var(--warn)] flex items-center gap-2"
+              className="voice-overflow-item voice-dock__menu-item text-[var(--warn)]"
             >
-              <IconFlag size={14} />
-              <span>{VOICE_CONFIG.copy.reportVoice}</span>
+              <IconFlag size={14} className="shrink-0" />
+              <span>Report voice</span>
             </button>
 
             {/* Block */}
             <button
               type="button"
               role="menuitem"
+              ref={el => (menuItemsRef.current[3] = el)}
               onClick={() => {
-                onOpenBlock();
+                onOpenBlock?.();
                 setShowMenu(false);
               }}
-              className="w-full text-left px-2 py-1.5 rounded hover:bg-[var(--c-panel2)] text-[var(--bad)] flex items-center gap-2"
+              className="voice-overflow-item voice-dock__menu-item text-[var(--bad)]"
             >
-              <IconShield size={14} />
-              <span>{VOICE_CONFIG.copy.blockPlayer}</span>
+              <IconShield size={14} className="shrink-0" />
+              <span>Block voice from this player</span>
             </button>
 
             {/* End Call */}
-            <div className="pt-1 mt-1 border-t border-[var(--c-border)]">
+            <div className="pt-1 mt-1 border-t border-[var(--hairline)]">
               <button
                 type="button"
                 role="menuitem"
+                ref={el => (menuItemsRef.current[4] = el)}
                 onClick={() => {
-                  onEndVoice();
+                  onEndVoice?.();
                   setShowMenu(false);
                 }}
-                className="w-full text-left px-2 py-1.5 rounded hover:bg-rose-500/10 text-[var(--bad)] font-semibold flex items-center gap-2"
+                className="voice-overflow-item voice-dock__menu-item voice-dock__menu-item--danger text-[var(--bad)] font-semibold"
               >
-                <IconPhoneOff size={14} />
-                <span>{VOICE_CONFIG.copy.endVoice}</span>
+                <IconPhoneOff size={14} className="shrink-0" />
+                <span>End voice</span>
               </button>
             </div>
           </div>
@@ -245,7 +278,7 @@ export default function VoiceDock({
       <button
         type="button"
         onClick={onEndVoice}
-        className="voice-topbar-btn is-bad px-2"
+        className="voice-topbar-btn is-bad px-2.5"
         title="End voice call"
         aria-label="End live voice call"
       >
@@ -255,4 +288,3 @@ export default function VoiceDock({
     </div>
   );
 }
-

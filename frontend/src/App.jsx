@@ -23,6 +23,9 @@ import AuthPage from './pages/AuthPage'
 import IntelReports from './pages/IntelReports'
 import IntelReportDetail from './pages/IntelReportDetail'
 import ShareExperienceWizard from './pages/ShareExperienceWizard'
+import DiscussionIndex from './pages/Discussion/DiscussionIndex'
+import DiscussionRoom from './pages/Discussion/DiscussionRoom'
+import ThreadView from './pages/Discussion/ThreadView'
 import { useSocket } from './hooks/useSocket'
 import { getActiveMatch, setActiveMatch } from './utils/activeMatch'
 import { ThemeProvider } from './context/ThemeContext'
@@ -93,6 +96,10 @@ function PageTitleSync() {
       document.title = 'Who We Are | AlgoArena'
     } else if (pathname === '/premium') {
       document.title = 'Premium | AlgoArena'
+    } else if (pathname === '/discuss') {
+      document.title = 'Discussions | AlgoArena'
+    } else if (pathname.startsWith('/discuss/')) {
+      document.title = 'Discussion Room | AlgoArena'
     } else if (pathname === '/account/billing') {
       document.title = 'Billing & Subscription | AlgoArena'
     } else if (pathname === '/terms') {
@@ -307,6 +314,10 @@ function AppLayout() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />
+          {/* Discussion Rooms */}
+          <Route path="/discuss" element={<DiscussionIndex />} />
+          <Route path="/discuss/:slug" element={<DiscussionRoom />} />
+          <Route path="/discuss/:slug/thread/:id" element={<ThreadView />} />
           {/* Intel Reports Routes (Gated) */}
           <Route path="/experiences" element={<RequireAuthGate><IntelReports /></RequireAuthGate>} />
           <Route path="/experiences/mine" element={<RequireAuthGate><IntelReports /></RequireAuthGate>} />

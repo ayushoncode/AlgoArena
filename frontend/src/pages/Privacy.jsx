@@ -91,6 +91,20 @@ export default function Privacy() {
           </p>
         </section>
 
+        {/* Section 7: Discussion Rooms and Public Content */}
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold text-white">7. Discussion Rooms and Community Privacy</h2>
+          <p className="text-sm leading-relaxed text-slate-300">
+            When you participate in problem discussion rooms:
+          </p>
+          <ul className="list-disc pl-5 space-y-1.5 text-sm text-slate-300">
+            <li>Public Author Information: Only your public username, avatar, Elo rating, and Premium membership indicator are visible on threads and replies. Your email address, institute name, rating history, and personal details are never displayed or returned in discussion APIs.</li>
+            <li>Content Storage: Forum threads and replies are stored on our servers to maintain discussion continuity. Edited posts display an edited timestamp. Deleted posts have their bodies replaced with a deleted marker while preserving reply hierarchy.</li>
+            <li>Privacy from Blocked Users: When you block another user, your posts are hidden from their view, and they cannot reply to your threads. Block lists are stored securely and never made public.</li>
+            <li>No Logging of Sensitive Content: Operational logs hash user identifiers and never log post bodies or personal messages [TODO: owner to confirm log retention period].</li>
+          </ul>
+        </section>
+
         {/* Footer nav */}
         <div className="pt-8 border-t border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
           <Link to="/" className="text-[#ffd696] hover:underline">&larr; Return to Home</Link>

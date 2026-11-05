@@ -1,37 +1,39 @@
 /**
  * frontend/src/components/voice/VoiceSettingsModal.jsx
  *
- * Voice device settings dialog:
- * - Microphone input selection
- * - Speaker output selection (with setSinkId support)
- * - Live input level meter (Web Audio AnalyserNode) with microphone test
- * - Headphone tip ("Headphones prevent echo.")
- * - Push-to-talk option and shortcut summary (Alt+M)
+ * Device settings dialog for Live Voice:
+ * - Input device select
+ * - Output device select (if supported by browser)
+ * - Input level meter: three neutral bars, no green gradient
+ * - Push-to-talk toggle and Alt+M keyboard shortcut reference
+ * - 480px max width on desktop, full-width bottom sheet on phone, 6px radius
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { IconSliders, IconClose, IconMic, IconSpeaker, IconCheck } from './VoiceIcons';
+import { IconSliders, IconClose, IconSpeaker } from './VoiceIcons';
 import { VOICE_CONFIG } from '../../content/voice';
 import './voice.css';
 
 export default function VoiceSettingsModal({
   isOpen,
+  pushToTalk,
   pushToTalkEnabled,
   onTogglePushToTalk,
   onClose,
 }) {
+  const isPtt = pushToTalk ?? pushToTalkEnabled ?? false;
   const [audioInputs, setAudioInputs] = useState([]);
   const [audioOutputs, setAudioOutputs] = useState([]);
   const [selectedInputId, setSelectedInputId] = useState('');
   const [selectedOutputId, setSelectedOutputId] = useState('');
   const [isTestingMic, setIsTestingMic] = useState(false);
-  const [inputLevel, setInputLevel] = useState(0);
+  const [activeBars, setActiveBars] = useState(0); // 0, 1, 2, or 3 bars
 
   const testStreamRef = useRef(null);
   const audioContextRef = useRef(null);
   const animFrameRef = useRef(null);
 
-  // Enumerate audio devices
+  // Enumerate devices
   useEffect(() => {
     if (!isOpen) return;
 
@@ -46,14 +48,14 @@ export default function VoiceSettingsModal({
         if (inputs.length && !selectedInputId) setSelectedInputId(inputs[0].deviceId);
         if (outputs.length && !selectedOutputId) setSelectedOutputId(outputs[0].deviceId);
       } catch (err) {
-        console.warn('[VoiceSettings] enumerateDevices notice:', err.message);
+        console.warn('[VoiceSettings] Device enumeration note:', err.message);
       }
     }
 
     loadDevices();
   }, [isOpen, selectedInputId, selectedOutputId]);
 
-  // Clean up mic test on close
+  // Cleanup on modal close
   useEffect(() => {
     if (!isOpen) {
       stopMicTest();
@@ -74,7 +76,7 @@ export default function VoiceSettingsModal({
       audioContextRef.current = null;
     }
     setIsTestingMic(false);
-    setInputLevel(0);
+    setActiveBars(0);
   }
 
   async function startMicTest() {
@@ -103,14 +105,21 @@ export default function VoiceSettingsModal({
           sum += buffer[i];
         }
         const avg = sum / buffer.length;
-        const pct = Math.min(100, Math.round((avg / 128) * 100));
-        setInputLevel(pct);
+        if (avg > 50) {
+          setActiveBars(3);
+        } else if (avg > 20) {
+          setActiveBars(2);
+        } else if (avg > 5) {
+          setActiveBars(1);
+        } else {
+          setActiveBars(0);
+        }
         animFrameRef.current = requestAnimationFrame(tick);
       }
 
       tick();
     } catch (err) {
-      console.warn('[VoiceSettings] Mic test getUserMedia notice:', err.message);
+      console.warn('[VoiceSettings] Mic test getUserMedia note:', err.message);
       setIsTestingMic(false);
     }
   }
@@ -126,23 +135,24 @@ export default function VoiceSettingsModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           stopMicTest();
-          onClose();
+          onClose?.();
         }
       }}
     >
       <div className="voice-modal-frame">
+        {/* Header */}
         <div className="voice-modal-header">
           <div className="flex items-center gap-2">
             <IconSliders size={16} className="text-[var(--info)]" />
             <h3 id="voice-settings-title" className="voice-modal-title">
-              {VOICE_CONFIG.copy.deviceSettings}
+              Voice settings
             </h3>
           </div>
           <button
             type="button"
             onClick={() => {
               stopMicTest();
-              onClose();
+              onClose?.();
             }}
             className="voice-modal-close-btn"
             aria-label="Close voice settings"
@@ -151,17 +161,18 @@ export default function VoiceSettingsModal({
           </button>
         </div>
 
-        <div className="voice-modal-body">
+        {/* Body */}
+        <div className="voice-modal-body space-y-4">
           {/* Headphone tip */}
-          <div className="p-2.5 rounded bg-[var(--c-panel2)] border border-[var(--c-border)] text-xs text-[var(--c-text-dim)] flex items-center gap-2">
-            <IconSpeaker size={15} className="text-[var(--info)] shrink-0" />
-            <span>{VOICE_CONFIG.copy.headphoneTip}</span>
+          <div className="p-3 rounded-md bg-[var(--bg-surface)] border border-[var(--hairline)] text-xs text-[var(--ink-muted)] flex items-center gap-2.5">
+            <IconSpeaker size={16} className="text-[var(--info)] shrink-0" />
+            <span>Headphones prevent echo and feedback during matches.</span>
           </div>
 
-          {/* Microphone Selector */}
+          {/* Input device select */}
           <div>
             <label htmlFor="voice-mic-select" className="voice-select-label">
-              {VOICE_CONFIG.copy.inputDevice}
+              Microphone
             </label>
             <select
               id="voice-mic-select"
@@ -181,37 +192,33 @@ export default function VoiceSettingsModal({
             </select>
           </div>
 
-          {/* Microphone Test Step */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="font-mono text-[10px] text-[var(--c-text-mute)] uppercase">
-                {VOICE_CONFIG.copy.speakingLevel}
+          {/* Input level meter: three neutral bars, no green gradient */}
+          <div className="p-3 rounded-md bg-[var(--bg-surface)] border border-[var(--hairline)] space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[11px] text-[var(--ink-muted)] uppercase">
+                Input level
               </span>
               <button
                 type="button"
                 onClick={isTestingMic ? stopMicTest : startMicTest}
-                className="font-mono text-[10px] text-[var(--info)] hover:underline"
+                className="font-mono text-xs text-[var(--info)] hover:underline"
               >
-                {isTestingMic ? 'Stop Test' : VOICE_CONFIG.copy.testMicrophone}
+                {isTestingMic ? 'Stop test' : 'Test mic'}
               </button>
             </div>
-            <div className="voice-meter-bar">
-              <div
-                className="voice-meter-fill"
-                style={{ width: `${inputLevel}%` }}
-                aria-valuenow={inputLevel}
-                aria-valuemin="0"
-                aria-valuemax="100"
-                role="progressbar"
-              />
+            {/* Three neutral bars */}
+            <div className="voice-level-meter-three" aria-label={`Input level is ${activeBars} of 3`}>
+              <span className={`voice-level-bar ${activeBars >= 1 ? 'is-active' : ''}`} />
+              <span className={`voice-level-bar ${activeBars >= 2 ? 'is-active' : ''}`} />
+              <span className={`voice-level-bar ${activeBars >= 3 ? 'is-active' : ''}`} />
             </div>
           </div>
 
-          {/* Speaker Selector (if supported) */}
+          {/* Output device select (if supported) */}
           {audioOutputs.length > 0 && (
             <div>
               <label htmlFor="voice-speaker-select" className="voice-select-label">
-                {VOICE_CONFIG.copy.outputDevice}
+                Audio output
               </label>
               <select
                 id="voice-speaker-select"
@@ -228,45 +235,45 @@ export default function VoiceSettingsModal({
             </div>
           )}
 
-          {/* Push to talk option */}
-          <div className="border-t border-[var(--c-border)] pt-3">
-            <label className="flex items-center gap-2 cursor-pointer text-xs text-[var(--c-text)]">
+          {/* Push-to-talk option */}
+          <div className="border-t border-[var(--hairline)] pt-3">
+            <label className="flex items-center gap-2.5 cursor-pointer text-xs text-[var(--ink)]">
               <input
                 type="checkbox"
-                checked={pushToTalkEnabled}
-                onChange={(e) => onTogglePushToTalk(e.target.checked)}
-                className="rounded border-[var(--c-border)] accent-[var(--info)]"
+                checked={isPtt}
+                onChange={(e) => onTogglePushToTalk?.(e.target.checked)}
+                className="rounded border-[var(--hairline)] accent-[var(--info)]"
               />
-              <span className="font-semibold">{VOICE_CONFIG.copy.pushToTalkLabel}</span>
+              <span className="font-semibold">Push to talk</span>
             </label>
-            <p className="font-mono text-[10px] text-[var(--c-text-mute)] mt-1 ml-5">
-              {VOICE_CONFIG.copy.pushToTalkHint}
+            <p className="font-mono text-[11px] text-[var(--ink-muted)] mt-1 ml-6">
+              Hold the mute key to transmit audio.
             </p>
           </div>
 
-          {/* Keyboard Shortcut Note */}
-          <div className="border-t border-[var(--c-border)] pt-2.5 font-mono text-[10px] text-[var(--c-text-mute)] flex justify-between">
-            <span>Toggle Mute Shortcut:</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-[var(--c-panel2)] border border-[var(--c-border)] text-[var(--c-text)] font-bold">
-              {VOICE_CONFIG.muteToggleShortcut}
+          {/* Keyboard shortcut */}
+          <div className="border-t border-[var(--hairline)] pt-3 font-mono text-[11px] text-[var(--ink-muted)] flex items-center justify-between">
+            <span>Toggle mute shortcut:</span>
+            <kbd className="px-2 py-0.5 rounded bg-[var(--bg-base)] border border-[var(--hairline)] text-[var(--ink)] font-bold">
+              Alt + M
             </kbd>
           </div>
         </div>
 
+        {/* Footer */}
         <div className="voice-modal-footer">
           <button
             type="button"
             onClick={() => {
               stopMicTest();
-              onClose();
+              onClose?.();
             }}
-            className="voice-btn-accept px-4"
+            className="voice-btn-primary h-11 px-6"
           >
-            <span>Done</span>
+            Done
           </button>
         </div>
       </div>
     </div>
   );
 }
-

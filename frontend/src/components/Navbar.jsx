@@ -9,6 +9,9 @@ import StreakButton from './navbar/StreakButton'
 import MobileMenuSheet from './navbar/MobileMenuSheet'
 import { getStreakData } from './navbar/navData'
 import { usePremium } from '../hooks/usePremium'
+import { useSocket } from '../hooks/useSocket'
+import { getUnreadReplies } from '../services/discussionApi'
+import { IconLock } from './icons'
 import './navbar/navbar-v2.css'
 
 /**
@@ -39,9 +42,11 @@ export default function Navbar() {
 
 function NavbarV2({ navigate, pathname }) {
   const { user, logout, isAuthenticated, loading } = useAuth()
-  const { isPremium, isPremiumEnabled } = usePremium()
+  const { isPremium, isPremiumEnabled, openLockedModal } = usePremium()
+  const { on, off } = useSocket()
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [hasUnreadDiscuss, setHasUnreadDiscuss] = useState(false)
 
   const avatarBtnRef = useRef(null)
   const streakBtnRef = useRef(null)
@@ -100,6 +105,33 @@ function NavbarV2({ navigate, pathname }) {
     }
   }, [isAuthenticated, user?.id, pathname])
 
+  // Fetch discussion unread status & register live notification
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setHasUnreadDiscuss(false)
+      return
+    }
+
+    let isSubscribed = true
+    getUnreadReplies()
+      .then(res => {
+        if (isSubscribed && res?.hasUnread) {
+          setHasUnreadDiscuss(true)
+        }
+      })
+      .catch(() => {})
+
+    function onReplyNotif() {
+      if (isSubscribed) setHasUnreadDiscuss(true)
+    }
+
+    on('disc:reply_notification', onReplyNotif)
+    return () => {
+      isSubscribed = false
+      off('disc:reply_notification', onReplyNotif)
+    }
+  }, [isAuthenticated, on, off])
+
   function handleFlameClick() {
     setMenuOpen(false)
     setMobileOpen(false)
@@ -114,9 +146,19 @@ function NavbarV2({ navigate, pathname }) {
     navigate(mode === 'register' ? '/signup' : '/login')
   }
 
+  const isDiscussionFreeRead = import.meta.env.VITE_DISCUSSION_FREE_READ === 'true'
+  const isDiscussionGated = isAuthenticated && isPremiumEnabled && !isPremium && !isDiscussionFreeRead
+
   const NAV_LINKS = [
     { label: 'Lobby', href: '/lobby' },
     { label: 'Leaderboard', href: '/leaderboard' },
+    {
+      label: 'Discuss',
+      href: '/discuss',
+      isDiscuss: true,
+      hasDot: hasUnreadDiscuss,
+      isGated: isDiscussionGated
+    },
     ...(isPremiumEnabled && !isAuthenticated ? [{ label: 'Premium', href: '/premium' }] : []),
     ...(isAuthenticated ? [{ label: 'Intel Reports', href: '/experiences' }] : []),
     ...(!isAuthenticated ? [{ label: 'Who We Are', href: '/who-we-are' }] : []),
@@ -137,15 +179,40 @@ function NavbarV2({ navigate, pathname }) {
 
           {/* ── DESKTOP CENTER NAV (>= 900px) ───────────────────────── */}
           <div className="nav-v2-desktop-nav flex items-center gap-7">
-            {NAV_LINKS.map(({ label, href }) => {
-              const active = pathname === href
+            {NAV_LINKS.map(({ label, href, isDiscuss, hasDot, isGated }) => {
+              const active = pathname === href || (isDiscuss && pathname.startsWith('/discuss'))
+
+              if (isGated) {
+                return (
+                  <button
+                    key={href}
+                    type="button"
+                    onClick={() => openLockedModal('discussion')}
+                    className="nav-v2-desktop-link flex items-center gap-1.5 cursor-pointer"
+                    style={{ background: 'transparent', border: 'none', padding: 0 }}
+                  >
+                    <span>{label}</span>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 select-none">
+                      <IconLock size={10} />
+                      <span>Premium</span>
+                    </span>
+                  </button>
+                )
+              }
+
               return (
                 <Link
                   key={href}
                   to={href}
-                  className={`nav-v2-desktop-link ${active ? 'is-active' : ''}`}
+                  className={`nav-v2-desktop-link relative ${active ? 'is-active' : ''}`}
                 >
-                  {label}
+                  <span>{label}</span>
+                  {hasDot && (
+                    <span
+                      aria-label="New replies"
+                      className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-sky-400"
+                    />
+                  )}
                   {active && (
                     <span
                       aria-hidden="true"
@@ -363,6 +430,8 @@ function NavbarV2({ navigate, pathname }) {
         navigate={navigate}
         goAuth={goAuth}
         triggerRef={hamburgerBtnRef}
+        hasUnreadDiscuss={hasUnreadDiscuss}
+        isDiscussionGated={isDiscussionGated}
       />
     </>
   )
