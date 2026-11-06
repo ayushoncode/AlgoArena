@@ -9,7 +9,6 @@ import LiveArenaQueue from './LiveArenaQueue'
 import StriverSheetView from '../../components/StriverSheetView'
 import { IconSwords, IconCheck, IconClose, IconCode, IconShield, IconTrophy, IconPlay, IconLock } from '../../components/icons'
 import { usePremium } from '../../hooks/usePremium'
-import striver3dAvatar from '../../assets/striver-3d.png'
 import './Lobby.css'
 
 function cleanPreview(raw) {
@@ -137,13 +136,6 @@ export default function LobbyViewV2({
             onClick={() => setLobbyTab && setLobbyTab('striver')}
             className={`lobby-v2-mode-tab lobby-v2-striver-tab ${lobbyTab === 'striver' ? 'is-active' : ''}`}
           >
-            <div className="lobby-v2-striver-mascot-wrap" aria-hidden="true">
-              <img
-                src={striver3dAvatar}
-                alt=""
-                className="lobby-v2-striver-mascot"
-              />
-            </div>
             <IconCode size={15} />
             <span><span className="hidden sm:inline">Striver A2Z Sheet</span><span className="sm:hidden">Striver</span></span>
             {isPremiumEnabled && !isPremium && (
