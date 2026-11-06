@@ -27,11 +27,7 @@ html[data-theme='light'] body:has(.lb-page-root) nav.fixed {
   font-family: var(--font-sans, 'Sora Variable', sans-serif) !important;
 }
 
-body:has(.lb-page-root) nav.fixed a,
-body:has(.lb-page-root) nav.fixed span,
-body:has(.lb-page-root) nav.fixed button {
-  font-family: var(--font-sans, 'Sora Variable', sans-serif) !important;
-}
+
 
 /* ═══════════════════════════════════════════════════════════
    MAIN CONTAINER & GRID

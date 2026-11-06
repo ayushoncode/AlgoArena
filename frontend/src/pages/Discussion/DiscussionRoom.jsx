@@ -17,12 +17,14 @@ import {
 } from '../../components/icons';
 import PremiumBadge from '../../components/PremiumBadge';
 import { useAuth } from '../../hooks/useAuth';
+import { usePremium } from '../../hooks/usePremium';
 import './DiscussionRoom.css';
 
 export default function DiscussionRoom() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { isPremium, isPremiumEnabled, openLockedModal } = usePremium();
 
   const [room, setRoom] = useState(null);
   const [threads, setThreads] = useState([]);
@@ -146,6 +148,11 @@ export default function DiscussionRoom() {
       setComposerBody('');
       localStorage.removeItem(`disc_draft_${slug}`);
     } catch (err) {
+      if (err.code === 'PREMIUM_REQUIRED' || err.response?.data?.code === 'PREMIUM_REQUIRED') {
+        setIsComposerOpen(false);
+        openLockedModal('discussion');
+        return;
+      }
       setComposerError(err.message || 'Failed to create thread.');
     } finally {
       setIsSubmitting(false);
@@ -222,11 +229,21 @@ export default function DiscussionRoom() {
                 navigate('/login');
                 return;
               }
+              if (isPremiumEnabled && !isPremium) {
+                openLockedModal('discussion');
+                return;
+              }
               setIsComposerOpen(true);
             }}
           >
             <IconPlus size={16} />
             <span>New thread</span>
+            {isPremiumEnabled && !isPremium && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 ml-1">
+                <IconLock size={10} />
+                <span>Premium</span>
+              </span>
+            )}
           </button>
         </div>
       </div>

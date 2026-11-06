@@ -631,7 +631,7 @@
 }
 
 .nav-v2-streak-count {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
   font-size: 13px;
   font-weight: 700;
   line-height: 1;

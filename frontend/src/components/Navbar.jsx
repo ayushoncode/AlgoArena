@@ -107,7 +107,7 @@ function NavbarV2({ navigate, pathname }) {
 
   // Fetch discussion unread status & register live notification
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !isPremium) {
       setHasUnreadDiscuss(false)
       return
     }
@@ -130,7 +130,7 @@ function NavbarV2({ navigate, pathname }) {
       isSubscribed = false
       off('disc:reply_notification', onReplyNotif)
     }
-  }, [isAuthenticated, on, off])
+  }, [isAuthenticated, isPremium, on, off])
 
   function handleFlameClick() {
     setMenuOpen(false)
@@ -152,16 +152,18 @@ function NavbarV2({ navigate, pathname }) {
   const NAV_LINKS = [
     { label: 'Lobby', href: '/lobby' },
     { label: 'Leaderboard', href: '/leaderboard' },
-    {
-      label: 'Discuss',
-      href: '/discuss',
-      isDiscuss: true,
-      hasDot: hasUnreadDiscuss,
-      isGated: isDiscussionGated
-    },
-    ...(isPremiumEnabled && !isAuthenticated ? [{ label: 'Premium', href: '/premium' }] : []),
-    ...(isAuthenticated ? [{ label: 'Intel Reports', href: '/experiences' }] : []),
-    ...(!isAuthenticated ? [{ label: 'Who We Are', href: '/who-we-are' }] : []),
+    ...(isAuthenticated ? [
+      {
+        label: 'Discuss',
+        href: '/discuss',
+        isDiscuss: true,
+        hasDot: hasUnreadDiscuss,
+        isGated: isDiscussionGated
+      },
+      { label: 'Intel Reports', href: '/experiences' }
+    ] : [
+      { label: 'Who We Are', href: '/who-we-are' }
+    ]),
   ]
 
   return (

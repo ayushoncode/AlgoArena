@@ -48,11 +48,7 @@ html[data-theme='light'] body:has(.lobby-v2) nav.fixed {
   font-family: var(--font-sans, 'Sora Variable', sans-serif) !important;
 }
 
-body:has(.lobby-v2) nav.fixed a,
-body:has(.lobby-v2) nav.fixed span,
-body:has(.lobby-v2) nav.fixed button {
-  font-family: var(--font-sans, 'Sora Variable', sans-serif) !important;
-}
+
 
 /* ── HEADER ROW ──────────────────────────────────────────────── */
 .lobby-v2-header-block {
@@ -406,41 +402,6 @@ body:has(.lobby-v2) nav.fixed button {
 
 .lobby-v2-striver-tab {
   position: relative;
-  overflow: visible;
-}
-
-.lobby-v2-striver-mascot-wrap {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  width: 66px;
-  height: 62px;
-  z-index: 10;
-  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 180ms ease;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.65));
-}
-
-.lobby-v2-striver-tab:hover .lobby-v2-striver-mascot-wrap {
-  transform: translateX(-50%) translateY(-2px) scale(1.06);
-}
-
-.lobby-v2-striver-tab.is-active .lobby-v2-striver-mascot-wrap {
-  filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.45)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.65));
-}
-
-.lobby-v2-striver-mascot {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: bottom center;
-  display: block;
-  user-select: none;
-  -webkit-user-drag: none;
 }
 
 .lobby-v2-mode-tab {
@@ -2895,14 +2856,8 @@ body:has(.lobby-v2) nav.fixed button {
   .lobby-v2-mode-selector {
     gap: 4px;
     padding: 3px;
-    margin-top: 40px;
-    margin-bottom: 20px;
-    overflow: visible;
-  }
-
-  .lobby-v2-striver-mascot-wrap {
-    width: 52px;
-    height: 48px;
+    margin-top: 14px;
+    margin-bottom: 16px;
   }
 
   .lobby-v2-mode-tab {

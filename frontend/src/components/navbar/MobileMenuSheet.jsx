@@ -241,7 +241,7 @@ export default function MobileMenuSheet({
       <div className="nav-v2-m-sheet-body">
         {/* Main Nav Section */}
         <div className="nav-v2-m-nav-group" role="navigation" aria-label="Main navigation">
-          {isPremiumEnabled && (
+          {isPremiumEnabled && isAuthenticated && (
             <button
               type="button"
               className={`nav-v2-m-row ${pathname === '/premium' ? 'is-active' : ''}`}
@@ -303,43 +303,45 @@ export default function MobileMenuSheet({
             <span className="nav-v2-m-row-label">Leaderboard</span>
           </button>
 
-          <button
-            type="button"
-            className={`nav-v2-m-row ${pathname.startsWith('/discuss') ? 'is-active' : ''}`}
-            onClick={() => {
-              if (isDiscussionGated) {
-                onClose()
-                openLockedModal('discussion')
-              } else {
-                handleNav('/discuss')
-              }
-            }}
-            aria-current={pathname.startsWith('/discuss') ? 'page' : undefined}
-          >
-            <span className="nav-v2-m-row-icon">
-              <IconMessageSquare size={20} />
-            </span>
-            <span className="nav-v2-m-row-label">Discussions</span>
-            {hasUnreadDiscuss && (
-              <span className="w-2 h-2 rounded-full bg-sky-400 ml-2" />
-            )}
-            {isDiscussionGated && (
-              <span
-                style={{
-                  marginLeft: 'auto',
-                  fontSize: '11px',
-                  fontFamily: 'var(--font-mono, monospace)',
-                  color: 'var(--c-text-mute)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <IconLock size={12} />
-                <span>Premium</span>
+          {isAuthenticated && (
+            <button
+              type="button"
+              className={`nav-v2-m-row ${pathname.startsWith('/discuss') ? 'is-active' : ''}`}
+              onClick={() => {
+                if (isDiscussionGated) {
+                  onClose()
+                  openLockedModal('discussion')
+                } else {
+                  handleNav('/discuss')
+                }
+              }}
+              aria-current={pathname.startsWith('/discuss') ? 'page' : undefined}
+            >
+              <span className="nav-v2-m-row-icon">
+                <IconMessageSquare size={20} />
               </span>
-            )}
-          </button>
+              <span className="nav-v2-m-row-label">Discussions</span>
+              {hasUnreadDiscuss && (
+                <span className="w-2 h-2 rounded-full bg-sky-400 ml-2" />
+              )}
+              {isDiscussionGated && (
+                <span
+                  style={{
+                    marginLeft: 'auto',
+                    fontSize: '11px',
+                    fontFamily: 'var(--font-mono, monospace)',
+                    color: 'var(--c-text-mute)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <IconLock size={12} />
+                  <span>Premium</span>
+                </span>
+              )}
+            </button>
+          )}
 
           {isAuthenticated ? (
             <button
