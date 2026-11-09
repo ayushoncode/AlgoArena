@@ -864,6 +864,16 @@ export const CANONICAL_SIGNATURES = {
     ret: TYPE_LIST,
     isList: true,
   },
+  'find length of loop': {
+    params: [{ name: 'head', ...TYPE_LIST }],
+    ret: TYPE_INT,
+    isList: true,
+  },
+  'palindrome linked list': {
+    params: [{ name: 'head', ...TYPE_LIST }],
+    ret: TYPE_BOOL,
+    isList: true,
+  },
   'intersection of two linked lists': {
     params: [{ name: 'headA', ...TYPE_LIST }, { name: 'headB', ...TYPE_LIST }],
     ret: TYPE_LIST,

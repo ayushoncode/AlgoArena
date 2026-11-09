@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
-import { IconSearch, IconClose, IconChevronDown } from '../components/icons'
+import { IconSearch, IconClose } from '../components/icons'
 import SiteNav from '../components/home/SiteNav'
 import AuthDialog from '../components/AuthDialog'
 import LeaderboardSkeleton from './Leaderboard/LeaderboardSkeleton'
@@ -29,7 +29,6 @@ export default function Leaderboard() {
   const [lastUpdated, setLastUpdated] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('global')
-  const [unrankedOpen, setUnrankedOpen] = useState(false)
   const [userRowVisible, setUserRowVisible] = useState(true)
   const [isInitialMount, setIsInitialMount] = useState(true)
   const [authOpen, setAuthOpen] = useState(false)
@@ -75,20 +74,20 @@ export default function Leaderboard() {
     ogDesc.content = 'AlgoArena real-time rankings and leaderboard. Track top algorithmic duellists by Elo rating, match records, and division tiers.'
   }, [])
 
-  // Fetch rankings from existing endpoint (GET /api/users/leaderboard)
-  const fetchRankings = useCallback(async (isInitial = false) => {
+  // Fetch rankings from existing endpoint (GET /api/users/leaderboard or /api/friends/leaderboard)
+  const fetchRankings = useCallback(async (isInitial = false, tab = activeTab) => {
     try {
       if (isInitial) setLoading(true)
-      const res = await api.get('/api/users/leaderboard', {
+      const endpoint = tab === 'friends' ? '/api/friends/leaderboard' : '/api/users/leaderboard'
+      const res = await api.get(endpoint, {
         signal: abortControllerRef.current?.signal,
       })
       if (!isMountedRef.current) return
 
-      if (Array.isArray(res.data)) {
-        setPlayers(res.data)
-        setLastUpdated(new Date())
-        setError(null)
-      }
+      const list = Array.isArray(res.data) ? res.data : (res.data?.players || [])
+      setPlayers(list)
+      setLastUpdated(new Date())
+      setError(null)
     } catch (err) {
       if (!isMountedRef.current) return
       if (err.name === 'CanceledError' || err.name === 'AbortError' || err.message === 'canceled') return
@@ -102,7 +101,7 @@ export default function Leaderboard() {
         }, 800)
       }
     }
-  }, [])
+  }, [activeTab])
 
   // Initial load and 30-second interval auto-refresh
   useEffect(() => {
@@ -146,49 +145,30 @@ export default function Leaderboard() {
   }, [user, players, searchQuery])
 
   // Filtered players based on search query (username or institute)
+  // Strictly filter out unranked players (0 completed matches)
   const q = searchQuery.trim().toLowerCase()
-  const filteredPlayers = useMemo(() => {
-    if (!q) return players
-    return players.filter(p =>
+  const rankedPlayers = useMemo(() => {
+    const active = players.filter(p => ((p.wins ?? 0) + (p.losses ?? 0)) > 0)
+    if (!q) return active
+    return active.filter(p =>
       p.username?.toLowerCase().includes(q) ||
       (p.institute && p.institute.toLowerCase().includes(q))
     )
   }, [players, q])
-
-  // Split into active ranked players vs unranked (0 wins and 0 losses)
-  const { rankedPlayers, unrankedPlayers } = useMemo(() => {
-    const ranked = []
-    const unranked = []
-
-    for (const p of filteredPlayers) {
-      const wins = p.wins ?? 0
-      const losses = p.losses ?? 0
-      if (wins === 0 && losses === 0) {
-        unranked.push(p)
-      } else {
-        ranked.push(p)
-      }
-    }
-
-    return { rankedPlayers: ranked, unrankedPlayers: unranked }
-  }, [filteredPlayers])
 
   // Top 3 for Podium plinths (from overall ranked list when no search active)
   const top1 = !q ? rankedPlayers[0] : null
   const top2 = !q ? rankedPlayers[1] : null
   const top3 = !q ? rankedPlayers[2] : null
 
-  // Table players: all matching players when searching, or all ranked players when not searching
-  const tablePlayers = useMemo(() => {
-    if (q) return filteredPlayers
-    return rankedPlayers
-  }, [filteredPlayers, rankedPlayers, q])
+  // Table players: all ranked matching players
+  const tablePlayers = rankedPlayers
 
   // Current user's index in overall rankings
   const myOverallIdx = useMemo(() => {
     if (!user) return -1
-    return players.findIndex(p => p.username === user.username)
-  }, [players, user])
+    return rankedPlayers.findIndex(p => p.username === user.username)
+  }, [rankedPlayers, user])
 
   // Format timestamp in HH:MM:SS format
   const formattedTimestamp = useMemo(() => {
@@ -269,16 +249,35 @@ export default function Leaderboard() {
               aria-selected={activeTab === 'global'}
               aria-controls="panel-rankings"
               tabIndex={0}
-              className="lb-tab-btn"
-              onClick={() => setActiveTab('global')}
+              className={`lb-tab-btn ${activeTab === 'global' ? 'is-active' : ''}`}
+              onClick={() => {
+                setActiveTab('global')
+                fetchRankings(true, 'global')
+              }}
             >
               Global
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-friends"
+              aria-selected={activeTab === 'friends'}
+              aria-controls="panel-rankings"
+              tabIndex={0}
+              className={`lb-tab-btn ${activeTab === 'friends' ? 'is-active' : ''}`}
+              onClick={() => {
+                setActiveTab('friends')
+                fetchRankings(true, 'friends')
+              }}
+            >
+              Friends
             </button>
             <div
               className="lb-tab-indicator"
               style={{
-                width: '64px',
-                transform: 'translateX(4px)',
+                width: activeTab === 'friends' ? '68px' : '64px',
+                transform: activeTab === 'friends' ? 'translateX(76px)' : 'translateX(4px)',
+                transition: 'all 0.15s ease'
               }}
               aria-hidden="true"
             />
@@ -288,7 +287,7 @@ export default function Leaderboard() {
           <div className="lb-controls-right">
             
             <div className="lb-result-count" aria-live="polite" aria-atomic="true">
-              {loading ? 'Syncing...' : `${filteredPlayers.length} players`}
+              {loading ? 'Syncing...' : `${rankedPlayers.length} players`}
             </div>
 
             <div className="lb-search-wrap">
@@ -336,16 +335,22 @@ export default function Leaderboard() {
             </div>
           ) : loading ? (
             <LeaderboardSkeleton />
-          ) : filteredPlayers.length === 0 ? (
+          ) : rankedPlayers.length === 0 ? (
             <div className="lb-empty-box">
-              <p className="lb-empty-title">No players match that name.</p>
-              <button
-                type="button"
-                className="lb-clear-search-btn"
-                onClick={handleClearSearch}
-              >
-                Clear search
-              </button>
+              <p className="lb-empty-title">
+                {activeTab === 'friends'
+                  ? (q ? 'No friends match that name.' : 'No friends found on the leaderboard yet.')
+                  : 'No players match that name.'}
+              </p>
+              {q && (
+                <button
+                  type="button"
+                  className="lb-clear-search-btn"
+                  onClick={handleClearSearch}
+                >
+                  Clear search
+                </button>
+              )}
             </div>
           ) : (
             <>
@@ -392,8 +397,8 @@ export default function Leaderboard() {
                   </thead>
                   <tbody>
                     {tablePlayers.map((player, idx) => {
-                      const overallIdx = players.findIndex(p => p.username === player.username)
-                      const actualRank = overallIdx >= 0 ? overallIdx + 1 : idx + 1
+                      const overallIdx = rankedPlayers.findIndex(p => p.username === player.username)
+                      const actualRank = player.rank ? Number(player.rank) : (overallIdx >= 0 ? overallIdx + 1 : idx + 1)
                       const isMe = user?.username === player.username
                       const isPodium = !q && actualRank <= 3
 
@@ -413,50 +418,6 @@ export default function Leaderboard() {
                   </tbody>
                 </table>
               </div>
-
-              {/* UNRANKED COLLAPSED GROUP (Only when not searching) */}
-              {!q && unrankedPlayers.length > 0 && (
-                <div className="lb-unranked-section">
-                  <button
-                    type="button"
-                    className="lb-unranked-toggle"
-                    onClick={() => setUnrankedOpen(prev => !prev)}
-                    aria-expanded={unrankedOpen}
-                  >
-                    <span>Unranked ({unrankedPlayers.length})</span>
-                    <IconChevronDown
-                      size={14}
-                      className={`lb-user-caret ${unrankedOpen ? 'is-rotated' : ''}`}
-                    />
-                  </button>
-
-                  {unrankedOpen && (
-                    <div className="lb-table-wrap">
-                      <table className="lb-table" aria-label="Unranked Players">
-                        <caption className="sr-only">Unranked arena players with zero completed matches</caption>
-                        <tbody>
-                          {unrankedPlayers.map(player => {
-                            const isMe = user?.username === player.username
-
-                            return (
-                              <PlayerRow
-                                key={player.id || player.username}
-                                player={player}
-                                actualRank="--"
-                                isMe={isMe}
-                                isPremium={Boolean(premiumBadges[player.username?.toLowerCase()] || premiumBadges[player.id])}
-                                rowRef={isMe ? userRowRef : null}
-                                onSelect={() => navigate(`/profile/${encodeURIComponent(player.username)}`)}
-                              />
-                            )
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              )}
-
             </>
           )}
         </div>

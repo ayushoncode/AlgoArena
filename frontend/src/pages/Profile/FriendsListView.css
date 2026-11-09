@@ -1,0 +1,220 @@
+/**
+ * FriendsListView.css
+ * Follows design tokens: Sora font, navy tonal surfaces, hairlines, gold mono ratings.
+ * Zero gradients, zero blur, zero shadows.
+ */
+
+.friends-view-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+  font-family: var(--font-sans, "Sora Variable", sans-serif);
+  color: var(--ink, #ffffff);
+}
+
+.friends-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.friends-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.friends-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.friends-subtitle {
+  font-size: 13px;
+  color: var(--sub, #a2a9b8);
+  margin: 0;
+}
+
+.friends-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--bg-1, #262626);
+  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.16));
+  border-radius: 8px;
+  padding: 8px 14px;
+  width: 100%;
+  max-width: 320px;
+  box-sizing: border-box;
+}
+
+.friends-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink, #ffffff);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.friends-search-input::placeholder {
+  color: var(--c-text-mute, #71717a);
+}
+
+.friends-list-card {
+  background-color: var(--bg-1, #262626);
+  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.16));
+  border-radius: 10px;
+  overflow: visible;
+  position: relative;
+}
+
+.friends-list-card > *:first-child,
+.friends-row:first-child {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.friends-list-card > *:last-child,
+.friends-row:last-child {
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+[data-theme='light'] .friends-list-card {
+  background-color: #ffffff;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+.friends-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--hair-subtle, rgba(255, 255, 255, 0.04));
+  gap: 16px;
+  transition: background-color 0.12s;
+}
+
+[data-theme='light'] .friends-row {
+  border-bottom-color: rgba(15, 23, 42, 0.06);
+}
+
+.friends-row:last-child {
+  border-bottom: none;
+}
+
+.friends-row:hover {
+  background-color: var(--bg-2, rgba(255, 255, 255, 0.03));
+}
+
+[data-theme='light'] .friends-row:hover {
+  background-color: rgba(15, 23, 42, 0.02);
+}
+
+.friends-user-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.friends-avatar-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: var(--bg-2, #333333);
+  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.2));
+  flex-shrink: 0;
+}
+
+.friends-name-tier {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.friends-name-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.friends-username-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink, #ffffff);
+  text-decoration: none;
+}
+
+[data-theme='light'] .friends-username-link {
+  color: #0f172a;
+}
+
+.friends-username-link:hover {
+  color: var(--info, #38bdf8);
+}
+
+.friends-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.friends-rating {
+  font-family: var(--font-mono, monospace);
+  color: var(--gold, #ffd696);
+  font-weight: 600;
+}
+
+.friends-tier-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.friends-mutual-badge {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--c-text-mute, #71717a);
+}
+
+.friends-action-col {
+  position: relative;
+  flex-shrink: 0;
+  min-width: 130px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.friends-empty-notice {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--sub, #a2a9b8);
+  font-size: 14px;
+}
+
+.friends-private-notice {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--sub, #a2a9b8);
+  font-size: 14px;
+}
+
+.friends-skeleton {
+  height: 64px;
+  border-bottom: 1px solid var(--hair-subtle, rgba(255, 255, 255, 0.04));
+  background-color: var(--bg-2, rgba(255, 255, 255, 0.02));
+  animation: notifPulse 1.5s infinite ease-in-out;
+}
+

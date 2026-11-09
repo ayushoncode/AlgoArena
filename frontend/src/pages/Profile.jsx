@@ -1209,9 +1209,9 @@ function LegacyProfileView({
                     <Calendar size={12} className="text-[#38BDF8]" />
                     Joined {joinDateStr}
                   </span>
-                  {!isMe && (
+                  {activeUser?.rank && (Number(activeUser?.wins || 0) + Number(activeUser?.losses || 0)) > 0 && (
                     <span className="flex items-center gap-1 text-[#38BDF8]">
-                      Rank #{activeUser?.rank ?? '—'}
+                      Rank #{activeUser.rank}
                     </span>
                   )}
                 </div>
