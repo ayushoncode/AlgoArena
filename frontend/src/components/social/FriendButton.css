@@ -1,0 +1,231 @@
+/**
+ * FriendButton.css
+ * Follows design tokens: 44px height, hairline borders, no gradients, no shadows.
+ */
+
+.friend-button-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 36px;
+}
+
+.friend-button-wrapper.menu-active {
+  z-index: 120;
+}
+
+.friend-status-group {
+  position: relative;
+  width: 100%;
+  height: 36px;
+}
+
+.friend-self-links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.friend-self-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  font-family: var(--font-sans, "Sora Variable", sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sub, #a2a9b8);
+  background-color: var(--bg-1, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.16));
+  border-radius: 6px;
+  text-decoration: none;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+
+.friend-self-link:hover {
+  color: var(--ink, #ffffff);
+  border-color: var(--hair-subtle, rgba(255, 255, 255, 0.24));
+  background-color: var(--bg-2, rgba(255, 255, 255, 0.08));
+}
+
+[data-theme='light'] .friend-self-link {
+  background-color: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #475569;
+}
+
+[data-theme='light'] .friend-self-link:hover {
+  color: #0f172a;
+  background-color: rgba(15, 23, 42, 0.08);
+}
+
+/* Main Buttons (36px standard action height matching LeetCode / AlgoArena sidebar) */
+.friend-btn {
+  width: 100%;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-sans, "Sora Variable", sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-sizing: border-box;
+}
+
+.friend-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.friend-btn-add {
+  background-color: #2cbb5d;
+  border: 1px solid #2cbb5d;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.friend-btn-add:hover:not(:disabled) {
+  background-color: #26a551;
+  border-color: #26a551;
+}
+
+[data-theme='light'] .friend-btn-add {
+  background-color: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+}
+
+[data-theme='light'] .friend-btn-add:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.friend-btn-connected {
+  background-color: rgba(44, 187, 93, 0.12);
+  border: 1px solid rgba(44, 187, 93, 0.35);
+  color: #2cbb5d;
+}
+
+.friend-btn-connected:hover:not(:disabled) {
+  background-color: rgba(44, 187, 93, 0.2);
+}
+
+.friend-btn-connected:hover:not(:disabled) {
+  background-color: rgba(56, 189, 248, 0.14);
+}
+
+.friend-chevron {
+  transition: transform 0.15s;
+}
+
+.friend-btn-pending {
+  background-color: var(--bg-1, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.2));
+  color: var(--sub, #a2a9b8);
+}
+
+.friend-btn-pending:hover:not(:disabled) {
+  border-color: rgba(244, 63, 94, 0.4);
+  color: #fb7185;
+}
+
+.friend-cancel-hint {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  opacity: 0.7;
+}
+
+.friend-incoming-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.friend-btn-accept {
+  background-color: var(--info, #38bdf8);
+  border: none;
+  color: #02060f;
+}
+
+.friend-btn-accept:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.friend-btn-decline {
+  background-color: transparent;
+  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.2));
+  color: var(--sub, #a2a9b8);
+}
+
+.friend-btn-decline:hover:not(:disabled) {
+  background-color: var(--bg-2, rgba(255, 255, 255, 0.06));
+  color: var(--ink, #ffffff);
+}
+
+/* Dropdown */
+.friend-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 160px;
+  background-color: var(--bg-1, #1e2025);
+  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.2));
+  border-radius: 8px;
+  padding: 4px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme='light'] .friend-dropdown-menu {
+  background-color: #ffffff;
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+.friend-dropdown-item {
+  min-height: 38px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #fb7185;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.12s, color 0.12s;
+  width: 100%;
+}
+
+.friend-dropdown-item:hover {
+  background-color: var(--bg-2, rgba(255, 255, 255, 0.08));
+  color: #f43f5e;
+}
+
+[data-theme='light'] .friend-dropdown-item {
+  color: #e11d48;
+}
+
+[data-theme='light'] .friend-dropdown-item:hover {
+  background-color: rgba(225, 29, 72, 0.08);
+  color: #be123c;
+}
+
+.friend-mutual-count {
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+  color: var(--c-text-mute, #71717a);
+  padding: 2px 4px;
+}
+

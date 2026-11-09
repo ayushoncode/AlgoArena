@@ -141,6 +141,9 @@ export function AuthProvider({ children }) {
     setUser(null)
     localStorage.removeItem('aa_token')
     localStorage.removeItem('aa_user')
+    localStorage.removeItem('arena-theme')
+    document.documentElement.removeAttribute('data-theme')
+    window.dispatchEvent(new Event('auth-logout'))
   }, [])
 
   const value = useMemo(() => ({

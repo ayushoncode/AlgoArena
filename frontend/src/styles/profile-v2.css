@@ -2075,8 +2075,8 @@
 
 .profile-v2 .profile-leetcode-layout {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 24px;
   align-items: start;
   width: 100%;
 }
@@ -2160,8 +2160,11 @@
   font-weight: 600;
   color: #ffffff;
   margin: 0;
-  line-height: 1.2;
-  word-break: break-word;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .profile-v2 .sidebar-tier-badge {

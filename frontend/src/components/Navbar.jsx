@@ -7,10 +7,12 @@ import AvatarButton from './navbar/AvatarButton'
 import ProfileMenu from './navbar/ProfileMenu'
 import StreakButton from './navbar/StreakButton'
 import MobileMenuSheet from './navbar/MobileMenuSheet'
+import NotificationBell from './navbar/NotificationBell'
+import NotificationPanel from './navbar/NotificationPanel'
 import { getStreakData } from './navbar/navData'
 import { usePremium } from '../hooks/usePremium'
 import { useSocket } from '../hooks/useSocket'
-import { getUnreadReplies } from '../services/discussionApi'
+import { useNotifications } from '../hooks/useNotifications'
 import { IconLock } from './icons'
 import './navbar/navbar-v2.css'
 
@@ -46,12 +48,25 @@ function NavbarV2({ navigate, pathname }) {
   const { on, off } = useSocket()
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [hasUnreadDiscuss, setHasUnreadDiscuss] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
 
   const avatarBtnRef = useRef(null)
   const streakBtnRef = useRef(null)
+  const notifBtnRef = useRef(null)
   const mobileStreakBtnRef = useRef(null)
+  const mobileNotifBtnRef = useRef(null)
   const hamburgerBtnRef = useRef(null)
+
+  const {
+    unreadCount,
+    notifications,
+    loading: notifsLoading,
+    activeTab,
+    setActiveTab,
+    fetchList,
+    markAsRead,
+    markAllAsRead
+  } = useNotifications()
 
   const [streakData, setStreakData] = useState({ current: 0, best: 0, isCompletedToday: false })
   const [streakLoading, setStreakLoading] = useState(false)
@@ -73,6 +88,7 @@ function NavbarV2({ navigate, pathname }) {
   useEffect(() => {
     setMobileOpen(false)
     setMenuOpen(false)
+    setNotifOpen(false)
   }, [pathname])
 
   // Fetch streak when authenticated
@@ -105,41 +121,26 @@ function NavbarV2({ navigate, pathname }) {
     }
   }, [isAuthenticated, user?.id, pathname])
 
-  // Fetch discussion unread status & register live notification
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setHasUnreadDiscuss(false)
-      return
-    }
-
-    let isSubscribed = true
-    getUnreadReplies()
-      .then(res => {
-        if (isSubscribed && res?.hasUnread) {
-          setHasUnreadDiscuss(true)
-        }
-      })
-      .catch(() => {})
-
-    function onReplyNotif() {
-      if (isSubscribed) setHasUnreadDiscuss(true)
-    }
-
-    on('disc:reply_notification', onReplyNotif)
-    return () => {
-      isSubscribed = false
-      off('disc:reply_notification', onReplyNotif)
-    }
-  }, [isAuthenticated, on, off])
 
   function handleFlameClick() {
     setMenuOpen(false)
+    setNotifOpen(false)
     setMobileOpen(false)
     navigate('/daily')
   }
 
   function handleToggleMenu() {
+    setNotifOpen(false)
     setMenuOpen(o => !o)
+  }
+
+  function handleToggleNotif() {
+    setMenuOpen(false)
+    setNotifOpen(o => {
+      const next = !o
+      if (next) fetchList(activeTab)
+      return next
+    })
   }
 
   function goAuth(mode) {
@@ -152,16 +153,17 @@ function NavbarV2({ navigate, pathname }) {
   const NAV_LINKS = [
     { label: 'Lobby', href: '/lobby' },
     { label: 'Leaderboard', href: '/leaderboard' },
-    {
-      label: 'Discuss',
-      href: '/discuss',
-      isDiscuss: true,
-      hasDot: hasUnreadDiscuss,
-      isGated: isDiscussionGated
-    },
-    ...(isPremiumEnabled && !isAuthenticated ? [{ label: 'Premium', href: '/premium' }] : []),
-    ...(isAuthenticated ? [{ label: 'Intel Reports', href: '/experiences' }] : []),
-    ...(!isAuthenticated ? [{ label: 'Who We Are', href: '/who-we-are' }] : []),
+    ...(isAuthenticated ? [
+      {
+        label: 'Discuss',
+        href: '/discuss',
+        isDiscuss: true,
+        isGated: isDiscussionGated
+      },
+      { label: 'Intel Reports', href: '/experiences' }
+    ] : [
+      { label: 'Who We Are', href: '/who-we-are' }
+    ]),
   ]
 
   return (
@@ -207,12 +209,6 @@ function NavbarV2({ navigate, pathname }) {
                   className={`nav-v2-desktop-link relative ${active ? 'is-active' : ''}`}
                 >
                   <span>{label}</span>
-                  {hasDot && (
-                    <span
-                      aria-label="New replies"
-                      className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-sky-400"
-                    />
-                  )}
                   {active && (
                     <span
                       aria-hidden="true"
@@ -243,6 +239,31 @@ function NavbarV2({ navigate, pathname }) {
                   onClick={handleFlameClick}
                   buttonRef={streakBtnRef}
                 />
+
+                <NotificationBell
+                  id="nav-notif-btn"
+                  unreadCount={unreadCount}
+                  isOpen={notifOpen}
+                  onClick={handleToggleNotif}
+                  buttonRef={notifBtnRef}
+                />
+
+                {!isMobile && (
+                  <NotificationPanel
+                    isOpen={notifOpen}
+                    onClose={() => setNotifOpen(false)}
+                    triggerRef={notifBtnRef}
+                    notifications={notifications}
+                    loading={notifsLoading}
+                    activeTab={activeTab}
+                    onTabChange={(tab) => {
+                      setActiveTab(tab);
+                      fetchList(tab);
+                    }}
+                    onMarkRead={markAsRead}
+                    onMarkAllRead={markAllAsRead}
+                  />
+                )}
 
                 <AvatarButton
                   id="nav-user-btn"
@@ -369,6 +390,15 @@ function NavbarV2({ navigate, pathname }) {
                   buttonRef={mobileStreakBtnRef}
                 />
 
+                <NotificationBell
+                  id="nav-notif-btn-mobile"
+                  unreadCount={unreadCount}
+                  isOpen={notifOpen}
+                  onClick={handleToggleNotif}
+                  buttonRef={mobileNotifBtnRef}
+                  isMobile={true}
+                />
+
                 <button
                   ref={hamburgerBtnRef}
                   type="button"
@@ -430,9 +460,27 @@ function NavbarV2({ navigate, pathname }) {
         navigate={navigate}
         goAuth={goAuth}
         triggerRef={hamburgerBtnRef}
-        hasUnreadDiscuss={hasUnreadDiscuss}
         isDiscussionGated={isDiscussionGated}
       />
+
+      {/* ── MOBILE FULL-SCREEN NOTIFICATION SHEET ───────────────────── */}
+      {isMobile && notifOpen && (
+        <NotificationPanel
+          isOpen={notifOpen}
+          onClose={() => setNotifOpen(false)}
+          triggerRef={mobileNotifBtnRef}
+          notifications={notifications}
+          loading={notifsLoading}
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            fetchList(tab);
+          }}
+          onMarkRead={markAsRead}
+          onMarkAllRead={markAllAsRead}
+          isMobile={true}
+        />
+      )}
     </>
   )
 }

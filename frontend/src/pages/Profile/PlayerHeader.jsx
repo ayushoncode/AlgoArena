@@ -5,6 +5,7 @@ import { getTierForRating, getTierProgress } from '../../lib/tiers'
 import { usePremium } from '../../hooks/usePremium'
 import { usePremiumBadges } from '../../hooks/usePremiumBadges'
 import PremiumBadge from '../../components/PremiumBadge'
+import FriendButton from '../../components/social/FriendButton'
 
 export default function PlayerHeader({
   activeUser,
@@ -135,6 +136,14 @@ export default function PlayerHeader({
                 Edit handle
               </button>
             )}
+
+            <div className="header-friend-action ml-auto">
+              <FriendButton
+                targetUserId={activeUser?.id}
+                targetUsername={username}
+                isMe={isMe}
+              />
+            </div>
           </div>
 
           {handleErr && (
@@ -169,8 +178,8 @@ export default function PlayerHeader({
               </span>
             )}
 
-            {/* Rank on public profiles (if provided in payload) */}
-            {!isMe && activeUser?.rank && (
+            {/* Rank: only shown after at least 1 completed match */}
+            {activeUser?.rank && (Number(activeUser?.wins || 0) + Number(activeUser?.losses || 0)) > 0 && (
               <span className="meta-item">
                 Rank #{activeUser.rank}
               </span>

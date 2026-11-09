@@ -1,0 +1,167 @@
+/**
+ * SocialPrivacyPanel.css
+ * Follows design tokens: Sora font, navy surfaces, hairlines, semantic colors.
+ */
+
+.social-privacy-container {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+  font-family: var(--font-sans, "Sora Variable", sans-serif);
+  color: var(--ink, #ffffff);
+}
+
+.privacy-header {
+  margin-bottom: 24px;
+}
+
+.privacy-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px 0;
+}
+
+.privacy-subtitle {
+  font-size: 13px;
+  color: var(--sub, #a2a9b8);
+  margin: 0;
+}
+
+.privacy-section-card {
+  background-color: var(--bg-1, #262626);
+  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.16));
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+[data-theme='light'] .privacy-section-card {
+  background-color: #ffffff;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+.privacy-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.privacy-section-desc {
+  font-size: 13px;
+  color: var(--sub, #a2a9b8);
+  margin: 0 0 16px 0;
+}
+
+.privacy-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.privacy-radio-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background-color: var(--bg-2, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--hair-subtle, rgba(255, 255, 255, 0.04));
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+[data-theme='light'] .privacy-radio-label {
+  background-color: rgba(15, 23, 42, 0.02);
+  border-color: rgba(15, 23, 42, 0.06);
+}
+
+.privacy-radio-label:hover {
+  background-color: var(--bg-2, rgba(255, 255, 255, 0.05));
+  border-color: var(--hair-muted, rgba(196, 214, 232, 0.2));
+}
+
+.privacy-radio-label.is-selected {
+  border-color: var(--info, #38bdf8);
+  background-color: rgba(56, 189, 248, 0.04);
+}
+
+.privacy-radio-input {
+  margin-top: 3px;
+}
+
+.privacy-radio-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.privacy-radio-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #ffffff);
+}
+
+[data-theme='light'] .privacy-radio-title {
+  color: #0f172a;
+}
+
+.privacy-radio-sub {
+  font-size: 12px;
+  color: var(--sub, #a2a9b8);
+}
+
+.privacy-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.privacy-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink, #ffffff);
+  cursor: pointer;
+}
+
+[data-theme='light'] .privacy-checkbox-label {
+  color: #0f172a;
+}
+
+.privacy-save-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.privacy-btn-save {
+  min-height: 44px;
+  padding: 0 24px;
+  background-color: var(--info, #38bdf8);
+  border: none;
+  border-radius: 8px;
+  color: #02060f;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.privacy-btn-save:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.privacy-btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.privacy-feedback-msg {
+  font-size: 13px;
+  color: #34d399;
+}
+

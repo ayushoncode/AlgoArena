@@ -103,6 +103,16 @@ export default function AuthPage({ initialMode = 'login' }) {
     }
   }, [user, navigate])
 
+  // Auth pages must ALWAYS remain pure neutral dark regardless of user theme
+  useEffect(() => {
+    document.documentElement.removeAttribute('data-theme')
+    const originalScheme = document.documentElement.style.colorScheme
+    document.documentElement.style.colorScheme = 'dark'
+    return () => {
+      document.documentElement.style.colorScheme = originalScheme
+    }
+  }, [])
+
   // Primary mode: 'login' | 'register' | 'verify_reg_otp' | 'otp_login' | 'verify_login_otp' | 'forgot' | 'reset'
   const [mode, setMode] = useState(initialMode)
 

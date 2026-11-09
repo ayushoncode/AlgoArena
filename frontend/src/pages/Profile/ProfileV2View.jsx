@@ -10,6 +10,7 @@ import MatchHistoryV2 from './MatchHistoryV2'
 import ActivityHeatmapYear from './ActivityHeatmapYear'
 import TopicBreakdownV2 from './TopicBreakdownV2'
 import FootNoteV2 from './FootNoteV2'
+import { getUserFriends } from '../../services/socialApi'
 
 export default function ProfileV2View({
   authLoading,
@@ -48,6 +49,20 @@ export default function ProfileV2View({
   const doNavigate = navigate || routerNav
 
   const [showEditProfileModal, setShowEditProfileModal] = useState(false)
+  const [friendsCount, setFriendsCount] = useState(activeUser?.friends_count ?? 0)
+
+  useEffect(() => {
+    if (activeUser?.username) {
+      let active = true
+      getUserFriends(activeUser.username)
+        .then(res => {
+          if (!active) return
+          setFriendsCount(res.totalCount || res.friends?.length || 0)
+        })
+        .catch(() => {})
+      return () => { active = false }
+    }
+  }, [activeUser?.username])
 
   // Set page document title according to accessibility and SEO requirements
   useEffect(() => {
@@ -146,10 +161,13 @@ export default function ProfileV2View({
                 streak={streak}
                 activeDates={activeDates}
                 favTopicTitle={favTopicTitle}
+                friendsCount={friendsCount}
+                username={activeUser?.username}
+                friendsHidden={Boolean(!isMe && activeUser?.friends_hidden)}
               />
             </div>
 
-            {/* 3. BIG ANNUAL ACTIVITY HEATMAP */}
+            {/* 4. BIG ANNUAL ACTIVITY HEATMAP */}
             <ActivityHeatmapYear
               matches={matches}
               eloHistory={eloHistory}

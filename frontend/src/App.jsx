@@ -26,9 +26,12 @@ import ShareExperienceWizard from './pages/ShareExperienceWizard'
 import DiscussionIndex from './pages/Discussion/DiscussionIndex'
 import DiscussionRoom from './pages/Discussion/DiscussionRoom'
 import ThreadView from './pages/Discussion/ThreadView'
+import FriendsListView from './pages/Profile/FriendsListView'
+import FriendRequestsView from './pages/Profile/FriendRequestsView'
+import SocialPrivacyPanel from './pages/Profile/SocialPrivacyPanel'
 import { useSocket } from './hooks/useSocket'
 import { getActiveMatch, setActiveMatch } from './utils/activeMatch'
-import { ThemeProvider } from './context/ThemeContext'
+import { ThemeProvider, isOutsidePath } from './context/ThemeContext'
 import { PremiumProvider } from './context/PremiumContext'
 import MascotProvider from './components/mascot/MascotProvider.jsx'
 import PremiumPage from './pages/Premium/PremiumPage'
@@ -272,20 +275,27 @@ function AppLayout() {
   const isMatchPage = pathname.startsWith('/match')
   const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/register'
   const isLandingPage = pathname === '/' && !isAuthenticated
-  const isEditorialPage = isLandingPage || pathname === '/who-we-are' || (pathname === '/leaderboard' && !isAuthenticated) || isAuthPage
+  const isLegalPage = pathname === '/terms' || pathname === '/privacy' || pathname === '/refund-policy'
+  const isEditorialPage = isLandingPage || pathname === '/who-we-are' || (pathname === '/leaderboard' && !isAuthenticated) || isAuthPage || isLegalPage
 
-  // Outside pages (Landing page, Who We Are) must ALWAYS remain pure dark
+  // Outside pages, legal pages, and ALL logged out states must ALWAYS remain pure black theme
   useEffect(() => {
-    const isOutside = pathname === '/' || pathname === '/who-we-are'
+    if (!isAuthenticated) {
+      document.documentElement.removeAttribute('data-theme')
+      return
+    }
+    const isOutside = isOutsidePath(pathname)
     if (isOutside) {
       document.documentElement.removeAttribute('data-theme')
     } else {
       const stored = localStorage.getItem('arena-theme')
       if (stored === 'light') {
         document.documentElement.setAttribute('data-theme', 'light')
+      } else {
+        document.documentElement.removeAttribute('data-theme')
       }
     }
-  }, [pathname])
+  }, [pathname, isAuthenticated])
 
   return (
     <>
@@ -325,6 +335,11 @@ function AppLayout() {
           <Route path="/experiences/new" element={<RequireAuthGate><ShareExperienceWizard /></RequireAuthGate>} />
           <Route path="/experiences/:id" element={<RequireAuthGate><IntelReportDetail /></RequireAuthGate>} />
           <Route path="/experiences/:id/edit" element={<RequireAuthGate><ShareExperienceWizard /></RequireAuthGate>} />
+
+          {/* Social & Friends Routes */}
+          <Route path="/profile/:username/friends" element={<RequireAuthGate><FriendsListView /></RequireAuthGate>} />
+          <Route path="/profile/requests" element={<RequireAuthGate><FriendRequestsView /></RequireAuthGate>} />
+          <Route path="/profile/privacy" element={<RequireAuthGate><SocialPrivacyPanel /></RequireAuthGate>} />
 
           <Route path="/match/:roomId" element={<MatchRoute />} />
           <Route path="/result" element={<ResultRoute />} />

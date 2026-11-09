@@ -29,12 +29,14 @@ import {
 } from '../../components/icons';
 import PremiumBadge from '../../components/PremiumBadge';
 import { useAuth } from '../../hooks/useAuth';
+import { usePremium } from '../../hooks/usePremium';
 import './ThreadView.css';
 
 export default function ThreadView() {
   const { slug, id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { isPremium, isPremiumEnabled, openLockedModal } = usePremium();
   const { connected, emit, on, off } = useSocket();
 
   const [thread, setThread] = useState(null);
@@ -178,6 +180,14 @@ export default function ThreadView() {
 
   const handleReplySubmit = async (e) => {
     e.preventDefault();
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    if (isPremiumEnabled && !isPremium) {
+      openLockedModal('discussion');
+      return;
+    }
     if (!replyBody.trim()) return;
 
     setIsSubmitting(true);
@@ -194,6 +204,10 @@ export default function ThreadView() {
       setReplyingTo(null);
       localStorage.removeItem(`disc_reply_draft_${id}`);
     } catch (err) {
+      if (err.code === 'PREMIUM_REQUIRED' || err.response?.data?.code === 'PREMIUM_REQUIRED') {
+        openLockedModal('discussion');
+        return;
+      }
       setComposerError(err.message || 'Failed to post reply.');
     } finally {
       setIsSubmitting(false);

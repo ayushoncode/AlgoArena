@@ -781,6 +781,19 @@ router.post('/threads/:id/replies', authMiddleware, discussionGate(true), async 
         threadAuthorId: thread.author_id,
         problemSlug: thread.problem_slug
       }).catch(err => console.warn('[Discussion Socket] emitReplyCreated error:', err.message));
+
+      if (thread.author_id && thread.author_id !== userId) {
+        try {
+          const { createNotification } = require('../services/notifications');
+          createNotification({
+            io,
+            userId: thread.author_id,
+            type: 'discussion_reply',
+            actorId: userId,
+            entityId: id
+          }).catch(() => {});
+        } catch {}
+      }
     }
 
     return res.status(201).json({ reply });

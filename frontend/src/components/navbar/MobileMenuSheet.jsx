@@ -17,7 +17,9 @@ import {
   IconLogOut,
   IconHexagonBadge,
   IconMessageSquare,
-  IconLock
+  IconLock,
+  IconUsers,
+  IconUserPlus
 } from '../icons'
 import { usePremium } from '../../hooks/usePremium'
 import PremiumBadge from '../PremiumBadge'
@@ -44,7 +46,6 @@ export default function MobileMenuSheet({
   navigate,
   goAuth,
   triggerRef,
-  hasUnreadDiscuss = false,
   isDiscussionGated = false
 }) {
   const { theme, toggleTheme } = useTheme()
@@ -241,7 +242,7 @@ export default function MobileMenuSheet({
       <div className="nav-v2-m-sheet-body">
         {/* Main Nav Section */}
         <div className="nav-v2-m-nav-group" role="navigation" aria-label="Main navigation">
-          {isPremiumEnabled && (
+          {isPremiumEnabled && isAuthenticated && (
             <button
               type="button"
               className={`nav-v2-m-row ${pathname === '/premium' ? 'is-active' : ''}`}
@@ -303,43 +304,42 @@ export default function MobileMenuSheet({
             <span className="nav-v2-m-row-label">Leaderboard</span>
           </button>
 
-          <button
-            type="button"
-            className={`nav-v2-m-row ${pathname.startsWith('/discuss') ? 'is-active' : ''}`}
-            onClick={() => {
-              if (isDiscussionGated) {
-                onClose()
-                openLockedModal('discussion')
-              } else {
-                handleNav('/discuss')
-              }
-            }}
-            aria-current={pathname.startsWith('/discuss') ? 'page' : undefined}
-          >
-            <span className="nav-v2-m-row-icon">
-              <IconMessageSquare size={20} />
-            </span>
-            <span className="nav-v2-m-row-label">Discussions</span>
-            {hasUnreadDiscuss && (
-              <span className="w-2 h-2 rounded-full bg-sky-400 ml-2" />
-            )}
-            {isDiscussionGated && (
-              <span
-                style={{
-                  marginLeft: 'auto',
-                  fontSize: '11px',
-                  fontFamily: 'var(--font-mono, monospace)',
-                  color: 'var(--c-text-mute)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <IconLock size={12} />
-                <span>Premium</span>
+          {isAuthenticated && (
+            <button
+              type="button"
+              className={`nav-v2-m-row ${pathname.startsWith('/discuss') ? 'is-active' : ''}`}
+              onClick={() => {
+                if (isDiscussionGated) {
+                  onClose()
+                  openLockedModal('discussion')
+                } else {
+                  handleNav('/discuss')
+                }
+              }}
+              aria-current={pathname.startsWith('/discuss') ? 'page' : undefined}
+            >
+              <span className="nav-v2-m-row-icon">
+                <IconMessageSquare size={20} />
               </span>
-            )}
-          </button>
+              <span className="nav-v2-m-row-label">Discussions</span>
+              {isDiscussionGated && (
+                <span
+                  style={{
+                    marginLeft: 'auto',
+                    fontSize: '11px',
+                    fontFamily: 'var(--font-mono, monospace)',
+                    color: 'var(--c-text-mute)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <IconLock size={12} />
+                  <span>Premium</span>
+                </span>
+              )}
+            </button>
+          )}
 
           {isAuthenticated ? (
             <button
@@ -384,6 +384,30 @@ export default function MobileMenuSheet({
                 <IconUser size={20} />
               </span>
               <span className="nav-v2-m-row-label">Profile</span>
+            </button>
+
+            <button
+              type="button"
+              className={`nav-v2-m-row ${pathname.includes('/friends') ? 'is-active' : ''}`}
+              onClick={() => handleNav(`/profile/${encodeURIComponent(username)}/friends`)}
+              aria-current={pathname.includes('/friends') ? 'page' : undefined}
+            >
+              <span className="nav-v2-m-row-icon">
+                <IconUsers size={20} />
+              </span>
+              <span className="nav-v2-m-row-label">Friends</span>
+            </button>
+
+            <button
+              type="button"
+              className={`nav-v2-m-row ${pathname === '/profile/requests' ? 'is-active' : ''}`}
+              onClick={() => handleNav('/profile/requests')}
+              aria-current={pathname === '/profile/requests' ? 'page' : undefined}
+            >
+              <span className="nav-v2-m-row-icon">
+                <IconUserPlus size={20} />
+              </span>
+              <span className="nav-v2-m-row-label">Friend requests</span>
             </button>
 
             <button

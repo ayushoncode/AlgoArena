@@ -33,21 +33,22 @@ router.get('/stats', async (_req, res) => {
   }
 })
 
-// GET /api/users/leaderboard — top 20 by Elo (public)
+// GET /api/users/leaderboard — top players by Elo (public, only active players with >= 1 match)
 router.get('/leaderboard', async (req, res) => {
   try {
     const instituteFilter = req.query.institute ? String(req.query.institute).trim() : null;
     let query = `
       SELECT id, username, elo_rating, wins, losses, avatar_seed, avatar_style, institute,
-             RANK() OVER (ORDER BY elo_rating DESC) AS rank
+             RANK() OVER (ORDER BY elo_rating DESC, id ASC) AS rank
       FROM users
+      WHERE (COALESCE(wins, 0) + COALESCE(losses, 0)) > 0
     `;
     const params = [];
     if (instituteFilter) {
-      query += ` WHERE institute ILIKE $1`;
+      query += ` AND institute ILIKE $1`;
       params.push(`%${instituteFilter}%`);
     }
-    query += ` ORDER BY elo_rating DESC LIMIT 20`;
+    query += ` ORDER BY elo_rating DESC, id ASC LIMIT 100`;
     const { rows } = await db.query(query, params);
     return res.json(rows)
   } catch (err) {
@@ -61,16 +62,28 @@ router.get('/me', authMiddleware, async (req, res) => {
   try {
     const { rows } = await db.query(
       `WITH ranked_users AS (
-         SELECT id, username, email, elo_rating, wins, losses, is_username_set, avatar_seed, avatar_style, institute, institute_locked,
-                display_name, bio, website, github, linkedin, location, created_at,
+         SELECT id,
                 RANK() OVER (ORDER BY elo_rating DESC, id ASC) AS rank
          FROM users
+         WHERE (COALESCE(wins, 0) + COALESCE(losses, 0)) > 0
        )
-       SELECT * FROM ranked_users WHERE id = $1`,
+       SELECT u.id, u.username, u.email, u.elo_rating, u.wins, u.losses, u.is_username_set,
+              u.avatar_seed, u.avatar_style, u.institute, u.institute_locked,
+              u.display_name, u.bio, u.website, u.github, u.linkedin, u.location,
+              u.leetcode, u.codeforces, u.codechef, u.created_at,
+              r.rank
+       FROM users u
+       LEFT JOIN ranked_users r ON r.id = u.id
+       WHERE u.id = $1`,
       [req.user.id]
     )
     if (!rows[0]) return res.status(404).json({ message: 'user not found' })
-    return res.json(rows[0])
+    let friendsCount = 0;
+    try {
+      const { getFriendCount } = require('../services/social');
+      friendsCount = await getFriendCount(req.user.id);
+    } catch (_) {}
+    return res.json({ ...rows[0], friends_count: friendsCount })
   } catch (err) {
     console.error('[GET /users/me]', err)
     return res.status(500).json({ message: 'internal server error' })
@@ -325,10 +338,10 @@ router.patch('/me/avatar', authMiddleware, async (req, res) => {
   }
 })
 
-// PATCH /api/users/me/profile — update profile details (display_name, bio, website, github, linkedin, location, institute)
+// PATCH /api/users/me/profile — update profile details (display_name, bio, website, github, linkedin, location, institute, leetcode, codeforces, codechef)
 router.patch('/me/profile', authMiddleware, async (req, res) => {
   try {
-    const { display_name, bio, website, github, linkedin, location, institute } = req.body
+    const { display_name, bio, website, github, linkedin, location, institute, leetcode, codeforces, codechef } = req.body
 
     const cleanDisplayName = display_name !== undefined ? String(display_name).trim().slice(0, 100) : undefined
     const cleanBio = bio !== undefined ? String(bio).trim().slice(0, 500) : undefined
@@ -337,6 +350,9 @@ router.patch('/me/profile', authMiddleware, async (req, res) => {
     const cleanLinkedin = linkedin !== undefined ? String(linkedin).trim().replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, '').replace(/\/$/, '').slice(0, 100) : undefined
     const cleanLocation = location !== undefined ? String(location).trim().slice(0, 100) : undefined
     const cleanInstitute = institute !== undefined ? String(institute).trim().slice(0, 255) : undefined
+    const cleanLeetcode = leetcode !== undefined ? String(leetcode).trim().replace(/^https?:\/\/(www\.)?leetcode\.com\/(u\/)?/, '').replace(/\/$/, '').slice(0, 100) : undefined
+    const cleanCodeforces = codeforces !== undefined ? String(codeforces).trim().replace(/^https?:\/\/(www\.)?codeforces\.com\/profile\//, '').replace(/\/$/, '').slice(0, 100) : undefined
+    const cleanCodechef = codechef !== undefined ? String(codechef).trim().replace(/^https?:\/\/(www\.)?codechef\.com\/users\//, '').replace(/\/$/, '').slice(0, 100) : undefined
 
     const updates = []
     const params = []
@@ -366,6 +382,18 @@ router.patch('/me/profile', authMiddleware, async (req, res) => {
       updates.push(`location = $${pIdx++}`)
       params.push(cleanLocation)
     }
+    if (cleanLeetcode !== undefined) {
+      updates.push(`leetcode = $${pIdx++}`)
+      params.push(cleanLeetcode)
+    }
+    if (cleanCodeforces !== undefined) {
+      updates.push(`codeforces = $${pIdx++}`)
+      params.push(cleanCodeforces)
+    }
+    if (cleanCodechef !== undefined) {
+      updates.push(`codechef = $${pIdx++}`)
+      params.push(cleanCodechef)
+    }
     if (cleanInstitute !== undefined) {
       const checkInst = await db.query(
         `SELECT institute, institute_locked FROM users WHERE id = $1`,
@@ -392,13 +420,19 @@ router.patch('/me/profile', authMiddleware, async (req, res) => {
 
     const updatedUser = await db.query(
       `WITH ranked_users AS (
-         SELECT id, username, email, elo_rating, wins, losses, is_username_set,
-                avatar_seed, avatar_style, institute, institute_locked,
-                display_name, bio, website, github, linkedin, location, created_at,
+         SELECT id,
                 RANK() OVER (ORDER BY elo_rating DESC, id ASC) AS rank
          FROM users
+         WHERE (COALESCE(wins, 0) + COALESCE(losses, 0)) > 0
        )
-       SELECT * FROM ranked_users WHERE id = $1`,
+       SELECT u.id, u.username, u.email, u.elo_rating, u.wins, u.losses, u.is_username_set,
+              u.avatar_seed, u.avatar_style, u.institute, u.institute_locked,
+              u.display_name, u.bio, u.website, u.github, u.linkedin, u.location,
+              u.leetcode, u.codeforces, u.codechef, u.created_at,
+              r.rank
+       FROM users u
+       LEFT JOIN ranked_users r ON r.id = u.id
+       WHERE u.id = $1`,
       [req.user.id]
     )
 
@@ -417,14 +451,17 @@ router.get('/search', async (req, res) => {
     if (!q || q.length < 1) return res.json([])
     const { rows } = await db.query(
       `WITH ranked_users AS (
-         SELECT id, username, elo_rating, wins, losses, avatar_seed, avatar_style, institute,
+         SELECT id,
                 RANK() OVER (ORDER BY elo_rating DESC, id ASC) AS rank
          FROM users
+         WHERE (COALESCE(wins, 0) + COALESCE(losses, 0)) > 0
        )
-       SELECT username, elo_rating, wins, losses, avatar_seed, avatar_style, institute, rank
-       FROM ranked_users
-       WHERE LOWER(username) LIKE $1
-       ORDER BY elo_rating DESC
+       SELECT u.username, u.elo_rating, u.wins, u.losses, u.avatar_seed, u.avatar_style, u.institute,
+              r.rank
+       FROM users u
+       LEFT JOIN ranked_users r ON r.id = u.id
+       WHERE LOWER(u.username) LIKE $1
+       ORDER BY u.elo_rating DESC
        LIMIT 8`,
       [`${q}%`]
     )
@@ -441,25 +478,36 @@ router.get('/:username/profile', async (req, res) => {
     const username = String(req.params.username).trim().toLowerCase()
     const { rows } = await db.query(
       `WITH ranked_users AS (
-         SELECT u.id, u.username, u.elo_rating, u.wins, u.losses, u.created_at, u.is_username_set,
-                u.avatar_seed, u.avatar_style, u.institute,
-                u.display_name, u.bio, u.website, u.github, u.linkedin, u.location,
-                RANK() OVER (ORDER BY u.elo_rating DESC, u.id ASC) AS rank
-         FROM users u
+         SELECT id,
+                RANK() OVER (ORDER BY elo_rating DESC, id ASC) AS rank
+         FROM users
+         WHERE (COALESCE(wins, 0) + COALESCE(losses, 0)) > 0
        )
-       SELECT * FROM ranked_users
-       WHERE LOWER(username) = $1`,
+       SELECT u.id, u.username, u.elo_rating, u.wins, u.losses, u.created_at, u.is_username_set,
+              u.avatar_seed, u.avatar_style, u.institute,
+              u.display_name, u.bio, u.website, u.github, u.linkedin, u.location,
+              u.leetcode, u.codeforces, u.codechef,
+              r.rank
+       FROM users u
+       LEFT JOIN ranked_users r ON r.id = u.id
+       WHERE LOWER(u.username) = $1`,
       [username]
     )
     if (!rows[0]) return res.status(404).json({ message: 'Player not found' })
 
     const user = rows[0]
     const total = (user.wins || 0) + (user.losses || 0)
+    let friendsCount = 0;
+    try {
+      const { getFriendCount } = require('../services/social');
+      friendsCount = await getFriendCount(user.id);
+    } catch (_) {}
 
     return res.json({
       ...user,
       total_matches: total,
       win_rate: total > 0 ? Math.round((user.wins / total) * 100) : 0,
+      friends_count: friendsCount,
     })
   } catch (err) {
     console.error('[GET /users/:username/profile]', err)
@@ -589,5 +637,145 @@ router.get('/:username/elo-history', async (req, res) => {
   }
 })
 
+// ── GET /api/users/:username/friends ─────────────────────────────────────────
+// Public/friends list with privacy enforcement, search filter, and cursor pagination
+router.get('/:username/friends', authMiddleware, async (req, res) => {
+  const socialConfig = require('../config/social');
+  if (!socialConfig.isFriendsEnabled) {
+    return res.status(404).json({
+      error: 'FEATURE_DISABLED',
+      message: 'Friends feature is currently disabled.'
+    });
+  }
+
+  const viewerId = req.user.id;
+  const targetUsername = String(req.params.username || '').trim().toLowerCase();
+  const searchQ = req.query.q ? String(req.query.q).trim().toLowerCase() : null;
+  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 50);
+  const cursor = req.query.cursor ? new Date(req.query.cursor) : null;
+
+  try {
+    const { rows: targetUsers } = await db.query(
+      `SELECT id, username FROM users WHERE LOWER(username) = $1;`,
+      [targetUsername]
+    );
+
+    if (targetUsers.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const targetUser = targetUsers[0];
+    const {
+      canViewFriendsList,
+      areFriends,
+      getRelationshipStatus,
+      getMutualFriendsCount,
+      getFriendCount
+    } = require('../services/social');
+
+    const allowed = await canViewFriendsList(viewerId, targetUser.id);
+    if (!allowed) {
+      return res.status(403).json({
+        error: 'PRIVATE_FRIENDS',
+        message: `${targetUser.username} keeps their friends private.`
+      });
+    }
+
+    let query = `
+      WITH friend_records AS (
+        SELECT
+          f.id as friendship_id,
+          f.created_at as friendship_created_at,
+          CASE WHEN f.user_low = $1 THEN f.user_high ELSE f.user_low END AS friend_id
+        FROM friendships f
+        WHERE (f.user_low = $1 OR f.user_high = $1)
+          AND f.status = 'accepted'
+      ),
+      ranked_friends AS (
+        SELECT
+          u.id, u.username, u.elo_rating, u.avatar_seed, u.avatar_style,
+          fr.friendship_created_at,
+          RANK() OVER (ORDER BY u.elo_rating DESC, u.id ASC) AS rank,
+          EXISTS(
+            SELECT 1 FROM subscriptions s
+            WHERE s.user_id = u.id AND s.status = 'active' AND s.current_period_end > NOW()
+          ) AS is_premium
+        FROM friend_records fr
+        JOIN users u ON u.id = fr.friend_id
+        WHERE 1=1
+    `;
+
+    const params = [targetUser.id];
+    let pIdx = 2;
+
+    if (searchQ) {
+      query += ` AND LOWER(u.username) LIKE $${pIdx++}`;
+      params.push(`%${searchQ}%`);
+    }
+
+    if (cursor) {
+      query += ` AND fr.friendship_created_at < $${pIdx++}`;
+      params.push(cursor);
+    }
+
+    query += `
+      )
+      SELECT * FROM ranked_friends
+      ORDER BY friendship_created_at DESC
+      LIMIT $${pIdx};
+    `;
+    params.push(limit);
+
+    const { rows } = await db.query(query, params);
+
+    // Populate relation and mutual flags for viewer
+    const items = await Promise.all(
+      rows.map(async (r) => {
+        const isSelf = r.id === viewerId;
+        const relation = isSelf ? 'self' : await getRelationshipStatus(viewerId, r.id);
+        const isMutual = isSelf ? false : await areFriends(viewerId, r.id);
+        const mutualCount = isSelf ? 0 : await getMutualFriendsCount(viewerId, r.id);
+
+        return {
+          id: r.id,
+          username: r.username,
+          eloRating: r.elo_rating,
+          elo_rating: r.elo_rating,
+          rank: Number(r.rank),
+          avatarSeed: r.avatar_seed,
+          avatar_seed: r.avatar_seed,
+          avatarStyle: r.avatar_style,
+          avatar_style: r.avatar_style,
+          isPremium: Boolean(r.is_premium),
+          is_premium: Boolean(r.is_premium),
+          relation,
+          isMutual,
+          is_mutual: isMutual,
+          mutualCount,
+          mutual_count: mutualCount,
+          friendshipCreatedAt: r.friendship_created_at,
+          friendship_created_at: r.friendship_created_at
+        };
+      })
+    );
+
+    const nextCursor = items.length === limit ? items[items.length - 1].friendshipCreatedAt : null;
+    const totalCount = await getFriendCount(targetUser.id);
+
+    return res.json({
+      targetUser: { id: targetUser.id, username: targetUser.username },
+      items,
+      friends: items,
+      totalCount,
+      count: totalCount,
+      nextCursor
+    });
+  } catch (err) {
+    console.error('[GET /api/users/:username/friends error]:', err.message);
+    return res.status(500).json({ message: 'Failed to load friends list' });
+  }
+});
+
 module.exports = router
+
 

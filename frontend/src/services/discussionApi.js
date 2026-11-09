@@ -7,7 +7,7 @@ import api from '../utils/api';
  */
 
 export async function getDiscussionRooms() {
-  const { data } = await api.get('/api/discussion/rooms');
+  const { data } = await api.get('/api/discussion/rooms', { skipGatedModal: true });
   return data;
 }
 
@@ -18,23 +18,23 @@ export async function getDiscussionRoom(slug, { type, sort, q, cursor } = {}) {
   if (q && q.trim()) params.q = q.trim();
   if (cursor) params.cursor = cursor;
 
-  const { data } = await api.get(`/api/discussion/rooms/${encodeURIComponent(slug)}`, { params });
+  const { data } = await api.get(`/api/discussion/rooms/${encodeURIComponent(slug)}`, { params, skipGatedModal: true });
   return data;
 }
 
 export async function getDiscussionThread(id) {
-  const { data } = await api.get(`/api/discussion/threads/${encodeURIComponent(id)}`);
+  const { data } = await api.get(`/api/discussion/threads/${encodeURIComponent(id)}`, { skipGatedModal: true });
   return data;
 }
 
 export async function getMyThreads() {
-  const { data } = await api.get('/api/discussion/mine');
+  const { data } = await api.get('/api/discussion/mine', { skipGatedModal: true });
   return data;
 }
 
 export async function getUnreadReplies(since = null) {
   const params = since ? { since } : {};
-  const { data } = await api.get('/api/discussion/unread', { params });
+  const { data } = await api.get('/api/discussion/unread', { params, skipGatedModal: true });
   return data;
 }
 
