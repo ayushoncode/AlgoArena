@@ -100,7 +100,7 @@ function ProblemRow({ problem, globalIdx, onBattleProblem, queuingProblemId, isQ
 }
 
 // ── Difficulty Subsection (Easy / Medium / Hard) ───────────────────
-function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, isQueuing, searchQuery, isGated = false, defaultOpen = true }) {
+function DiffSection({ subsection, startIdx, onBattleProblem, queuingProblemId, isQueuing, searchQuery, isGated = false, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen)
   const isSearchActive = Boolean(searchQuery && searchQuery.trim().length > 0)
   const isOpen = isSearchActive ? true : open
@@ -421,11 +421,14 @@ function TopicStepCard({
               {(step.subsections || []).map((sub, si) => {
                 const startIdx = runningIdx
                 runningIdx += (sub.problems || []).length
+                // Only Easy (first) subsection is open by default; Medium & Hard remain collapsed
+                const isEasyDefaultOpen = (si === 0)
                 return (
                   <DiffSection
                     key={si}
                     subsection={sub}
                     startIdx={startIdx}
+                    defaultOpen={isEasyDefaultOpen}
                     onBattleProblem={onBattleProblem}
                     queuingProblemId={queuingProblemId}
                     isQueuing={isQueuing}

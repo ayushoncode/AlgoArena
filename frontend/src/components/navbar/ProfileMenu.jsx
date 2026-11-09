@@ -11,7 +11,9 @@ import {
   IconSun,
   IconMoon,
   IconClose,
-  IconHexagonBadge
+  IconHexagonBadge,
+  IconUsers,
+  IconUserPlus
 } from '../icons'
 import { usePremium } from '../../hooks/usePremium'
 import PremiumBadge from '../PremiumBadge'
@@ -298,6 +300,32 @@ export default function ProfileMenu({ isOpen, onClose, user, triggerRef, logout 
             <IconUser size={18} />
           </span>
           <span className="nav-v2-menu-item-label">Profile</span>
+        </button>
+
+        <button
+          type="button"
+          id="dd-friends"
+          className="nav-v2-menu-item"
+          role="menuitem"
+          onClick={() => handleNavigate(`/profile/${encodeURIComponent(username)}/friends`)}
+        >
+          <span className="nav-v2-menu-item-icon">
+            <IconUsers size={18} />
+          </span>
+          <span className="nav-v2-menu-item-label">Friends</span>
+        </button>
+
+        <button
+          type="button"
+          id="dd-friend-requests"
+          className="nav-v2-menu-item"
+          role="menuitem"
+          onClick={() => handleNavigate('/profile/requests')}
+        >
+          <span className="nav-v2-menu-item-icon">
+            <IconUserPlus size={18} />
+          </span>
+          <span className="nav-v2-menu-item-label">Friend requests</span>
         </button>
 
         <button

@@ -992,6 +992,51 @@ export const DEFAULT_STRIVER_CURRICULUM = [
             difficulty: 'easy',
             sample_input: '[1, 2, 3, 4, 5]',
             sample_output: '[3, 4, 5]'
+          },
+          {
+            id: '097263ca-0d40-4b65-8eb8-8fe756606b26',
+            title: 'Reverse Linked List',
+            slug: 'reverse-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[1, 2, 3, 4, 5]',
+            sample_output: '[5, 4, 3, 2, 1]'
+          },
+          {
+            id: 'ca82cadb-6cd7-4ddc-b4bc-fe81fb07a2dc',
+            title: 'Linked List Cycle',
+            slug: 'linked-list-cycle',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[3, 2, 0, -4], 1',
+            sample_output: 'true'
+          },
+          {
+            id: '26814fcd-c825-47e4-8d65-9b30a6665d42',
+            title: 'Linked List Cycle II',
+            slug: 'linked-list-cycle-ii',
+            topic: 'linked-list',
+            difficulty: 'medium',
+            sample_input: '[3, 2, 0, -4], 1',
+            sample_output: 'tail connects to node index 1'
+          },
+          {
+            id: 'f8b0bab9-2e1c-4f7d-a025-300cc3446470',
+            title: 'Find Length of Loop',
+            slug: 'find-length-of-loop',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[25, 14, 19, 33, 10, 21, 39, 90, 58, 45], 4',
+            sample_output: '6'
+          },
+          {
+            id: '1adb5d3c-189e-4448-8b5f-1eb6233a54eb',
+            title: 'Palindrome Linked List',
+            slug: 'palindrome-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[1, 2, 2, 1]',
+            sample_output: 'true'
           }
         ]
       }

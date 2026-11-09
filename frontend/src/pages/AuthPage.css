@@ -10,16 +10,32 @@
  */
 
 .auth-page-root {
+  --bg-0: #1a1a1a;
+  --bg-1: #262626;
+  --bg-2: #2f2f2f;
+  --hair-muted: rgba(255, 255, 255, 0.12);
+  --hair: rgba(255, 255, 255, 0.2);
+  color-scheme: dark !important;
   min-height: 100vh;
   width: 100%;
-  background-color: var(--bg-0, #1a1a1a);
-  background-image: none;
-  color: #ffffff;
+  background-color: #1a1a1a !important;
+  background-image: none !important;
+  color: #ffffff !important;
   font-family: var(--font-sans, 'Sora Variable', -apple-system, BlinkMacSystemFont, sans-serif);
   display: flex;
   flex-direction: column;
   position: relative;
   box-sizing: border-box;
+}
+
+html[data-theme="light"] .auth-page-root,
+[data-theme="light"] .auth-page-root {
+  --bg-0: #1a1a1a !important;
+  --bg-1: #262626 !important;
+  --bg-2: #2f2f2f !important;
+  --hair-muted: rgba(255, 255, 255, 0.12) !important;
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
 }
 
 /* ── TOP HEADER BAR ─────────────────────────────────────────── */
@@ -214,6 +230,16 @@
   background: var(--bg-1, #262626);
   border-color: rgba(255, 255, 255, 0.35);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.auth-input:-webkit-autofill,
+.auth-input:-webkit-autofill:hover,
+.auth-input:-webkit-autofill:focus,
+.auth-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #262626 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .auth-input-pr {

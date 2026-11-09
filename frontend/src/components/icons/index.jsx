@@ -442,3 +442,55 @@ export function IconQuote({ size = 20, className = '' }) {
     </svg>
   )
 }
+
+export function IconBell({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <path d="M10 2.5C6.5 2.5 5 5.5 5 9.5C5 12.5 3.5 14 3.5 14H16.5C16.5 14 15 12.5 15 9.5C15 5.5 13.5 2.5 10 2.5Z" />
+      <path d="M8.5 16.5C8.8 17.5 9.3 18 10 18C10.7 18 11.2 17.5 11.5 16.5" />
+    </svg>
+  )
+}
+
+export function IconUserPlus({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <circle cx="8" cy="6.5" r="3.5" />
+      <path d="M2.5 16.5C2.5 13.5 5 12 8 12C9.2 12 10.3 12.3 11.2 12.8" />
+      <path d="M15 11.5V16.5" />
+      <path d="M12.5 14H17.5" />
+    </svg>
+  )
+}
+
+export function IconUserCheck({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <circle cx="8" cy="6.5" r="3.5" />
+      <path d="M2.5 16.5C2.5 13.5 5 12 8 12C9.2 12 10.3 12.3 11.2 12.8" />
+      <path d="M13 14.5L15 16.5L18.5 12" />
+    </svg>
+  )
+}
+
+export function IconUserX({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <circle cx="8" cy="6.5" r="3.5" />
+      <path d="M2.5 16.5C2.5 13.5 5 12 8 12C9.2 12 10.3 12.3 11.2 12.8" />
+      <path d="M13.5 12.5L17.5 16.5" />
+      <path d="M17.5 12.5L13.5 16.5" />
+    </svg>
+  )
+}
+
+export function IconUsers({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} className={className} {...baseSvgProps}>
+      <circle cx="7" cy="6.5" r="3" />
+      <path d="M2 16C2 13.2 4.2 11.8 7 11.8C9.8 11.8 12 13.2 12 16" />
+      <path d="M13 4.2C13.8 4.6 14.5 5.5 14.5 6.5C14.5 7.5 13.8 8.4 13 8.8" />
+      <path d="M14.5 11.9C16.2 12.3 18 13.5 18 16" />
+    </svg>
+  )
+}

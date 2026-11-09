@@ -15,6 +15,9 @@ export default function EditProfileModal({
   const [website, setWebsite] = useState('')
   const [github, setGithub] = useState('')
   const [linkedin, setLinkedin] = useState('')
+  const [leetcode, setLeetcode] = useState('')
+  const [codeforces, setCodeforces] = useState('')
+  const [codechef, setCodechef] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -27,6 +30,9 @@ export default function EditProfileModal({
       setWebsite(activeUser.website || '')
       setGithub(activeUser.github || '')
       setLinkedin(activeUser.linkedin || '')
+      setLeetcode(activeUser.leetcode || '')
+      setCodeforces(activeUser.codeforces || '')
+      setCodechef(activeUser.codechef || '')
     }
   }, [activeUser, isOpen])
 
@@ -45,6 +51,9 @@ export default function EditProfileModal({
         website,
         github,
         linkedin,
+        leetcode,
+        codeforces,
+        codechef,
       })
       onClose()
     } catch (err) {
@@ -205,6 +214,42 @@ export default function EditProfileModal({
                 value={linkedin}
                 onChange={e => setLinkedin(e.target.value)}
                 placeholder="username or link"
+                maxLength={100}
+              />
+            </div>
+
+            {/* LeetCode */}
+            <div className="edit-field-group">
+              <label>LeetCode</label>
+              <input
+                type="text"
+                value={leetcode}
+                onChange={e => setLeetcode(e.target.value)}
+                placeholder="username or profile link"
+                maxLength={100}
+              />
+            </div>
+
+            {/* Codeforces */}
+            <div className="edit-field-group">
+              <label>Codeforces</label>
+              <input
+                type="text"
+                value={codeforces}
+                onChange={e => setCodeforces(e.target.value)}
+                placeholder="handle or profile link"
+                maxLength={100}
+              />
+            </div>
+
+            {/* CodeChef */}
+            <div className="edit-field-group span-2">
+              <label>CodeChef</label>
+              <input
+                type="text"
+                value={codechef}
+                onChange={e => setCodechef(e.target.value)}
+                placeholder="username or profile link"
                 maxLength={100}
               />
             </div>

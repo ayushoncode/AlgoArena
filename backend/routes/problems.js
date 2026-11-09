@@ -251,7 +251,12 @@ router.get('/striver-sheet', requirePremium('sheet'), async (_req, res) => {
           {
             title: 'Medium Problems of LL',
             problems: [
-              'middle-of-the-linked-list'
+              'middle-of-the-linked-list',
+              'reverse-linked-list',
+              'linked-list-cycle',
+              'linked-list-cycle-ii',
+              'find-length-of-loop',
+              'palindrome-linked-list'
             ]
           }
         ]

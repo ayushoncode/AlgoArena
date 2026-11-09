@@ -1,0 +1,208 @@
+/**
+ * ProfileFriendsSection.css
+ * Follows design system: Sora font, navy tonal surfaces, hairlines, gold mono ratings.
+ * Zero gradients, zero box-shadow.
+ */
+
+.profile-friends-card {
+  background-color: var(--bg-1, #262626);
+  border: 1px solid var(--hair-muted, rgba(255, 255, 255, 0.08));
+  border-radius: 4px;
+  padding: 24px;
+  font-family: var(--font-sans, "Sora Variable", sans-serif);
+  color: var(--ink, #ffffff);
+}
+
+[data-theme='light'] .profile-friends-card {
+  background-color: #ffffff;
+  border-color: rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+}
+
+.p-friends-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.p-friends-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.p-friends-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.p-friends-count-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  background-color: rgba(56, 189, 248, 0.12);
+  color: var(--info, #38bdf8);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.p-friends-header-links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.p-friends-link-btn {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--info, #38bdf8);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.15s;
+}
+
+.p-friends-link-btn:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+.p-friends-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.p-friend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background-color: var(--bg-2, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--hair-subtle, rgba(255, 255, 255, 0.05));
+  border-radius: 6px;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.12s, border-color 0.12s;
+}
+
+[data-theme='light'] .p-friend-item {
+  background-color: rgba(15, 23, 42, 0.02);
+  border-color: rgba(15, 23, 42, 0.06);
+}
+
+.p-friend-item:hover {
+  background-color: var(--bg-2, rgba(255, 255, 255, 0.06));
+  border-color: var(--hair-muted, rgba(196, 214, 232, 0.2));
+}
+
+.p-friend-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: var(--bg-3, #333333);
+  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.16));
+  flex-shrink: 0;
+}
+
+.p-friend-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.p-friend-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #ffffff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-theme='light'] .p-friend-name {
+  color: #0f172a;
+}
+
+.p-friend-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.p-friend-rating {
+  font-family: var(--font-mono, monospace);
+  color: var(--gold, #ffd696);
+  font-weight: 600;
+}
+
+.p-friend-tier {
+  font-size: 10px;
+}
+
+/* Empty State */
+.p-friends-empty {
+  padding: 24px 16px;
+  text-align: center;
+  background-color: var(--bg-2, rgba(255, 255, 255, 0.02));
+  border-radius: 6px;
+  border: 1px dashed var(--hair-muted, rgba(255, 255, 255, 0.08));
+}
+
+.p-friends-empty-text {
+  font-size: 13px;
+  color: var(--sub, #a2a9b8);
+  margin: 0 0 12px 0;
+}
+
+.p-friends-empty-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.p-friends-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.p-friends-action-primary {
+  background-color: var(--info, #38bdf8);
+  color: #02060f;
+  border: none;
+}
+
+.p-friends-action-primary:hover {
+  opacity: 0.9;
+}
+
+.p-friends-action-secondary {
+  background-color: transparent;
+  color: var(--sub, #a2a9b8);
+  border: 1px solid var(--hair-muted, rgba(196, 214, 232, 0.2));
+}
+
+.p-friends-action-secondary:hover {
+  background-color: var(--bg-2, rgba(255, 255, 255, 0.05));
+  color: var(--ink, #ffffff);
+}
+

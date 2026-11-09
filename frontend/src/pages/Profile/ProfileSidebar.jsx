@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { UserAvatar } from '../../utils/avatar'
 import { getTierForRating } from '../../lib/tiers'
 import ProfileSkillsCard from './ProfileSkillsCard'
 import { usePremium } from '../../hooks/usePremium'
 import { usePremiumBadges } from '../../hooks/usePremiumBadges'
 import PremiumBadge from '../../components/PremiumBadge'
-import { IconHexagonBadge } from '../../components/icons'
+import { IconHexagonBadge, IconUsers, IconUserPlus } from '../../components/icons'
+import FriendButton from '../../components/social/FriendButton'
+import { getUserFriends, getFriendRequests, getMutualFriendsCount, blockUser } from '../../services/socialApi'
 
 export default function ProfileSidebar({
   activeUser,
@@ -26,9 +29,47 @@ export default function ProfileSidebar({
 }) {
   const [copied, setCopied] = useState(false)
   const [showShareMenu, setShowShareMenu] = useState(false)
+  const [friendsCount, setFriendsCount] = useState(activeUser?.friends_count ?? 0)
+  const [pendingCount, setPendingCount] = useState(0)
+  const [mutualCount, setMutualCount] = useState(0)
   const shareMenuRef = useRef(null)
   const username = activeUser?.username || 'Warrior'
   const canonicalTier = getTierForRating(elo)
+
+  useEffect(() => {
+    if (typeof activeUser?.friends_count === 'number') {
+      setFriendsCount(activeUser.friends_count)
+    }
+  }, [activeUser?.friends_count])
+
+  useEffect(() => {
+    if (!username) return
+    let active = true
+    getUserFriends(username)
+      .then(res => {
+        if (!active) return
+        const count = res.totalCount ?? res.count ?? res.friends?.length ?? res.items?.length ?? 0
+        setFriendsCount(count)
+      })
+      .catch(() => {})
+
+    if (isMe) {
+      getFriendRequests({ direction: 'incoming' })
+        .then(res => {
+          if (!active) return
+          setPendingCount(res.requests?.length || res.items?.length || 0)
+        })
+        .catch(() => {})
+    } else if (activeUser?.id) {
+      getMutualFriendsCount(activeUser.id)
+        .then(res => {
+          if (!active) return
+          setMutualCount(res.count || res.mutualCount || 0)
+        })
+        .catch(() => {})
+    }
+    return () => { active = false }
+  }, [username, isMe, activeUser?.id])
 
   const { isPremium, status: subStatus } = usePremium()
   const badges = usePremiumBadges(isMe ? [] : [username], isMe ? [] : [activeUser?.id])
@@ -88,6 +129,18 @@ export default function ProfileSidebar({
     }
   }
 
+  const handleBlockPlayer = async () => {
+    if (!activeUser?.id) return
+    if (!window.confirm(`Block ${username}? You will no longer be friends and they cannot send you requests.`)) return
+    try {
+      await blockUser(activeUser.id)
+      setShowShareMenu(false)
+      window.location.reload()
+    } catch (err) {
+      console.error('Failed to block player:', err)
+    }
+  }
+
   // Close share menu on outside click or escape
   useEffect(() => {
     if (!showShareMenu) return
@@ -116,6 +169,9 @@ export default function ProfileSidebar({
   const website = activeUser?.website?.trim()
   const rawGithub = activeUser?.github?.trim()
   const rawLinkedin = activeUser?.linkedin?.trim()
+  const rawLeetcode = activeUser?.leetcode?.trim()
+  const rawCodeforces = activeUser?.codeforces?.trim()
+  const rawCodechef = activeUser?.codechef?.trim()
 
   const websiteUrl = website ? (website.startsWith('http') ? website : `https://${website}`) : ''
   const githubUrl = rawGithub ? (rawGithub.startsWith('http') ? rawGithub : `https://github.com/${rawGithub.replace(/^@/, '')}`) : ''
@@ -123,7 +179,16 @@ export default function ProfileSidebar({
   const linkedinUrl = rawLinkedin ? (rawLinkedin.startsWith('http') ? rawLinkedin : `https://linkedin.com/in/${rawLinkedin.replace(/^@/, '')}`) : ''
   const linkedinHandle = rawLinkedin ? rawLinkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, '').replace(/\/$/, '') : ''
 
-  const hasAnyLinks = Boolean(location || website || rawGithub || rawLinkedin)
+  const leetcodeUrl = rawLeetcode ? (rawLeetcode.startsWith('http') ? rawLeetcode : `https://leetcode.com/u/${rawLeetcode.replace(/^@/, '')}`) : ''
+  const leetcodeHandle = rawLeetcode ? rawLeetcode.replace(/^https?:\/\/(www\.)?leetcode\.com\/(u\/)?/, '').replace(/\/$/, '') : ''
+
+  const codeforcesUrl = rawCodeforces ? (rawCodeforces.startsWith('http') ? rawCodeforces : `https://codeforces.com/profile/${rawCodeforces.replace(/^@/, '')}`) : ''
+  const codeforcesHandle = rawCodeforces ? rawCodeforces.replace(/^https?:\/\/(www\.)?codeforces\.com\/profile\//, '').replace(/\/$/, '') : ''
+
+  const codechefUrl = rawCodechef ? (rawCodechef.startsWith('http') ? rawCodechef : `https://codechef.com/users/${rawCodechef.replace(/^@/, '')}`) : ''
+  const codechefHandle = rawCodechef ? rawCodechef.replace(/^https?:\/\/(www\.)?codechef\.com\/users\//, '').replace(/\/$/, '') : ''
+
+  const hasAnyLinks = Boolean(location || institute || website || rawGithub || rawLinkedin || rawLeetcode || rawCodeforces || rawCodechef)
 
   return (
     <aside className="profile-leetcode-sidebar">
@@ -166,8 +231,8 @@ export default function ProfileSidebar({
           </div>
 
           <div className="sidebar-names">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <h1 className="sidebar-display-name" style={{ margin: 0 }}>{displayName}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, maxWidth: '100%' }}>
+              <h1 className="sidebar-display-name" style={{ margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</h1>
               {isPremiumUser && (
                 <span
                   title={launchSlotNum ? `Launch Member #${launchSlotNum}` : 'Premium Subscriber'}
@@ -196,7 +261,9 @@ export default function ProfileSidebar({
                 className="sidebar-rank-value"
                 style={{ color: canonicalTier.color }}
               >
-                {activeUser?.rank ? Number(activeUser.rank).toLocaleString() : '-'}
+                {(Number(activeUser?.wins || 0) + Number(activeUser?.losses || 0)) > 0 && activeUser?.rank
+                  ? Number(activeUser.rank).toLocaleString()
+                  : 'Unranked'}
               </span>
             </div>
           </div>
@@ -209,31 +276,131 @@ export default function ProfileSidebar({
           </p>
         )}
 
-        {/* Action Buttons: Edit Profile (when isMe) or Share Profile (when !isMe) */}
-        <div className="sidebar-actions-row" style={{ marginTop: bio ? 12 : 16 }}>
-          {isMe && (
+        {/* Friends Stat Row (LeetCode-style below bio/rank) */}
+        <div
+          className="sidebar-friends-stat-row"
+          style={{
+            marginTop: bio ? 10 : 12,
+            marginBottom: 14,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            fontSize: 13,
+            lineHeight: '18px',
+            color: 'var(--sub, #a2a9b8)'
+          }}
+        >
+          <Link
+            to={`/profile/${encodeURIComponent(username)}/friends`}
+            style={{
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              color: 'inherit',
+              lineHeight: 1
+            }}
+          >
+            <strong style={{ color: 'var(--ink, #ffffff)', fontWeight: 600, fontSize: 13, lineHeight: 1 }}>
+              {friendsCount}
+            </strong>
+            <span style={{ fontSize: 13, lineHeight: 1 }}>{friendsCount === 1 ? 'Friend' : 'Friends'}</span>
+          </Link>
+
+          {isMe && pendingCount > 0 && (
+            <>
+              <span style={{ color: 'var(--hair-muted, rgba(255, 255, 255, 0.2))', lineHeight: 1 }}>|</span>
+              <Link
+                to="/profile/requests"
+                style={{
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  color: 'inherit',
+                  lineHeight: 1
+                }}
+              >
+                <strong style={{ color: 'var(--primary, #38bdf8)', fontWeight: 600, fontSize: 13, lineHeight: 1 }}>
+                  {pendingCount}
+                </strong>
+                <span style={{ fontSize: 13, lineHeight: 1 }}>Requests</span>
+              </Link>
+            </>
+          )}
+
+          {!isMe && mutualCount > 0 && (
+            <>
+              <span style={{ color: 'var(--hair-muted, rgba(255, 255, 255, 0.2))', lineHeight: 1 }}>|</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, lineHeight: 1 }}>
+                <strong style={{ color: 'var(--ink, #ffffff)', fontWeight: 600, fontSize: 13, lineHeight: 1 }}>
+                  {mutualCount}
+                </strong>
+                <span style={{ fontSize: 13, lineHeight: 1 }}>Mutual</span>
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Action Buttons Row: Side-by-side controls (LeetCode-style) */}
+        <div
+          className="sidebar-actions-row"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            width: '100%',
+            height: 36,
+            marginBottom: 16
+          }}
+        >
+          {isMe ? (
             <button
               type="button"
               className="btn-edit-profile"
               onClick={() => setShowEditProfileModal(true)}
+              style={{ flex: 1, height: 36, margin: 0, boxSizing: 'border-box' }}
             >
               Edit Profile
             </button>
+          ) : (
+            <div style={{ flex: 1, minWidth: 0, height: 36 }}>
+              <FriendButton
+                targetUserId={activeUser?.id}
+                targetUsername={username}
+                isMe={false}
+              />
+            </div>
           )}
 
           <div
             className="share-menu-anchor"
             ref={shareMenuRef}
-            style={!isMe ? { width: '100%' } : undefined}
+            style={{ position: 'relative', width: 36, height: 36, flexShrink: 0 }}
           >
             {isMe ? (
               <button
                 type="button"
                 className={`btn-share-icon ${showShareMenu ? 'active' : ''}`}
-                onClick={() => setShowShareMenu((prev) => !prev)}
+                onClick={() => setShowShareMenu(prev => !prev)}
                 title="Share profile"
                 aria-label="Share profile"
                 aria-expanded={showShareMenu}
+                style={{
+                  width: 36,
+                  height: 36,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 6,
+                  backgroundColor: 'var(--bg-2, #2f2f2f)',
+                  border: '1px solid var(--hair-muted, rgba(255, 255, 255, 0.08))',
+                  color: 'var(--sub, #a2a9b8)',
+                  cursor: 'pointer',
+                  margin: 0,
+                  padding: 0,
+                  boxSizing: 'border-box'
+                }}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
@@ -244,12 +411,32 @@ export default function ProfileSidebar({
             ) : (
               <button
                 type="button"
-                className="btn-edit-profile"
-                onClick={() => setShowShareMenu((prev) => !prev)}
+                className={`btn-share-icon ${showShareMenu ? 'active' : ''}`}
+                onClick={() => setShowShareMenu(prev => !prev)}
+                title="More options"
+                aria-label="More options"
                 aria-expanded={showShareMenu}
-                style={{ width: '100%' }}
+                style={{
+                  width: 36,
+                  height: 36,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 6,
+                  backgroundColor: 'var(--bg-2, #2f2f2f)',
+                  border: '1px solid var(--hair-muted, rgba(255, 255, 255, 0.08))',
+                  color: 'var(--sub, #a2a9b8)',
+                  cursor: 'pointer',
+                  margin: 0,
+                  padding: 0,
+                  boxSizing: 'border-box'
+                }}
               >
-                Share Profile
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="5" cy="12" r="2" />
+                  <circle cx="12" cy="12" r="2" />
+                  <circle cx="19" cy="12" r="2" />
+                </svg>
               </button>
             )}
 
@@ -312,7 +499,7 @@ export default function ProfileSidebar({
                   >
                     <span className="share-option-icon whatsapp-icon">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                       </svg>
                     </span>
                     <span>Share on WhatsApp</span>
@@ -334,6 +521,23 @@ export default function ProfileSidebar({
                         </svg>
                       </span>
                       <span>More options...</span>
+                    </button>
+                  )}
+
+                  {!isMe && activeUser?.id && (
+                    <button
+                      type="button"
+                      className="share-option-btn"
+                      onClick={handleBlockPlayer}
+                      style={{ color: '#ef4444', borderTop: '1px solid var(--hair-muted, rgba(255,255,255,0.08))', marginTop: 4, paddingTop: 8 }}
+                    >
+                      <span className="share-option-icon">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                        </svg>
+                      </span>
+                      <span>Block player</span>
                     </button>
                   )}
                 </div>
@@ -386,6 +590,17 @@ export default function ProfileSidebar({
           <>
             <div className="sidebar-divider" />
             <ul className="sidebar-meta-list" aria-label="Competitor affiliations">
+              {/* College / Institute */}
+              {institute && (
+                <li className="sidebar-meta-item">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="meta-icon" aria-hidden="true">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                  </svg>
+                  <span className="truncate" title={institute}>{institute}</span>
+                </li>
+              )}
+
               {/* Location */}
               {location && (
                 <li className="sidebar-meta-item">
@@ -427,7 +642,8 @@ export default function ProfileSidebar({
                     href={githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="sidebar-link"
+                    className="sidebar-link truncate"
+                    title={githubHandle}
                   >
                     {githubHandle}
                   </a>
@@ -446,9 +662,64 @@ export default function ProfileSidebar({
                     href={linkedinUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="sidebar-link"
+                    className="sidebar-link truncate"
+                    title={linkedinHandle}
                   >
                     {linkedinHandle}
+                  </a>
+                </li>
+              )}
+
+              {/* LeetCode */}
+              {rawLeetcode && (
+                <li className="sidebar-meta-item">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="meta-icon" style={{ color: '#FFA116' }} aria-hidden="true">
+                    <path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.247 2.198 5.864 2.176 8.084-.05l3.864-3.882c.516-.519.78-1.218.73-1.928a2.53 2.53 0 0 0-.822-1.74l-3.328-3.07a1.05 1.05 0 0 0-1.425 1.543l3.328 3.07a.434.434 0 0 1 .14.298.43.43 0 0 1-.124.331l-3.865 3.883a3.67 3.67 0 0 1-5.185.032l-4.277-4.193a3.791 3.791 0 0 1-.81-1.16 3.518 3.518 0 0 1-.223-.65 3.524 3.524 0 0 1-.04-1.506 3.36 3.36 0 0 1 .772-1.343l3.854-4.126 5.405-5.787a.432.432 0 0 1 .324-.131.43.43 0 0 1 .31.131.435.435 0 0 1 0 .614l-4.041 4.055a1.05 1.05 0 0 0 1.485 1.485l4.04-4.055a2.535 2.535 0 0 0 0-3.585A1.374 1.374 0 0 0 13.483 0zm-2.866 12.815a1.05 1.05 0 0 0-1.05 1.05v.005a1.05 1.05 0 0 0 1.05 1.05h7.32a1.05 1.05 0 0 0 1.05-1.05v-.005a1.05 1.05 0 0 0-1.05-1.05h-7.32z"/>
+                  </svg>
+                  <a
+                    href={leetcodeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sidebar-link truncate"
+                    title={`LeetCode: ${leetcodeHandle}`}
+                  >
+                    {leetcodeHandle}
+                  </a>
+                </li>
+              )}
+
+              {/* Codeforces */}
+              {rawCodeforces && (
+                <li className="sidebar-meta-item">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="meta-icon" style={{ color: '#1F8ACB' }} aria-hidden="true">
+                    <path d="M4.5 7.5a1.5 1.5 0 0 1 1.5 1.5v10.5a1.5 1.5 0 0 1-3 0V9a1.5 1.5 0 0 1 1.5-1.5zm7.5-6a1.5 1.5 0 0 1 1.5 1.5v16.5a1.5 1.5 0 0 1-3 0V3a1.5 1.5 0 0 1 1.5-1.5zm7.5 10.5a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-3 0v-6a1.5 1.5 0 0 1 1.5-1.5z"/>
+                  </svg>
+                  <a
+                    href={codeforcesUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sidebar-link truncate"
+                    title={`Codeforces: ${codeforcesHandle}`}
+                  >
+                    {codeforcesHandle}
+                  </a>
+                </li>
+              )}
+
+              {/* CodeChef */}
+              {rawCodechef && (
+                <li className="sidebar-meta-item">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="meta-icon" style={{ color: '#c99158' }} aria-hidden="true">
+                    <path d="M12 2a5 5 0 0 0-4.9 4.02A4.5 4.5 0 0 0 4 10.5c0 1.94 1.23 3.6 2.96 4.22.04.1.08.19.13.28H17a4.99 4.99 0 0 0 2.96-4.5 4.5 4.5 0 0 0-3.06-4.48A5 5 0 0 0 12 2zm-5 14v4a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-4H7z"/>
+                  </svg>
+                  <a
+                    href={codechefUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sidebar-link truncate"
+                    title={`CodeChef: ${codechefHandle}`}
+                  >
+                    {codechefHandle}
                   </a>
                 </li>
               )}
