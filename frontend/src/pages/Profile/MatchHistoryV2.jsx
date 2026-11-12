@@ -190,7 +190,7 @@ export default function MatchHistoryV2({ matches = [], onNavigate }) {
 
                     <td className="td-opponent">
                       <div className="opponent-cell">
-                        <UserAvatar username={opponentName} size={22} />
+                        <UserAvatar username={opponentName} seed={m.opponent_avatar_seed || m.avatar_seed} style={m.opponent_avatar_style || m.avatar_style} size={22} />
                         <a
                           href={`/profile/${encodeURIComponent(opponentName)}`}
                           onClick={(e) => {
@@ -231,7 +231,7 @@ export default function MatchHistoryV2({ matches = [], onNavigate }) {
                       <div className="mobile-row-top">
                         <div className="mobile-result-opp">
                           <span className={`mobile-result ${isWin ? 'win' : isLoss ? 'loss' : ''}`}>{label}</span>
-                          <UserAvatar username={opponentName} size={18} />
+                          <UserAvatar username={opponentName} seed={m.opponent_avatar_seed || m.avatar_seed} style={m.opponent_avatar_style || m.avatar_style} size={18} />
                           <a
                             href={`/profile/${encodeURIComponent(opponentName)}`}
                             onClick={(e) => {

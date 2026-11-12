@@ -32,16 +32,18 @@ export function useFriendship(targetUserId, targetUsername = null, initialStatus
     (targetUsername && currentUser.username?.toLowerCase() === targetUsername?.toLowerCase())
   );
 
+  const targetIdentifier = targetUserId || targetUsername;
+
   const refreshStatus = useCallback(async () => {
-    if (!targetUserId || isSelf) {
+    if (!targetIdentifier || isSelf) {
       if (isSelf) setRelation('self');
       return;
     }
     setLoading(true);
     try {
       const [statusRes, mutualRes] = await Promise.all([
-        getFriendshipStatus(targetUserId),
-        getMutualFriendsCount(targetUserId)
+        getFriendshipStatus(targetIdentifier),
+        targetUserId ? getMutualFriendsCount(targetUserId).catch(() => ({ count: 0 })) : Promise.resolve({ count: 0 })
       ]);
       const currentRel = statusRes?.relation || statusRes?.status || 'none';
       setRelation(currentRel);
@@ -52,13 +54,13 @@ export function useFriendship(targetUserId, targetUsername = null, initialStatus
     } finally {
       setLoading(false);
     }
-  }, [targetUserId, isSelf]);
+  }, [targetIdentifier, targetUserId, isSelf]);
 
   useEffect(() => {
-    if (targetUserId) {
+    if (targetIdentifier) {
       refreshStatus();
     }
-  }, [targetUserId, refreshStatus]);
+  }, [targetIdentifier, refreshStatus]);
 
   // Listen to socket friend events
   useEffect(() => {

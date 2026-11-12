@@ -886,7 +886,7 @@ export const DEFAULT_STRIVER_CURRICULUM = [
   },
   {
     id: 'step-6-learn-linkedlist',
-    title: 'Learn LinkedList',
+    title: 'Linked List',
     topic: 'linked-list',
     badge: 'Curriculum Ready',
     subsections: [
@@ -1037,10 +1037,106 @@ export const DEFAULT_STRIVER_CURRICULUM = [
             difficulty: 'easy',
             sample_input: '[1, 2, 2, 1]',
             sample_output: 'true'
+          },
+          {
+            id: 'c4affaaf-782b-44a3-98e5-646f53215dad',
+            title: 'Odd Even Linked List',
+            slug: 'odd-even-linked-list',
+            topic: 'linked-list',
+            difficulty: 'medium',
+            sample_input: '[1, 2, 3, 4, 5]',
+            sample_output: '[1, 3, 5, 2, 4]'
+          },
+          {
+            id: 'bcd2f80a-4585-40e4-8d33-1c11567d7e2d',
+            title: 'Remove Nth Node From End of List',
+            slug: 'remove-nth-node-from-end-of-list',
+            topic: 'linked-list',
+            difficulty: 'medium',
+            sample_input: '[1, 2, 3, 4, 5], 2',
+            sample_output: '[1, 2, 3, 5]'
+          },
+          {
+            id: '621ee7a6-d907-40ce-b5c1-122a27732ff3',
+            title: 'Delete the Middle Node of a Linked List',
+            slug: 'delete-the-middle-node-of-a-linked-list',
+            topic: 'linked-list',
+            difficulty: 'medium',
+            sample_input: '[1, 3, 4, 7, 1, 2, 6]',
+            sample_output: '[1, 3, 4, 1, 2, 6]'
+          },
+          {
+            id: '97c225dd-7f0c-4034-9b47-9323c92f12d1',
+            title: 'Sort List',
+            slug: 'sort-list',
+            topic: 'linked-list',
+            difficulty: 'medium',
+            sample_input: '[4, 2, 1, 3]',
+            sample_output: '[1, 2, 3, 4]'
+          },
+          {
+            id: 'e834db72-7c21-4092-aa05-c3df43d2e0d0',
+            title: 'Sort a linked list of 0s, 1s and 2s',
+            slug: 'sort-a-linked-list-of-0s-1s-or-2s',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[1, 2, 2, 1, 2, 0, 2, 2]',
+            sample_output: '[0, 1, 1, 2, 2, 2, 2, 2]'
+          },
+          {
+            id: '389b3cef-96bd-4998-9c22-4e31698e258c',
+            title: 'Add 1 to a Linked List',
+            slug: 'add-1-to-a-linked-list',
+            topic: 'linked-list',
+            difficulty: 'medium',
+            sample_input: '[4, 5, 6]',
+            sample_output: '[4, 5, 7]'
+          },
+          {
+            id: '403f984b-7ce0-41fa-8a99-41329756326e',
+            title: 'Add Two Numbers',
+            slug: 'add-two-numbers',
+            topic: 'linked-list',
+            difficulty: 'medium',
+            sample_input: '[2, 4, 3], [5, 6, 4]',
+            sample_output: '[7, 0, 8]'
+          }
+        ]
+      },
+      {
+        title: 'Medium Problems of DLL',
+        problems: [
+          {
+            id: '052e8aa4-afef-4079-9a2e-b1ecac09e344',
+            title: 'Delete all occurrences of a key in a doubly linked list',
+            slug: 'delete-all-occurrences-of-a-key-in-dll',
+            topic: 'linked-list',
+            difficulty: 'medium',
+            sample_input: '[2, 2, 10, 8, 4, 2, 5, 2], 2',
+            sample_output: '[10, 8, 4, 5]'
+          },
+          {
+            id: 'a26525e7-81f2-494e-ad8d-991a2a384199',
+            title: 'Find pairs with given sum in doubly linked list',
+            slug: 'find-pairs-with-given-sum-in-doubly-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[1, 2, 4, 5, 6, 8, 9], 7',
+            sample_output: '[[1, 6], [2, 5]]'
+          },
+          {
+            id: 'd2d93c93-732d-4c74-9057-e1577460ae5a',
+            title: 'Remove duplicates from a sorted doubly linked list',
+            slug: 'remove-duplicates-from-a-sorted-doubly-linked-list',
+            topic: 'linked-list',
+            difficulty: 'easy',
+            sample_input: '[1, 1, 1, 2, 3, 4]',
+            sample_output: '[1, 2, 3, 4]'
           }
         ]
       }
     ]
   }
-]
+];
+
 

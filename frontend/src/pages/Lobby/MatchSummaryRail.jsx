@@ -13,6 +13,7 @@ export default function MatchSummaryRail({
   diffObj,
   onStartQueue,
   queuing,
+  isAuthenticated = true,
 }) {
   const swings = SWINGS[diff] || SWINGS.medium
 
@@ -48,16 +49,24 @@ export default function MatchSummaryRail({
           type="button"
           className="lobby-v2-deploy-btn"
           onClick={onStartQueue}
-          disabled={!selectedTopicId || queuing}
+          disabled={isAuthenticated && (!selectedTopicId || queuing)}
         >
-          {selectedTopicId ? 'Find Match' : 'Choose a topic to begin'}
+          {!isAuthenticated
+            ? 'Sign in to Play'
+            : selectedTopicId
+              ? 'Find Match'
+              : 'Choose a topic to begin'}
         </button>
 
-        {!selectedTopicId && (
+        {!isAuthenticated ? (
+          <p className="lobby-v2-disabled-hint" style={{ color: 'var(--feat, #ffd696)' }}>
+            Sign in to access the arena and enter matchmaking
+          </p>
+        ) : !selectedTopicId ? (
           <p className="lobby-v2-disabled-hint">
             Please select a topic from above
           </p>
-        )}
+        ) : null}
       </div>
     </aside>
   )

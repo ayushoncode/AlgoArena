@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useRef } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 
 function toLocalDateKey(dt) {
@@ -19,6 +19,29 @@ export default function ActivityHeatmapYear({
 }) {
   const [hoveredCell, setHoveredCell] = useState(null)
   const [selectedYear, setSelectedYear] = useState('current')
+  const cardRef = useRef(null)
+
+  const handleCellEnter = (e, cell) => {
+    const cellRect = e.currentTarget.getBoundingClientRect()
+    const cardRect = cardRef.current?.getBoundingClientRect()
+    if (!cardRect) {
+      setHoveredCell(cell)
+      return
+    }
+
+    const cellCenterX = cellRect.left + cellRect.width / 2 - cardRect.left
+    const cellTopY = cellRect.top - cardRect.top
+
+    setHoveredCell({
+      ...cell,
+      x: cellCenterX,
+      y: cellTopY,
+    })
+  }
+
+  const handleCellLeave = () => {
+    setHoveredCell(null)
+  }
 
   // Aggregate matches strictly by local date YYYY-MM-DD from actual matches/duels
   const dateCounts = useMemo(() => {
@@ -177,7 +200,7 @@ export default function ActivityHeatmapYear({
   }
 
   return (
-    <div className="profile-big-heatmap-card" role="region" aria-label="Annual activity heatmap">
+    <div ref={cardRef} className="profile-big-heatmap-card" role="region" aria-label="Annual activity heatmap">
       {/* 1. Header Bar */}
       <div className="big-heatmap-header">
         <div className="heatmap-header-left">
@@ -219,7 +242,7 @@ export default function ActivityHeatmapYear({
       </div>
 
       {/* 2. Month-by-Month Grouped Matrix Grid with Spacing */}
-      <div className="big-heatmap-scroll-area">
+      <div className="big-heatmap-scroll-area" onScroll={handleCellLeave}>
         <div className="big-heatmap-content">
           <div className="big-heatmap-months-strip">
             {months.map(m => (
@@ -240,6 +263,7 @@ export default function ActivityHeatmapYear({
 
                         const bg = getCellColor(cell.count)
                         const isHovered = hoveredCell?.date === cell.date
+                        const matchText = cell.count === 0 ? 'No matches played' : `${cell.count} ${cell.count === 1 ? 'match' : 'matches'} played`
 
                         return (
                           <div
@@ -248,11 +272,12 @@ export default function ActivityHeatmapYear({
                             style={{ backgroundColor: bg }}
                             tabIndex={0}
                             role="gridcell"
-                            aria-label={`${cell.formatted}: ${cell.count} ${cell.count === 1 ? 'match' : 'matches'}`}
-                            onMouseEnter={() => setHoveredCell(cell)}
-                            onMouseLeave={() => setHoveredCell(null)}
-                            onFocus={() => setHoveredCell(cell)}
-                            onBlur={() => setHoveredCell(null)}
+                            aria-label={`${cell.formatted}: ${matchText}`}
+                            title={`${matchText} on ${cell.formatted}`}
+                            onMouseEnter={(e) => handleCellEnter(e, cell)}
+                            onMouseLeave={handleCellLeave}
+                            onFocus={(e) => handleCellEnter(e, cell)}
+                            onBlur={handleCellLeave}
                           />
                         )
                       })}
@@ -265,19 +290,30 @@ export default function ActivityHeatmapYear({
               </div>
             ))}
           </div>
-
-          {/* Interactive Floating Tooltip */}
-          {hoveredCell && (
-            <div className="big-heatmap-tooltip" role="status" aria-live="polite">
-              <span className="tooltip-date">{hoveredCell.formatted}</span>
-              <span className="tooltip-sep">•</span>
-              <span className="tooltip-matches">
-                {hoveredCell.count === 0 ? 'No submissions' : `${hoveredCell.count} ${hoveredCell.count === 1 ? 'submission' : 'submissions'}`}
-              </span>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* 3. Interactive Floating Tooltip positioned directly over hovered cell */}
+      {hoveredCell && (
+        <div
+          className="big-heatmap-tooltip"
+          style={{
+            left: `${Math.max(90, Math.min((cardRef.current?.clientWidth || 800) - 90, hoveredCell.x || 0))}px`,
+            top: `${(hoveredCell.y || 0) - 8}px`,
+            transform: 'translate(-50%, -100%)',
+          }}
+          role="status"
+          aria-live="polite"
+        >
+          <span className={`tooltip-matches-badge ${hoveredCell.count === 0 ? 'is-zero' : ''}`}>
+            {hoveredCell.count === 0
+              ? 'No matches played'
+              : `${hoveredCell.count} ${hoveredCell.count === 1 ? 'match' : 'matches'} played`}
+          </span>
+          <span className="tooltip-sep">on</span>
+          <span className="tooltip-date">{hoveredCell.formatted}</span>
+        </div>
+      )}
     </div>
   )
 }

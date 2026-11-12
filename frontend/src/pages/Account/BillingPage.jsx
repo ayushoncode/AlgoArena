@@ -139,7 +139,7 @@ export default function BillingPage() {
   }
 
   const planName = sub?.launchSlot ? 'Premium Launch' : 'Premium Standard'
-  const planPriceDisplay = sub?.launchSlot ? '39' : '50'
+  const planPriceDisplay = sub?.launchSlot ? '39' : '100'
 
   return (
     <div className="billing-page-wrapper">
