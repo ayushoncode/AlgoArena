@@ -101,28 +101,26 @@ export const PREMIUM_CONFIG = {
       tier: 'premium',
       status: 'live'
     },
-
-    // Premium card features (coming later)
     {
       id: 'discussion_rooms',
       icon: 'chat',
       name: 'Discussion rooms',
       tier: 'premium',
-      status: 'comingSoon'
+      status: 'live'
     },
     {
       id: 'global_chat',
       icon: 'chat',
       name: 'Global chat',
       tier: 'premium',
-      status: 'comingSoon'
+      status: 'live'
     },
     {
       id: 'voice_chat',
       icon: 'voice',
       name: 'Live voice communication',
       tier: 'premium',
-      status: 'comingSoon'
+      status: 'live'
     }
   ],
 

@@ -17,7 +17,7 @@ module.exports = {
   },
 
   currency: 'INR',
-  standardPricePaise: 5000,
+  standardPricePaise: 10000,
   launchPricePaise: 3900,
   totalLaunchSlots: 100,
   slotReservationTimeoutMinutes: 30,

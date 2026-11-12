@@ -33,6 +33,7 @@ const SWINGS = {
 export default function LobbyViewV2({
   // User & System
   user,
+  isAuthenticated = true,
   connected,
   live,
 
@@ -96,7 +97,7 @@ export default function LobbyViewV2({
   return (
     <div className="lobby-v2">
       <main className="lobby-v2-main" id="lobby-v2-content">
-        
+
         {/* 1. HEADER ROW */}
         <LobbyHeader
           user={user}
@@ -115,6 +116,70 @@ export default function LobbyViewV2({
           off={off}
           emit={emit}
         />
+
+        {!isAuthenticated && (
+          <div
+            className="lobby-v2-guest-banner"
+            style={{
+              background: 'var(--bg-1, #080d1a)',
+              border: '1px solid rgba(196, 214, 232, 0.18)',
+              borderRadius: '8px',
+              padding: '12px 18px',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '14px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  color: 'var(--feat, #e2ebf5)',
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}
+              >
+                Guest View
+              </span>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--sub, #a2a9b8)', lineHeight: '1.4' }}>
+                You are viewing AlgoArena as a guest. Sign in to queue for live 1v1 duels and climb the leaderboard.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onStartQueue}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '32px',
+                padding: '0 16px',
+                background: '#ffffff',
+                color: '#02060f',
+                fontWeight: 600,
+                fontSize: '12.5px',
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'opacity 0.15s'
+              }}
+              onMouseOver={e => e.currentTarget.style.opacity = '0.9'}
+              onMouseOut={e => e.currentTarget.style.opacity = '1'}
+            >
+              Sign in to Duel
+            </button>
+          </div>
+        )}
 
         {/* 2. MODE SELECTOR (Quick Arena vs Striver Sheet vs Private Duel) */}
         <div className="lobby-v2-mode-selector" role="tablist" aria-label="Game Modes">
@@ -427,6 +492,7 @@ export default function LobbyViewV2({
               diffObj={diffObj}
               onStartQueue={onStartQueue}
               queuing={queuing}
+              isAuthenticated={isAuthenticated}
             />
           </div>
         ) : (
@@ -442,6 +508,7 @@ export default function LobbyViewV2({
             onStartQueue={onStartQueue}
             onSurpriseMe={onSurpriseMe}
             queuing={queuing}
+            isAuthenticated={isAuthenticated}
           />
         )}
 
@@ -465,10 +532,18 @@ export default function LobbyViewV2({
               type="button"
               className="lobby-v2-mobile-find-btn"
               onClick={onStartQueue}
-              disabled={!topic || queuing}
+              disabled={isAuthenticated && (!topic || queuing)}
             >
               <IconSwords size={13} />
-              <span>{queuing ? 'Searching...' : (topic ? 'Find Match' : 'Choose Topic')}</span>
+              <span>
+                {queuing
+                  ? 'Searching...'
+                  : !isAuthenticated
+                    ? 'Sign in to Play'
+                    : topic
+                      ? 'Find Match'
+                      : 'Choose Topic'}
+              </span>
             </button>
           </aside>
         )}

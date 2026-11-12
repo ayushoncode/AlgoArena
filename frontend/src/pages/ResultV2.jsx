@@ -5,7 +5,65 @@ import { UserAvatar } from '../utils/avatar'
 import { getTierForRating } from '../lib/tiers'
 import { useTheme } from '../context/ThemeContext'
 import { getDailyChallenge, clearStreakCache } from '../components/navbar/navData'
+import { useFriendship } from '../hooks/useFriendship'
+import { IconUserPlus, IconUserCheck } from '../components/icons'
 import './ResultV2.css'
+
+function ResultFriendAction({ targetUserId, targetUsername }) {
+  const {
+    relation,
+    actionInProgress,
+    sendRequest,
+    accept
+  } = useFriendship(targetUserId, targetUsername);
+
+  if (relation === 'self') return null;
+
+  if (relation === 'friends') {
+    return (
+      <span className="result-v2__friend-badge" title="Friends">
+        <IconUserCheck size={11} />
+        <span>Friends</span>
+      </span>
+    );
+  }
+
+  if (relation === 'pending_out') {
+    return (
+      <span className="result-v2__friend-badge result-v2__friend-badge--pending" title="Friend request sent">
+        <span>Request sent</span>
+      </span>
+    );
+  }
+
+  if (relation === 'pending_in') {
+    return (
+      <button
+        type="button"
+        className="result-v2__friend-btn result-v2__friend-btn--accept"
+        onClick={accept}
+        disabled={actionInProgress}
+        title="Accept friend request"
+      >
+        <IconUserCheck size={11} />
+        <span>{actionInProgress ? 'Saving...' : 'Accept'}</span>
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="result-v2__friend-btn result-v2__friend-btn--add"
+      onClick={sendRequest}
+      disabled={actionInProgress}
+      title="Add as friend"
+    >
+      <IconUserPlus size={11} />
+      <span>{actionInProgress ? 'Sending...' : 'Add friend'}</span>
+    </button>
+  );
+}
 
 function CheckIcon({ size = 14, className = '' }) {
   return (
@@ -255,13 +313,31 @@ export default function ResultV2({
                       <CheckIcon size={10} />
                     </span>
                   )}
-                  <span className="result-v2__rival-name font-mono font-bold">
-                    {oppData?.username ?? 'Opponent'}
+                  {oppData?.username && oppData.username !== 'Opponent' ? (
+                    <Link
+                      to={`/profile/${encodeURIComponent(oppData.username)}`}
+                      className="result-v2__rival-name font-mono font-bold hover:underline"
+                      title="View rival profile"
+                    >
+                      {oppData.username}
+                    </Link>
+                  ) : (
+                    <span className="result-v2__rival-name font-mono font-bold">
+                      {oppData?.username ?? 'Opponent'}
+                    </span>
+                  )}
+                </div>
+                <div className="result-v2__rival-sub-row">
+                  {oppData?.username && oppData.username !== 'Opponent' && oppData.username.toLowerCase() !== user?.username?.toLowerCase() && (
+                    <ResultFriendAction
+                      targetUserId={oppData?.userId || oppData?.id}
+                      targetUsername={oppData?.username}
+                    />
+                  )}
+                  <span className="result-v2__player-rating font-mono text-xs">
+                    {oppData?.rating ?? 1200}
                   </span>
                 </div>
-                <span className="result-v2__player-rating font-mono text-xs">
-                  {oppData?.rating ?? 1200}
-                </span>
               </div>
               <UserAvatar
                 username={oppData?.username}

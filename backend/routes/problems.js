@@ -224,7 +224,7 @@ router.get('/striver-sheet', requirePremium('sheet'), async (_req, res) => {
       },
       {
         id: 'step-6-learn-linkedlist',
-        title: 'Learn LinkedList',
+        title: 'Linked List',
         topic: 'linked-list',
         icon: 'Link',
         badge: 'Curriculum Ready',
@@ -256,7 +256,22 @@ router.get('/striver-sheet', requirePremium('sheet'), async (_req, res) => {
               'linked-list-cycle',
               'linked-list-cycle-ii',
               'find-length-of-loop',
-              'palindrome-linked-list'
+              'palindrome-linked-list',
+              'odd-even-linked-list',
+              'remove-nth-node-from-end-of-list',
+              'delete-the-middle-node-of-a-linked-list',
+              'sort-list',
+              'sort-a-linked-list-of-0s-1s-or-2s',
+              'add-1-to-a-linked-list',
+              'add-two-numbers'
+            ]
+          },
+          {
+            title: 'Medium Problems of DLL',
+            problems: [
+              'delete-all-occurrences-of-a-key-in-dll',
+              'find-pairs-with-given-sum-in-doubly-linked-list',
+              'remove-duplicates-from-a-sorted-doubly-linked-list'
             ]
           }
         ]
@@ -370,9 +385,10 @@ router.post('/:id/run', authMiddleware, async (req, res) => {
               this.left = (left===undefined ? null : left);
               this.right = (right===undefined ? null : right);
             }
-            function ListNode(val, next) {
+            function ListNode(val, next, prev) {
               this.val = (val===undefined ? 0 : val);
               this.next = (next===undefined ? null : next);
+              this.prev = (prev===undefined ? null : prev);
             }
             function __buildTree(arr) {
               if (!Array.isArray(arr) || arr.length === 0 || arr[0] === null) return null;
@@ -396,12 +412,17 @@ router.post('/:id/run', authMiddleware, async (req, res) => {
             }
             function __buildList(arr) {
               if (!Array.isArray(arr) || arr.length === 0) return null;
-              const dummy = new ListNode(0);
-              let curr = dummy;
+              let head = null, prev = null;
               for (const v of arr) {
-                if (v !== null && v !== undefined) { curr.next = new ListNode(v); curr = curr.next; }
+                if (v !== null && v !== undefined) {
+                  const node = new ListNode(v);
+                  node.prev = prev;
+                  if (prev) prev.next = node;
+                  else head = node;
+                  prev = node;
+                }
               }
-              return dummy.next;
+              return head;
             }
             function __serialize(obj) {
               if (obj === null || obj === undefined) return null;

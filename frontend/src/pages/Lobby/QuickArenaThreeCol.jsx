@@ -59,6 +59,7 @@ export default function QuickArenaThreeCol({
   onStartQueue,
   onSurpriseMe,
   queuing = false,
+  isAuthenticated = true,
 }) {
   const [topicStats, setTopicStats] = useState(null)
   const [statsLoading, setStatsLoading] = useState(true)
@@ -415,12 +416,22 @@ export default function QuickArenaThreeCol({
                 type="button"
                 className="quick-arena-find-btn"
                 onClick={onStartQueue}
-                disabled={!topic || queuing}
+                disabled={isAuthenticated && (!topic || queuing)}
               >
-                <span>{queuing ? 'Searching...' : 'Find Match'}</span>
+                <span>
+                  {queuing
+                    ? 'Searching...'
+                    : !isAuthenticated
+                      ? 'Sign in to Play'
+                      : 'Find Match'}
+                </span>
               </button>
 
-              {!topic ? (
+              {!isAuthenticated ? (
+                <p className="quick-arena-helper-line" style={{ color: 'var(--feat, #ffd696)' }}>
+                  Sign in to access the arena and start matchmaking
+                </p>
+              ) : !topic ? (
                 <p className="quick-arena-helper-line">
                   Please select a topic to begin
                 </p>
@@ -453,9 +464,17 @@ export default function QuickArenaThreeCol({
           type="button"
           className="quick-arena-mobile-find-btn"
           onClick={onStartQueue}
-          disabled={!topic || queuing}
+          disabled={isAuthenticated && (!topic || queuing)}
         >
-          <span>{queuing ? 'Searching...' : (topic ? 'Find Match' : 'Choose Topic')}</span>
+          <span>
+            {queuing
+              ? 'Searching...'
+              : !isAuthenticated
+                ? 'Sign in to Play'
+                : topic
+                  ? 'Find Match'
+                  : 'Choose Topic'}
+          </span>
         </button>
       </aside>
     </section>

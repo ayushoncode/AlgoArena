@@ -19,6 +19,7 @@ import {
   Skeleton, EmptyState, VerdictChip, Tooltip,
 } from '../components/ui'
 import { ArenaLogo } from '../components/ArenaLogo'
+import AuthDialog from '../components/AuthDialog'
 import StriverSheetView from '../components/StriverSheetView'
 import { DEFAULT_STRIVER_CURRICULUM } from '../content/striverCurriculum'
 import LobbyViewV2 from './Lobby/LobbyViewV2'
@@ -487,7 +488,7 @@ function SearchingOverlay({ topic, difficulty, rating, problem = null, onCancel 
               <>Locked on Striver problem: <span className="font-bold underline decoration-amber-500" style={{ color: 'var(--c-text)' }}>{problem.title}</span></>
             ) : (
               <>Scanning arena for opponents near your{' '}
-              <span style={{ color: userTier.col, fontWeight: 700 }}>{userTier.name} ({rating})</span> Elo</>
+                <span style={{ color: userTier.col, fontWeight: 700 }}>{userTier.name} ({rating})</span> Elo</>
             )}
           </p>
           <div className="flex items-center justify-center gap-2 pt-2 font-mono text-xs">
@@ -830,6 +831,7 @@ export default function Lobby() {
   const [matchFoundData, setMatchFoundData] = useState(null)
   const [customModalOpen, setCustomModalOpen] = useState(false)
   const [customModalTab, setCustomModalTab] = useState('create')
+  const [authDialogOpen, setAuthDialogOpen] = useState(false)
   const [dailyProblem, setDailyProblem] = useState(null)
 
   const desktopSearchRef = useRef(null)
@@ -841,7 +843,7 @@ export default function Lobby() {
 
   // Ensure clean state on Lobby mount — leave any lingering queue
   useEffect(() => {
-    try { emit('leave_queue') } catch {}
+    try { emit('leave_queue') } catch { }
   }, [emit])
 
   // Load preferences from localStorage
@@ -915,14 +917,17 @@ export default function Lobby() {
           desktopSearchRef.current?.focus()
         }
       } else if (e.key === 'Enter') {
-        if (topic) startQueue()
+        if (!isAuthenticated) {
+          setAuthDialogOpen(true)
+        } else if (topic) {
+          startQueue()
+        }
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [topic, customModalOpen, queuing, matchFoundData, handleSelectTopic])
+  }, [topic, customModalOpen, queuing, matchFoundData, handleSelectTopic, isAuthenticated])
 
-  useEffect(() => { if (!loading && !isAuthenticated) navigate('/', { replace: true }) }, [loading, isAuthenticated, navigate])
   useEffect(() => { if (initialRoomCode) setCustomModalOpen(true) }, [initialRoomCode])
 
   useEffect(() => {
@@ -975,6 +980,10 @@ export default function Lobby() {
   } : null
 
   function startQueue() {
+    if (!isAuthenticated) {
+      setAuthDialogOpen(true)
+      return
+    }
     if (!topic || queuing) return
     setQueuingProblem(null)
     setQueuing(true)
@@ -988,6 +997,10 @@ export default function Lobby() {
   }
 
   const handleBattleProblem = useCallback((prob) => {
+    if (!isAuthenticated) {
+      setAuthDialogOpen(true)
+      return
+    }
     if (isPremiumEnabled && !isPremium) {
       openLockedModal('sheet_1v1')
       return
@@ -1002,9 +1015,13 @@ export default function Lobby() {
       difficulty: prob.difficulty || 'easy',
       problemId: prob.id
     })
-  }, [queuing, emit, isPremiumEnabled, isPremium, openLockedModal])
+  }, [isAuthenticated, queuing, emit, isPremiumEnabled, isPremium, openLockedModal])
 
   const handleBattleRandomFromSheet = useCallback((sheetTopic = 'arrays', sheetDiff = 'easy') => {
+    if (!isAuthenticated) {
+      setAuthDialogOpen(true)
+      return
+    }
     if (isPremiumEnabled && !isPremium) {
       openLockedModal('sheet_1v1')
       return
@@ -1015,9 +1032,13 @@ export default function Lobby() {
     setDiff(sheetDiff)
     setQueuing(true)
     emit('join_queue', { topic: sheetTopic, difficulty: sheetDiff })
-  }, [queuing, emit, isPremiumEnabled, isPremium, openLockedModal])
+  }, [isAuthenticated, queuing, emit, isPremiumEnabled, isPremium, openLockedModal])
 
   const handleAcceptChallenge = useCallback((challenge) => {
+    if (!isAuthenticated) {
+      setAuthDialogOpen(true)
+      return
+    }
     if (!challenge) return
     if (challenge.problemId) {
       handleBattleProblem({
@@ -1038,7 +1059,7 @@ export default function Lobby() {
         difficulty: chosenDiff
       })
     }
-  }, [handleBattleProblem, handleSelectTopic, handleSelectDiff, emit])
+  }, [isAuthenticated, handleBattleProblem, handleSelectTopic, handleSelectDiff, emit])
 
   function handleSurpriseMe() {
     const randomTopic = TOPICS[Math.floor(Math.random() * TOPICS.length)].id
@@ -1048,8 +1069,7 @@ export default function Lobby() {
   const isDailySelected = dailyObj ? (topic === dailyObj.topic && diff === dailyObj.difficulty) : false
 
   // Show true-to-layout skeleton while auth is being restored from localStorage
-  // or before unauthenticated redirect occurs.
-  if (loading || !isAuthenticated) {
+  if (loading) {
     return <LobbySkeleton />
   }
 
@@ -1098,595 +1118,598 @@ export default function Lobby() {
       {isLegacyUI ? (
         <PageWrapper heroGlow>
 
-        <div style={{ borderBottom: '1px solid var(--c-border)', background: 'var(--c-nav-bg)', backdropFilter: 'blur(16px)' }}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+          <div style={{ borderBottom: '1px solid var(--c-border)', background: 'var(--c-nav-bg)', backdropFilter: 'blur(16px)' }}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
 
-            {/* Left — Title */}
-            <div className="flex-shrink-0">
-              <p className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--c-red)' }}>
-                Command Center
-              </p>
-              <h1 className="font-display font-black text-2xl sm:text-3xl tracking-tight uppercase" style={{ color: 'var(--c-text)' }}>
-                Deploy Into Battle
-              </h1>
-            </div>
-
-            {/* Center — Roster Search */}
-            <div className="flex-1 max-w-xs sm:max-w-sm mx-4 hidden sm:block">
-              <HeaderRosterSearch inputRef={desktopSearchRef} />
-            </div>
-
-            {/* Right — System Info */}
-            <div className="flex items-center gap-3 flex-shrink-0">
-              {/* Mobile search icon */}
-              <div className="sm:hidden">
-                <HeaderRosterSearch inputRef={mobileSearchRef} />
+              {/* Left — Title */}
+              <div className="flex-shrink-0">
+                <p className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--c-red)' }}>
+                  Command Center
+                </p>
+                <h1 className="font-display font-black text-2xl sm:text-3xl tracking-tight uppercase" style={{ color: 'var(--c-text)' }}>
+                  Deploy Into Battle
+                </h1>
               </div>
-              <div className="text-right font-mono text-[11px] px-3 py-2"
-                style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)', clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}>
-                <div className="flex items-center justify-end gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--c-green)' }} />
-                  {live.loading ? (
-                    <Skeleton className="w-8 h-4 rounded-sm" />
-                  ) : (
-                    <span className="font-bold" style={{ color: 'var(--c-text)' }}>{live.totalProblems}</span>
-                  )}
-                  <span style={{ color: 'var(--c-text-mute)' }}>Problems</span>
-                </div>
-                <div className="text-[10px] flex justify-end mt-0.5" style={{ color: 'var(--c-text-mute)' }}>
-                  {live.loading ? (
-                    <div className="flex items-center gap-1"><Skeleton className="w-4 h-3 rounded-sm" /> Coders Online</div>
-                  ) : (
-                    <>{live.players} Coders Online</>
-                  )}
-                </div>
+
+              {/* Center — Roster Search */}
+              <div className="flex-1 max-w-xs sm:max-w-sm mx-4 hidden sm:block">
+                <HeaderRosterSearch inputRef={desktopSearchRef} />
               </div>
-            </div>
 
-          </div>
-        </div>
-
-        {/* ── MAIN CONTENT ────────────────────────────────── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 pb-24 lg:pb-6 space-y-6">
-
-          {/* ── LOBBY MODE SELECTOR (Quick Arena vs Striver Sheet) ── */}
-          <div className="flex items-center gap-2 p-1.5 rounded-lg border border-[var(--c-border)] bg-[var(--c-panel)] shadow-inner">
-            <button
-              type="button"
-              onClick={() => setLobbyTab('random')}
-              className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md font-display font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 ${
-                lobbyTab === 'random'
-                  ? 'bg-[var(--c-red)] text-white shadow-lg shadow-rose-900/40 ring-1 ring-white/20'
-                  : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)] hover:bg-[var(--c-panel2)]'
-              }`}
-            >
-              <Zap size={15} className={lobbyTab === 'random' ? 'animate-pulse text-amber-300' : ''} />
-              <span>Quick Arena (Random)</span>
-              <span className="hidden sm:inline-block text-[9px] px-2 py-0.5 rounded font-mono bg-black/20 text-white/90">
-                Topic & Diff
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setLobbyTab('striver')}
-              className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md font-display font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 ${
-                lobbyTab === 'striver'
-                  ? 'bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-lg shadow-sky-950/40 ring-1 ring-sky-400/30'
-                  : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)] hover:bg-[var(--c-panel2)]'
-              }`}
-            >
-              <BookOpen size={14} className={lobbyTab === 'striver' ? 'text-sky-200' : ''} />
-              <span>Striver A2Z Sheet</span>
-              <span className="hidden sm:inline-block text-[9px] px-2 py-0.5 rounded font-mono bg-black/25 text-white/90">
-                Curriculum
-              </span>
-            </button>
-          </div>
-
-          {lobbyTab === 'striver' ? (
-            <>
-              {isPremiumEnabled && !isPremium && (
-                <div
-                  style={{
-                    background: 'var(--bg-1, #080d1a)',
-                    border: '1px solid rgba(255, 214, 150, 0.35)',
-                    borderRadius: '10px',
-                    padding: '16px 20px',
-                    marginBottom: '16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '16px',
-                    flexWrap: 'wrap'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div
-                      style={{
-                        width: '42px',
-                        height: '42px',
-                        borderRadius: '8px',
-                        background: 'rgba(255, 214, 150, 0.1)',
-                        border: '1px solid rgba(255, 214, 150, 0.3)',
-                        color: 'var(--gold, #ffd696)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                      }}
-                    >
-                      <IconLock size={20} />
-                    </div>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontFamily: 'var(--font-display, Sora, sans-serif)', fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>
-                          Striver A2Z Sheet Curriculum
-                        </span>
-                        <span
-                          style={{
-                            fontFamily: 'var(--font-mono, monospace)',
-                            fontSize: '10.5px',
-                            textTransform: 'uppercase',
-                            color: 'var(--gold, #ffd696)',
-                            background: 'rgba(255, 214, 150, 0.1)',
-                            padding: '2px 7px',
-                            borderRadius: '4px',
-                            border: '1px solid rgba(255, 214, 150, 0.25)',
-                            letterSpacing: '0.04em'
-                          }}
-                        >
-                          Preview Mode
-                        </span>
-                      </div>
-                      <p style={{ margin: '3px 0 0', fontSize: '12.5px', color: 'var(--sub, #a2a9b8)', lineHeight: '1.4' }}>
-                        Browse the full topic breakdown freely. AlgoArena Premium is required to launch 1v1 duels on sheet questions.
-                      </p>
-                    </div>
+              {/* Right — System Info */}
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {/* Mobile search icon */}
+                <div className="sm:hidden">
+                  <HeaderRosterSearch inputRef={mobileSearchRef} />
+                </div>
+                <div className="text-right font-mono text-[11px] px-3 py-2"
+                  style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)', clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}>
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--c-green)' }} />
+                    {live.loading ? (
+                      <Skeleton className="w-8 h-4 rounded-sm" />
+                    ) : (
+                      <span className="font-bold" style={{ color: 'var(--c-text)' }}>{live.totalProblems}</span>
+                    )}
+                    <span style={{ color: 'var(--c-text-mute)' }}>Problems</span>
                   </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '16px', fontWeight: 700, color: 'var(--gold, #ffd696)' }}>
-                        ₹39 <span style={{ fontSize: '11px', color: 'var(--sub, #a2a9b8)', fontWeight: 400 }}>/ month</span>
-                      </div>
-                      <div style={{ fontSize: '10.5px', color: 'var(--sub, #a2a9b8)' }}>Launch Offer</div>
-                    </div>
-                    <Link
-                      to="/premium"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        height: '38px',
-                        padding: '0 18px',
-                        background: 'var(--gold, #ffd696)',
-                        color: '#080d1a',
-                        fontWeight: 700,
-                        fontSize: '13px',
-                        borderRadius: '6px',
-                        textDecoration: 'none',
-                        letterSpacing: '0.02em',
-                        whiteSpace: 'nowrap',
-                        transition: 'opacity 0.15s'
-                      }}
-                      onMouseOver={e => e.currentTarget.style.opacity = '0.9'}
-                      onMouseOut={e => e.currentTarget.style.opacity = '1'}
-                    >
-                      Upgrade to Premium
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              <StriverSheetView
-                striverData={striverData}
-                loading={striverLoading}
-                onBattleProblem={handleBattleProblem}
-                onBattleRandom={handleBattleRandomFromSheet}
-                queuingProblemId={queuingProblem?.id}
-                isQueuing={queuing}
-                isGated={isPremiumEnabled && !isPremium}
-              />
-            </>
-          ) : (
-            <>
-              {/* STEPPER STRIP */}
-              <div className="grid grid-cols-3 gap-2 sm:gap-4 p-2 rounded" style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)' }}>
-            {/* Step 1: Select Topic */}
-            <div className={`flex items-center gap-2 p-2 rounded transition-colors ${topic ? 'opacity-100' : 'opacity-70'}`}
-              style={{ background: topic ? 'rgba(225,29,72,0.12)' : 'transparent', border: `1px solid ${topic ? 'rgba(225,29,72,0.35)' : 'var(--c-border)'}` }}>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center font-mono text-xs font-bold shrink-0"
-                style={{ background: topic ? 'var(--c-red)' : 'var(--c-panel2)', color: topic ? '#fff' : 'var(--c-text-mute)' }}>
-                1
-              </div>
-              <div className="min-w-0">
-                <p className="font-mono text-[10px] uppercase font-bold tracking-wider" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)', background: 'transparent' }}>Step 1</p>
-                <p className="font-display font-semibold text-xs truncate" style={{ color: 'var(--c-text)', background: 'transparent' }}>Select Topic</p>
-              </div>
-            </div>
-
-            {/* Step 2: Choose Difficulty (Matches chosen difficulty color: Easy=Green, Medium=Amber/Yellow, Hard=Red) */}
-            <div className="flex items-center gap-2 p-2 rounded transition-colors"
-              style={{ background: diffObj.bg, border: `1px solid ${diffObj.border}` }}>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center font-mono text-xs font-bold shrink-0"
-                style={{ background: diffObj.col, color: diffObj.id === 'easy' ? '#000' : '#fff' }}>
-                2
-              </div>
-              <div className="min-w-0">
-                <p className="font-mono text-[10px] uppercase font-bold tracking-wider" style={{ color: diffObj.col, background: 'transparent' }}>Step 2</p>
-                <p className="font-display font-semibold text-xs truncate" style={{ color: 'var(--c-text)', background: 'transparent' }}>Choose Difficulty</p>
-              </div>
-            </div>
-
-            {/* Step 3: Deploy Match (Matches RED Deploy button) */}
-            <div className={`flex items-center gap-2 p-2 rounded transition-colors ${topic ? 'opacity-100 animate-pulse' : 'opacity-50'}`}
-              style={{ background: topic ? 'rgba(225,29,72,0.12)' : 'transparent', border: `1px solid ${topic ? 'rgba(225,29,72,0.35)' : 'var(--c-border)'}` }}>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center font-mono text-xs font-bold shrink-0"
-                style={{ background: topic ? 'var(--c-red)' : 'var(--c-panel2)', color: topic ? '#fff' : 'var(--c-text-mute)' }}>
-                3
-              </div>
-              <div className="min-w-0">
-                <p className="font-mono text-[10px] uppercase font-bold tracking-wider" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)', background: 'transparent' }}>Step 3</p>
-                <p className="font-display font-semibold text-xs truncate" style={{ color: 'var(--c-text)', background: 'transparent' }}>Deploy Match</p>
-              </div>
-            </div>
-          </div>
-
-          {/* TWO COLUMN CONTENT: TOPIC & DIFF GRID vs STICKY DEPLOY LOADOUT */}
-          <div className="grid lg:grid-cols-[1fr_340px] gap-6 items-start">
-
-            {/* LEFT COLUMN: TOPICS + DIFFICULTY */}
-            <div className="space-y-8">
-
-              {/* STEP 1: TOPICS GRID */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="font-display font-bold text-lg uppercase tracking-wide" style={{ color: 'var(--c-text)' }}>
-                      Step 1: Choose Battle Topic
-                    </h2>
-                    <p className="font-mono text-xs" style={{ color: 'var(--c-text-mute)' }}>
-                      Press number keys 1–8 to select a topic quickly
-                    </p>
-                  </div>
-
-                  {topic && (
-                    <button onClick={() => handleSelectTopic(null)} className="font-mono text-xs flex items-center gap-1 hover:text-rose-500 transition-colors"
-                      style={{ color: 'var(--c-text-mute)', background: 'none', border: 'none', cursor: 'pointer' }}
-                    ><X size={12} /> Clear Selection</button>
-                  )}
-                </div>
-
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3" role="radiogroup" aria-label="Battle Topics">
-                  {/* SURPRISE ME CARD */}
-                  <motion.button
-                    type="button"
-                    role="radio"
-                    aria-checked={false}
-                    onClick={handleSurpriseMe}
-                    whileHover={{ y: -2, scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="relative text-left p-4 transition-all duration-200 outline-none cursor-pointer flex flex-col justify-between"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(56,189,248,0.1) 0%, var(--c-panel) 100%)',
-                      border: '1px dashed var(--c-blue)',
-                      clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))'
-                    }}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2.5">
-                          <div className="p-2 rounded flex items-center justify-center" style={{ background: 'rgba(56,189,248,0.2)', color: 'var(--c-blue)' }}>
-                            <Shuffle size={16} />
-                          </div>
-                          <div>
-                            <span className="font-display font-bold text-sm tracking-wide block" style={{ color: 'var(--c-blue)' }}>
-                              Surprise Me
-                            </span>
-                            <span className="font-mono text-[9px] uppercase tracking-wider" style={{ color: 'var(--c-text-mute)' }}>
-                              Key [9]
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="font-sans text-xs leading-relaxed mb-3" style={{ color: 'var(--c-text-dim)' }}>
-                        Random topic pick for unpredictable tactical duel.
-                      </p>
-                    </div>
-
-                    <div className="pt-2 flex items-center justify-between font-mono text-[9px]" style={{ borderTop: '1px solid var(--c-border)', color: 'var(--c-blue)' }}>
-                      <span>Random Selection</span>
-                      <ChevronRight size={12} />
-                    </div>
-                  </motion.button>
-
-                  {/* 8 TOPIC CARDS */}
-                  {TOPICS.map((t, idx) => (
-                    <TopicCard
-                      key={t.id}
-                      topic={t}
-                      selected={topic === t.id}
-                      onClick={() => handleSelectTopic(t.id)}
-                      indexKey={idx + 1}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* STEP 2: DIFFICULTY SELECTOR */}
-              <div>
-                <div className="mb-4">
-                  <h2 className="font-display font-bold text-lg uppercase tracking-wide" style={{ color: 'var(--c-text)' }}>
-                    Step 2: Choose Difficulty
-                  </h2>
-                  <p className="font-mono text-xs" style={{ color: 'var(--c-text-mute)' }}>
-                    Difficulty affects estimated Elo swings and problem severity
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {DIFFS.map(d => {
-                    const active = diff === d.id
-                    return (
-                      <button
-                        key={d.id}
-                        type="button"
-                        onClick={() => handleSelectDiff(d.id)}
-                        className="p-4 text-left transition-all duration-200 outline-none cursor-pointer rounded"
-                        style={{
-                          background: active ? d.bg : 'var(--c-panel)',
-                          border: `1.5px solid ${active ? d.col : 'var(--c-border)'}`,
-                          boxShadow: active ? `0 0 20px ${d.col}25` : 'none'
-                        }}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-display font-bold text-base uppercase" style={{ color: active ? d.col : 'var(--c-text)' }}>
-                            {d.label}
-                          </span>
-                          {active && (
-                            <div className="w-2 h-2 rounded-full" style={{ background: d.col }} />
-                          )}
-                        </div>
-                        <p className="font-mono text-xs font-semibold mb-2" style={{ color: d.col }}>
-                          {d.descriptor}
-                        </p>
-                        <p className="font-mono text-[10px]" style={{ color: 'var(--c-text-mute)' }}>
-                          Est Elo: {d.eloEst}
-                        </p>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-            </div>
-
-            {/* RIGHT COLUMN: STICKY DEPLOY LOADOUT + PRIVATE DUEL */}
-            <div className="space-y-6 lg:sticky lg:top-20">
-
-              {/* DEPLOY LOADOUT PANEL */}
-              <HudPanel
-                accentTopLeft={topic ? 'var(--c-red)' : undefined}
-                accentBotRight={topic ? 'var(--c-red)' : undefined}
-                glow={!!topic}
-                glowColor="rgba(225,29,72,0.2)"
-                style={{ padding: '1.25rem' }}
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid var(--c-border)' }}>
-                    <h3 className="font-display font-bold text-base uppercase tracking-wider" style={{ color: 'var(--c-text)' }}>
-                      Your Loadout
-                    </h3>
-                    <span className="font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded"
-                      style={{
-                        background: topic ? 'rgba(16,185,129,0.15)' : 'rgba(225,29,72,0.15)',
-                        color: topic ? 'var(--c-green)' : 'var(--c-red)',
-                        border: `1px solid ${topic ? 'rgba(16,185,129,0.3)' : 'rgba(225,29,72,0.3)'}`
-                      }}>
-                      {topic ? 'Ready' : 'Incomplete'}
-                    </span>
-                  </div>
-
-                  {/* Summary Rows */}
-                  <div className="space-y-2.5 font-mono text-xs">
-                    <div className="flex justify-between items-center">
-                      <span style={{ color: 'var(--c-text-mute)' }}>Topic:</span>
-                      <span className="font-bold flex items-center gap-1.5" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)' }}>
-                        {selectedTopicObj ? (
-                          <>
-                            <selectedTopicObj.icon size={13} />
-                            {selectedTopicObj.label}
-                          </>
-                        ) : 'Not Selected'}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <span style={{ color: 'var(--c-text-mute)' }}>Difficulty:</span>
-                      <DiffChip difficulty={diff} />
-                    </div>
-
-
-
-                    <div className="flex justify-between items-center pt-2" style={{ borderTop: '1px solid var(--c-border)' }}>
-                      <span style={{ color: 'var(--c-text-mute)' }}>Est Victory:</span>
-                      <span className="font-bold" style={{ color: 'var(--c-green)' }}>+18 Elo</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span style={{ color: 'var(--c-text-mute)' }}>Est Defeat:</span>
-                      <span className="font-bold" style={{ color: 'var(--c-red)' }}>−18 Elo</span>
-                    </div>
-                  </div>
-
-                  {/* Deploy Button */}
-                  <div className="pt-2">
-                    <HudButton
-                      id="find-match-btn"
-                      onClick={startQueue}
-                      disabled={!topic}
-                      className="w-full py-3.5 text-base flex items-center justify-center gap-2"
-                    >
-                      <Swords size={18} />
-                      {topic ? 'Deploy Into Battle' : 'Choose A Topic To Begin'}
-                    </HudButton>
-
-                    {!topic && (
-                      <p className="font-mono text-[10px] text-center mt-2 animate-pulse" style={{ color: 'var(--c-red)' }}>
-                        Please select a topic from Step 1 above
-                      </p>
+                  <div className="text-[10px] flex justify-end mt-0.5" style={{ color: 'var(--c-text-mute)' }}>
+                    {live.loading ? (
+                      <div className="flex items-center gap-1"><Skeleton className="w-4 h-3 rounded-sm" /> Coders Online</div>
+                    ) : (
+                      <>{live.players} Coders Online</>
                     )}
                   </div>
                 </div>
-              </HudPanel>
+              </div>
 
-              {/* PROMOTED PRIVATE DUEL CARD — EYE-CATCHING FRIEND BATTLE */}
-              <HudPanel
-                accentTopLeft="var(--c-blue)"
-                accentBotRight="var(--c-blue)"
-                glow
-                glowColor="rgba(56, 189, 248, 0.22)"
-                style={{
-                  padding: '1.25rem',
-                  background: 'linear-gradient(145deg, rgba(56,189,248,0.07) 0%, rgba(37,99,235,0.05) 50%, var(--c-panel) 100%)',
-                  border: '1px solid rgba(56, 189, 248, 0.35)',
-                  boxShadow: '0 8px 24px -6px rgba(2, 132, 199, 0.15)'
-                }}
+            </div>
+          </div>
+
+          {/* ── MAIN CONTENT ────────────────────────────────── */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 pb-24 lg:pb-6 space-y-6">
+
+            {/* ── LOBBY MODE SELECTOR (Quick Arena vs Striver Sheet) ── */}
+            <div className="flex items-center gap-2 p-1.5 rounded-lg border border-[var(--c-border)] bg-[var(--c-panel)] shadow-inner">
+              <button
+                type="button"
+                onClick={() => setLobbyTab('random')}
+                className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md font-display font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 ${lobbyTab === 'random'
+                    ? 'bg-[var(--c-red)] text-white shadow-lg shadow-rose-900/40 ring-1 ring-white/20'
+                    : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)] hover:bg-[var(--c-panel2)]'
+                  }`}
               >
-                <div className="space-y-3.5">
-                  {/* Header with animated live badge */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(56,189,248,0.2) 0%, rgba(37,99,235,0.2) 100%)',
-                          border: '1px solid rgba(56,189,248,0.4)',
-                          color: 'var(--c-blue)'
-                        }}
-                      >
-                        <Users size={16} />
-                      </div>
-                      <div>
-                        <span className="font-mono text-[9px] font-extrabold uppercase tracking-widest flex items-center gap-1" style={{ color: 'var(--c-blue)' }}>
-                          <Sparkles size={9} className="animate-spin" />
-                          1v1 Friend Battle
-                        </span>
-                        <h3 className="font-display font-black text-sm uppercase tracking-tight" style={{ color: 'var(--c-text)' }}>
-                          Private Duel
-                        </h3>
-                      </div>
-                    </div>
+                <Zap size={15} className={lobbyTab === 'random' ? 'animate-pulse text-amber-300' : ''} />
+                <span>Quick Arena (Random)</span>
+                <span className="hidden sm:inline-block text-[9px] px-2 py-0.5 rounded font-mono bg-black/20 text-white/90">
+                  Topic & Diff
+                </span>
+              </button>
 
-                    <span
-                      className="inline-flex items-center gap-1 font-mono text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0"
-                      style={{
-                        background: 'rgba(56,189,248,0.12)',
-                        color: 'var(--c-blue)',
-                        border: '1px solid rgba(56,189,248,0.35)'
-                      }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full animate-ping" style={{ background: 'var(--c-blue)' }} />
-                      Custom Code
-                    </span>
-                  </div>
+              <button
+                type="button"
+                onClick={() => setLobbyTab('striver')}
+                className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md font-display font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 ${lobbyTab === 'striver'
+                    ? 'bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-lg shadow-sky-950/40 ring-1 ring-sky-400/30'
+                    : 'text-[var(--c-text-mute)] hover:text-[var(--c-text)] hover:bg-[var(--c-panel2)]'
+                  }`}
+              >
+                <BookOpen size={14} className={lobbyTab === 'striver' ? 'text-sky-200' : ''} />
+                <span>Striver A2Z Sheet</span>
+                <span className="hidden sm:inline-block text-[9px] px-2 py-0.5 rounded font-mono bg-black/25 text-white/90">
+                  Curriculum
+                </span>
+              </button>
+            </div>
 
-                  {/* Catchy description */}
-                  <p className="font-sans text-xs leading-relaxed" style={{ color: 'var(--c-text-dim)' }}>
-                    Challenge your friends, peers, or classmates directly. Generate a 6-digit room code and code live head-to-head!
-                  </p>
-
-                  {/* Feature perk chips */}
-                  <div className="grid grid-cols-2 gap-1.5 font-mono text-[9.5px]">
-                    <div
-                      className="flex items-center gap-1.5 px-2 py-1 rounded truncate"
-                      style={{ background: 'var(--c-panel2)', border: '1px solid var(--c-border)', color: 'var(--c-text-dim)' }}
-                    >
-                      <Shield size={11} style={{ color: 'var(--c-blue)' }} className="shrink-0" />
-                      <span className="truncate">Zero Elo Risk</span>
-                    </div>
-                    <div
-                      className="flex items-center gap-1.5 px-2 py-1 rounded truncate"
-                      style={{ background: 'var(--c-panel2)', border: '1px solid var(--c-border)', color: 'var(--c-text-dim)' }}
-                    >
-                      <Zap size={11} style={{ color: 'var(--c-gold)' }} className="shrink-0" />
-                      <span className="truncate">Live Match Sync</span>
-                    </div>
-                  </div>
-
-                  {/* High-visibility Action CTA Button */}
-                  <button
-                    type="button"
-                    onClick={() => setCustomModalOpen(true)}
-                    className="w-full py-2.5 px-4 rounded font-display font-extrabold text-xs uppercase tracking-wider text-white transition-all duration-200 flex items-center justify-center gap-2 group hover:brightness-110 active:scale-[0.99] cursor-pointer shadow-md"
+            {lobbyTab === 'striver' ? (
+              <>
+                {isPremiumEnabled && !isPremium && (
+                  <div
                     style={{
-                      background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 60%, #4f46e5 100%)',
-                      boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)',
-                      clipPath: 'polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%)'
+                      background: 'var(--bg-1, #080d1a)',
+                      border: '1px solid rgba(255, 214, 150, 0.35)',
+                      borderRadius: '10px',
+                      padding: '16px 20px',
+                      marginBottom: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '16px',
+                      flexWrap: 'wrap'
                     }}
                   >
-                    <Swords size={13} className="group-hover:rotate-12 transition-transform duration-200" />
-                    <span>Create Or Join Room</span>
-                    <ChevronRight size={13} className="group-hover:translate-x-1 transition-transform duration-200 ml-auto" />
-                  </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div
+                        style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '8px',
+                          background: 'rgba(255, 214, 150, 0.1)',
+                          border: '1px solid rgba(255, 214, 150, 0.3)',
+                          color: 'var(--gold, #ffd696)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}
+                      >
+                        <IconLock size={20} />
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontFamily: 'var(--font-display, Sora, sans-serif)', fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>
+                            Striver A2Z Sheet Curriculum
+                          </span>
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mono, monospace)',
+                              fontSize: '10.5px',
+                              textTransform: 'uppercase',
+                              color: 'var(--gold, #ffd696)',
+                              background: 'rgba(255, 214, 150, 0.1)',
+                              padding: '2px 7px',
+                              borderRadius: '4px',
+                              border: '1px solid rgba(255, 214, 150, 0.25)',
+                              letterSpacing: '0.04em'
+                            }}
+                          >
+                            Preview Mode
+                          </span>
+                        </div>
+                        <p style={{ margin: '3px 0 0', fontSize: '12.5px', color: 'var(--sub, #a2a9b8)', lineHeight: '1.4' }}>
+                          Browse the full topic breakdown freely. AlgoArena Premium is required to launch 1v1 duels on sheet questions.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '16px', fontWeight: 700, color: 'var(--gold, #ffd696)' }}>
+                          ₹39 <span style={{ fontSize: '11px', color: 'var(--sub, #a2a9b8)', fontWeight: 400 }}>/ month</span>
+                        </div>
+                        <div style={{ fontSize: '10.5px', color: 'var(--sub, #a2a9b8)' }}>Launch Offer</div>
+                      </div>
+                      <Link
+                        to="/premium"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '38px',
+                          padding: '0 18px',
+                          background: 'var(--gold, #ffd696)',
+                          color: '#080d1a',
+                          fontWeight: 700,
+                          fontSize: '13px',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          letterSpacing: '0.02em',
+                          whiteSpace: 'nowrap',
+                          transition: 'opacity 0.15s'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.opacity = '0.9'}
+                        onMouseOut={e => e.currentTarget.style.opacity = '1'}
+                      >
+                        Upgrade to Premium
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                <StriverSheetView
+                  striverData={striverData}
+                  loading={striverLoading}
+                  onBattleProblem={handleBattleProblem}
+                  onBattleRandom={handleBattleRandomFromSheet}
+                  queuingProblemId={queuingProblem?.id}
+                  isQueuing={queuing}
+                  isGated={isPremiumEnabled && !isPremium}
+                />
+              </>
+            ) : (
+              <>
+                {/* STEPPER STRIP */}
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 p-2 rounded" style={{ background: 'var(--c-panel)', border: '1px solid var(--c-border)' }}>
+                  {/* Step 1: Select Topic */}
+                  <div className={`flex items-center gap-2 p-2 rounded transition-colors ${topic ? 'opacity-100' : 'opacity-70'}`}
+                    style={{ background: topic ? 'rgba(225,29,72,0.12)' : 'transparent', border: `1px solid ${topic ? 'rgba(225,29,72,0.35)' : 'var(--c-border)'}` }}>
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center font-mono text-xs font-bold shrink-0"
+                      style={{ background: topic ? 'var(--c-red)' : 'var(--c-panel2)', color: topic ? '#fff' : 'var(--c-text-mute)' }}>
+                      1
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-mono text-[10px] uppercase font-bold tracking-wider" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)', background: 'transparent' }}>Step 1</p>
+                      <p className="font-display font-semibold text-xs truncate" style={{ color: 'var(--c-text)', background: 'transparent' }}>Select Topic</p>
+                    </div>
+                  </div>
+
+                  {/* Step 2: Choose Difficulty (Matches chosen difficulty color: Easy=Green, Medium=Amber/Yellow, Hard=Red) */}
+                  <div className="flex items-center gap-2 p-2 rounded transition-colors"
+                    style={{ background: diffObj.bg, border: `1px solid ${diffObj.border}` }}>
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center font-mono text-xs font-bold shrink-0"
+                      style={{ background: diffObj.col, color: diffObj.id === 'easy' ? '#000' : '#fff' }}>
+                      2
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-mono text-[10px] uppercase font-bold tracking-wider" style={{ color: diffObj.col, background: 'transparent' }}>Step 2</p>
+                      <p className="font-display font-semibold text-xs truncate" style={{ color: 'var(--c-text)', background: 'transparent' }}>Choose Difficulty</p>
+                    </div>
+                  </div>
+
+                  {/* Step 3: Deploy Match (Matches RED Deploy button) */}
+                  <div className={`flex items-center gap-2 p-2 rounded transition-colors ${topic ? 'opacity-100 animate-pulse' : 'opacity-50'}`}
+                    style={{ background: topic ? 'rgba(225,29,72,0.12)' : 'transparent', border: `1px solid ${topic ? 'rgba(225,29,72,0.35)' : 'var(--c-border)'}` }}>
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center font-mono text-xs font-bold shrink-0"
+                      style={{ background: topic ? 'var(--c-red)' : 'var(--c-panel2)', color: topic ? '#fff' : 'var(--c-text-mute)' }}>
+                      3
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-mono text-[10px] uppercase font-bold tracking-wider" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)', background: 'transparent' }}>Step 3</p>
+                      <p className="font-display font-semibold text-xs truncate" style={{ color: 'var(--c-text)', background: 'transparent' }}>Deploy Match</p>
+                    </div>
+                  </div>
                 </div>
-              </HudPanel>
 
-            </div>
+                {/* TWO COLUMN CONTENT: TOPIC & DIFF GRID vs STICKY DEPLOY LOADOUT */}
+                <div className="grid lg:grid-cols-[1fr_340px] gap-6 items-start">
+
+                  {/* LEFT COLUMN: TOPICS + DIFFICULTY */}
+                  <div className="space-y-8">
+
+                    {/* STEP 1: TOPICS GRID */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h2 className="font-display font-bold text-lg uppercase tracking-wide" style={{ color: 'var(--c-text)' }}>
+                            Step 1: Choose Battle Topic
+                          </h2>
+                          <p className="font-mono text-xs" style={{ color: 'var(--c-text-mute)' }}>
+                            Press number keys 1–8 to select a topic quickly
+                          </p>
+                        </div>
+
+                        {topic && (
+                          <button onClick={() => handleSelectTopic(null)} className="font-mono text-xs flex items-center gap-1 hover:text-rose-500 transition-colors"
+                            style={{ color: 'var(--c-text-mute)', background: 'none', border: 'none', cursor: 'pointer' }}
+                          ><X size={12} /> Clear Selection</button>
+                        )}
+                      </div>
+
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3" role="radiogroup" aria-label="Battle Topics">
+                        {/* SURPRISE ME CARD */}
+                        <motion.button
+                          type="button"
+                          role="radio"
+                          aria-checked={false}
+                          onClick={handleSurpriseMe}
+                          whileHover={{ y: -2, scale: 1.01 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="relative text-left p-4 transition-all duration-200 outline-none cursor-pointer flex flex-col justify-between"
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(56,189,248,0.1) 0%, var(--c-panel) 100%)',
+                            border: '1px dashed var(--c-blue)',
+                            clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))'
+                          }}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-2.5">
+                                <div className="p-2 rounded flex items-center justify-center" style={{ background: 'rgba(56,189,248,0.2)', color: 'var(--c-blue)' }}>
+                                  <Shuffle size={16} />
+                                </div>
+                                <div>
+                                  <span className="font-display font-bold text-sm tracking-wide block" style={{ color: 'var(--c-blue)' }}>
+                                    Surprise Me
+                                  </span>
+                                  <span className="font-mono text-[9px] uppercase tracking-wider" style={{ color: 'var(--c-text-mute)' }}>
+                                    Key [9]
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <p className="font-sans text-xs leading-relaxed mb-3" style={{ color: 'var(--c-text-dim)' }}>
+                              Random topic pick for unpredictable tactical duel.
+                            </p>
+                          </div>
+
+                          <div className="pt-2 flex items-center justify-between font-mono text-[9px]" style={{ borderTop: '1px solid var(--c-border)', color: 'var(--c-blue)' }}>
+                            <span>Random Selection</span>
+                            <ChevronRight size={12} />
+                          </div>
+                        </motion.button>
+
+                        {/* 8 TOPIC CARDS */}
+                        {TOPICS.map((t, idx) => (
+                          <TopicCard
+                            key={t.id}
+                            topic={t}
+                            selected={topic === t.id}
+                            onClick={() => handleSelectTopic(t.id)}
+                            indexKey={idx + 1}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* STEP 2: DIFFICULTY SELECTOR */}
+                    <div>
+                      <div className="mb-4">
+                        <h2 className="font-display font-bold text-lg uppercase tracking-wide" style={{ color: 'var(--c-text)' }}>
+                          Step 2: Choose Difficulty
+                        </h2>
+                        <p className="font-mono text-xs" style={{ color: 'var(--c-text-mute)' }}>
+                          Difficulty affects estimated Elo swings and problem severity
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {DIFFS.map(d => {
+                          const active = diff === d.id
+                          return (
+                            <button
+                              key={d.id}
+                              type="button"
+                              onClick={() => handleSelectDiff(d.id)}
+                              className="p-4 text-left transition-all duration-200 outline-none cursor-pointer rounded"
+                              style={{
+                                background: active ? d.bg : 'var(--c-panel)',
+                                border: `1.5px solid ${active ? d.col : 'var(--c-border)'}`,
+                                boxShadow: active ? `0 0 20px ${d.col}25` : 'none'
+                              }}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-display font-bold text-base uppercase" style={{ color: active ? d.col : 'var(--c-text)' }}>
+                                  {d.label}
+                                </span>
+                                {active && (
+                                  <div className="w-2 h-2 rounded-full" style={{ background: d.col }} />
+                                )}
+                              </div>
+                              <p className="font-mono text-xs font-semibold mb-2" style={{ color: d.col }}>
+                                {d.descriptor}
+                              </p>
+                              <p className="font-mono text-[10px]" style={{ color: 'var(--c-text-mute)' }}>
+                                Est Elo: {d.eloEst}
+                              </p>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* RIGHT COLUMN: STICKY DEPLOY LOADOUT + PRIVATE DUEL */}
+                  <div className="space-y-6 lg:sticky lg:top-20">
+
+                    {/* DEPLOY LOADOUT PANEL */}
+                    <HudPanel
+                      accentTopLeft={topic ? 'var(--c-red)' : undefined}
+                      accentBotRight={topic ? 'var(--c-red)' : undefined}
+                      glow={!!topic}
+                      glowColor="rgba(225,29,72,0.2)"
+                      style={{ padding: '1.25rem' }}
+                    >
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid var(--c-border)' }}>
+                          <h3 className="font-display font-bold text-base uppercase tracking-wider" style={{ color: 'var(--c-text)' }}>
+                            Your Loadout
+                          </h3>
+                          <span className="font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded"
+                            style={{
+                              background: topic ? 'rgba(16,185,129,0.15)' : 'rgba(225,29,72,0.15)',
+                              color: topic ? 'var(--c-green)' : 'var(--c-red)',
+                              border: `1px solid ${topic ? 'rgba(16,185,129,0.3)' : 'rgba(225,29,72,0.3)'}`
+                            }}>
+                            {topic ? 'Ready' : 'Incomplete'}
+                          </span>
+                        </div>
+
+                        {/* Summary Rows */}
+                        <div className="space-y-2.5 font-mono text-xs">
+                          <div className="flex justify-between items-center">
+                            <span style={{ color: 'var(--c-text-mute)' }}>Topic:</span>
+                            <span className="font-bold flex items-center gap-1.5" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)' }}>
+                              {selectedTopicObj ? (
+                                <>
+                                  <selectedTopicObj.icon size={13} />
+                                  {selectedTopicObj.label}
+                                </>
+                              ) : 'Not Selected'}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between items-center">
+                            <span style={{ color: 'var(--c-text-mute)' }}>Difficulty:</span>
+                            <DiffChip difficulty={diff} />
+                          </div>
+
+
+
+                          <div className="flex justify-between items-center pt-2" style={{ borderTop: '1px solid var(--c-border)' }}>
+                            <span style={{ color: 'var(--c-text-mute)' }}>Est Victory:</span>
+                            <span className="font-bold" style={{ color: 'var(--c-green)' }}>+18 Elo</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span style={{ color: 'var(--c-text-mute)' }}>Est Defeat:</span>
+                            <span className="font-bold" style={{ color: 'var(--c-red)' }}>−18 Elo</span>
+                          </div>
+                        </div>
+
+                        {/* Deploy Button */}
+                        <div className="pt-2">
+                          <HudButton
+                            id="find-match-btn"
+                            onClick={startQueue}
+                            disabled={isAuthenticated && !topic}
+                            className="w-full py-3.5 text-base flex items-center justify-center gap-2"
+                          >
+                            <Swords size={18} />
+                            {!isAuthenticated ? 'Sign In To Battle' : topic ? 'Deploy Into Battle' : 'Choose A Topic To Begin'}
+                          </HudButton>
+
+                          {!isAuthenticated ? (
+                            <p className="font-mono text-[10px] text-center mt-2" style={{ color: 'var(--c-gold)' }}>
+                              Sign in to access the arena and start matchmaking
+                            </p>
+                          ) : !topic ? (
+                            <p className="font-mono text-[10px] text-center mt-2 animate-pulse" style={{ color: 'var(--c-red)' }}>
+                              Please select a topic from Step 1 above
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </HudPanel>
+
+                    {/* PROMOTED PRIVATE DUEL CARD — EYE-CATCHING FRIEND BATTLE */}
+                    <HudPanel
+                      accentTopLeft="var(--c-blue)"
+                      accentBotRight="var(--c-blue)"
+                      glow
+                      glowColor="rgba(56, 189, 248, 0.22)"
+                      style={{
+                        padding: '1.25rem',
+                        background: 'linear-gradient(145deg, rgba(56,189,248,0.07) 0%, rgba(37,99,235,0.05) 50%, var(--c-panel) 100%)',
+                        border: '1px solid rgba(56, 189, 248, 0.35)',
+                        boxShadow: '0 8px 24px -6px rgba(2, 132, 199, 0.15)'
+                      }}
+                    >
+                      <div className="space-y-3.5">
+                        {/* Header with animated live badge */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
+                              style={{
+                                background: 'linear-gradient(135deg, rgba(56,189,248,0.2) 0%, rgba(37,99,235,0.2) 100%)',
+                                border: '1px solid rgba(56,189,248,0.4)',
+                                color: 'var(--c-blue)'
+                              }}
+                            >
+                              <Users size={16} />
+                            </div>
+                            <div>
+                              <span className="font-mono text-[9px] font-extrabold uppercase tracking-widest flex items-center gap-1" style={{ color: 'var(--c-blue)' }}>
+                                <Sparkles size={9} className="animate-spin" />
+                                1v1 Friend Battle
+                              </span>
+                              <h3 className="font-display font-black text-sm uppercase tracking-tight" style={{ color: 'var(--c-text)' }}>
+                                Private Duel
+                              </h3>
+                            </div>
+                          </div>
+
+                          <span
+                            className="inline-flex items-center gap-1 font-mono text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                            style={{
+                              background: 'rgba(56,189,248,0.12)',
+                              color: 'var(--c-blue)',
+                              border: '1px solid rgba(56,189,248,0.35)'
+                            }}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full animate-ping" style={{ background: 'var(--c-blue)' }} />
+                            Custom Code
+                          </span>
+                        </div>
+
+                        {/* Catchy description */}
+                        <p className="font-sans text-xs leading-relaxed" style={{ color: 'var(--c-text-dim)' }}>
+                          Challenge your friends, peers, or classmates directly. Generate a 6-digit room code and code live head-to-head!
+                        </p>
+
+                        {/* Feature perk chips */}
+                        <div className="grid grid-cols-2 gap-1.5 font-mono text-[9.5px]">
+                          <div
+                            className="flex items-center gap-1.5 px-2 py-1 rounded truncate"
+                            style={{ background: 'var(--c-panel2)', border: '1px solid var(--c-border)', color: 'var(--c-text-dim)' }}
+                          >
+                            <Shield size={11} style={{ color: 'var(--c-blue)' }} className="shrink-0" />
+                            <span className="truncate">Zero Elo Risk</span>
+                          </div>
+                          <div
+                            className="flex items-center gap-1.5 px-2 py-1 rounded truncate"
+                            style={{ background: 'var(--c-panel2)', border: '1px solid var(--c-border)', color: 'var(--c-text-dim)' }}
+                          >
+                            <Zap size={11} style={{ color: 'var(--c-gold)' }} className="shrink-0" />
+                            <span className="truncate">Live Match Sync</span>
+                          </div>
+                        </div>
+
+                        {/* High-visibility Action CTA Button */}
+                        <button
+                          type="button"
+                          onClick={() => setCustomModalOpen(true)}
+                          className="w-full py-2.5 px-4 rounded font-display font-extrabold text-xs uppercase tracking-wider text-white transition-all duration-200 flex items-center justify-center gap-2 group hover:brightness-110 active:scale-[0.99] cursor-pointer shadow-md"
+                          style={{
+                            background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 60%, #4f46e5 100%)',
+                            boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)',
+                            clipPath: 'polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%)'
+                          }}
+                        >
+                          <Swords size={13} className="group-hover:rotate-12 transition-transform duration-200" />
+                          <span>Create Or Join Room</span>
+                          <ChevronRight size={13} className="group-hover:translate-x-1 transition-transform duration-200 ml-auto" />
+                        </button>
+                      </div>
+                    </HudPanel>
+
+                  </div>
+
+                </div>
+              </>
+            )}
 
           </div>
-          </>
-        )}
 
-        </div>
-
-        {/* MOBILE STICKY BOTTOM DEPLOY BAR */}
-        {lobbyTab === 'random' ? (
-          <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 flex items-center gap-3 backdrop-blur-md"
-            style={{ background: 'var(--c-nav-bg)', borderTop: '1px solid var(--c-border)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
-            <div className="flex-1 min-w-0">
-              <p className="font-mono text-[10px] uppercase font-bold truncate" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)' }}>
-                {selectedTopicObj ? selectedTopicObj.label : 'Select Topic'} • {diffObj.label}
-              </p>
-              <p className="font-mono text-[10px]" style={{ color: 'var(--c-text-mute)' }}>
-                Elo swing: +18 / −18
-              </p>
+          {/* MOBILE STICKY BOTTOM DEPLOY BAR */}
+          {lobbyTab === 'random' ? (
+            <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 flex items-center gap-3 backdrop-blur-md"
+              style={{ background: 'var(--c-nav-bg)', borderTop: '1px solid var(--c-border)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
+              <div className="flex-1 min-w-0">
+                <p className="font-mono text-[10px] uppercase font-bold truncate" style={{ color: topic ? 'var(--c-red)' : 'var(--c-text-mute)' }}>
+                  {selectedTopicObj ? selectedTopicObj.label : 'Select Topic'} • {diffObj.label}
+                </p>
+                <p className="font-mono text-[10px]" style={{ color: 'var(--c-text-mute)' }}>
+                  Elo swing: +18 / −18
+                </p>
+              </div>
+              <HudButton
+                onClick={startQueue}
+                disabled={!topic}
+                className="px-5 py-3 text-xs font-bold whitespace-nowrap flex items-center gap-1.5"
+              >
+                <Swords size={14} />
+                {topic ? 'Deploy' : 'Pick Topic'}
+              </HudButton>
             </div>
-            <HudButton
-              onClick={startQueue}
-              disabled={!topic}
-              className="px-5 py-3 text-xs font-bold whitespace-nowrap flex items-center gap-1.5"
-            >
-              <Swords size={14} />
-              {topic ? 'Deploy' : 'Pick Topic'}
-            </HudButton>
-          </div>
-        ) : (
-          <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 flex items-center justify-between gap-3 backdrop-blur-md"
-            style={{ background: 'var(--c-nav-bg)', borderTop: '1px solid var(--c-border)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
-            <div className="flex-1 min-w-0">
-              <p className="font-mono text-[10px] uppercase font-bold truncate text-amber-400">
-                Striver A2Z Curriculum
-              </p>
-              <p className="font-mono text-[10px] text-[var(--c-text-mute)]">
-                Tap '1v1 Battle' on any problem
-              </p>
+          ) : (
+            <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 flex items-center justify-between gap-3 backdrop-blur-md"
+              style={{ background: 'var(--c-nav-bg)', borderTop: '1px solid var(--c-border)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
+              <div className="flex-1 min-w-0">
+                <p className="font-mono text-[10px] uppercase font-bold truncate text-amber-400">
+                  Striver A2Z Curriculum
+                </p>
+                <p className="font-mono text-[10px] text-[var(--c-text-mute)]">
+                  Tap '1v1 Battle' on any problem
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleBattleRandomFromSheet('arrays', 'easy')}
+                className="px-4 py-2 text-xs font-bold font-display uppercase tracking-wider text-white bg-gradient-to-r from-amber-500 to-rose-600 rounded flex items-center gap-1.5 shadow-md shadow-rose-950/40"
+              >
+                <Shuffle size={13} />
+                Random
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => handleBattleRandomFromSheet('arrays', 'easy')}
-              className="px-4 py-2 text-xs font-bold font-display uppercase tracking-wider text-white bg-gradient-to-r from-amber-500 to-rose-600 rounded flex items-center gap-1.5 shadow-md shadow-rose-950/40"
-            >
-              <Shuffle size={13} />
-              Random
-            </button>
-          </div>
-        )}
+          )}
 
         </PageWrapper>
       ) : (
         <LobbyViewV2
           user={user}
+          isAuthenticated={isAuthenticated}
           connected={connected}
           live={live}
           topics={TOPICS}
@@ -1710,6 +1733,10 @@ export default function Lobby() {
             navigate(`/match/${data.roomId}`, { state: { topic: data.topic, difficulty: data.difficulty, players: data.players, problemId: data.problemId } })
           }}
           onOpenCustomModal={(tab) => {
+            if (!isAuthenticated) {
+              setAuthDialogOpen(true)
+              return
+            }
             setCustomModalTab(tab || 'create')
             setCustomModalOpen(true)
           }}
@@ -1727,6 +1754,11 @@ export default function Lobby() {
           emit={emit}
         />
       )}
+
+      <AuthDialog
+        isOpen={authDialogOpen}
+        onClose={() => setAuthDialogOpen(false)}
+      />
 
       {premiumToast && (
         <div

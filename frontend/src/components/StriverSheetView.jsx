@@ -254,6 +254,7 @@ function TopicStepCard({
     const raw = (step.topic || step.title || '').toLowerCase()
     if (raw.includes('binary search') || raw.includes('binary-search')) return 'Binary Search'
     if (raw.includes('array')) return 'Arrays'
+    if (raw.includes('linked')) return 'Linked List'
     return (step.title || step.topic || '').replace(/^Step\s*\d+\s*:\s*(Solve\s+Problems\s+on\s+)?/i, '').trim()
   }, [step.topic, step.title])
 
