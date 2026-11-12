@@ -72,6 +72,15 @@ export default function Result() {
   const myData  = isWin ? winner : (loser  ?? { username: user?.username, rating: user?.elo_rating, delta: -18 })
   const oppData = isWin ? (loser  ?? { username: 'Opponent', rating: 1200 }) : (winner ?? { username: 'Opponent', rating: 1200 })
 
+  const oppPlayer = state?.players?.find?.(p => p.username?.toLowerCase() !== user?.username?.toLowerCase())
+    || state?.matchState?.players?.find?.(p => p.username?.toLowerCase() !== user?.username?.toLowerCase())
+  const resolvedOppData = {
+    ...oppData,
+    userId: oppData?.userId || oppData?.id || oppPlayer?.userId || oppPlayer?.id,
+    id: oppData?.userId || oppData?.id || oppPlayer?.userId || oppPlayer?.id,
+    username: oppData?.username || oppPlayer?.username || 'Opponent'
+  }
+
   const isCustomMatch = state?.isCustom || state?.roomId?.includes('custom')
   const myDelta = isCustomMatch ? 0 : (myData?.delta ?? (isWin ? 18 : isDraw ? 0 : -18))
 
@@ -99,7 +108,7 @@ export default function Result() {
         isDraw={isDraw}
         isLoss={isLoss}
         myData={myData}
-        oppData={oppData}
+        oppData={resolvedOppData}
         fromRating={fromRating}
         toRating={toRating}
         myDelta={myDelta}

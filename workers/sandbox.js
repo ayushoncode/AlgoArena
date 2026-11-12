@@ -61,9 +61,10 @@ function TreeNode(val, left, right, next) {
   this.next = (next===undefined ? null : next);
 }
 
-function ListNode(val, next) {
+function ListNode(val, next, prev) {
   this.val = (val===undefined ? 0 : val);
   this.next = (next===undefined ? null : next);
+  this.prev = (prev===undefined ? null : prev);
 }
 
 function Node(val, neighbors, left, right, next, random) {
@@ -105,20 +106,20 @@ function __buildTree(arr) {
 function __buildList(arr, pos) {
   if (!Array.isArray(arr) || arr.length === 0) return null;
   const nodes = [];
-  const dummy = new ListNode(0);
-  let curr = dummy;
+  let prev = null;
   for (const v of arr) {
     if (v !== null && v !== undefined) {
       const node = new ListNode(v);
+      node.prev = prev;
+      if (prev) prev.next = node;
       nodes.push(node);
-      curr.next = node;
-      curr = curr.next;
+      prev = node;
     }
   }
   if (typeof pos === 'number' && pos >= 0 && pos < nodes.length) {
-    curr.next = nodes[pos];
+    nodes[nodes.length - 1].next = nodes[pos];
   }
-  return dummy.next;
+  return nodes[0] || null;
 }
 
 function __buildIntersectionLists(intersectVal, listA, listB, skipA, skipB) {
@@ -435,9 +436,10 @@ class TreeNode:
         self.next = next
 
 class ListNode:
-    def __init__(self, val=0, next=None):
+    def __init__(self, val=0, next=None, prev=None):
         self.val = val
         self.next = next
+        self.prev = prev
 
 class Node:
     def __init__(self, val=0, neighbors=None, left=None, right=None, next=None, random=None):
@@ -474,18 +476,19 @@ def __build_tree(arr):
 def __build_list(arr, pos=None):
     if not isinstance(arr, list) or len(arr) == 0:
         return None
-    dummy = ListNode(0)
-    curr = dummy
     nodes = []
+    prev_node = None
     for v in arr:
         if v is not None:
             node = ListNode(v)
+            node.prev = prev_node
+            if prev_node:
+                prev_node.next = node
             nodes.append(node)
-            curr.next = node
-            curr = curr.next
+            prev_node = node
     if isinstance(pos, int) and 0 <= pos < len(nodes):
-        curr.next = nodes[pos]
-    return dummy.next
+        nodes[-1].next = nodes[pos]
+    return nodes[0] if nodes else None
 
 def __build_intersection_lists(intersect_val, list_a, list_b, skip_a, skip_b):
     if not isinstance(list_a, list) or not isinstance(list_b, list):
@@ -823,9 +826,11 @@ struct TreeNode {
 struct ListNode {
     int val;
     ListNode *next;
-    ListNode() : val(0), next(nullptr) {}
-    ListNode(int x) : val(x), next(nullptr) {}
-    ListNode(int x, ListNode *next) : val(x), next(next) {}
+    ListNode *prev;
+    ListNode() : val(0), next(nullptr), prev(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr), prev(nullptr) {}
+    ListNode(int x, ListNode *next) : val(x), next(next), prev(nullptr) {}
+    ListNode(int x, ListNode *next, ListNode *prev) : val(x), next(next), prev(prev) {}
 };
 
 struct Node {
@@ -872,15 +877,18 @@ inline TreeNode* __build_tree(const json& j) {
 
 inline ListNode* __build_list(const json& j) {
     if (j.is_null() || !j.is_array() || j.empty()) return nullptr;
-    ListNode dummy(0);
-    ListNode* curr = &dummy;
+    ListNode* head = nullptr;
+    ListNode* prev = nullptr;
     for (const auto& item : j) {
         if (!item.is_null()) {
-            curr->next = new ListNode(item.get<int>());
-            curr = curr->next;
+            ListNode* node = new ListNode(item.get<int>());
+            node->prev = prev;
+            if (prev) prev->next = node;
+            else head = node;
+            prev = node;
         }
     }
-    return dummy.next;
+    return head;
 }
 
 inline json __serialize_tree(TreeNode* root) {
@@ -1436,9 +1444,21 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
           return makeErrorResult('TIME_LIMIT_EXCEEDED', testCases,
             `Time limit exceeded (${timeout}ms)`, timeout)
         }
-        return makeErrorResult('RUNTIME_ERROR', testCases, err.message, Date.now() - startTime)
+        const msg = String(err.message || err.stderr || '')
+        if (
+          msg.includes('Cannot connect to the Docker daemon') ||
+          msg.includes('failed to connect to the docker API') ||
+          msg.includes('connect: no such file or directory') ||
+          msg.includes('ENOENT') || msg.includes('not found') || msg.includes('docker:')
+        ) {
+          isDockerUnavailable = true
+        } else {
+          return makeErrorResult('RUNTIME_ERROR', testCases, err.message, Date.now() - startTime)
+        }
       }
-    } else {
+    }
+
+    if (isDockerUnavailable) {
       // Fallback: direct runner execution (e.g. inside Railway / cloud container without host Docker socket)
       if (dockerCompileCmd) {
         let localCompileCmd = dockerCompileCmd[0]
@@ -1448,7 +1468,7 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
         if (lang === 'cpp' || lang === 'c++') {
           const nlohmannDir = path.join(__dirname, 'nlohmann')
           if (fs.existsSync(nlohmannDir)) {
-            localCompileArgs = localCompileArgs.map(arg => arg.replace('g++', `g++ -I "${nlohmannDir}" -I "${__dirname}"`))
+            localCompileArgs.unshift('-I', __dirname)
           }
         }
         try {
@@ -1458,7 +1478,7 @@ async function runSandbox({ code, language, testCases, timeLimitMs, onProgress }
         }
       }
 
-      const localCmd = dockerRunCmd[0]
+      const localCmd = dockerRunCmd[0].replace(new RegExp('/sandbox', 'g'), tmpDir)
       const localArgs = dockerRunCmd.slice(1).map(arg =>
         arg.replace(new RegExp('/sandbox', 'g'), tmpDir)
       )

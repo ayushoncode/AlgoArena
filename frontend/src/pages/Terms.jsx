@@ -66,7 +66,7 @@ export default function Terms() {
         <section className="space-y-3">
           <h2 className="text-xl font-semibold text-white">5. Paid Subscriptions and Billing</h2>
           <p className="text-sm leading-relaxed text-slate-300">
-            AlgoArena offers optional Premium subscriptions billed monthly in Indian Rupees (INR) through Razorpay. Standard pricing is 50 per month. The first 100 subscribers are eligible for a launch rate of 39 per month, which remains active for as long as that subscription continues unbroken. Prices exclude applicable taxes unless explicitly indicated [TODO: owner to confirm GST registration status].
+            AlgoArena offers optional Premium subscriptions billed monthly in Indian Rupees (INR) through Razorpay. Standard pricing is 100 per month. The first 100 subscribers are eligible for a launch rate of 39 per month, which remains active for as long as that subscription continues unbroken. Prices exclude applicable taxes unless explicitly indicated [TODO: owner to confirm GST registration status].
           </p>
           <p className="text-sm leading-relaxed text-slate-300">
             Fairness Guarantee: Premium subscriptions do not alter Elo rating calculations, matchmaking priority, test runner quotas, problem difficulty, or judge execution limits.

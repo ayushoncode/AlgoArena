@@ -515,14 +515,31 @@ async function getRelationshipStatus(viewerId, targetUserId) {
     return { status: 'none', friendshipId: null };
   }
 
+  let resolvedTargetId = targetUserId;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUserId));
+  if (!isUuid) {
+    const { rows: userRows } = await db.query(
+      `SELECT id FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`,
+      [targetUserId]
+    );
+    if (userRows.length === 0) {
+      return { status: 'none', friendshipId: null };
+    }
+    resolvedTargetId = userRows[0].id;
+  }
+
+  if (viewerId === resolvedTargetId) {
+    return { status: 'none', friendshipId: null };
+  }
+
   // Check if blocked
-  const blocked = await areUsersBlocked(viewerId, targetUserId);
+  const blocked = await areUsersBlocked(viewerId, resolvedTargetId);
   if (blocked) {
     // Never leak "blocked" status to client
     return { status: 'none', friendshipId: null };
   }
 
-  const [low, high] = orderPair(viewerId, targetUserId);
+  const [low, high] = orderPair(viewerId, resolvedTargetId);
   const { rows } = await db.query(
     `SELECT id, requested_by, status, expires_at
      FROM friendships

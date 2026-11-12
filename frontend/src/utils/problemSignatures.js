@@ -874,6 +874,73 @@ export const CANONICAL_SIGNATURES = {
     ret: TYPE_BOOL,
     isList: true,
   },
+  'odd even linked list': {
+    params: [{ name: 'head', ...TYPE_LIST }],
+    ret: TYPE_LIST,
+    isList: true,
+  },
+  'delete the middle node of a linked list': {
+    params: [{ name: 'head', ...TYPE_LIST }],
+    ret: TYPE_LIST,
+    isList: true,
+  },
+  'sort a linked list of 0s 1s or 2s': {
+    params: [{ name: 'head', ...TYPE_LIST }],
+    ret: TYPE_LIST,
+    isList: true,
+  },
+  'sort a linked list of 0s, 1s and 2s': {
+    params: [{ name: 'head', ...TYPE_LIST }],
+    ret: TYPE_LIST,
+    isList: true,
+  },
+  'add 1 to a linked list': {
+    params: [{ name: 'head', ...TYPE_LIST }],
+    ret: TYPE_LIST,
+    isList: true,
+  },
+  'introduction to doubly linked list': {
+    params: [{ name: 'arr', ...TYPE_INT_ARR }],
+    ret: TYPE_LIST,
+    isList: true,
+    isDll: true,
+  },
+  'insert a node in doubly linked list': {
+    params: [{ name: 'head', ...TYPE_LIST }, { name: 'p', ...TYPE_INT }, { name: 'x', ...TYPE_INT }],
+    ret: TYPE_LIST,
+    isList: true,
+    isDll: true,
+  },
+  'delete node in doubly linked list': {
+    params: [{ name: 'head', ...TYPE_LIST }, { name: 'x', ...TYPE_INT }],
+    ret: TYPE_LIST,
+    isList: true,
+    isDll: true,
+  },
+  'reverse a doubly linked list': {
+    params: [{ name: 'head', ...TYPE_LIST }],
+    ret: TYPE_LIST,
+    isList: true,
+    isDll: true,
+  },
+  'delete all occurrences of a key in a doubly linked list': {
+    params: [{ name: 'head', ...TYPE_LIST }, { name: 'key', ...TYPE_INT }],
+    ret: TYPE_LIST,
+    isList: true,
+    isDll: true,
+  },
+  'find pairs with given sum in doubly linked list': {
+    params: [{ name: 'head', ...TYPE_LIST }, { name: 'target', ...TYPE_INT }],
+    ret: TYPE_INT_MATRIX_RET,
+    isList: true,
+    isDll: true,
+  },
+  'remove duplicates from a sorted doubly linked list': {
+    params: [{ name: 'head', ...TYPE_LIST }],
+    ret: TYPE_LIST,
+    isList: true,
+    isDll: true,
+  },
   'intersection of two linked lists': {
     params: [{ name: 'headA', ...TYPE_LIST }, { name: 'headB', ...TYPE_LIST }],
     ret: TYPE_LIST,
@@ -1231,18 +1298,21 @@ export function buildStarterTemplate(problem, lang = 'javascript') {
   let ret = null
   let isTree = false
   let isList = false
+  let isDll = false
 
   if (sig) {
     params = sig.params
     ret = sig.ret
     isTree = !!sig.isTree || params.some(p => p.isTree) || (ret && ret.isTree)
     isList = !!sig.isList || params.some(p => p.isList) || (ret && ret.isList)
+    isDll = !!sig.isDll || cleanTitle.includes('doubly') || cleanTitle.includes('dll') || (problem.slug && (problem.slug.includes('doubly') || problem.slug.includes('dll')))
   } else {
     const rawTokens = splitArgs(problem.sample_input)
     params = rawTokens.map((tok, i) => inferParamInfo(tok, i, rawTokens.length, problem.title, problem.topic))
     ret = inferReturnType(problem.sample_output, problem.title, problem.topic)
     isTree = params.some(p => p.isTree) || (ret && ret.isTree)
     isList = params.some(p => p.isList) || (ret && ret.isList)
+    isDll = cleanTitle.includes('doubly') || cleanTitle.includes('dll') || (problem.slug && (problem.slug.includes('doubly') || problem.slug.includes('dll')))
   }
 
   const jsParamNames = params.map(p => p.name).join(', ')
@@ -1255,6 +1325,8 @@ export function buildStarterTemplate(problem, lang = 'javascript') {
     let prefix = ''
     if (isTree) {
       prefix += `# Definition for a binary tree node.\n# class TreeNode:\n#     def __init__(self, val=0, left=None, right=None):\n#         self.val = val\n#         self.left = left\n#         self.right = right\n\n`
+    } else if (isDll) {
+      prefix += `# Definition for doubly-linked list.\n# class ListNode:\n#     def __init__(self, val=0, next=None, prev=None):\n#         self.val = val\n#         self.next = next\n#         self.prev = prev\n\n`
     } else if (isList) {
       prefix += `# Definition for singly-linked list.\n# class ListNode:\n#     def __init__(self, val=0, next=None):\n#         self.val = val\n#         self.next = next\n\n`
     }
@@ -1268,6 +1340,8 @@ export function buildStarterTemplate(problem, lang = 'javascript') {
     let prefix = 'import java.util.*;\n\n'
     if (isTree) {
       prefix += `/**\n * Definition for a binary tree node.\n * public class TreeNode {\n *     int val;\n *     TreeNode left;\n *     TreeNode right;\n *     TreeNode() {}\n *     TreeNode(int val) { this.val = val; }\n *     TreeNode(int val, TreeNode left, TreeNode right) {\n *         this.val = val;\n *         this.left = left;\n *         this.right = right;\n *     }\n * }\n */\n`
+    } else if (isDll) {
+      prefix += `/**\n * Definition for doubly-linked list.\n * public class ListNode {\n *     int val;\n *     ListNode next;\n *     ListNode prev;\n *     ListNode() {}\n *     ListNode(int val) { this.val = val; }\n *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }\n *     ListNode(int val, ListNode next, ListNode prev) { this.val = val; this.next = next; this.prev = prev; }\n * }\n */\n`
     } else if (isList) {
       prefix += `/**\n * Definition for singly-linked list.\n * public class ListNode {\n *     int val;\n *     ListNode next;\n *     ListNode() {}\n *     ListNode(int val) { this.val = val; }\n *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }\n * }\n */\n`
     }
@@ -1283,6 +1357,8 @@ export function buildStarterTemplate(problem, lang = 'javascript') {
     let prefix = `#include <iostream>\n#include <vector>\n#include <string>\n#include <queue>\n#include <algorithm>\n#include <unordered_map>\n#include <unordered_set>\nusing namespace std;\n\n`
     if (isTree) {
       prefix += `/**\n * Definition for a binary tree node.\n * struct TreeNode {\n *     int val;\n *     TreeNode *left;\n *     TreeNode *right;\n *     TreeNode() : val(0), left(nullptr), right(nullptr) {}\n *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}\n *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}\n * };\n */\n`
+    } else if (isDll) {
+      prefix += `/**\n * Definition for doubly-linked list.\n * struct ListNode {\n *     int val;\n *     ListNode *next;\n *     ListNode *prev;\n *     ListNode() : val(0), next(nullptr), prev(nullptr) {}\n *     ListNode(int x) : val(x), next(nullptr), prev(nullptr) {}\n *     ListNode(int x, ListNode *next) : val(x), next(next), prev(nullptr) {}\n *     ListNode(int x, ListNode *next, ListNode *prev) : val(x), next(next), prev(prev) {}\n * };\n */\n`
     } else if (isList) {
       prefix += `/**\n * Definition for singly-linked list.\n * struct ListNode {\n *     int val;\n *     ListNode *next;\n *     ListNode() : val(0), next(nullptr) {}\n *     ListNode(int x) : val(x), next(nullptr) {}\n *     ListNode(int x, ListNode *next) : val(x), next(next) {}\n * };\n */\n`
     }
@@ -1299,6 +1375,8 @@ public:
   let prefix = ''
   if (isTree) {
     prefix = `/**\n * Definition for a binary tree node.\n * function TreeNode(val, left, right) {\n *     this.val = (val===undefined ? 0 : val)\n *     this.left = (left===undefined ? null : left)\n *     this.right = (right===undefined ? null : right)\n * }\n */\n`
+  } else if (isDll) {
+    prefix = `/**\n * Definition for doubly-linked list.\n * function ListNode(val, next, prev) {\n *     this.val = (val===undefined ? 0 : val)\n *     this.next = (next===undefined ? null : next)\n *     this.prev = (prev===undefined ? null : prev)\n * }\n */\n`
   } else if (isList) {
     prefix = `/**\n * Definition for singly-linked list.\n * function ListNode(val, next) {\n *     this.val = (val===undefined ? 0 : val)\n *     this.next = (next===undefined ? null : next)\n * }\n */\n`
   }
